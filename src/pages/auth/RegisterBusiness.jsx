@@ -14,7 +14,6 @@ export default function RegisterBusiness() {
     country: '',
     address: '',
     walletAddress: '',
-    // Company info
     name: '',
     licenseNo: '',
     taxCode: '',
@@ -36,7 +35,7 @@ export default function RegisterBusiness() {
 
   const handleRoleChange = (newRole) => {
     setRole(newRole);
-    setError(''); // Clear error when switching roles
+    setError('');
   };
 
   const handleSubmit = async (e) => {
