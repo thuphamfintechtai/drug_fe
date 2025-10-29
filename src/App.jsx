@@ -3,6 +3,8 @@ import { AuthProvider } from './context/AuthContext';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import RegisterBusiness from './pages/auth/RegisterBusiness';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
 import Dashboard from './pages/user/Dashboard';
 import AdminDashboard from './pages/admin/Dashboard';
 import ManufacturerDashboard from './pages/manufacturer/Dashboard';
@@ -35,6 +37,8 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/register-business" element={<RegisterBusiness />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route
           path="/dashboard"
           element={
