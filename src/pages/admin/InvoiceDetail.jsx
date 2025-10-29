@@ -41,28 +41,22 @@ export default function AdminInvoiceDetail() {
       </div>
 
       {/* Banner */}
-      <motion.div
-        className="relative overflow-hidden rounded-2xl p-5 mb-5 bg-gradient-to-r from-[#e0f2fe] to-[#f0f9ff] border border-cyan-100"
+      <motion.section
+        className="relative overflow-hidden rounded-2xl mb-5 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center gap-3">
-          <motion.div
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] shadow-md shadow-cyan-200/40"
-            animate={{ rotate: [0, 8, 0, -8, 0] }}
-            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-          />
-          <div>
-            <h2 className="text-lg font-semibold text-slate-800">Chi tiết hóa đơn</h2>
-            <p className="text-sm text-slate-600">Thông tin hóa đơn minh bạch – phong cách medical tech</p>
-          </div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
+        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">Chi tiết hóa đơn</h2>
+          <p className="mt-1 text-white/90">Thông tin minh bạch – chuẩn y tế.</p>
         </div>
-      </motion.div>
+      </motion.section>
 
       {/* Card chi tiết */}
       <motion.div
-        className="rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-[0_10px_30px_rgba(2,132,199,0.06)] p-6"
+        className="rounded-2xl bg-white/90 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-6"
         variants={fadeUp}
         initial="hidden"
         animate="show"
@@ -75,36 +69,36 @@ export default function AdminInvoiceDetail() {
           <div className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <div className="text-xs text-slate-500">Mã hóa đơn</div>
-                <div className="font-semibold text-slate-800">{item._id}</div>
+                <div className="text-xs text-[#003544]/65">Mã hóa đơn</div>
+                <div className="font-semibold text-[#003544]">{item._id}</div>
               </div>
               <div>
-                <div className="text-xs text-slate-500">Mã xác thực</div>
-                <div className="font-semibold text-slate-800">{item.verificationCode}</div>
+                <div className="text-xs text-[#003544]/65">Mã xác thực</div>
+                <div className="font-semibold text-[#003544]">{item.verificationCode}</div>
               </div>
               <div>
-                <div className="text-xs text-slate-500">Nhà phân phối</div>
-                <div className="font-medium text-slate-800">{item.distributor?.name || item.distributorName}</div>
+                <div className="text-xs text-[#003544]/65">Nhà phân phối</div>
+                <div className="font-medium text-[#003544]">{item.distributor?.name || item.distributorName}</div>
               </div>
               <div>
-                <div className="text-xs text-slate-500">Nhà thuốc</div>
-                <div className="font-medium text-slate-800">{item.pharmacy?.name || item.pharmacyName}</div>
+                <div className="text-xs text-[#003544]/65">Nhà thuốc</div>
+                <div className="font-medium text-[#003544]">{item.pharmacy?.name || item.pharmacyName}</div>
               </div>
               <div>
-                <div className="text-xs text-slate-500">Tổng tiền</div>
-                <div className="font-semibold text-slate-800">{item.totalAmount}</div>
+                <div className="text-xs text-[#003544]/65">Tổng tiền</div>
+                <div className="font-semibold text-[#003544]">{item.totalAmount}</div>
               </div>
               {item.createdAt && (
                 <div>
-                  <div className="text-xs text-slate-500">Ngày tạo</div>
-                  <div className="font-medium text-slate-800">{new Date(item.createdAt).toLocaleString()}</div>
+                  <div className="text-xs text-[#003544]/65">Ngày tạo</div>
+                  <div className="font-medium text-[#003544]">{new Date(item.createdAt).toLocaleString()}</div>
                 </div>
               )}
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-slate-800 mb-2">Dữ liệu gốc</h3>
-              <pre className="bg-slate-50 p-3 rounded-xl text-sm text-slate-800 overflow-x-auto border border-slate-200">{JSON.stringify(item, null, 2)}</pre>
+              <h3 className="text-sm font-semibold text-[#003544] mb-2">Dữ liệu gốc</h3>
+              <pre className="bg-[#f5fcff] p-3 rounded-xl text-sm text-[#003544] overflow-x-auto border border-[#90e0ef55]">{JSON.stringify(item, null, 2)}</pre>
             </div>
           </div>
         ) : (

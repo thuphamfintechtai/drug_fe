@@ -35,28 +35,22 @@ export default function AdminInvoiceCreate() {
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {/* Banner */}
-      <motion.div
-        className="relative overflow-hidden rounded-2xl p-5 mb-5 bg-gradient-to-r from-[#e0f2fe] to-[#f0f9ff] border border-cyan-100"
+      <motion.section
+        className="relative overflow-hidden rounded-2xl mb-5 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center gap-3">
-          <motion.div
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] shadow-md shadow-cyan-200/40"
-            animate={{ rotate: [0, 12, 0, -12, 0] }}
-            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-          />
-          <div>
-            <h2 className="text-lg font-semibold text-slate-800">Tạo Commercial Invoice</h2>
-            <p className="text-sm text-slate-600">Chuẩn y tế – minh bạch blockchain</p>
-          </div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
+        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">Tạo Commercial Invoice</h2>
+          <p className="mt-1 text-white/90">Chuẩn y tế – minh bạch Blockchain.</p>
         </div>
-      </motion.div>
+      </motion.section>
 
       {/* Card form */}
       <motion.div
-        className="rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-[0_10px_30px_rgba(2,132,199,0.06)] p-6"
+        className="rounded-2xl bg-white/90 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-6"
         variants={fadeUp}
         initial="hidden"
         animate="show"
@@ -71,7 +65,7 @@ export default function AdminInvoiceCreate() {
             <label className="block text-sm font-medium text-slate-700 mb-2">Distributor ID</label>
             <input
               name="distributorId" value={form.distributorId} onChange={handleChange}
-              className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition"
+              className="w-full rounded-xl border border-[#90e0ef55] bg-white/60 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
               placeholder="VD: DIST-001" required
             />
           </div>
@@ -79,7 +73,7 @@ export default function AdminInvoiceCreate() {
             <label className="block text-sm font-medium text-slate-700 mb-2">Pharmacy ID</label>
             <input
               name="pharmacyId" value={form.pharmacyId} onChange={handleChange}
-              className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition"
+              className="w-full rounded-xl border border-[#90e0ef55] bg-white/60 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
               placeholder="VD: PHAR-009" required
             />
           </div>
@@ -87,7 +81,7 @@ export default function AdminInvoiceCreate() {
             <label className="block text-sm font-medium text-slate-700 mb-2">Tổng tiền</label>
             <input
               name="totalAmount" type="number" value={form.totalAmount} onChange={handleChange}
-              className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition"
+              className="w-full rounded-xl border border-[#90e0ef55] bg-white/60 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
               placeholder="VD: 12000000" required
             />
           </div>
@@ -95,13 +89,16 @@ export default function AdminInvoiceCreate() {
             <motion.button
               disabled={loading}
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}
-              className="px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#0077b6] shadow hover:shadow-cyan-200/60"
+              className="px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
             >
               Tạo
             </motion.button>
           </div>
         </form>
       </motion.div>
+      <style>{`
+        @keyframes float-slow { 0%,100% { transform: translateY(0) } 50% { transform: translateY(10px) } }
+      `}</style>
     </DashboardLayout>
   );
 }

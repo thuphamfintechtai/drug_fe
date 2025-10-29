@@ -30,43 +30,107 @@ export default function PharmacyDrugs() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <input
-            value={q}
-            onChange={(e) => setSearchParams({ page: '1', q: e.target.value })}
-            placeholder="Tìm theo tên"
-            className="border rounded px-3 py-2"
-          />
+      {/* Banner hiện đại */}
+      <section className="relative overflow-hidden rounded-2xl border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
+        {/* Pills bay chậm */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/30 blur-xl animate-float-slow" />
+          <div className="absolute top-8 right-6 w-16 h-8 rounded-full bg-white/25 blur-md rotate-6 animate-float-slower" />
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-28 h-10 rounded-full bg-white/20 blur-md -rotate-6 animate-float-slower" />
         </div>
+        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div className="max-w-2xl">
+              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm animate-fade-in">
+                DrugTrace — Danh sách thuốc • Truy xuất minh bạch
+              </h1>
+              <p className="mt-3 text-white/90 leading-relaxed animate-slide-up">
+                Khám phá và tra cứu thuốc nhanh chóng. Dữ liệu xác thực bởi Blockchain.
+              </p>
+            </div>
+            {/* Search bar cao cấp */}
+            <div className="w-full md:max-w-md">
+              <div className="group relative">
+                <div className="absolute inset-0 rounded-2xl bg-white/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex items-center gap-2 rounded-2xl border border-white/30 bg-white/15 backdrop-blur px-4 py-2.5 text-white/95 shadow-[0_6px_18px_rgba(0,0,0,0.08)] focus-within:bg-white/20">
+                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                  <input
+                    value={q}
+                    onChange={(e) => setSearchParams({ page: '1', q: e.target.value })}
+                    placeholder="Tìm theo tên thuốc..."
+                    className="w-full bg-transparent placeholder:text-white/70 text-white outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {items.map((d) => (
-            <Link to={`/pharmacy/drugs/${d._id}`} key={d._id} className="border rounded p-3 hover:shadow">
-              <div className="font-semibold">{d.name}</div>
-              <div className="text-sm text-gray-600">{d.genericName}</div>
+      {/* Lưới danh sách */}
+      <div className="mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {items.map((d, idx) => (
+            <Link
+              to={`/pharmacy/drugs/${d._id}`}
+              key={d._id}
+              className="group relative rounded-2xl border border-[#90e0ef55] bg-white/80 backdrop-blur-xl p-4 shadow-[0_10px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_14px_36px_rgba(0,0,0,0.08)] transition-all duration-300"
+            >
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#90e0ef0f] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-base font-semibold text-[#003544] tracking-tight line-clamp-2">
+                      {d.name}
+                    </div>
+                    <div className="mt-1 text-sm text-[#003544]/70 line-clamp-1">{d.genericName}</div>
+                  </div>
+                  <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] shadow-[0_6px_18px_rgba(0,180,216,0.35)]" />
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-xs text-[#003544]/70">
+                  <span className="rounded-md bg-[#90e0ef22] px-2 py-1">ATC</span>
+                  <span className="rounded-md bg-[#90e0ef22] px-2 py-1">Batch</span>
+                  <span className="rounded-md bg-[#90e0ef22] px-2 py-1">Expiry</span>
+                </div>
+              </div>
             </Link>
           ))}
         </div>
-
-        {pagination && (
-          <div className="flex items-center justify-between mt-4">
-            <button
-              disabled={page <= 1}
-              onClick={() => setSearchParams({ page: String(page - 1), q })}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >Trước</button>
-            <div>Trang {pagination.currentPage} / {pagination.totalPages}</div>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setSearchParams({ page: String(page + 1), q })}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >Sau</button>
-          </div>
-        )}
-
-        {loading && <div className="mt-4 text-gray-500">Đang tải...</div>}
       </div>
+
+      {/* Phân trang */}
+      {pagination && (
+        <div className="mt-6 flex items-center justify-between">
+          <button
+            disabled={page <= 1}
+            onClick={() => setSearchParams({ page: String(page - 1), q })}
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium border border-[#90e0ef55] text-[#003544] hover:bg-[#90e0ef22] disabled:opacity-50 disabled:hover:bg-transparent transition-all"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/><path d="M9 12h12"/></svg>
+            Trước
+          </button>
+          <div className="text-sm text-[#003544]/80">Trang {pagination.currentPage} / {pagination.totalPages}</div>
+          <button
+            disabled={page >= pagination.totalPages}
+            onClick={() => setSearchParams({ page: String(page + 1), q })}
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] disabled:opacity-60 transition-all"
+          >
+            Sau
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6"/><path d="M3 12h12"/></svg>
+          </button>
+        </div>
+      )}
+
+      {loading && <div className="mt-4 text-[#003544]/70">Đang tải...</div>}
+
+      {/* Keyframes */}
+      <style>{`
+        @keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes float-slow { 0%,100% { transform: translateY(0) } 50% { transform: translateY(10px) } }
+        @keyframes float-slower { 0%,100% { transform: translateY(0) } 50% { transform: translateY(6px) } }
+      `}</style>
     </DashboardLayout>
   );
 }

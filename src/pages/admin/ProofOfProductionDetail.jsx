@@ -88,24 +88,18 @@ export default function AdminProofOfProductionDetail() {
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {/* Banner */}
-      <motion.div
-        className="relative overflow-hidden rounded-2xl p-5 mb-4 bg-gradient-to-r from-[#e0f2fe] to-[#f0f9ff] border border-cyan-100"
+      <motion.section
+        className="relative overflow-hidden rounded-2xl mb-4 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center gap-3">
-          <motion.div
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] shadow-md shadow-cyan-200/40"
-            animate={{ rotate: [0, 10, 0, -10, 0] }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <div>
-            <h1 className="text-lg font-semibold text-slate-800">Chi tiết Proof of Production</h1>
-            <p className="text-sm text-slate-600">Thông tin sản xuất – minh bạch, chuẩn y tế</p>
-          </div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
+        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">Chi tiết Proof of Production</h1>
+          <p className="text-white/90 mt-1">Thông tin sản xuất – minh bạch, chuẩn y tế.</p>
         </div>
-      </motion.div>
+      </motion.section>
 
       {/* Back link */}
       <div className="mb-3">
@@ -116,7 +110,7 @@ export default function AdminProofOfProductionDetail() {
       </div>
 
       <motion.div
-        className="rounded-2xl bg-white/90 backdrop-blur-md p-6 border border-slate-200 shadow-sm"
+        className="rounded-2xl bg-white/90 backdrop-blur-xl p-6 border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.06)]"
         variants={fadeUp}
         initial="hidden"
         animate="show"
@@ -129,10 +123,10 @@ export default function AdminProofOfProductionDetail() {
           <div className="space-y-6">
             {/* 🔹 Thông tin chính */}
             <section>
-              <h2 className="text-lg font-semibold text-cyan-700 mb-2">
+              <h2 className="text-lg font-semibold text-[#003544] mb-2">
                 Thông tin sản xuất
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[15px]">
                 <div><strong>ID:</strong> {proof._id}</div>
                 <div><strong>Batch:</strong> {proof.batchNumber}</div>
                 <div><strong>Serial:</strong> {proof.serialNumber}</div>
@@ -157,10 +151,10 @@ export default function AdminProofOfProductionDetail() {
 
             {/* 🔹 Thông tin thuốc */}
             <section>
-              <h2 className="text-lg font-semibold text-cyan-700 mb-2">
+              <h2 className="text-lg font-semibold text-[#003544] mb-2">
                 Thông tin thuốc
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[15px]">
                 <div><strong>Tên thương mại:</strong> {proof.drug?.tradeName || proof.drugName}</div>
                 <div><strong>Tên hoạt chất:</strong> {proof.genericName}</div>
                 <div><strong>Dạng bào chế:</strong> {proof.drug?.dosageForm}</div>
@@ -172,10 +166,10 @@ export default function AdminProofOfProductionDetail() {
 
             {/* 🔹 Nhà sản xuất */}
             <section>
-              <h2 className="text-lg font-semibold text-cyan-700 mb-2">
+              <h2 className="text-lg font-semibold text-[#003544] mb-2">
                 Nhà sản xuất
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[15px]">
                 <div><strong>Tên:</strong> {proof.manufacturer?.name}</div>
                 <div><strong>Địa chỉ:</strong> {proof.manufacturer?.address}</div>
                 <div><strong>Email liên hệ:</strong> {proof.manufacturer?.contactEmail}</div>
@@ -186,12 +180,12 @@ export default function AdminProofOfProductionDetail() {
             {/* 🔹 QA Report */}
             {proof.qaReportUri && (
               <section>
-                <h2 className="text-lg font-semibold text-cyan-700 mb-2">QA Report</h2>
+                <h2 className="text-lg font-semibold text-[#003544] mb-2">QA Report</h2>
                 <a
                   href={proof.qaReportUri}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline text-sm"
+                  className="text-[#00b4d8] hover:underline text-sm"
                 >
                   📄 Tải báo cáo QA
                 </a>
@@ -201,7 +195,7 @@ export default function AdminProofOfProductionDetail() {
             {/* 🔹 Blockchain / NFT */}
             {nft && (
               <section>
-                <h2 className="text-lg font-semibold text-cyan-700 mb-2">
+                <h2 className="text-lg font-semibold text-[#003544] mb-2">
                   Blockchain / NFT
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
@@ -210,7 +204,7 @@ export default function AdminProofOfProductionDetail() {
                   <div><strong>Tx Hash:</strong>
                     <a
                       href={`https://sepolia.etherscan.io/tx/${nft.chainTxHash}`}
-                      className="text-blue-600 hover:underline ml-1"
+                      className="text-[#00b4d8] hover:underline ml-1"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -223,7 +217,7 @@ export default function AdminProofOfProductionDetail() {
                       href={nft.ipfsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline ml-1"
+                      className="text-[#00b4d8] hover:underline ml-1"
                     >
                       {nft.ipfsUrl}
                     </a>
@@ -236,6 +230,9 @@ export default function AdminProofOfProductionDetail() {
           <div className="text-gray-500">Không có dữ liệu</div>
         )}
       </motion.div>
+      <style>{`
+        @keyframes float-slow { 0%,100% { transform: translateY(0) } 50% { transform: translateY(10px) } }
+      `}</style>
     </DashboardLayout>
   );
 }

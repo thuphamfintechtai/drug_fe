@@ -65,40 +65,23 @@ export default function AdminDrugForm() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Banner nhỏ với slogan + pills icon */}
-      <motion.div
-        className="relative overflow-hidden rounded-2xl p-5 mb-6 bg-gradient-to-r from-[#e0f2fe] to-[#f0f9ff] border border-cyan-100"
+      {/* Banner nhỏ với gradient xanh y tế */}
+      <motion.section
+        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center gap-4">
-          <motion.svg
-            width="42" height="42" viewBox="0 0 24 24"
-            className="text-cyan-600 drop-shadow"
-            initial={{ rotate: -10 }}
-            animate={{ rotate: [ -10, 10, -10 ] }}
-            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <defs>
-              <linearGradient id="capsule" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#00b4d8" />
-                <stop offset="60%" stopColor="#48cae4" />
-                <stop offset="100%" stopColor="#90e0ef" />
-              </linearGradient>
-            </defs>
-            <rect x="2" y="8" rx="6" ry="6" width="20" height="8" fill="url(#capsule)" stroke="#cfe8f6" />
-          </motion.svg>
-          <div>
-            <h2 className="text-lg font-semibold text-slate-800">{isEdit ? 'Cập nhật thuốc' : 'Tạo thuốc mới'}</h2>
-            <p className="text-sm text-slate-600">Dữ liệu chuẩn, minh bạch</p>
-          </div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
+        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">{isEdit ? 'Cập nhật thuốc' : 'Tạo thuốc mới'}</h2>
+          <p className="mt-1 text-white/90">Dữ liệu chuẩn, minh bạch.</p>
         </div>
-      </motion.div>
+      </motion.section>
 
       {/* Card form kiểu glass + animation reveal */}
       <motion.div
-        className="rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-[0_10px_30px_rgba(2,132,199,0.08)] p-6"
+        className="rounded-2xl bg-white/90 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-6"
         variants={fadeUp}
         initial="hidden"
         animate="show"
@@ -114,7 +97,7 @@ export default function AdminDrugForm() {
             <label className="block text-sm font-medium text-slate-700 mb-2">Tên thuốc</label>
             <input
               name="name" value={form.name} onChange={handleChange}
-              className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition"
+              className="w-full rounded-xl border border-[#90e0ef55] bg-white/60 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
               placeholder="VD: Paracetamol" required
             />
           </div>
@@ -123,7 +106,7 @@ export default function AdminDrugForm() {
             <label className="block text-sm font-medium text-slate-700 mb-2">ATC code</label>
             <input
               name="atcCode" value={form.atcCode} onChange={handleChange}
-              className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition"
+              className="w-full rounded-xl border border-[#90e0ef55] bg-white/60 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
               placeholder="VD: N02BE01" required
             />
           </div>
@@ -132,7 +115,7 @@ export default function AdminDrugForm() {
             <label className="block text-sm font-medium text-slate-700 mb-2">Mô tả</label>
             <textarea
               name="description" value={form.description} onChange={handleChange}
-              className="w-full rounded-xl border-2 border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition"
+              className="w-full rounded-xl border border-[#90e0ef55] bg-white/60 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
               rows={4} placeholder="Công dụng, dạng bào chế, chỉ định, v.v."
             />
           </div>
@@ -141,7 +124,7 @@ export default function AdminDrugForm() {
             <motion.button
               type="submit" disabled={loading}
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}
-              className="px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#0077b6] shadow hover:shadow-cyan-200/60 disabled:opacity-60"
+              className="px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] disabled:opacity-60"
             >
               {isEdit ? 'Cập nhật' : 'Tạo mới'}
             </motion.button>
@@ -150,7 +133,7 @@ export default function AdminDrugForm() {
               <motion.button
                 type="button" onClick={handleDelete} disabled={loading}
                 whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}
-                className="px-5 py-2.5 rounded-xl text-white bg-red-600 hover:bg-red-700 shadow disabled:opacity-60"
+                className="px-5 py-2.5 rounded-xl text-white bg-red-600/90 hover:bg-red-600 shadow disabled:opacity-60"
               >
                 Xóa
               </motion.button>
@@ -158,6 +141,10 @@ export default function AdminDrugForm() {
           </div>
         </form>
       </motion.div>
+
+      <style>{`
+        @keyframes float-slow { 0%,100% { transform: translateY(0) } 50% { transform: translateY(10px) } }
+      `}</style>
     </DashboardLayout>
   );
 }

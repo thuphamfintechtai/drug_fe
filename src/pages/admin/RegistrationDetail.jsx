@@ -86,24 +86,18 @@ export default function AdminRegistrationDetail() {
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {/* Banner */}
-      <motion.div
-        className="relative overflow-hidden rounded-2xl p-5 mb-4 bg-gradient-to-r from-[#e0f2fe] to-[#f0f9ff] border border-cyan-100"
+      <motion.section
+        className="relative overflow-hidden rounded-2xl mb-4 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center gap-3">
-          <motion.div
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] shadow-md shadow-cyan-200/40"
-            animate={{ rotate: [0, 10, 0, -10, 0] }}
-            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-          />
-          <div>
-            <h1 className="text-lg font-semibold text-slate-800">Chi tiết đơn đăng ký</h1>
-            <p className="text-sm text-slate-600">Quản trị phê duyệt – minh bạch, chuẩn y tế</p>
-          </div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
+        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">Chi tiết đơn đăng ký</h1>
+          <p className="text-white/90 mt-1">Quản trị phê duyệt – minh bạch, chuẩn y tế.</p>
         </div>
-      </motion.div>
+      </motion.section>
 
       {/* Back link */}
       <div className="mb-3">
@@ -115,7 +109,7 @@ export default function AdminRegistrationDetail() {
 
       {/* Detail card */}
       <motion.div
-        className="rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm p-5"
+        className="rounded-2xl bg-white/90 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] p-5"
         variants={fadeUp}
         initial="hidden"
         animate="show"
@@ -129,7 +123,7 @@ export default function AdminRegistrationDetail() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-slate-800">Đơn đăng ký</h2>
-                <p className="text-sm text-slate-500">ID: {item._id}</p>
+                <p className="text-sm text-[#003544]/70">ID: {item._id}</p>
               </div>
               <span className="px-3 py-1 rounded-full text-sm border"
                 style={{
@@ -141,22 +135,22 @@ export default function AdminRegistrationDetail() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 border border-slate-200 rounded-xl">
-                <h3 className="font-medium mb-2 text-slate-800">Người dùng</h3>
-                <div className="text-sm text-slate-800">{item.user?.fullName || item.user?.username}</div>
-                <div className="text-sm text-slate-500">{item.user?.email}</div>
-                <div className="text-sm text-slate-500">{item.user?.walletAddress}</div>
+              <div className="p-4 border border-[#90e0ef55] bg-white/60 rounded-xl">
+                <h3 className="font-medium mb-2 text-[#003544]">Người dùng</h3>
+                <div className="text-sm text-[#003544]">{item.user?.fullName || item.user?.username}</div>
+                <div className="text-sm text-[#003544]/70">{item.user?.email}</div>
+                <div className="text-sm text-[#003544]/70">{item.user?.walletAddress}</div>
               </div>
-              <div className="p-4 border border-slate-200 rounded-xl">
-                <h3 className="font-medium mb-2 text-slate-800">Thông tin doanh nghiệp</h3>
-                <div className="text-sm text-slate-800">Tên: {item.companyInfo?.name}</div>
-                <div className="text-sm text-slate-800">Vai trò: {item.role}</div>
-                <div className="text-sm text-slate-800">Giấy phép: {item.companyInfo?.licenseNo}</div>
-                <div className="text-sm text-slate-800">Mã số thuế: {item.companyInfo?.taxCode}</div>
+              <div className="p-4 border border-[#90e0ef55] bg-white/60 rounded-xl">
+                <h3 className="font-medium mb-2 text-[#003544]">Thông tin doanh nghiệp</h3>
+                <div className="text-sm text-[#003544]">Tên: {item.companyInfo?.name}</div>
+                <div className="text-sm text-[#003544]">Vai trò: {item.role}</div>
+                <div className="text-sm text-[#003544]">Giấy phép: {item.companyInfo?.licenseNo}</div>
+                <div className="text-sm text-[#003544]">Mã số thuế: {item.companyInfo?.taxCode}</div>
                 {item.role === 'pharma_company' && (
-                  <div className="text-sm text-slate-800">GMP: {item.companyInfo?.gmpCertNo}</div>
+                  <div className="text-sm text-[#003544]">GMP: {item.companyInfo?.gmpCertNo}</div>
                 )}
-                <div className="text-sm text-slate-800">Wallet: {item.companyInfo?.walletAddress}</div>
+                <div className="text-sm text-[#003544]">Wallet: {item.companyInfo?.walletAddress}</div>
               </div>
             </div>
 
@@ -181,7 +175,7 @@ export default function AdminRegistrationDetail() {
                       value={rejectReason}
                       onChange={e => setRejectReason(e.target.value)}
                       placeholder="Lý do từ chối"
-                      className="border-2 border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400"
+                      className="border border-[#90e0ef55] bg-white/60 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4]"
                     />
                     <button
                       disabled={actionLoading}
@@ -195,7 +189,7 @@ export default function AdminRegistrationDetail() {
                 <button
                   disabled={actionLoading}
                   onClick={handleRetry}
-                  className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#0077b6] shadow hover:shadow-cyan-200/60 disabled:opacity-60"
+                  className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] disabled:opacity-60"
                 >Retry blockchain</button>
               )}
             </div>
@@ -204,6 +198,9 @@ export default function AdminRegistrationDetail() {
           <div className="text-slate-600">Không tìm thấy dữ liệu</div>
         )}
       </motion.div>
+      <style>{`
+        @keyframes float-slow { 0%,100% { transform: translateY(0) } 50% { transform: translateY(10px) } }
+      `}</style>
     </DashboardLayout>
   );
 }

@@ -49,28 +49,22 @@ export default function AdminInvoices() {
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {/* Banner */}
-      <motion.div
-        className="relative overflow-hidden rounded-2xl p-5 mb-5 bg-gradient-to-r from-[#e0f2fe] to-[#f0f9ff] border border-cyan-100"
+      <motion.section
+        className="relative overflow-hidden rounded-2xl mb-5 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center gap-3">
-          <motion.div
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] shadow-md shadow-cyan-200/40"
-            animate={{ rotate: [0, 10, 0, -10, 0] }}
-            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-          />
-          <div>
-            <h2 className="text-lg font-semibold text-slate-800">Danh sách hóa đơn</h2>
-            <p className="text-sm text-slate-600">Tra cứu nhanh – xác thực minh bạch</p>
-          </div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
+        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">Danh sách hóa đơn</h2>
+          <p className="text-white/90 mt-1">Tra cứu nhanh – xác thực minh bạch.</p>
         </div>
-      </motion.div>
+      </motion.section>
 
       {/* Actions */}
       <motion.div
-        className="rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-[0_10px_30px_rgba(2,132,199,0.06)] p-4 mb-5"
+        className="rounded-2xl bg-white/90 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
         variants={fadeUp}
         initial="hidden"
         animate="show"
@@ -81,16 +75,16 @@ export default function AdminInvoices() {
               value={code}
               onChange={e => setCode(e.target.value)}
               placeholder="Tìm theo verification code"
-              className="border-2 border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition w-full md:w-[280px]"
+              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition w-full md:w-[320px]"
             />
-            <button className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#0077b6] shadow hover:shadow-cyan-200/60">Tìm</button>
+            <button className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]">Tìm</button>
           </form>
-          <a href="/admin/invoices/new" className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#0077b6] shadow hover:shadow-cyan-200/60 text-center">Tạo Invoice</a>
+          <a href="/admin/invoices/new" className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] text-center">Tạo Invoice</a>
         </div>
       </motion.div>
 
       {/* Table */}
-      <motion.div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto" variants={fadeUp} initial="hidden" animate="show">
+      <motion.div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] overflow-x-auto" variants={fadeUp} initial="hidden" animate="show">
         {loading ? (
           <div className="p-6">Đang tải...</div>
         ) : error ? (
@@ -98,23 +92,25 @@ export default function AdminInvoices() {
         ) : (
           <table className="min-w-full">
             <thead>
-              <tr className="bg-slate-50 text-left text-slate-700">
-                <th className="p-3">Mã xác thực</th>
-                <th className="p-3">Nhà phân phối</th>
-                <th className="p-3">Nhà thuốc</th>
-                <th className="p-3">Tổng</th>
-                <th className="p-3 text-right">Thao tác</th>
+              <tr className="text-left text-[#003544]">
+                <th className="p-3 bg-[#f5fcff]">Mã xác thực</th>
+                <th className="p-3 bg-[#f5fcff]">Nhà phân phối</th>
+                <th className="p-3 bg-[#f5fcff]">Nhà thuốc</th>
+                <th className="p-3 bg-[#f5fcff]">Tổng</th>
+                <th className="p-3 bg-[#f5fcff] text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {items.map(inv => (
-                <tr key={inv._id} className="border-t hover:bg-slate-50/60 transition">
-                  <td className="p-3 font-medium text-slate-800">{inv.verificationCode}</td>
-                  <td className="p-3 text-slate-700">{inv.distributorName || inv.distributor?.name}</td>
-                  <td className="p-3 text-slate-700">{inv.pharmacyName || inv.pharmacy?.name}</td>
-                  <td className="p-3 text-slate-700">{inv.totalAmount}</td>
+                <tr key={inv._id} className="border-t border-[#90e0ef40] hover:bg-[#f5fcff] transition">
+                  <td className="p-3 font-medium text-[#003544]">{inv.verificationCode}</td>
+                  <td className="p-3 text-[#003544]/80">{inv.distributorName || inv.distributor?.name}</td>
+                  <td className="p-3 text-[#003544]/80">{inv.pharmacyName || inv.pharmacy?.name}</td>
+                  <td className="p-3 text-[#003544]/80">{inv.totalAmount}</td>
                   <td className="p-3 text-right">
-                    <a href={`/admin/invoices/${inv._id}`} className="px-3 py-2 rounded-lg border border-slate-200 hover:border-cyan-300 hover:bg-cyan-50 text-slate-700">Chi tiết</a>
+                    <a href={`/admin/invoices/${inv._id}`} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#90e0ef55] text-[#003544] hover:bg-[#90e0ef22] transition">Chi tiết
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6"/><path d="M3 12h12"/></svg>
+                    </a>
                   </td>
                 </tr>
               ))}
@@ -125,6 +121,9 @@ export default function AdminInvoices() {
           </table>
         )}
       </motion.div>
+      <style>{`
+        @keyframes float-slow { 0%,100% { transform: translateY(0) } 50% { transform: translateY(10px) } }
+      `}</style>
     </DashboardLayout>
   );
 }

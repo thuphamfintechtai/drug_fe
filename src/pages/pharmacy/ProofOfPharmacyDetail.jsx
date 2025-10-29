@@ -39,43 +39,61 @@ export default function PharmacyProofDetail() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <div className="bg-white rounded-lg shadow p-4">
-        {loading && <div>Đang tải...</div>}
-        {data && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-semibold mb-2">Thông tin Proof of Pharmacy</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div><span className="text-gray-500">Mã: </span>{data.verificationCode || data._id}</div>
-                <div><span className="text-gray-500">Trạng thái: </span><span className="capitalize">{data.status}</span></div>
-                <div><span className="text-gray-500">Drug: </span>{data.drug?.name}</div>
-                <div><span className="text-gray-500">Distributor: </span>{data.fromDistributor?.fullName || data.fromDistributor?.username}</div>
-                <div><span className="text-gray-500">Pharmacy: </span>{data.toPharmacy?.fullName || data.toPharmacy?.username}</div>
-                <div><span className="text-gray-500">Số lượng nhận: </span>{data.receivedQuantity}</div>
+      {/* Banner */}
+      <section className="relative overflow-hidden rounded-2xl border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/30 blur-xl animate-float-slow" />
+          <div className="absolute top-8 right-6 w-16 h-8 rounded-full bg-white/25 blur-md rotate-6 animate-float-slower" />
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-28 h-10 rounded-full bg-white/20 blur-md -rotate-6 animate-float-slower" />
+        </div>
+        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">Chi tiết Proof of Pharmacy</h1>
+          <p className="mt-2 text-white/90">Xem và cập nhật trạng thái biên nhận.</p>
+        </div>
+      </section>
+
+      <div className="mt-6 space-y-6">
+        <div className="relative rounded-2xl border border-[#90e0ef55] bg-white/85 backdrop-blur-xl p-6 shadow-[0_10px_24px_rgba(0,0,0,0.06)]">
+          {loading && <div className="text-[#003544]/70">Đang tải...</div>}
+          {!loading && data && (
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-semibold text-[#003544] tracking-tight">Thông tin Proof of Pharmacy</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[15px]">
+                <div><span className="text-[#003544]/60">Mã: </span>{data.verificationCode || data._id}</div>
+                <div><span className="text-[#003544]/60">Trạng thái: </span><span className="capitalize">{data.status}</span></div>
+                <div><span className="text-[#003544]/60">Thuốc: </span>{data.drug?.name}</div>
+                <div><span className="text-[#003544]/60">Nhà phân phối: </span>{data.fromDistributor?.fullName || data.fromDistributor?.username}</div>
+                <div><span className="text-[#003544]/60">Nhà thuốc: </span>{data.toPharmacy?.fullName || data.toPharmacy?.username}</div>
+                <div><span className="text-[#003544]/60">Số lượng nhận: </span>{data.receivedQuantity}</div>
+              </div>
+              <div className="pt-2">
+                <Link to={`/pharmacy/proof-of-pharmacy/${id}/confirm`} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] transition">Xác nhận nhận hàng</Link>
               </div>
             </div>
+          )}
+        </div>
 
-            <div className="flex items-center gap-3">
-              <Link to={`/pharmacy/proof-of-pharmacy/${id}/confirm`} className="px-4 py-2 bg-teal-600 text-white rounded">Xác nhận nhận hàng</Link>
-            </div>
-
-            <form onSubmit={submitStatus} className="p-4 border rounded">
-              <h3 className="font-semibold mb-2">Cập nhật trạng thái</h3>
-              <div className="flex flex-col md:flex-row gap-2 items-center">
-                <select value={status} onChange={(e) => setStatus(e.target.value)} className="border rounded px-3 py-2">
-                  <option value="pending">Pending</option>
-                  <option value="received">Received</option>
-                  <option value="verified">Verified</option>
-                  <option value="completed">Completed</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-                <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ghi chú" className="border rounded px-3 py-2 flex-1" />
-                <button className="px-4 py-2 bg-cyan-600 text-white rounded">Lưu</button>
-              </div>
-            </form>
+        <form onSubmit={submitStatus} className="rounded-2xl border border-[#90e0ef55] bg-white/85 backdrop-blur-xl p-6 shadow-[0_10px_24px_rgba(0,0,0,0.06)]">
+          <h3 className="text-lg font-semibold text-[#003544] mb-3">Cập nhật trạng thái</h3>
+          <div className="flex flex-col md:flex-row gap-3 items-center">
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full md:w-auto border border-[#90e0ef55] bg-white/60 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4]">
+              <option value="pending">Đang chờ</option>
+              <option value="received">Đã nhận</option>
+              <option value="verified">Đã xác minh</option>
+              <option value="completed">Hoàn tất</option>
+              <option value="rejected">Từ chối</option>
+            </select>
+            <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ghi chú" className="w-full md:flex-1 border border-[#90e0ef55] bg-white/60 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4]" />
+            <button className="shrink-0 px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] transition">Lưu</button>
           </div>
-        )}
+        </form>
       </div>
+
+      <style>{`
+        @keyframes float-slow { 0%,100% { transform: translateY(0) } 50% { transform: translateY(10px) } }
+        @keyframes float-slower { 0%,100% { transform: translateY(0) } 50% { transform: translateY(6px) } }
+      `}</style>
     </DashboardLayout>
   );
 }

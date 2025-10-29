@@ -33,24 +33,18 @@ export default function AdminProofOfDistributionDetail() {
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {/* Banner */}
-      <motion.div
-        className="relative overflow-hidden rounded-2xl p-5 mb-4 bg-gradient-to-r from-[#e0f2fe] to-[#f0f9ff] border border-cyan-100"
+      <motion.section
+        className="relative overflow-hidden rounded-2xl mb-4 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center gap-3">
-          <motion.div
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] shadow-md shadow-cyan-200/40"
-            animate={{ rotate: [0, 10, 0, -10, 0] }}
-            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-          />
-          <div>
-            <h1 className="text-lg font-semibold text-slate-800">Chi tiết Proof of Distribution</h1>
-            <p className="text-sm text-slate-600">Thông tin minh chứng phân phối – minh bạch, tin cậy</p>
-          </div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
+        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">Chi tiết Proof of Distribution</h1>
+          <p className="text-white/90 mt-1">Thông tin minh chứng phân phối – minh bạch, tin cậy.</p>
         </div>
-      </motion.div>
+      </motion.section>
 
       {/* Back link */}
       <div className="mb-3">
@@ -62,7 +56,7 @@ export default function AdminProofOfDistributionDetail() {
 
       {/* Detail card */}
       <motion.div
-        className="rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm p-5"
+        className="rounded-2xl bg-white/90 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] p-5"
         variants={fadeUp}
         initial="hidden"
         animate="show"
@@ -73,16 +67,19 @@ export default function AdminProofOfDistributionDetail() {
           <div className="text-red-600">{error}</div>
         ) : item ? (
           <div className="space-y-3">
-            <div className="text-sm text-slate-600">ID: <span className="text-slate-800">{item._id}</span></div>
-            <div className="text-slate-800"><span className="text-slate-600">Thuốc:</span> {item.drug?.name || item.drugName}</div>
-            <div className="text-slate-800"><span className="text-slate-600">Nhà phân phối:</span> {item.distributor?.name || item.distributorName}</div>
-            <div className="text-slate-800"><span className="text-slate-600">Trạng thái:</span> {item.status}</div>
-            <pre className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-sm overflow-x-auto text-slate-800">{JSON.stringify(item, null, 2)}</pre>
+            <div className="text-sm text-[#003544]/70">ID: <span className="text-[#003544]">{item._id}</span></div>
+            <div className="text-[#003544]"><span className="text-[#003544]/70">Thuốc:</span> {item.drug?.name || item.drugName}</div>
+            <div className="text-[#003544]"><span className="text-[#003544]/70">Nhà phân phối:</span> {item.distributor?.name || item.distributorName}</div>
+            <div className="text-[#003544]"><span className="text-[#003544]/70">Trạng thái:</span> {item.status}</div>
+            <pre className="bg-[#f5fcff] border border-[#90e0ef55] p-3 rounded-lg text-sm overflow-x-auto text-[#003544]">{JSON.stringify(item, null, 2)}</pre>
           </div>
         ) : (
           <div className="text-slate-600">Không có dữ liệu</div>
         )}
       </motion.div>
+      <style>{`
+        @keyframes float-slow { 0%,100% { transform: translateY(0) } 50% { transform: translateY(10px) } }
+      `}</style>
     </DashboardLayout>
   );
 }
