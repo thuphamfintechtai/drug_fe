@@ -5,7 +5,7 @@ export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
 
   return (
-    <nav className="bg-white shadow-sm border-b-2 border-cyan-500">
+    <nav className="fixed top-0 inset-x-0 z-50 bg-white shadow-sm border-b-2 border-cyan-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link to="/" className="text-lg font-bold text-cyan-600">DrugTrace</Link>
 
