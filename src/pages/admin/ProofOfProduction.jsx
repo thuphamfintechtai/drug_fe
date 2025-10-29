@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { listProofs, searchByBatch, getStats } from '../../services/admin/proofOfProductionService';
+import { listProofs, searchByBatch, getStats, fixBrokenData } from '../../services/admin/proofOfProductionService';
 
 export default function AdminProofOfProduction() {
   const normalizeList = (raw) => {
@@ -57,6 +57,14 @@ export default function AdminProofOfProduction() {
     finally { setLoading(false); }
   };
 
+  const handleFixBroken = async () => {
+    if (!confirm('Chạy fix-broken-data?')) return;
+    setLoading(true);
+    try { await fixBrokenData({}); await load(); }
+    catch (e) { setError(e?.response?.data?.message || 'Không thể sửa dữ liệu'); }
+    finally { setLoading(false); }
+  };
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
       <div className="bg-white p-4 rounded shadow mb-4">
@@ -69,6 +77,7 @@ export default function AdminProofOfProduction() {
             <input value={batch} onChange={e => setBatch(e.target.value)} placeholder="Tìm theo batch number" className="border rounded px-3 py-2 flex-1" />
             <button className="px-4 py-2 bg-cyan-600 text-white rounded">Tìm</button>
           </form>
+          <button onClick={handleFixBroken} className="px-4 py-2 bg-orange-600 text-white rounded">Fix broken data</button>
         </div>
       </div>
 
@@ -79,12 +88,12 @@ export default function AdminProofOfProduction() {
       <div className="bg-white rounded shadow overflow-x-auto">
         {loading ? <div className="p-6">Đang tải...</div> : error ? <div className="p-6 text-red-600">{error}</div> : (
           <table className="min-w-full">
-            <thead><tr className="bg-gray-50 text-left"><th className="p-3">Drug</th><th className="p-3">Batch</th><th className="p-3">Qty</th><th className="p-3">Date</th></tr></thead>
+            <thead><tr className="bg-gray-50 text-left"><th className="p-3">Drug</th><th className="p-3">Batch</th><th className="p-3">Qty</th><th className="p-3">Date</th><th className="p-3 text-right">Thao tác</th></tr></thead>
             <tbody>
               {(Array.isArray(items) ? items : []).map(p => (
-                <tr key={p._id} className="border-t"><td className="p-3">{p.drugName || p.drug?.name}</td><td className="p-3">{p.batchNumber}</td><td className="p-3">{p.quantity}</td><td className="p-3">{p.productionDate ? new Date(p.productionDate).toLocaleDateString() : ''}</td></tr>
+                <tr key={p._id} className="border-t"><td className="p-3">{p.drugName || p.drug?.name}</td><td className="p-3">{p.batchNumber}</td><td className="p-3">{p.quantity}</td><td className="p-3">{p.productionDate ? new Date(p.productionDate).toLocaleDateString() : ''}</td><td className="p-3 text-right"><a href={`/admin/proof-of-production/${p._id}`} className="px-3 py-2 bg-white border rounded hover:bg-gray-50">Chi tiết</a></td></tr>
               ))}
-              {(Array.isArray(items) && items.length === 0) && <tr><td className="p-4" colSpan={4}>Không có dữ liệu</td></tr>}
+              {(Array.isArray(items) && items.length === 0) && <tr><td className="p-4" colSpan={5}>Không có dữ liệu</td></tr>}
             </tbody>
           </table>
         )}

@@ -52,10 +52,10 @@ export default function AdminProofOfPharmacy() {
       <div className="bg-white rounded shadow overflow-x-auto">
         {loading ? <div className="p-6">Đang tải...</div> : error ? <div className="p-6 text-red-600">{error}</div> : (
           <table className="min-w-full">
-            <thead><tr className="bg-gray-50 text-left"><th className="p-3">Drug</th><th className="p-3">Pharmacy</th><th className="p-3">Status</th></tr></thead>
+            <thead><tr className="bg-gray-50 text-left"><th className="p-3">Drug</th><th className="p-3">Pharmacy</th><th className="p-3">Status</th><th className="p-3 text-right">Thao tác</th></tr></thead>
             <tbody>
               {items.map(p => (
-                <tr key={p._id} className="border-t"><td className="p-3">{p.drugName || p.drug?.name}</td><td className="p-3">{p.pharmacyName || p.pharmacy?.name}</td><td className="p-3">{p.status}</td></tr>
+                <tr key={p._id} className="border-t"><td className="p-3">{p.drugName || p.drug?.name}</td><td className="p-3">{p.pharmacyName || p.pharmacy?.name}</td><td className="p-3">{p.status}</td><td className="p-3 text-right"><a href={`/admin/proof-of-pharmacy/${p._id}`} className="px-3 py-2 bg-white border rounded hover:bg-gray-50">Chi tiết</a></td></tr>
               ))}
               {items.length === 0 && <tr><td className="p-4" colSpan={3}>Không có dữ liệu</td></tr>}
             </tbody>

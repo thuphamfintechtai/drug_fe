@@ -10,10 +10,16 @@ import AdminDashboard from './pages/admin/Dashboard';
 import AdminRegistrations from './pages/admin/Registrations';
 import AdminRegistrationDetail from './pages/admin/RegistrationDetail';
 import AdminDrugs from './pages/admin/Drugs';
+import AdminDrugForm from './pages/admin/DrugForm';
 import AdminProofOfProduction from './pages/admin/ProofOfProduction';
+import AdminProofOfProductionDetail from './pages/admin/ProofOfProductionDetail';
 import AdminProofOfDistribution from './pages/admin/ProofOfDistribution';
+import AdminProofOfDistributionDetail from './pages/admin/ProofOfDistributionDetail';
 import AdminProofOfPharmacy from './pages/admin/ProofOfPharmacy';
+import AdminProofOfPharmacyDetail from './pages/admin/ProofOfPharmacyDetail';
 import AdminInvoices from './pages/admin/Invoices';
+import AdminInvoiceDetail from './pages/admin/InvoiceDetail';
+import AdminInvoiceCreate from './pages/admin/InvoiceCreate';
 import AdminManufacturers from './pages/admin/Manufacturers';
 import AdminNftTracking from './pages/admin/NftTracking';
 import ManufacturerDashboard from './pages/manufacturer/Dashboard';
@@ -82,10 +88,17 @@ function AppContent() {
           }
         />
         <Route path="/admin/drugs" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminDrugs /></ProtectedRoute>} />
+        <Route path="/admin/drugs/new" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminDrugForm /></ProtectedRoute>} />
+        <Route path="/admin/drugs/:id" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminDrugForm /></ProtectedRoute>} />
         <Route path="/admin/proof-of-production" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminProofOfProduction /></ProtectedRoute>} />
+        <Route path="/admin/proof-of-production/:id" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminProofOfProductionDetail /></ProtectedRoute>} />
         <Route path="/admin/proof-of-distribution" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminProofOfDistribution /></ProtectedRoute>} />
+        <Route path="/admin/proof-of-distribution/:id" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminProofOfDistributionDetail /></ProtectedRoute>} />
         <Route path="/admin/proof-of-pharmacy" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminProofOfPharmacy /></ProtectedRoute>} />
+        <Route path="/admin/proof-of-pharmacy/:id" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminProofOfPharmacyDetail /></ProtectedRoute>} />
         <Route path="/admin/invoices" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminInvoices /></ProtectedRoute>} />
+        <Route path="/admin/invoices/new" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminInvoiceCreate /></ProtectedRoute>} />
+        <Route path="/admin/invoices/:id" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminInvoiceDetail /></ProtectedRoute>} />
         <Route path="/admin/manufacturers" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminManufacturers /></ProtectedRoute>} />
         <Route path="/admin/nft-tracking" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminNftTracking /></ProtectedRoute>} />
         <Route

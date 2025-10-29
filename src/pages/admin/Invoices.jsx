@@ -43,19 +43,22 @@ export default function AdminInvoices() {
   return (
     <DashboardLayout navigationItems={navigationItems}>
       <div className="bg-white p-4 rounded shadow mb-4">
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <input value={code} onChange={e => setCode(e.target.value)} placeholder="Tìm theo verification code" className="border rounded px-3 py-2 flex-1" />
-          <button className="px-4 py-2 bg-cyan-600 text-white rounded">Tìm</button>
-        </form>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <input value={code} onChange={e => setCode(e.target.value)} placeholder="Tìm theo verification code" className="border rounded px-3 py-2 flex-1" />
+            <button className="px-4 py-2 bg-cyan-600 text-white rounded">Tìm</button>
+          </form>
+          <a href="/admin/invoices/new" className="px-4 py-2 bg-green-600 text-white rounded text-center">Tạo Invoice</a>
+        </div>
       </div>
 
       <div className="bg-white rounded shadow overflow-x-auto">
         {loading ? <div className="p-6">Đang tải...</div> : error ? <div className="p-6 text-red-600">{error}</div> : (
           <table className="min-w-full">
-            <thead><tr className="bg-gray-50 text-left"><th className="p-3">Code</th><th className="p-3">Distributor</th><th className="p-3">Pharmacy</th><th className="p-3">Tổng</th></tr></thead>
+            <thead><tr className="bg-gray-50 text-left"><th className="p-3">Code</th><th className="p-3">Distributor</th><th className="p-3">Pharmacy</th><th className="p-3">Tổng</th><th className="p-3 text-right">Thao tác</th></tr></thead>
             <tbody>
               {items.map(inv => (
-                <tr key={inv._id} className="border-t"><td className="p-3">{inv.verificationCode}</td><td className="p-3">{inv.distributorName || inv.distributor?.name}</td><td className="p-3">{inv.pharmacyName || inv.pharmacy?.name}</td><td className="p-3">{inv.totalAmount}</td></tr>
+                <tr key={inv._id} className="border-t"><td className="p-3">{inv.verificationCode}</td><td className="p-3">{inv.distributorName || inv.distributor?.name}</td><td className="p-3">{inv.pharmacyName || inv.pharmacy?.name}</td><td className="p-3">{inv.totalAmount}</td><td className="p-3 text-right"><a href={`/admin/invoices/${inv._id}`} className="px-3 py-2 bg-white border rounded hover:bg-gray-50">Chi tiết</a></td></tr>
               ))}
               {items.length === 0 && <tr><td className="p-4" colSpan={4}>Không có dữ liệu</td></tr>}
             </tbody>
