@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import { listDrugs, searchDrugByAtc, getDrugStats, getDrugCodes } from '../../services/admin/drugService';
 
@@ -53,48 +54,117 @@ export default function AdminDrugs() {
     finally { setLoading(false); }
   };
 
+  const fadeUp = {
+    hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
+    show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  };
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <div className="bg-white p-4 rounded shadow mb-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <input value={atc} onChange={e => setAtc(e.target.value)} placeholder="Tìm theo ATC code" className="border rounded px-3 py-2 flex-1" />
-            <button className="px-4 py-2 bg-cyan-600 text-white rounded">Tìm</button>
-          </form>
-          <a href="/admin/drugs/new" className="px-4 py-2 bg-green-600 text-white rounded text-center">Tạo thuốc</a>
-        </div>
-      </div>
-
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div className="p-4 bg-white rounded shadow"><div className="text-sm text-gray-600">Tổng thuốc</div><div className="text-2xl font-semibold">{stats.total || 0}</div></div>
-        </div>
-      )}
-
-      {codes && codes.length > 0 && (
-        <div className="bg-white p-4 rounded shadow mb-4">
-          <h3 className="font-semibold mb-2">Drug codes</h3>
-          <div className="flex flex-wrap gap-2 max-h-40 overflow-auto">
-            {codes.map((c, idx) => (
-              <span key={idx} className="px-2 py-1 bg-gray-100 rounded text-sm">{c}</span>
-            ))}
+      {/* Banner */}
+      <motion.div
+        className="relative overflow-hidden rounded-2xl p-5 mb-5 bg-gradient-to-r from-[#e0f2fe] to-[#f0f9ff] border border-cyan-100"
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex items-center gap-3">
+          <motion.div
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] shadow-md shadow-cyan-200/40"
+            animate={{ rotate: [0, 10, 0, -10, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <div>
+            <h2 className="text-lg font-semibold text-slate-800">Quản lý thuốc</h2>
+            <p className="text-sm text-slate-600">Danh mục thuốc minh bạch</p>
           </div>
         </div>
+      </motion.div>
+
+      {/* Thanh tác vụ: tìm kiếm + tạo mới */}
+      <motion.div
+        className="rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-[0_10px_30px_rgba(2,132,199,0.06)] p-4 mb-5"
+        variants={fadeUp}
+        initial="hidden"
+        animate="show"
+      >
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <form onSubmit={handleSearch} className="flex gap-2 w-full md:w-auto">
+            <input
+              value={atc}
+              onChange={e => setAtc(e.target.value)}
+              placeholder="Tìm theo ATC code"
+              className="border-2 border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition w-full md:w-[280px]"
+            />
+            <button className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#0077b6] shadow hover:shadow-cyan-200/60">Tìm</button>
+          </form>
+          <a href="/admin/drugs/new" className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#0077b6] shadow hover:shadow-cyan-200/60 text-center">Tạo thuốc</a>
+        </div>
+      </motion.div>
+
+      {/* Stats */}
+      {stats && (
+        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5" variants={fadeUp} initial="hidden" animate="show">
+          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div className="text-sm text-slate-600">Tổng thuốc</div>
+            <div className="text-3xl font-bold text-slate-800 mt-1">{stats.total || 0}</div>
+          </div>
+        </motion.div>
       )}
 
-      <div className="bg-white rounded shadow overflow-x-auto">
-        {loading ? <div className="p-6">Đang tải...</div> : error ? <div className="p-6 text-red-600">{error}</div> : (
+      {/* Codes cloud */}
+      {codes && codes.length > 0 && (
+        <motion.div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5" variants={fadeUp} initial="hidden" animate="show">
+          <h3 className="font-semibold mb-3 text-slate-800">Drug codes</h3>
+          <div className="flex flex-wrap gap-2 max-h-40 overflow-auto">
+            {codes.map((c, idx) => (
+              <span key={idx} className="px-2.5 py-1 rounded-full text-sm bg-cyan-50 text-cyan-700 border border-cyan-100">
+                {c}
+              </span>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Table */}
+      <motion.div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto" variants={fadeUp} initial="hidden" animate="show">
+        {loading ? (
+          <div className="p-6">Đang tải...</div>
+        ) : error ? (
+          <div className="p-6 text-red-600">{error}</div>
+        ) : (
           <table className="min-w-full">
-            <thead><tr className="bg-gray-50 text-left"><th className="p-3">Tên</th><th className="p-3">ATC</th><th className="p-3">Manufactor</th><th className="p-3 text-right">Thao tác</th></tr></thead>
+            <thead>
+              <tr className="bg-slate-50 text-left text-slate-700">
+                <th className="p-3">Tên</th>
+                <th className="p-3">ATC</th>
+                <th className="p-3">Nhà sản xuất</th>
+                <th className="p-3 text-right">Thao tác</th>
+              </tr>
+            </thead>
             <tbody>
-              {(Array.isArray(items) ? items : []).map(d => (
-                <tr key={d._id} className="border-t"><td className="p-3">{d.name}</td><td className="p-3">{d.atcCode}</td><td className="p-3">{d.manufactorName || d.manufacturer?.name}</td><td className="p-3 text-right"><a href={`/admin/drugs/${d._id}`} className="px-3 py-2 bg-white border rounded hover:bg-gray-50">Chi tiết</a></td></tr>
+              {(Array.isArray(items) ? items : []).map((d) => (
+                <tr key={d._id} className="border-t hover:bg-slate-50/60 transition">
+                  <td className="p-3 font-medium text-slate-800">{d.name}</td>
+                  <td className="p-3 text-slate-700">{d.atcCode}</td>
+                  <td className="p-3 text-slate-700">{d.manufactorName || d.manufacturer?.name}</td>
+                  <td className="p-3 text-right">
+                    <a
+                      href={`/admin/drugs/${d._id}`}
+                      className="px-3 py-2 rounded-lg border border-slate-200 hover:border-cyan-300 hover:bg-cyan-50 text-slate-700"
+                    >
+                      Chi tiết
+                    </a>
+                  </td>
+                </tr>
               ))}
-              {(Array.isArray(items) && items.length === 0) && <tr><td className="p-4" colSpan={4}>Không có dữ liệu</td></tr>}
+              {(Array.isArray(items) && items.length === 0) && (
+                <tr><td className="p-4 text-slate-600" colSpan={4}>Không có dữ liệu</td></tr>
+              )}
             </tbody>
           </table>
         )}
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }

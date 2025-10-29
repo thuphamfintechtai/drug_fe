@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import { createInvoice } from '../../services/admin/invoiceService';
 
@@ -26,27 +27,81 @@ export default function AdminInvoiceCreate() {
     finally { setLoading(false); }
   };
 
+  const fadeUp = {
+    hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
+    show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  };
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <div className="bg-white p-4 rounded shadow">
-        <h2 className="text-lg font-semibold mb-4">Tạo Commercial Invoice</h2>
-        {error && <div className="mb-3 text-red-600">{error}</div>}
-        <form onSubmit={handleSubmit} className="space-y-3">
+      {/* Banner */}
+      <motion.div
+        className="relative overflow-hidden rounded-2xl p-5 mb-5 bg-gradient-to-r from-[#e0f2fe] to-[#f0f9ff] border border-cyan-100"
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex items-center gap-3">
+          <motion.div
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] shadow-md shadow-cyan-200/40"
+            animate={{ rotate: [0, 12, 0, -12, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          />
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Distributor ID</label>
-            <input name="distributorId" value={form.distributorId} onChange={handleChange} className="border rounded px-3 py-2 w-full" required />
+            <h2 className="text-lg font-semibold text-slate-800">Tạo Commercial Invoice</h2>
+            <p className="text-sm text-slate-600">Chuẩn y tế – minh bạch blockchain</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Card form */}
+      <motion.div
+        className="rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-[0_10px_30px_rgba(2,132,199,0.06)] p-6"
+        variants={fadeUp}
+        initial="hidden"
+        animate="show"
+      >
+        {error && (
+          <motion.div className="mb-3 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            {error}
+          </motion.div>
+        )}
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Distributor ID</label>
+            <input
+              name="distributorId" value={form.distributorId} onChange={handleChange}
+              className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition"
+              placeholder="VD: DIST-001" required
+            />
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Pharmacy ID</label>
-            <input name="pharmacyId" value={form.pharmacyId} onChange={handleChange} className="border rounded px-3 py-2 w-full" required />
+            <label className="block text-sm font-medium text-slate-700 mb-2">Pharmacy ID</label>
+            <input
+              name="pharmacyId" value={form.pharmacyId} onChange={handleChange}
+              className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition"
+              placeholder="VD: PHAR-009" required
+            />
           </div>
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">Tổng tiền</label>
-            <input name="totalAmount" type="number" value={form.totalAmount} onChange={handleChange} className="border rounded px-3 py-2 w-full" required />
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2">Tổng tiền</label>
+            <input
+              name="totalAmount" type="number" value={form.totalAmount} onChange={handleChange}
+              className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition"
+              placeholder="VD: 12000000" required
+            />
           </div>
-          <button disabled={loading} className="px-4 py-2 bg-cyan-600 text-white rounded">Tạo</button>
+          <div className="md:col-span-2">
+            <motion.button
+              disabled={loading}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}
+              className="px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#0077b6] shadow hover:shadow-cyan-200/60"
+            >
+              Tạo
+            </motion.button>
+          </div>
         </form>
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }

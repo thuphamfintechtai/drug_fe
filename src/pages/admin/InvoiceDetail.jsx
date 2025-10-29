@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import { getInvoiceById } from '../../services/admin/invoiceService';
 
@@ -24,21 +25,92 @@ export default function AdminInvoiceDetail() {
     load();
   }, [id]);
 
+  const fadeUp = {
+    hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
+    show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  };
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <div className="mb-4"><Link to="/admin/invoices" className="text-cyan-700 hover:underline">← Quay lại danh sách</Link></div>
-      <div className="bg-white p-4 rounded shadow">
-        {loading ? 'Đang tải...' : error ? <div className="text-red-600">{error}</div> : item ? (
-          <div className="space-y-2">
-            <div className="text-sm text-gray-600">ID: {item._id}</div>
-            <div>Verification: {item.verificationCode}</div>
-            <div>Distributor: {item.distributor?.name || item.distributorName}</div>
-            <div>Pharmacy: {item.pharmacy?.name || item.pharmacyName}</div>
-            <div>Tổng tiền: {item.totalAmount}</div>
-            <pre className="bg-gray-50 p-3 rounded text-sm overflow-x-auto">{JSON.stringify(item, null, 2)}</pre>
-          </div>
-        ) : 'Không có dữ liệu'}
+      {/* Link quay lại */}
+      <div className="mb-4">
+        <Link to="/admin/invoices" className="inline-flex items-center gap-1 text-cyan-700 hover:text-cyan-800">
+          <span>←</span>
+          <span>Quay lại danh sách</span>
+        </Link>
       </div>
+
+      {/* Banner */}
+      <motion.div
+        className="relative overflow-hidden rounded-2xl p-5 mb-5 bg-gradient-to-r from-[#e0f2fe] to-[#f0f9ff] border border-cyan-100"
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex items-center gap-3">
+          <motion.div
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] shadow-md shadow-cyan-200/40"
+            animate={{ rotate: [0, 8, 0, -8, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <div>
+            <h2 className="text-lg font-semibold text-slate-800">Chi tiết hóa đơn</h2>
+            <p className="text-sm text-slate-600">Thông tin hóa đơn minh bạch – phong cách medical tech</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Card chi tiết */}
+      <motion.div
+        className="rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-[0_10px_30px_rgba(2,132,199,0.06)] p-6"
+        variants={fadeUp}
+        initial="hidden"
+        animate="show"
+      >
+        {loading ? (
+          <div>Đang tải...</div>
+        ) : error ? (
+          <div className="text-red-600">{error}</div>
+        ) : item ? (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="text-xs text-slate-500">Mã hóa đơn</div>
+                <div className="font-semibold text-slate-800">{item._id}</div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-500">Mã xác thực</div>
+                <div className="font-semibold text-slate-800">{item.verificationCode}</div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-500">Nhà phân phối</div>
+                <div className="font-medium text-slate-800">{item.distributor?.name || item.distributorName}</div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-500">Nhà thuốc</div>
+                <div className="font-medium text-slate-800">{item.pharmacy?.name || item.pharmacyName}</div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-500">Tổng tiền</div>
+                <div className="font-semibold text-slate-800">{item.totalAmount}</div>
+              </div>
+              {item.createdAt && (
+                <div>
+                  <div className="text-xs text-slate-500">Ngày tạo</div>
+                  <div className="font-medium text-slate-800">{new Date(item.createdAt).toLocaleString()}</div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Dữ liệu gốc</h3>
+              <pre className="bg-slate-50 p-3 rounded-xl text-sm text-slate-800 overflow-x-auto border border-slate-200">{JSON.stringify(item, null, 2)}</pre>
+            </div>
+          </div>
+        ) : (
+          'Không có dữ liệu'
+        )}
+      </motion.div>
     </DashboardLayout>
   );
 }

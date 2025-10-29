@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import { getPharmacyById } from '../../services/admin/proofOfPharmacyService';
 
@@ -24,20 +25,64 @@ export default function AdminProofOfPharmacyDetail() {
     load();
   }, [id]);
 
+  const fadeUp = {
+    hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
+    show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  };
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <div className="mb-4"><Link to="/admin/proof-of-pharmacy" className="text-cyan-700 hover:underline">← Quay lại danh sách</Link></div>
-      <div className="bg-white p-4 rounded shadow">
-        {loading ? 'Đang tải...' : error ? <div className="text-red-600">{error}</div> : item ? (
-          <div className="space-y-2">
-            <div className="text-sm text-gray-600">ID: {item._id}</div>
-            <div>Drug: {item.drug?.name || item.drugName}</div>
-            <div>Pharmacy: {item.pharmacy?.name || item.pharmacyName}</div>
-            <div>Status: {item.status}</div>
-            <pre className="bg-gray-50 p-3 rounded text-sm overflow-x-auto">{JSON.stringify(item, null, 2)}</pre>
+      {/* Banner */}
+      <motion.div
+        className="relative overflow-hidden rounded-2xl p-5 mb-4 bg-gradient-to-r from-[#e0f2fe] to-[#f0f9ff] border border-cyan-100"
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex items-center gap-3">
+          <motion.div
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] shadow-md shadow-cyan-200/40"
+            animate={{ rotate: [0, 10, 0, -10, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <div>
+            <h1 className="text-lg font-semibold text-slate-800">Chi tiết Proof of Pharmacy</h1>
+            <p className="text-sm text-slate-600">Thông tin minh chứng nhà thuốc – minh bạch, tin cậy</p>
           </div>
-        ) : 'Không có dữ liệu'}
+        </div>
+      </motion.div>
+
+      {/* Back link */}
+      <div className="mb-3">
+        <Link to="/admin/proof-of-pharmacy" className="inline-flex items-center gap-2 text-cyan-700 hover:text-cyan-800">
+          <span>←</span>
+          <span>Quay lại danh sách</span>
+        </Link>
       </div>
+
+      {/* Detail card */}
+      <motion.div
+        className="rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm p-5"
+        variants={fadeUp}
+        initial="hidden"
+        animate="show"
+      >
+        {loading ? (
+          <div>Đang tải...</div>
+        ) : error ? (
+          <div className="text-red-600">{error}</div>
+        ) : item ? (
+          <div className="space-y-3">
+            <div className="text-sm text-slate-600">ID: <span className="text-slate-800">{item._id}</span></div>
+            <div className="text-slate-800"><span className="text-slate-600">Thuốc:</span> {item.drug?.name || item.drugName}</div>
+            <div className="text-slate-800"><span className="text-slate-600">Nhà thuốc:</span> {item.pharmacy?.name || item.pharmacyName}</div>
+            <div className="text-slate-800"><span className="text-slate-600">Trạng thái:</span> {item.status}</div>
+            <pre className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-sm overflow-x-auto text-slate-800">{JSON.stringify(item, null, 2)}</pre>
+          </div>
+        ) : (
+          <div className="text-slate-600">Không có dữ liệu</div>
+        )}
+      </motion.div>
     </DashboardLayout>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import { getRegistrationById, approveRegistration, rejectRegistration, retryRegistrationBlockchain } from '../../services/admin/adminService';
 
@@ -32,6 +33,11 @@ export default function AdminRegistrationDetail() {
     };
     load();
   }, [id]);
+
+  const fadeUp = {
+    hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
+    show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  };
 
   const handleApprove = async () => {
     setActionLoading(true);
@@ -79,11 +85,41 @@ export default function AdminRegistrationDetail() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <div className="mb-4">
-        <Link to="/admin/registrations" className="text-cyan-700 hover:underline">← Quay lại danh sách</Link>
+      {/* Banner */}
+      <motion.div
+        className="relative overflow-hidden rounded-2xl p-5 mb-4 bg-gradient-to-r from-[#e0f2fe] to-[#f0f9ff] border border-cyan-100"
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex items-center gap-3">
+          <motion.div
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] shadow-md shadow-cyan-200/40"
+            animate={{ rotate: [0, 10, 0, -10, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <div>
+            <h1 className="text-lg font-semibold text-slate-800">Chi tiết đơn đăng ký</h1>
+            <p className="text-sm text-slate-600">Quản trị phê duyệt – minh bạch, chuẩn y tế</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Back link */}
+      <div className="mb-3">
+        <Link to="/admin/registrations" className="inline-flex items-center gap-2 text-cyan-700 hover:text-cyan-800">
+          <span>←</span>
+          <span>Quay lại danh sách</span>
+        </Link>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      {/* Detail card */}
+      <motion.div
+        className="rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm p-5"
+        variants={fadeUp}
+        initial="hidden"
+        animate="show"
+      >
         {loading ? (
           <div>Đang tải...</div>
         ) : error ? (
@@ -92,59 +128,82 @@ export default function AdminRegistrationDetail() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold">Đơn đăng ký</h2>
-                <p className="text-sm text-gray-500">ID: {item._id}</p>
+                <h2 className="text-xl font-semibold text-slate-800">Đơn đăng ký</h2>
+                <p className="text-sm text-slate-500">ID: {item._id}</p>
               </div>
-              <span className="px-3 py-1 rounded bg-gray-100 text-gray-700">{item.status}</span>
+              <span className="px-3 py-1 rounded-full text-sm border"
+                style={{
+                  background: item.status === 'pending' ? 'rgba(251,191,36,0.1)' : item.status === 'approved' ? 'rgba(16,185,129,0.1)' : item.status === 'rejected' ? 'rgba(239,68,68,0.1)' : 'rgba(100,116,139,0.08)',
+                  color: item.status === 'pending' ? '#a16207' : item.status === 'approved' ? '#065f46' : item.status === 'rejected' ? '#991b1b' : '#334155',
+                  borderColor: item.status === 'pending' ? '#f59e0b33' : item.status === 'approved' ? '#10b98133' : item.status === 'rejected' ? '#ef444433' : '#94a3b833'
+                }}
+              >{item.status}</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 border rounded">
-                <h3 className="font-medium mb-2">Người dùng</h3>
-                <div className="text-sm">{item.user?.fullName || item.user?.username}</div>
-                <div className="text-sm text-gray-500">{item.user?.email}</div>
-                <div className="text-sm text-gray-500">{item.user?.walletAddress}</div>
+              <div className="p-4 border border-slate-200 rounded-xl">
+                <h3 className="font-medium mb-2 text-slate-800">Người dùng</h3>
+                <div className="text-sm text-slate-800">{item.user?.fullName || item.user?.username}</div>
+                <div className="text-sm text-slate-500">{item.user?.email}</div>
+                <div className="text-sm text-slate-500">{item.user?.walletAddress}</div>
               </div>
-              <div className="p-4 border rounded">
-                <h3 className="font-medium mb-2">Thông tin doanh nghiệp</h3>
-                <div className="text-sm">Tên: {item.companyInfo?.name}</div>
-                <div className="text-sm">Role: {item.role}</div>
-                <div className="text-sm">License: {item.companyInfo?.licenseNo}</div>
-                <div className="text-sm">Tax code: {item.companyInfo?.taxCode}</div>
+              <div className="p-4 border border-slate-200 rounded-xl">
+                <h3 className="font-medium mb-2 text-slate-800">Thông tin doanh nghiệp</h3>
+                <div className="text-sm text-slate-800">Tên: {item.companyInfo?.name}</div>
+                <div className="text-sm text-slate-800">Vai trò: {item.role}</div>
+                <div className="text-sm text-slate-800">Giấy phép: {item.companyInfo?.licenseNo}</div>
+                <div className="text-sm text-slate-800">Mã số thuế: {item.companyInfo?.taxCode}</div>
                 {item.role === 'pharma_company' && (
-                  <div className="text-sm">GMP: {item.companyInfo?.gmpCertNo}</div>
+                  <div className="text-sm text-slate-800">GMP: {item.companyInfo?.gmpCertNo}</div>
                 )}
-                <div className="text-sm">Wallet: {item.companyInfo?.walletAddress}</div>
+                <div className="text-sm text-slate-800">Wallet: {item.companyInfo?.walletAddress}</div>
               </div>
             </div>
 
             {(item.transactionHash || item.contractAddress) && (
-              <div className="p-4 border rounded">
-                <h3 className="font-medium mb-2">Blockchain</h3>
-                {item.transactionHash && <div className="text-sm">TX: {item.transactionHash}</div>}
-                {item.contractAddress && <div className="text-sm">Contract: {item.contractAddress}</div>}
+              <div className="p-4 border border-slate-200 rounded-xl">
+                <h3 className="font-medium mb-2 text-slate-800">Blockchain</h3>
+                {item.transactionHash && <div className="text-sm text-slate-800">TX: {item.transactionHash}</div>}
+                {item.contractAddress && <div className="text-sm text-slate-800">Contract: {item.contractAddress}</div>}
               </div>
             )}
 
             <div className="flex flex-col md:flex-row md:items-center gap-3">
               {item.status === 'pending' && (
                 <>
-                  <button disabled={actionLoading} onClick={handleApprove} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Duyệt</button>
+                  <button
+                    disabled={actionLoading}
+                    onClick={handleApprove}
+                    className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow hover:shadow-emerald-200/60 disabled:opacity-60"
+                  >Duyệt</button>
                   <div className="flex items-center gap-2">
-                    <input value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="Lý do từ chối" className="border rounded px-3 py-2" />
-                    <button disabled={actionLoading} onClick={handleReject} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Từ chối</button>
+                    <input
+                      value={rejectReason}
+                      onChange={e => setRejectReason(e.target.value)}
+                      placeholder="Lý do từ chối"
+                      className="border-2 border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400"
+                    />
+                    <button
+                      disabled={actionLoading}
+                      onClick={handleReject}
+                      className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-rose-500 to-red-600 shadow hover:shadow-rose-200/60 disabled:opacity-60"
+                    >Từ chối</button>
                   </div>
                 </>
               )}
               {item.status === 'blockchain_failed' && (
-                <button disabled={actionLoading} onClick={handleRetry} className="px-4 py-2 bg-cyan-600 text-white rounded hover:bg-cyan-700">Retry blockchain</button>
+                <button
+                  disabled={actionLoading}
+                  onClick={handleRetry}
+                  className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#0077b6] shadow hover:shadow-cyan-200/60 disabled:opacity-60"
+                >Retry blockchain</button>
               )}
             </div>
           </div>
         ) : (
-          <div>Không tìm thấy dữ liệu</div>
+          <div className="text-slate-600">Không tìm thấy dữ liệu</div>
         )}
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }
