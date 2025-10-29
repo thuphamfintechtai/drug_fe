@@ -17,6 +17,7 @@ export default function RegisterBusiness() {
     // Company info
     name: '',
     licenseNo: '',
+    taxCode: '',
     gmpCertNo: '', // Only for pharma_company
     contactEmail: '',
     contactPhone: '',
@@ -279,6 +280,21 @@ export default function RegisterBusiness() {
                   name="licenseNo"
                   type="text"
                   value={formData.licenseNo}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-border-transparent outline-none"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="taxCode" className="block text-sm font-medium text-gray-700 mb-1">
+                  Mã số thuế *
+                </label>
+                <input
+                  id="taxCode"
+                  name="taxCode"
+                  type="text"
+                  value={formData.taxCode}
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus-border-transparent outline-none"
