@@ -126,10 +126,87 @@ export default function DashboardLayout({
       ),
     },
   ];
+  // Default pharmacy navigation (always shown under /pharmacy regardless of page-provided items)
+  const pharmacyNavigationItems = [
+    {
+      path: '/pharmacy',
+      label: 'Trang chủ',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      ),
+    },
+    {
+      path: '/pharmacy/proof-of-pharmacy',
+      label: 'Proof of Pharmacy',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+    {
+      path: '/pharmacy/proof-of-pharmacy/my',
+      label: 'Biên nhận của tôi',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      ),
+    },
+    {
+      path: '/pharmacy/proof-of-pharmacy/new',
+      label: 'Tạo Proof of Pharmacy',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+      ),
+    },
+    {
+      path: '/pharmacy/invoices',
+      label: 'Commercial Invoices',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 3.75h7.5L19.5 7.5v12a.75.75 0 01-.75.75H5.25A.75.75 0 014.5 19.5v-15a.75.75 0 01.75-.75zM8.25 9h7.5M8.25 12.75h7.5M8.25 16.5h4.5" />
+        </svg>
+      ),
+    },
+    {
+      path: '/pharmacy/invoices/my',
+      label: 'Hóa đơn của tôi',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      ),
+    },
+    {
+      path: '/pharmacy/drugs',
+      label: 'Danh sách thuốc',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7.5h18M7.5 3v18M6 12h12M12 6v12" />
+        </svg>
+      ),
+    },
+    {
+      path: '/pharmacy/nft-tracking',
+      label: 'NFT Tracking',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3.75l7.5 4.5v7.5L12 20.25l-7.5-4.5v-7.5L12 3.75zM12 8.25v7.5" />
+        </svg>
+      ),
+    },
+  ];
 
   const navItems = location.pathname.startsWith('/admin') && (user?.role === 'system_admin')
     ? adminNavigationItems
-    : navigationItems;
+    : (location.pathname.startsWith('/pharmacy') && (user?.role === 'pharmacy')
+      ? pharmacyNavigationItems
+      : navigationItems);
 
   useEffect(() => {
     localStorage.setItem('sidebarOpen', sidebarOpen ? 'true' : 'false');

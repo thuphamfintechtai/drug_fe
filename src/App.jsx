@@ -25,6 +25,17 @@ import AdminNftTracking from './pages/admin/NftTracking';
 import ManufacturerDashboard from './pages/manufacturer/Dashboard';
 import DistributorDashboard from './pages/distributor/Dashboard';
 import PharmacyDashboard from './pages/pharmacy/Dashboard';
+import PharmacyInvoices from './pages/pharmacy/Invoices';
+import PharmacyInvoiceDetail from './pages/pharmacy/InvoiceDetail';
+import PharmacyMyInvoices from './pages/pharmacy/MyInvoices';
+import PharmacyProofList from './pages/pharmacy/ProofOfPharmacy';
+import PharmacyProofDetail from './pages/pharmacy/ProofOfPharmacyDetail';
+import PharmacyProofCreate from './pages/pharmacy/ProofOfPharmacyCreate';
+import PharmacyProofConfirm from './pages/pharmacy/ProofOfPharmacyConfirm';
+import PharmacyMyReceipts from './pages/pharmacy/MyReceipts';
+import PharmacyDrugs from './pages/pharmacy/Drugs';
+import PharmacyDrugDetail from './pages/pharmacy/DrugDetail';
+import PharmacyNftTracking from './pages/pharmacy/NftTracking';
 import UserHome from './pages/public/UserHome';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
@@ -125,6 +136,17 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+        <Route path="/pharmacy/invoices" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyInvoices /></ProtectedRoute>} />
+        <Route path="/pharmacy/invoices/my" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyMyInvoices /></ProtectedRoute>} />
+        <Route path="/pharmacy/invoices/:id" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyInvoiceDetail /></ProtectedRoute>} />
+        <Route path="/pharmacy/proof-of-pharmacy" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyProofList /></ProtectedRoute>} />
+        <Route path="/pharmacy/proof-of-pharmacy/new" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyProofCreate /></ProtectedRoute>} />
+        <Route path="/pharmacy/proof-of-pharmacy/:id" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyProofDetail /></ProtectedRoute>} />
+        <Route path="/pharmacy/proof-of-pharmacy/:id/confirm" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyProofConfirm /></ProtectedRoute>} />
+        <Route path="/pharmacy/proof-of-pharmacy/my" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyMyReceipts /></ProtectedRoute>} />
+        <Route path="/pharmacy/drugs" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyDrugs /></ProtectedRoute>} />
+        <Route path="/pharmacy/drugs/:id" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyDrugDetail /></ProtectedRoute>} />
+        <Route path="/pharmacy/nft-tracking" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyNftTracking /></ProtectedRoute>} />
         <Route
           path="/user"
           element={
