@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -31,12 +32,108 @@ const MetricCard = ({ title, value, subtitle, detail, color }) => {
 export default function DashboardLayout({ 
   welcomeMessage, 
   metrics = [], 
-  navigationItems = [],
+  navigationItems = [], 
   children 
 }) {
   const { user, logout } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('sidebarOpen');
+    return saved === null ? true : saved === 'true';
+  });
   const navigate = useNavigate();
+  const location = useLocation();
+  // Default admin navigation (always shown under /admin regardless of page-provided items)
+  const adminNavigationItems = [
+    {
+      path: '/admin',
+      label: 'Trang chủ',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      ),
+    },
+    {
+      path: '/admin/registrations',
+      label: 'Duyệt đăng ký',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+    {
+      path: '/admin/drugs',
+      label: 'Quản lý thuốc',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-7 7-7-7" />
+        </svg>
+      ),
+    },
+    {
+      path: '/admin/proof-of-production',
+      label: 'Proof of Production',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v12a2 2 0 01-2 2z" />
+        </svg>
+      ),
+    },
+    {
+      path: '/admin/proof-of-distribution',
+      label: 'Proof of Distribution',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v12a2 2 0 01-2 2z" />
+        </svg>
+      ),
+    },
+    {
+      path: '/admin/proof-of-pharmacy',
+      label: 'Proof of Pharmacy',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v12a2 2 0 01-2 2z" />
+        </svg>
+      ),
+    },
+    {
+      path: '/admin/invoices',
+      label: 'Invoices',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v12a2 2 0 01-2 2z" />
+        </svg>
+      ),
+    },
+    {
+      path: '/admin/manufacturers',
+      label: 'Nhà sản xuất',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V7a2 2 0 00-2-2h-3V3H9v2H6a2 2 0 00-2 2v6" />
+        </svg>
+      ),
+    },
+    {
+      path: '/admin/nft-tracking',
+      label: 'NFT Tracking',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2-1.343-2-3-2z" />
+        </svg>
+      ),
+    },
+  ];
+
+  const navItems = location.pathname.startsWith('/admin') && (user?.role === 'system_admin')
+    ? adminNavigationItems
+    : navigationItems;
+
+  useEffect(() => {
+    localStorage.setItem('sidebarOpen', sidebarOpen ? 'true' : 'false');
+  }, [sidebarOpen]);
 
   const getRoleLabel = (role) => {
     const labels = {
@@ -73,16 +170,21 @@ export default function DashboardLayout({
               </div>
               {sidebarOpen && <span className="font-bold text-lg">DrugTrace</span>}
             </div>
-            {sidebarOpen && (
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="p-1 hover:bg-cyan-600 rounded"
-              >
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              className="p-1 hover:bg-cyan-600 rounded"
+              aria-label={sidebarOpen ? 'Thu gọn sidebar' : 'Mở rộng sidebar'}
+            >
+              {sidebarOpen ? (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-              </button>
-            )}
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
           </div>
 
           {/* User Profile */}
@@ -102,20 +204,24 @@ export default function DashboardLayout({
 
           {/* Navigation */}
           <nav className="space-y-2">
-            {navigationItems.map((item, index) => (
+            {navItems.map((item, index) => {
+              const isActive =
+                item.active !== undefined
+                  ? item.active
+                  : location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+              return (
               <Link
                 key={index}
                 to={item.path}
-                className={`flex items-center gap-3 p-3 rounded-lg transition ${
-                  item.active
-                    ? 'bg-cyan-600 text-white'
-                    : 'text-cyan-100 hover:bg-cyan-600/50'
+                className={`flex items-center gap-3 p-3 rounded-lg transition text-cyan-100 hover:bg-cyan-600/20 ${
+                  isActive ? 'font-semibold underline underline-offset-4 decoration-2 text-white' : ''
                 }`}
               >
                 {item.icon}
                 {sidebarOpen && <span>{item.label}</span>}
               </Link>
-            ))}
+              );
+            })}
           </nav>
         </div>
       </aside>

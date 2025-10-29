@@ -7,6 +7,15 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 import Dashboard from './pages/user/Dashboard';
 import AdminDashboard from './pages/admin/Dashboard';
+import AdminRegistrations from './pages/admin/Registrations';
+import AdminRegistrationDetail from './pages/admin/RegistrationDetail';
+import AdminDrugs from './pages/admin/Drugs';
+import AdminProofOfProduction from './pages/admin/ProofOfProduction';
+import AdminProofOfDistribution from './pages/admin/ProofOfDistribution';
+import AdminProofOfPharmacy from './pages/admin/ProofOfPharmacy';
+import AdminInvoices from './pages/admin/Invoices';
+import AdminManufacturers from './pages/admin/Manufacturers';
+import AdminNftTracking from './pages/admin/NftTracking';
 import ManufacturerDashboard from './pages/manufacturer/Dashboard';
 import DistributorDashboard from './pages/distributor/Dashboard';
 import PharmacyDashboard from './pages/pharmacy/Dashboard';
@@ -27,8 +36,8 @@ function App() {
 // Component để ẩn Navbar khi ở dashboard pages
 function AppContent() {
   const location = useLocation();
-  const dashboardRoutes = ['/admin', '/manufacturer', '/distributor', '/pharmacy', '/user', '/dashboard'];
-  const showNavbar = !dashboardRoutes.includes(location.pathname);
+  const dashboardPrefixes = ['/admin', '/manufacturer', '/distributor', '/pharmacy', '/user', '/dashboard'];
+  const showNavbar = !dashboardPrefixes.some(prefix => location.pathname.startsWith(prefix));
 
   return (
     <>
@@ -56,6 +65,29 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/registrations"
+          element={
+            <ProtectedRoute allowedRoles={['system_admin']}>
+              <AdminRegistrations />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/registrations/:id"
+          element={
+            <ProtectedRoute allowedRoles={['system_admin']}>
+              <AdminRegistrationDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/admin/drugs" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminDrugs /></ProtectedRoute>} />
+        <Route path="/admin/proof-of-production" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminProofOfProduction /></ProtectedRoute>} />
+        <Route path="/admin/proof-of-distribution" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminProofOfDistribution /></ProtectedRoute>} />
+        <Route path="/admin/proof-of-pharmacy" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminProofOfPharmacy /></ProtectedRoute>} />
+        <Route path="/admin/invoices" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminInvoices /></ProtectedRoute>} />
+        <Route path="/admin/manufacturers" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminManufacturers /></ProtectedRoute>} />
+        <Route path="/admin/nft-tracking" element={<ProtectedRoute allowedRoles={['system_admin']}><AdminNftTracking /></ProtectedRoute>} />
         <Route
           path="/manufacturer"
           element={
