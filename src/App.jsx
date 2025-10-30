@@ -23,6 +23,8 @@ import AdminInvoiceCreate from './pages/admin/InvoiceCreate';
 import AdminManufacturers from './pages/admin/Manufacturers';
 import AdminNftTracking from './pages/admin/NftTracking';
 import ManufacturerDashboard from './pages/manufacturer/Dashboard';
+import ManufactorProductionList from './pages/manufacturer/ManufactorProductionList';
+import ManufactorSearchPage from './pages/manufacturer/ManufactorSearchPage';
 import DistributorDashboard from './pages/distributor/Dashboard';
 import PharmacyDashboard from './pages/pharmacy/Dashboard';
 import PharmacyInvoices from './pages/pharmacy/Invoices';
@@ -37,6 +39,7 @@ import PharmacyDrugs from './pages/pharmacy/Drugs';
 import PharmacyDrugDetail from './pages/pharmacy/DrugDetail';
 import PharmacyNftTracking from './pages/pharmacy/NftTracking';
 import UserHome from './pages/public/UserHome';
+import MetaMaskConnect from './pages/MetaMaskConnect';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 
@@ -121,6 +124,22 @@ function AppContent() {
           }
         />
         <Route
+          path="/manufacturer/production-list"
+          element={
+            <ProtectedRoute allowedRoles={['pharma_company']}>
+              <ManufactorProductionList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manufacturer/search"
+          element={
+            <ProtectedRoute allowedRoles={['pharma_company']}>
+              <ManufactorSearchPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/distributor"
           element={
             <ProtectedRoute allowedRoles={['distributor']}>
@@ -155,6 +174,7 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+        <Route path="/metamask" element={<MetaMaskConnect />} />
         <Route path="/" element={<UserHome />} />
       </Routes>
     </>
