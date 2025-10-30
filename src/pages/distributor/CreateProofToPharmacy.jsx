@@ -1,30 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createProofToPharmacy } from '../../services/distributor/proofOfPharmacyService';
-import { Input, Button, notification, Form, InputNumber, Select } from 'antd';
+import { listPharmacies } from '../../services/admin/proofOfPharmacyService';
+import { Input, Button, notification, Form, Select, InputNumber } from 'antd';
 import DashboardLayout from '../../components/DashboardLayout';
 import { useNavigate } from 'react-router-dom';
-import { listPharmacies } from '../../services/admin/proofOfPharmacyService';
 
 export default function CreateProofToPharmacy() {
   const [loading, setLoading] = useState(false);
-  const [form] = Form.useForm();
-  const navigate = useNavigate();
   const [pharmacies, setPharmacies] = useState([]);
   const [fetchingPharmacy, setFetchingPharmacy] = useState(true);
+  const [form] = Form.useForm();
+  const navigate = useNavigate();
 
-  React.useEffect(() => {
+  // 🔄 Lấy danh sách nhà thuốc
+  useEffect(() => {
     async function fetchPharmacies() {
       setFetchingPharmacy(true);
       try {
         const res = await listPharmacies();
         setPharmacies(
-          (res?.data?.data || res?.data || []).map((pharmacy) => ({
-            value: pharmacy._id,
-            label: pharmacy.name || pharmacy._id,
+          (res?.data?.data || res?.data || []).map((p) => ({
+            value: p._id,
+            label: p.name || p._id,
           }))
         );
       } catch (error) {
-        setPharmacies([]);
+        notification.error({ message: 'Không tải được danh sách nhà thuốc' });
       } finally {
         setFetchingPharmacy(false);
       }
@@ -32,10 +33,20 @@ export default function CreateProofToPharmacy() {
     fetchPharmacies();
   }, []);
 
+  // 🚀 Gửi form
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      await createProofToPharmacy(values);
+      const payload = {
+        pharmacyId: values.pharmacyId,
+        receivedBy: values.receivedBy,
+        verificationCode: values.verificationCode,
+        receiptTxHash: values.receiptTxHash || '',
+        qualityCheck: values.qualityCheck,
+        notes: values.notes || '',
+      };
+
+      await createProofToPharmacy(payload);
       notification.success({ message: 'Tạo đơn giao thành công!' });
       form.resetFields();
     } catch (error) {
@@ -46,117 +57,18 @@ export default function CreateProofToPharmacy() {
     }
   };
 
+  // 📋 Menu bên trái
   const navigationItems = [
-    {
-      path: "/distributor",
-      label: "Trang chủ",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3 12l9-9 9 9M4 10v10h16V10"
-          />
-        </svg>
-      ),
-      active: true,
-    },
-    {
-      path: "/distributor/distributions",
-      label: "Proof of Distribution",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      ),
-    },
-    {
-      path: "/distributor/nft-tracking",
-      label: "Theo dõi vận chuyển",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 8v4l3 3m-9 6h12a2 2 0 002-2V5a2 2 0 00-2-2H9.828a2 2 0 00-1.414.586L4 8v12a2 2 0 002 2z"
-          />
-        </svg>
-      ),
-    },
-    {
-      path: "/distributor/create-proof",
-      label: "Tạo minh chứng giao",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
-      ),
-    },
-    {
-      path: "/distributor/invoices",
-      label: "Hóa đơn",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9 12h6m-6 4h6M5 4h14a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 012-2z"
-          />
-        </svg>
-      ),
-    },
-    {
-      path: "/distributor/stats",
-      label: "Thống kê",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h10M4 14h6m-2 4h12" />
-        </svg>
-      ),
-    },
+    { path: "/distributor", label: "Trang chủ" },
+    { path: "/distributor/distributions", label: "Proof of Distribution" },
+    { path: "/distributor/nft-tracking", label: "Theo dõi vận chuyển" },
+    { path: "/distributor/create-proof", label: "Tạo minh chứng giao" },
+    { path: "/distributor/invoices", label: "Hóa đơn" },
+    { path: "/distributor/stats", label: "Thống kê" },
   ];
 
-  // 📊 Không có metrics cho trang này (vì chỉ là form)
-  const metrics = [];
-
   return (
-    <DashboardLayout metrics={metrics} navigationItems={navigationItems}>
+    <DashboardLayout metrics={[]} navigationItems={navigationItems}>
       <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 max-w-screen-sm mx-auto">
         <h2 className="text-xl font-bold mb-4 text-gray-800">
           Tạo đơn giao hàng đến Nhà thuốc
@@ -169,7 +81,7 @@ export default function CreateProofToPharmacy() {
           <Form.Item
             name="pharmacyId"
             label="Nhà thuốc"
-            rules={[{ required: true, message: 'Vui lòng nhập hoặc chọn nhà thuốc' }]}
+            rules={[{ required: true, message: 'Vui lòng chọn nhà thuốc' }]}
           >
             <Select
               showSearch
@@ -177,25 +89,50 @@ export default function CreateProofToPharmacy() {
               loading={fetchingPharmacy}
               placeholder="Chọn nhà thuốc"
               filterOption={(input, option) =>
-                option.label?.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                option.label?.toLowerCase().includes(input.toLowerCase())
               }
             />
           </Form.Item>
 
           <Form.Item
-            name="drugName"
-            label="Tên thuốc"
-            rules={[{ required: true, message: 'Vui lòng nhập tên thuốc' }]}
+            name="receivedBy"
+            label="Người nhận"
+            rules={[{ required: true, message: 'Vui lòng nhập tên người nhận' }]}
           >
-            <Input placeholder="Nhập tên thuốc" />
+            <Input placeholder="Tên người nhận tại nhà thuốc" />
           </Form.Item>
 
           <Form.Item
-            name="quantity"
-            label="Số lượng"
-            rules={[{ required: true, message: 'Vui lòng nhập số lượng' }]}
+            name="verificationCode"
+            label="Mã xác nhận"
+            rules={[{ required: true, message: 'Vui lòng nhập mã xác nhận' }]}
           >
-            <InputNumber min={1} className="w-full" placeholder="Nhập số lượng" />
+            <Input placeholder="Nhập mã xác nhận" />
+          </Form.Item>
+
+          <Form.Item
+            name="receiptTxHash"
+            label="Hash giao dịch (nếu có)"
+          >
+            <Input placeholder="0x..." />
+          </Form.Item>
+
+          <Form.Item
+            name="qualityCheck"
+            label="Kiểm tra chất lượng"
+            rules={[{ required: true, message: 'Vui lòng chọn trạng thái kiểm tra' }]}
+          >
+            <Select
+              options={[
+                { value: 'pass', label: 'Đạt (Pass)' },
+                { value: 'fail', label: 'Không đạt (Fail)' },
+              ]}
+              placeholder="Chọn kết quả kiểm tra"
+            />
+          </Form.Item>
+
+          <Form.Item name="notes" label="Ghi chú">
+            <Input.TextArea rows={3} placeholder="Nhập ghi chú nếu có" />
           </Form.Item>
 
           <div className="flex justify-end">

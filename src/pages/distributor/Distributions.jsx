@@ -78,8 +78,18 @@ export default function Distributions() {
               size="small"
               type="primary"
               onClick={() => onConfirm(row._id)}
+              style={{ marginRight: 8 }}
             >
               Xác nhận nhận
+            </Button>
+          )}
+          {row.status === 'pending' && (
+            <Button
+              size="small"
+              type="dashed"
+              onClick={() => onConfirm(row._id)}
+            >
+              Xác nhận chứng từ
             </Button>
           )}
         </>
