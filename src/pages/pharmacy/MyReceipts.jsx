@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
-import { getMyReceipts } from '../../services/pharmacy/proofOfPharmacyService';
+import { getMyReceipts, searchPharmacyByCode } from '../../services/pharmacy/proofOfPharmacyService';
+import { getPharmacyNavigationItems } from '../../utils/pharmacyNavigation.jsx';
 
 export default function PharmacyMyReceipts() {
   const [items, setItems] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [searchCode, setSearchCode] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const location = useLocation();
   const page = Number(searchParams.get('page') || 1);
   const status = searchParams.get('status') || '';
 
-  const navigationItems = [
-    { path: '/pharmacy', label: 'Trang chủ', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>) },
-    { path: '/pharmacy/proof-of-pharmacy/my', label: 'Biên nhận của tôi', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" /></svg>), active: true },
-  ];
+  const navigationItems = getPharmacyNavigationItems(location.pathname);
 
   useEffect(() => {
     const load = async () => {
@@ -29,6 +30,30 @@ export default function PharmacyMyReceipts() {
     };
     load();
   }, [page, status]);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchCode.trim()) return;
+
+    setSearchLoading(true);
+    try {
+      const res = await searchPharmacyByCode(searchCode.trim());
+      if (res.data && res.data.success) {
+        setItems([res.data.data]);
+        setPagination(null);
+      }
+    } catch (error) {
+      console.error('Error searching:', error);
+      setItems([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchCode('');
+    setSearchParams({ page: '1', status });
+  };
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
@@ -46,21 +71,70 @@ export default function PharmacyMyReceipts() {
         </div>
       </section>
 
-      {/* Filters */}
-      <div className="mt-5 rounded-2xl bg-white/85 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4">
-        <div className="flex items-center justify-between gap-3">
-          <select
-            value={status}
-            onChange={(e) => setSearchParams({ page: '1', status: e.target.value })}
-            className="border border-[#90e0ef55] bg-white/60 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4]"
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="pending">Đang xử lý</option>
-            <option value="received">Đã nhận</option>
-            <option value="verified">Đã xác minh</option>
-            <option value="completed">Hoàn tất</option>
-            <option value="rejected">Từ chối</option>
-          </select>
+      {/* Search and Filters */}
+      <div className="mt-5 space-y-4">
+        {/* Search Box */}
+        <div className="rounded-2xl bg-white/85 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4">
+          <form onSubmit={handleSearch} className="flex items-center gap-3">
+            <div className="flex-1">
+              <input
+                type="text"
+                value={searchCode}
+                onChange={(e) => setSearchCode(e.target.value)}
+                placeholder="Tìm kiếm theo mã xác minh (verification code)..."
+                className="w-full border-2 border-cyan-300 bg-white rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={searchLoading || !searchCode.trim()}
+              className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {searchLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Đang tìm...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <span>Tìm kiếm</span>
+                </>
+              )}
+            </button>
+            {searchCode && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-semibold transition-all"
+              >
+                Xóa
+              </button>
+            )}
+          </form>
+        </div>
+
+        {/* Status Filter */}
+        <div className="rounded-2xl bg-white/85 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4">
+          <div className="flex items-center justify-between gap-3">
+            <select
+              value={status}
+              onChange={(e) => setSearchParams({ page: '1', status: e.target.value })}
+              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4]"
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="pending">Đang xử lý</option>
+              <option value="received">Đã nhận</option>
+              <option value="verified">Đã xác minh</option>
+              <option value="completed">Hoàn tất</option>
+              <option value="rejected">Từ chối</option>
+            </select>
+          </div>
         </div>
       </div>
 

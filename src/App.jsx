@@ -37,9 +37,9 @@ import PharmacyInvoiceDetail from './pages/pharmacy/InvoiceDetail';
 import PharmacyMyInvoices from './pages/pharmacy/MyInvoices';
 import PharmacyProofList from './pages/pharmacy/ProofOfPharmacy';
 import PharmacyProofDetail from './pages/pharmacy/ProofOfPharmacyDetail';
-import PharmacyProofCreate from './pages/pharmacy/ProofOfPharmacyCreate';
 import PharmacyProofConfirm from './pages/pharmacy/ProofOfPharmacyConfirm';
 import PharmacyMyReceipts from './pages/pharmacy/MyReceipts';
+import PharmacyProofStats from './pages/pharmacy/ProofStats';
 import PharmacyDrugs from './pages/pharmacy/Drugs';
 import PharmacyDrugDetail from './pages/pharmacy/DrugDetail';
 import PharmacyNftTracking from './pages/pharmacy/NftTracking';
@@ -204,7 +204,7 @@ function AppContent() {
         <Route path="/pharmacy/invoices/my" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyMyInvoices /></ProtectedRoute>} />
         <Route path="/pharmacy/invoices/:id" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyInvoiceDetail /></ProtectedRoute>} />
         <Route path="/pharmacy/proof-of-pharmacy" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyProofList /></ProtectedRoute>} />
-        <Route path="/pharmacy/proof-of-pharmacy/new" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyProofCreate /></ProtectedRoute>} />
+        <Route path="/pharmacy/proof-of-pharmacy/stats" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyProofStats /></ProtectedRoute>} />
         <Route path="/pharmacy/proof-of-pharmacy/:id" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyProofDetail /></ProtectedRoute>} />
         <Route path="/pharmacy/proof-of-pharmacy/:id/confirm" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyProofConfirm /></ProtectedRoute>} />
         <Route path="/pharmacy/proof-of-pharmacy/my" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyMyReceipts /></ProtectedRoute>} />
