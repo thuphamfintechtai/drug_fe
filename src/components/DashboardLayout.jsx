@@ -167,14 +167,32 @@ export default function DashboardLayout({
       >
         <div className="p-4">
           {/* Logo & Header */}
-          <div className={`flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'} mb-8 shadow-[inset_0_-8px_8px_rgba(0,0,0,0.08)]`}>
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => !sidebarOpen && setSidebarOpen(true)}>
+          <div
+            className={`flex items-center ${
+              sidebarOpen ? 'justify-between' : 'justify-center'
+            } mb-8 border-b border-white/10 pb-3`}
+          >
+            <div
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => !sidebarOpen && setSidebarOpen(true)}
+            >
               <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
                   <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 11.09a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3a1 1 0 00-.787 0l-7 3a1 1 0 000 1.838l7 3z" />
                 </svg>
               </div>
-              {sidebarOpen && <span className="font-medium text-lg" style={{ fontFamily: 'Inter, sans-serif' }}>DrugTrace</span>}
+              {sidebarOpen && (
+                <span
+                  className="font-medium text-lg"
+                  style={{ fontFamily: 'Inter, sans-serif' }}
+                >
+                  DrugTrace
+                </span>
+              )}
             </div>
             <button
               onClick={() => setSidebarOpen((v) => !v)}
@@ -182,97 +200,130 @@ export default function DashboardLayout({
               aria-label={sidebarOpen ? 'Thu gọn sidebar' : 'Mở rộng sidebar'}
             >
               {sidebarOpen ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
                 </svg>
               )}
             </button>
           </div>
-
-          {/* User Profile */}
-          <div className="mb-8 pb-6 shadow-[inset_0_-8px_8px_rgba(0,0,0,0.08)]">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                {user?.fullName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-              </div>
-              {sidebarOpen && (
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate" style={{ fontFamily: 'Inter, sans-serif' }}>{user?.fullName || user?.username || 'User'}</p>
-                  <p className="text-xs truncate" style={{ color: '#cdeff4' }}>{user?.email}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
+  
           {/* Navigation */}
           <nav className="space-y-3">
             {navItems.map((item, index) => {
               const isActive =
                 item.active !== undefined
                   ? item.active
-                  : location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+                  : location.pathname === item.path ||
+                    location.pathname.startsWith(item.path + '/');
               return (
-              <Link
-                key={index}
-                to={item.path}
-                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition 
-                  ${isActive ? 'text-white shadow-[0_0_12px_rgba(205,239,244,0.25)]' : 'text-white/90 hover:text-white'}
-                  hover:bg-white/10`}
-              >
-                <span className="w-5 h-5 flex items-center justify-center">{item.icon}</span>
-                {sidebarOpen && (
-                  <span
-                    className={`font-medium ${isActive ? 'underline underline-offset-8 decoration-2' : ''}`}
-                    style={{ fontFamily: 'Inter, sans-serif' }}
-                  >
-                    {item.label}
+                <Link
+                  key={index}
+                  to={item.path}
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition 
+                    ${
+                      isActive
+                        ? 'text-white bg-white/10'
+                        : 'text-white/90 hover:text-white hover:bg-white/10'
+                    }`}
+                >
+                  <span className="w-5 h-5 flex items-center justify-center">
+                    {item.icon}
                   </span>
-                )}
-              </Link>
+                  {sidebarOpen && (
+                    <span
+                      className="font-medium"
+                      style={{ fontFamily: 'Inter, sans-serif' }}
+                    >
+                      {item.label}
+                    </span>
+                  )}
+                </Link>
               );
             })}
           </nav>
         </div>
       </aside>
-
+  
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
+      <div
+        className={`flex-1 transition-all duration-300 ${
+          sidebarOpen ? 'ml-64' : 'ml-20'
+        }`}
+      >
         {/* Header */}
-        <header className="bg-white/95 backdrop-blur-sm shadow-sm border-b border-slate-200">
+        <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200">
           <div className="px-6 py-4 flex items-center justify-end">
             <div className="flex items-center gap-4">
               <button className="p-2 hover:bg-gray-100 rounded-lg relative">
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <svg
+                  className="w-6 h-6 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                  />
                 </svg>
                 <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#0077b6] shadow hover:shadow-cyan-200/60 transition"
+                className="px-4 py-2 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#0077b6] hover:opacity-90 transition"
               >
                 Đăng xuất
               </button>
             </div>
           </div>
         </header>
-
+  
         {/* Content */}
-        <motion.main className="p-6" variants={fadeUp} initial="hidden" animate="show">
+        <motion.main
+          className="p-6"
+          variants={fadeUp}
+          initial="hidden"
+          animate="show"
+        >
           {/* Welcome Section */}
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-slate-900 mb-2">
-              {welcomeMessage || `Chào mừng trở lại, ${user?.fullName || user?.username || 'User'}!`}
+              {welcomeMessage ||
+                `Chào mừng trở lại, ${
+                  user?.fullName || user?.username || "User"
+                }!`}
             </h1>
             <p className="text-slate-600">
               Bạn có 2 tin nhắn mới và 15 nhiệm vụ mới
             </p>
           </div>
-
+  
           {/* Metrics Cards */}
           {metrics.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -281,12 +332,13 @@ export default function DashboardLayout({
               ))}
             </div>
           )}
-
+  
           {/* Main Content */}
           {children}
         </motion.main>
       </div>
     </div>
   );
+  
 }
 

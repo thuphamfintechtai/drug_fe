@@ -164,7 +164,7 @@ export default function AdminDrugs() {
             <tbody>
               {(Array.isArray(items) ? items : []).map((d) => (
                 <tr key={d._id} className="border-t border-[#90e0ef40] hover:bg-[#f5fcff] transition">
-                  <td className="p-3 font-medium text-[#003544]">{d.name}</td>
+                  <td className="p-3 font-medium text-[#003544]">{d.tradeName}</td>
                   <td className="p-3 text-[#003544]/80">{d.atcCode}</td>
                   <td className="p-3 text-[#003544]/80">{d.tradeName || 'Không có tên thương mại'}</td>
                   <td className="p-3 text-right">

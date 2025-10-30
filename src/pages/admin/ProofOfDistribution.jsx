@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import { listDistributions, searchByVerificationCode, getStats } from '../../services/admin/proofOfDistributionService';
+import { getDrugById } from '../../services/admin/drugService';
+
 
 export default function AdminProofOfDistribution() {
   const [items, setItems] = useState([]);
@@ -94,17 +96,54 @@ export default function AdminProofOfDistribution() {
                 <th className="p-3 bg-[#f5fcff]">Nhà phân phối</th>
                 <th className="p-3 bg-[#f5fcff]">Trạng thái</th>
                 <th className="p-3 bg-[#f5fcff] text-right">Thao tác</th>
-              </tr>
+              </tr> 
             </thead>
             <tbody>
-              {items.map(p => (
-                <tr key={p._id} className="border-t border-[#90e0ef40] hover:bg-[#f5fcff] transition">
-                  <td className="p-3 font-medium text-[#003544]">{p.drugName || p.drug?.name}</td>
-                  <td className="p-3 text-[#003544]/80">{p.distributorName || p.distributor?.name}</td>
-                  <td className="p-3 text-[#003544]/80">{p.status}</td>
+            {(Array.isArray(items) ? items : []).map(p => (
+                <tr
+                  key={p._id}
+                  className="border-t border-[#90e0ef40] hover:bg-[#f5fcff] transition"
+                >
+                  {/* 🔹 Cột 1: Mã Serial (thuốc) */}
+                  <td className="p-3 font-medium text-[#003544]">
+                    {p.nftInfo?.serialNumber || "—"}
+                  </td>
+
+                  {/* 🔹 Cột 2: Nhà phân phối */}
+                  <td className="p-3 text-[#003544]/80">
+                    {p.toDistributor?.fullName || "—"}
+                  </td>
+
+                  {/* 🔹 Cột 3: Trạng thái */}
+                  <td className="p-3 text-[#003544]/80">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                        p.status === "delivered"
+                          ? "bg-green-50 text-green-700 border-green-200"
+                          : "bg-yellow-50 text-yellow-800 border-yellow-200"
+                      }`}
+                    >
+                      {p.status}
+                    </span>
+                  </td>
+
+                  {/* 🔹 Cột 4: Hành động */}
                   <td className="p-3 text-right">
-                    <a href={`/admin/proof-of-distribution/${p._id}`} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#90e0ef55] text-[#003544] hover:bg-[#90e0ef22] transition">Chi tiết
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6"/><path d="M3 12h12"/></svg>
+                    <a
+                      href={`/admin/proof-of-distribution/${p._id}`}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#90e0ef55] text-[#003544] hover:bg-[#90e0ef22] transition"
+                    >
+                      Chi tiết
+                      <svg
+                        className="w-4 h-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M9 6l6 6-6 6" />
+                        <path d="M3 12h12" />
+                      </svg>
                     </a>
                   </td>
                 </tr>

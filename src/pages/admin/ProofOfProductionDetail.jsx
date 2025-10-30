@@ -127,10 +127,9 @@ export default function AdminProofOfProductionDetail() {
                 Thông tin sản xuất
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[15px]">
-                <div><strong>ID:</strong> {proof._id}</div>
                 <div><strong>Batch:</strong> {proof.batchNumber}</div>
                 <div><strong>Serial:</strong> {proof.serialNumber}</div>
-                <div><strong>Số lượng:</strong> {proof.quantity}</div>
+                <div><strong>Số lượng viên thuốc:</strong> {proof.quantity}</div>
                 <div><strong>Ngày sản xuất:</strong> {new Date(proof.mfgDate).toLocaleDateString()}</div>
                 <div><strong>Ngày hết hạn:</strong> {new Date(proof.expDate).toLocaleDateString()}</div>
                 <div><strong>Trạng thái:</strong>
@@ -203,7 +202,7 @@ export default function AdminProofOfProductionDetail() {
                   <div><strong>Địa chỉ hợp đồng:</strong> {nft.contractAddress}</div>
                   <div><strong>Tx Hash:</strong>
                     <a
-                      href={`https://sepolia.etherscan.io/tx/${nft.chainTxHash}`}
+                      href={`https://zeroscan.org/tx/${nft.chainTxHash}`}
                       className="text-[#00b4d8] hover:underline ml-1"
                       target="_blank"
                       rel="noopener noreferrer"
