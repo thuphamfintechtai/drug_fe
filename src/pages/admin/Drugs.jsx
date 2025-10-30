@@ -13,6 +13,27 @@ export default function AdminDrugs() {
     if (Array.isArray(r?.data)) return r.data; // in case BE double-nests
     return [];
   };
+  const normalizeCodes = (raw) => {
+    const r = raw?.data ?? raw;
+    const arr = Array.isArray(r)
+      ? r
+      : Array.isArray(r?.items)
+      ? r.items
+      : Array.isArray(r?.results)
+      ? r.results
+      : Array.isArray(r?.codes)
+      ? r.codes
+      : Array.isArray(r?.data)
+      ? r.data
+      : [];
+    return arr
+      .map((item) => {
+        if (item == null) return '';
+        if (typeof item === 'string' || typeof item === 'number') return String(item);
+        return item.atcCode || item.code || item.name || item.tradeName || '';
+      })
+      .filter(Boolean);
+  };
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -35,7 +56,7 @@ export default function AdminDrugs() {
       ]);
       setItems(normalizeList(listRes));
       setStats(statsRes?.data || statsRes || null);
-      setCodes(codesRes?.data || codesRes || []);
+      setCodes(normalizeCodes(codesRes));
     } catch (e) { setError(e?.response?.data?.message || 'Không thể tải dữ liệu'); }
     finally { setLoading(false); }
   };
@@ -145,7 +166,7 @@ export default function AdminDrugs() {
                 <tr key={d._id} className="border-t border-[#90e0ef40] hover:bg-[#f5fcff] transition">
                   <td className="p-3 font-medium text-[#003544]">{d.name}</td>
                   <td className="p-3 text-[#003544]/80">{d.atcCode}</td>
-                  <td className="p-3 text-[#003544]/80">{d.manufactorName || d.manufacturer?.name}</td>
+                  <td className="p-3 text-[#003544]/80">{d.tradeName || 'Không có tên thương mại'}</td>
                   <td className="p-3 text-right">
                     <a href={`/admin/drugs/${d._id}`} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#90e0ef55] text-[#003544] hover:bg-[#90e0ef22] transition">Chi tiết
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6"/><path d="M3 12h12"/></svg>
