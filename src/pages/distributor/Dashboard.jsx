@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { getDistributionStats } from '../../services/distributor/proofService';
+import { getDistributions } from '../../services/distributor/proofService';
 
 export default function DistributorDashboard() {
   const [stats, setStats] = useState({
@@ -18,7 +18,7 @@ export default function DistributorDashboard() {
   const loadStats = async () => {
     try {
       setLoading(true);
-      const response = await getDistributionStats();
+      const response = await getDistributions();
       if (response.success) {
         const data = response.data;
         setStats({

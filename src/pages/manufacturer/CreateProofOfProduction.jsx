@@ -32,6 +32,25 @@ export default function CreateProofOfProduction() {
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
 
+  // Tự động tính ngày hết hạn khi có mfgDate + expiryValue + expiryUnit
+  useEffect(() => {
+    if (formData.mfgDate && formData.expiryValue && formData.expiryUnit) {
+      const mfg = new Date(formData.mfgDate);
+      const exp = new Date(mfg);
+      const num = parseInt(formData.expiryValue);
+
+      if (!isNaN(num) && num > 0) {
+        if (formData.expiryUnit === "day") exp.setDate(exp.getDate() + num);
+        if (formData.expiryUnit === "month") exp.setMonth(exp.getMonth() + num);
+        if (formData.expiryUnit === "year") exp.setFullYear(exp.getFullYear() + num);
+        setFormData((prev) => ({
+          ...prev,
+          expDate: exp.toISOString().split("T")[0],
+        }));
+      }
+    }
+  }, [formData.mfgDate, formData.expiryValue, formData.expiryUnit]);
+
   useEffect(() => {
     loadDrugs();
     checkWalletConnection();
@@ -204,7 +223,7 @@ export default function CreateProofOfProduction() {
     }
   };
 
-  const navigationItems = getManufacturerNavigationItems();
+  const navigationItems = getManufacturerNavigationItems(location.pathname);
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
@@ -254,17 +273,20 @@ export default function CreateProofOfProduction() {
         {step === 1 && (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
             <h2 className="text-xl font-bold text-gray-800 mb-6">📋 Thông tin sản xuất</h2>
-            
+
             <div className="space-y-4">
+              {/* Chọn thuốc */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Chọn thuốc *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Chọn thuốc <span className="text-red-500">*</span>
+                </label>
                 <select
                   value={formData.drugId}
-                  onChange={(e) => setFormData({...formData, drugId: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, drugId: e.target.value })}
                   className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500"
                 >
                   <option value="">-- Chọn thuốc --</option>
-                  {drugs.map(drug => (
+                  {drugs.map((drug) => (
                     <option key={drug._id} value={drug._id}>
                       {drug.tradeName} ({drug.genericName}) - {drug.atcCode}
                     </option>
@@ -272,55 +294,103 @@ export default function CreateProofOfProduction() {
                 </select>
               </div>
 
+              {/* Ngày sản xuất + Thời hạn sử dụng */}
               <div className="grid grid-cols-2 gap-4">
+                {/* Ngày sản xuất */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Ngày sản xuất *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Ngày sản xuất <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="date"
                     value={formData.mfgDate}
-                    onChange={(e) => setFormData({...formData, mfgDate: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, mfgDate: e.target.value })}
                     className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500"
                   />
                 </div>
+
+                {/* Thời hạn sử dụng (auto expDate) */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Ngày hết hạn *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Thời hạn sử dụng
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Nhập số"
+                      value={formData.expiryValue || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, expiryValue: e.target.value })
+                      }
+                      className="flex-1 border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500"
+                    />
+                    <select
+                      value={formData.expiryUnit || "year"}
+                      onChange={(e) =>
+                        setFormData({ ...formData, expiryUnit: e.target.value })
+                      }
+                      className="w-[45%] border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500"
+                    >
+                      <option value="year">Năm</option>
+                      <option value="month">Tháng</option>
+                      <option value="day">Ngày</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ngày hết hạn (readonly) */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Ngày hết hạn <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={formData.expDate}
+                  readOnly
+                  className="w-full border-2 border-cyan-300 rounded-xl p-3 bg-gray-50 text-gray-700 focus:ring-2 focus:ring-cyan-500"
+                />
+              </div>
+
+              {/* Số lượng + QA */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Số lượng <span className="text-red-500">*</span>
+                  </label>
                   <input
-                    type="date"
-                    value={formData.expDate}
-                    onChange={(e) => setFormData({...formData, expDate: e.target.value})}
+                    type="number"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                     className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500"
+                    placeholder="Số lượng sản xuất"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Kiểm định viên (ID người dùng - tùy chọn)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.qaInspector}
+                    onChange={(e) => setFormData({ ...formData, qaInspector: e.target.value })}
+                    className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500"
+                    placeholder="Để trống nếu không bắt buộc"
                   />
                 </div>
               </div>
 
+              {/* Báo cáo QA */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Số lượng *</label>
-                <input
-                  type="number"
-                  value={formData.quantity}
-                  onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500"
-                  placeholder="Số lượng sản xuất"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Kiểm định viên (tùy chọn)</label>
-                <input
-                  type="text"
-                  value={formData.qaInspector}
-                  onChange={(e) => setFormData({...formData, qaInspector: e.target.value})}
-                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500"
-                  placeholder="Tên kiểm định viên"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">URL Báo cáo QA (tùy chọn)</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Báo cáo QA (URL)
+                </label>
                 <input
                   type="text"
                   value={formData.qaReportUri}
-                  onChange={(e) => setFormData({...formData, qaReportUri: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, qaReportUri: e.target.value })}
                   className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500"
                   placeholder="https://..."
                 />
@@ -333,11 +403,12 @@ export default function CreateProofOfProduction() {
                 disabled={loading}
                 className="px-8 py-3 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl disabled:opacity-50"
               >
-                {loading ? 'Đang tạo metadata...' : 'Tiếp tục →'}
+                {loading ? "Đang tạo metadata..." : "Tiếp tục →"}
               </button>
             </div>
           </div>
         )}
+
 
         {/* Step 2: Metadata Preview */}
         {step === 2 && nftMetadata && (
@@ -429,4 +500,3 @@ export default function CreateProofOfProduction() {
     </DashboardLayout>
   );
 }
-

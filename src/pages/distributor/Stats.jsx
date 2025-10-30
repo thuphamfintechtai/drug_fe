@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getDistributionStats } from '../../services/distributor/proofService';
+import { getDistributions } from '../../services/distributor/proofService';
 import { Card, Row, Col, Spin } from 'antd';
 
 export default function Stats() {
@@ -7,7 +7,7 @@ export default function Stats() {
   const [loading, setLoading] = useState(true);
 
   useEffect(()=>{
-    getDistributionStats().then(res=>setData(res.data||{})).finally(()=>setLoading(false));
+    getDistributions().then(res=>setData(res.data||{})).finally(()=>setLoading(false));
   },[]);
 
   return (
