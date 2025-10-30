@@ -44,6 +44,7 @@ import PharmacyDrugs from './pages/pharmacy/Drugs';
 import PharmacyDrugDetail from './pages/pharmacy/DrugDetail';
 import PharmacyNftTracking from './pages/pharmacy/NftTracking';
 import UserHome from './pages/public/UserHome';
+import VerifyToken from './pages/user/VerifyToken';
 import MetaMaskConnect from './pages/MetaMaskConnect';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
@@ -220,6 +221,7 @@ function AppContent() {
           }
         />
         <Route path="/metamask" element={<MetaMaskConnect />} />
+        <Route path="/verifyToken" element={<VerifyToken />} />
         <Route path="/" element={<UserHome />} />
       </Routes>
     </>

@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform, useReducedMotion, AnimatePresence } from 'framer-motion';
 import { Toaster, toast } from 'react-hot-toast';
 import api from '../../utils/api';
 import AnimatedHeadline from '../../components/public/userhome/AnimatedHeadline';
+import { Scanner } from '@yudiel/react-qr-scanner';
+import { BrowserQRCodeReader } from '@zxing/browser';
 
 // Horizontal top progress bar (gradient) linked to page scroll
 function ScrollTopProgress() {
@@ -19,10 +21,66 @@ function ScrollTopProgress() {
 // --
 
 export default function UserHome() {
+  const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [searchResult, setSearchResult] = useState(null);
   const [error, setError] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const imgRef = useRef(null);
+
+  const normalizeScannedText = (text) => {
+    if (!text) return null;
+    try {
+      const url = new URL(text);
+      if (url.protocol.startsWith('http')) {
+        window.location.href = url.toString();
+        return null; // backend sẽ redirect về FE /verifyToken
+      }
+    } catch (_) {
+      // không phải URL -> có thể là tokenId base64url
+    }
+    return text;
+  };
+
+  const handleDecoded = (result) => {
+    if (!result) return;
+    const text = typeof result === 'string' ? result : result?.rawValue || result?.text || '';
+    const normalized = normalizeScannedText(text);
+    if (!normalized) return;
+    navigate(`/verifyToken?tokenId=${encodeURIComponent(normalized)}`);
+  };
+
+  const handleImageSelect = async (e) => {
+    setError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploading(true);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const imgEl = imgRef.current;
+          if (!imgEl) return;
+          imgEl.src = reader.result;
+          await imgEl.decode();
+          const codeReader = new BrowserQRCodeReader();
+          const result = await codeReader.decodeFromImageElement(imgEl);
+          const text = result?.getText?.() || result?.text || String(result || '');
+          handleDecoded(text);
+        } catch (err) {
+          toast.error('Không đọc được QR từ ảnh. Hãy thử ảnh khác.', { position: 'top-right' });
+        } finally {
+          setUploading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setUploading(false);
+      toast.error('Đã xảy ra lỗi khi xử lý ảnh.', { position: 'top-right' });
+    }
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -40,7 +98,7 @@ export default function UserHome() {
     setSearchResult(null);
 
     try {
-      const response = await api.get(`/NFTTracking/${searchValue.trim()}`);
+      const response = await api.get(`/NFTTracking/verify/${searchValue.trim()}/public`);
       if (response.data.success) {
         setSearchResult(response.data.data);
         toast.success('Tra cứu thành công!', {
@@ -267,6 +325,43 @@ export default function UserHome() {
                 </motion.div>
               </motion.div>
             )}
+          </motion.div>
+          {/* QR Scan Box */}
+          <motion.div
+            className="max-w-2xl mx-auto mt-6"
+            variants={itemVariants}
+          >
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border-t-4 border-cyan-500">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Quét mã QR</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowScanner((v) => !v)}
+                  className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
+                >
+                  {showScanner ? 'Đóng máy quét' : 'Mở máy quét'}
+                </button>
+              </div>
+              {showScanner && (
+                <div className="overflow-hidden rounded-lg border bg-black">
+                  <Scanner
+                    onDecode={handleDecoded}
+                    onError={() => {}}
+                    constraints={{ facingMode: 'environment' }}
+                    styles={{ container: { width: '100%' }, video: { width: '100%' } }}
+                  />
+                </div>
+              )}
+              <p className="mt-3 text-sm text-gray-600">Hướng camera vào mã QR. Sau khi quét xong sẽ chuyển đến trang xác minh.</p>
+              <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
+                <div className="mb-2 text-sm font-medium text-gray-700">Hoặc tải ảnh QR</div>
+                <input type="file" accept="image/*" onChange={handleImageSelect} disabled={uploading} />
+                <img ref={imgRef} alt="qr-preview" className="mt-3 hidden" />
+                {uploading && (
+                  <div className="mt-2 text-sm text-gray-500">Đang xử lý ảnh...</div>
+                )}
+              </div>
+            </div>
           </motion.div>
         </motion.div>
       </section>
