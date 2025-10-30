@@ -1,25 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { getMyInvoices } from '../../services/distributor/invoiceService';
-import { Table, Tag, Spin, notification } from 'antd';
+import { Table, Tag, Spin, Button, notification } from 'antd';
 import DashboardLayout from '../../components/DashboardLayout';
+import { useNavigate } from 'react-router-dom';
+import { getDistributorNavigationItems } from '../../utils/distributorNavigation';
 
 export default function Invoices() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const res = await getMyInvoices();
-      console.log('🧾 getMyInvoices response:', res);
-
       const list =
         Array.isArray(res?.data)
           ? res.data
           : Array.isArray(res?.data?.data)
           ? res.data.data
           : [];
-
       setData(list);
     } catch (error) {
       console.error('Invoice fetch error:', error);
@@ -33,17 +33,60 @@ export default function Invoices() {
     fetchData();
   }, []);
 
+  const statusColor = (status) => {
+    const colors = {
+      paid: 'green',
+      pending: 'orange',
+      draft: 'blue',
+      cancelled: 'red',
+    };
+    return colors[status] || 'default';
+  };
+
+  const statusLabel = (status) => {
+    const labels = {
+      paid: 'Đã thanh toán',
+      pending: 'Chờ thanh toán',
+      draft: 'Bản nháp',
+      cancelled: 'Đã hủy',
+    };
+    return labels[status] || status;
+  };
+
   const columns = [
-    { title: 'Mã hóa đơn', dataIndex: 'code', key: 'code' },
-    { title: 'Nhà thuốc', dataIndex: 'pharmacyName', key: 'pharmacyName' },
+    {
+      title: 'Mã hóa đơn',
+      dataIndex: 'code',
+      key: 'code',
+      render: (text) => (
+        <span className="font-mono font-semibold text-gray-800">{text || 'N/A'}</span>
+      ),
+    },
+    {
+      title: 'Nhà thuốc',
+      dataIndex: 'pharmacyName',
+      key: 'pharmacyName',
+      render: (text, record) =>
+        text ||
+        record.toPharmacy?.name ||
+        record.toPharmacy?.username ||
+        'N/A',
+    },
+    {
+      title: 'Thuốc',
+      dataIndex: 'drugName',
+      key: 'drugName',
+      render: (text, record) => {
+        const drug = record.drug || record.proofOfPharmacy?.drug;
+        return drug?.name || drug?.tradeName || text || 'N/A';
+      },
+    },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      render: (s) => (
-        <Tag color={s === 'paid' ? 'green' : s === 'pending' ? 'orange' : 'blue'}>
-          {s}
-        </Tag>
+      render: (status) => (
+        <Tag color={statusColor(status)}>{statusLabel(status)}</Tag>
       ),
     },
     {
@@ -51,133 +94,80 @@ export default function Invoices() {
       dataIndex: 'totalAmount',
       key: 'totalAmount',
       render: (v) =>
-        v
-          ? `${v.toLocaleString('vi-VN')} ₫`
-          : '0 ₫',
+        v ? `${Number(v).toLocaleString('vi-VN')} ₫` : '0 ₫',
+    },
+    {
+      title: 'Ngày tạo',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString('vi-VN') : 'N/A',
+    },
+    {
+      title: 'Thao tác',
+      key: 'action',
+      render: (_, record) => (
+        <Button
+          size="small"
+          onClick={() => navigate(`/distributor/invoices/${record._id}`)}
+        >
+          Xem chi tiết
+        </Button>
+      ),
     },
   ];
 
-  const navigationItems = [
-    {
-      path: "/distributor",
-      label: "Trang chủ",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3 12l9-9 9 9M4 10v10h16V10"
-          />
-        </svg>
-      ),
-      active: true,
-    },
-    {
-      path: "/distributor/distributions",
-      label: "Proof of Distribution",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      ),
-    },
-    {
-      path: "/distributor/nft-tracking",
-      label: "Theo dõi vận chuyển",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 8v4l3 3m-9 6h12a2 2 0 002-2V5a2 2 0 00-2-2H9.828a2 2 0 00-1.414.586L4 8v12a2 2 0 002 2z"
-          />
-        </svg>
-      ),
-    },
-    {
-      path: "/distributor/create-proof",
-      label: "Tạo minh chứng giao",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
-      ),
-    },
-    {
-      path: "/distributor/invoices",
-      label: "Hóa đơn",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9 12h6m-6 4h6M5 4h14a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 012-2z"
-          />
-        </svg>
-      ),
-    },
-    {
-      path: "/distributor/stats",
-      label: "Thống kê",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h10M4 14h6m-2 4h12" />
-        </svg>
-      ),
-    },
-  ];
+  const navigationItems = getDistributorNavigationItems();
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">
-          Danh sách hóa đơn
-        </h2>
+      {/* Banner đồng nhất */}
+      <section className="relative overflow-hidden rounded-2xl border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/30 blur-xl animate-float-slow" />
+          <div className="absolute top-8 right-6 w-16 h-8 rounded-full bg-white/25 blur-md rotate-6 animate-float-slower" />
+        </div>
+        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">
+                Hóa đơn thương mại
+              </h1>
+              <p className="mt-2 text-white/90">
+                Quản lý các hóa đơn đã tạo cho nhà thuốc.
+              </p>
+            </div>
+            <Button
+              type="primary"
+              size="large"
+              onClick={() => navigate('/distributor/invoices/create')}
+              className="bg-white/20 hover:bg-white/30 border-white/30"
+            >
+              + Tạo hóa đơn
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Content */}
+      <div className="mt-6 bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Danh sách hóa đơn</h2>
         <Spin spinning={loading}>
           <Table
             columns={columns}
             dataSource={data}
             rowKey="_id"
-            pagination={{ pageSize: 10 }}
+            pagination={{ pageSize: 10, showSizeChanger: true }}
+            scroll={{ x: 1000 }}
           />
         </Spin>
       </div>
+
+      <style>{`
+        @keyframes float-slow { 0%,100% { transform: translateY(0) } 50% { transform: translateY(10px) } }
+        @keyframes float-slower { 0%,100% { transform: translateY(0) } 50% { transform: translateY(6px) } }
+      `}</style>
     </DashboardLayout>
   );
 }

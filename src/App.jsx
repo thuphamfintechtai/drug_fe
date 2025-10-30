@@ -52,9 +52,14 @@ import Distributions from "./pages/distributor/Distributions";
 import DistributionDetail from "./pages/distributor/DistributionDetail";
 import CreateProofToPharmacy from "./pages/distributor/CreateProofToPharmacy";
 import DeliveriesToPharmacy from "./pages/distributor/DeliveriesToPharmacy";
+import DeliveryDetail from "./pages/distributor/DeliveryDetail";
 import Invoices from "./pages/distributor/Invoices";
+import InvoiceDetail from "./pages/distributor/InvoiceDetail";
+import InvoiceCreate from "./pages/distributor/InvoiceCreate";
 import NFTTracking from "./pages/distributor/NFTTracking";
 import Stats from "./pages/distributor/Stats";
+import Profile from "./pages/distributor/Profile";
+import DistributorDrugs from "./pages/distributor/Drugs";
 
 function App() {
   return (
@@ -232,23 +237,118 @@ function AppContent() {
         <Route path="/" element={<UserHome />} />
 
         {/* Distributor routes */}
-        <Route path="/distributor" element={<DistributorDashboard />} />
-        <Route path="/distributor/distributions" element={<Distributions />} />
+        <Route
+          path="/distributor"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <DistributorDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/distributions"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <Distributions />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/distributor/distributions/:id"
-          element={<DistributionDetail />}
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <DistributionDetail />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/distributor/create-proof"
-          element={<CreateProofToPharmacy />}
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <CreateProofToPharmacy />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/distributor/deliveries"
-          element={<DeliveriesToPharmacy />}
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <DeliveriesToPharmacy />
+            </ProtectedRoute>
+          }
         />
-        <Route path="/distributor/invoices" element={<Invoices />} />
-        <Route path="/distributor/nft-tracking" element={<NFTTracking />} />        
-        <Route path="/distributor/stats" element={<Stats />} />
+        <Route
+          path="/distributor/deliveries/:id"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <DeliveryDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/invoices"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <Invoices />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/invoices/create"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <InvoiceCreate />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/invoices/:id"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <InvoiceDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/nft-tracking"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <NFTTracking />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/stats"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <Stats />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/profile"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/drugs"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <DistributorDrugs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/drugs/:id"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <PharmacyDrugDetail />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </>
   );

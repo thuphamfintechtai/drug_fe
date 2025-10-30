@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getDistributionDetail, confirmDistribution, updateDistributionStatus } from '../../services/distributor/proofService';
-import { Button, Tag, Timeline, notification, Spin, Card, Descriptions, Form, Select, Input } from 'antd';
+import { getInvoiceById, updateInvoiceStatus } from '../../services/distributor/invoiceService';
+import { Button, Card, Descriptions, Tag, notification, Spin, Form, Select, Input } from 'antd';
 import DashboardLayout from '../../components/DashboardLayout';
 import { getDistributorNavigationItems } from '../../utils/distributorNavigation';
 
-export default function DistributionDetail() {
+export default function InvoiceDetail() {
   const { id } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,10 +13,14 @@ export default function DistributionDetail() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    load();
+  }, [id]);
+
   const load = async () => {
     setLoading(true);
     try {
-      const res = await getDistributionDetail(id);
+      const res = await getInvoiceById(id);
       const detail =
         res?.data?.data
           ? res.data.data
@@ -24,39 +28,24 @@ export default function DistributionDetail() {
       setData(detail);
       if (detail) {
         form.setFieldsValue({
-          status: detail.status || 'pending',
+          status: detail.status || 'draft',
           notes: detail.notes || '',
         });
       }
     } catch (error) {
-      console.error('Fetch detail error:', error);
-      notification.error({ message: 'Không xem được chi tiết lô hàng' });
+      console.error('Load invoice error:', error);
+      notification.error({ message: 'Không tải được chi tiết hóa đơn' });
       navigate(-1);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    load();
-  }, [id]);
-
-  const onConfirm = async () => {
-    try {
-      await confirmDistribution(id);
-      notification.success({ message: 'Đã xác nhận nhận hàng!' });
-      load();
-    } catch {
-      notification.error({ message: 'Xác nhận thất bại' });
-    }
-  };
-
   const onStatusUpdate = async (values) => {
-    if (!id) return;
     setUpdating(true);
     try {
-      await updateDistributionStatus(id, values);
-      notification.success({ message: 'Cập nhật trạng thái thành công!' });
+      await updateInvoiceStatus(id, values);
+      notification.success({ message: 'Cập nhật thành công!' });
       load();
     } catch (error) {
       console.error('Update status error:', error);
@@ -80,6 +69,13 @@ export default function DistributionDetail() {
 
   if (!data) return null;
 
+  const statusColor = {
+    paid: 'green',
+    pending: 'orange',
+    draft: 'blue',
+    cancelled: 'red',
+  };
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {/* Banner đồng nhất */}
@@ -91,95 +87,65 @@ export default function DistributionDetail() {
         </div>
         <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">
-            Chi tiết đơn phân phối
+            Chi tiết hóa đơn
           </h1>
           <p className="mt-2 text-white/90">
-            Thông tin chi tiết về đơn hàng nhận từ nhà sản xuất.
+            Xem và cập nhật thông tin hóa đơn thương mại.
           </p>
         </div>
       </section>
 
       <div className="mt-6 space-y-6">
-        {/* Thông tin chính */}
+        {/* Thông tin hóa đơn */}
         <Card
-          title="Thông tin đơn hàng"
+          title="Thông tin hóa đơn"
           className="rounded-2xl shadow-lg border border-gray-100"
         >
           <Descriptions column={{ xs: 1, sm: 2 }}>
-            <Descriptions.Item label="Mã đơn">
-              <span className="font-mono font-semibold">{data.code || 'N/A'}</span>
+            <Descriptions.Item label="Mã hóa đơn">
+              <span className="font-mono font-semibold">{data.code || data._id}</span>
             </Descriptions.Item>
-            <Descriptions.Item label="Mã xác minh">
-              <span className="font-mono">{data.verificationCode || 'N/A'}</span>
+            <Descriptions.Item label="Trạng thái">
+              <Tag color={statusColor[data.status] || 'default'}>
+                {data.status === 'paid'
+                  ? 'Đã thanh toán'
+                  : data.status === 'pending'
+                  ? 'Chờ thanh toán'
+                  : data.status === 'draft'
+                  ? 'Bản nháp'
+                  : data.status === 'cancelled'
+                  ? 'Đã hủy'
+                  : data.status}
+              </Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Tên thuốc">
+            <Descriptions.Item label="Nhà thuốc">
+              {data.toPharmacy?.name ||
+                data.toPharmacy?.username ||
+                data.pharmacyName ||
+                'N/A'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Thuốc">
               {data.drug?.name || 
                data.drug?.tradeName || 
-               data.proofOfProduction?.drug?.name ||
-               data.proofOfProduction?.drug?.tradeName ||
-               data.nftInfo?.drug?.name ||
-               data.nftInfo?.drug?.tradeName ||
+               data.proofOfPharmacy?.drug?.name ||
+               data.proofOfPharmacy?.drug?.tradeName ||
                data.drugName || 
                'N/A'}
             </Descriptions.Item>
-            <Descriptions.Item label="Số lượng">
-              <span className="font-medium">{data.quantity || 0}</span>
-            </Descriptions.Item>
-            <Descriptions.Item label="Trạng thái">
-              <Tag color={data.status === 'confirmed' ? 'green' : 'orange'}>
-                {data.status === 'confirmed' ? 'Đã xác nhận' : 'Chờ xác nhận'}
-              </Tag>
+            <Descriptions.Item label="Tổng tiền">
+              <span className="font-semibold text-lg">
+                {data.totalAmount
+                  ? `${Number(data.totalAmount).toLocaleString('vi-VN')} ₫`
+                  : '0 ₫'}
+              </span>
             </Descriptions.Item>
             <Descriptions.Item label="Ngày tạo">
               {data.createdAt
                 ? new Date(data.createdAt).toLocaleString('vi-VN')
                 : 'N/A'}
             </Descriptions.Item>
-            {data.manufacturer && (
-              <Descriptions.Item label="Nhà sản xuất">
-                {data.manufacturer.name || data.manufacturer.username || 'N/A'}
-              </Descriptions.Item>
-            )}
           </Descriptions>
         </Card>
-
-        {/* Timeline */}
-        {Array.isArray(data.timeline) && data.timeline.length > 0 && (
-          <Card
-            title="Lịch sử cập nhật"
-            className="rounded-2xl shadow-lg border border-gray-100"
-          >
-            <Timeline
-              items={data.timeline.map((t, i) => ({
-                key: i,
-                color: t.status === 'confirmed' ? 'green' : 'orange',
-                children: (
-                  <div>
-                    <span className="font-medium text-gray-800">{t.content}</span>
-                    <div className="text-gray-500 text-sm">{t.time}</div>
-                  </div>
-                ),
-              }))}
-            />
-          </Card>
-        )}
-
-        {/* Actions */}
-        {data.status === 'pending' && (
-          <Card
-            title="Xác nhận nhận hàng"
-            className="rounded-2xl shadow-lg border border-gray-100"
-          >
-            <Button
-              type="primary"
-              size="large"
-              onClick={onConfirm}
-              className="bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] border-0"
-            >
-              Xác nhận nhận lô hàng
-            </Button>
-          </Card>
-        )}
 
         {/* Form cập nhật trạng thái */}
         <Card
@@ -193,8 +159,9 @@ export default function DistributionDetail() {
               rules={[{ required: true, message: 'Vui lòng chọn trạng thái' }]}
             >
               <Select>
-                <Select.Option value="pending">Chờ xác nhận</Select.Option>
-                <Select.Option value="confirmed">Đã xác nhận</Select.Option>
+                <Select.Option value="draft">Bản nháp</Select.Option>
+                <Select.Option value="pending">Chờ thanh toán</Select.Option>
+                <Select.Option value="paid">Đã thanh toán</Select.Option>
                 <Select.Option value="cancelled">Đã hủy</Select.Option>
               </Select>
             </Form.Item>
@@ -202,12 +169,7 @@ export default function DistributionDetail() {
               <Input.TextArea rows={3} placeholder="Nhập ghi chú" />
             </Form.Item>
             <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={updating}
-                className="bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] border-0"
-              >
+              <Button type="primary" htmlType="submit" loading={updating} className="bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] border-0">
                 Cập nhật
               </Button>
               <Button onClick={() => navigate(-1)} className="ml-2">

@@ -228,12 +228,12 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-cyan-100 flex">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-cyan-100">
       {/* Sidebar */}
       <aside
         className={`bg-gradient-to-b from-[#007b91] to-[#009fbf] text-white transition-all duration-300 ${
           sidebarOpen ? 'w-64' : 'w-20'
-        } fixed h-full min-h-screen overflow-hidden`}
+        } fixed left-0 top-0 h-full min-h-screen overflow-y-auto z-50`}
       >
         <div className="p-4">
           {/* Logo & Header */}
@@ -340,7 +340,7 @@ export default function DashboardLayout({
   
       {/* Main Content */}
       <div
-        className={`flex-1 transition-all duration-300 ${
+        className={`transition-all duration-300 min-h-screen ${
           sidebarOpen ? 'ml-64' : 'ml-20'
         }`}
       >

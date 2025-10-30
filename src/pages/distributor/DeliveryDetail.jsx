@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getDistributionDetail, confirmDistribution, updateDistributionStatus } from '../../services/distributor/proofService';
-import { Button, Tag, Timeline, notification, Spin, Card, Descriptions, Form, Select, Input } from 'antd';
+import { getProofOfPharmacyById, updatePharmacyDeliveryStatus } from '../../services/distributor/proofOfPharmacyService';
+import { Button, Card, Descriptions, Tag, notification, Spin, Form, Select, Input } from 'antd';
 import DashboardLayout from '../../components/DashboardLayout';
 import { getDistributorNavigationItems } from '../../utils/distributorNavigation';
 
-export default function DistributionDetail() {
+const { TextArea } = Input;
+
+export default function DeliveryDetail() {
   const { id } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,41 +15,34 @@ export default function DistributionDetail() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const res = await getDistributionDetail(id);
-      const detail =
-        res?.data?.data
-          ? res.data.data
-          : res?.data || null;
-      setData(detail);
-      if (detail) {
-        form.setFieldsValue({
-          status: detail.status || 'pending',
-          notes: detail.notes || '',
-        });
-      }
-    } catch (error) {
-      console.error('Fetch detail error:', error);
-      notification.error({ message: 'Không xem được chi tiết lô hàng' });
-      navigate(-1);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     load();
   }, [id]);
 
-  const onConfirm = async () => {
+  const load = async () => {
+    setLoading(true);
     try {
-      await confirmDistribution(id);
-      notification.success({ message: 'Đã xác nhận nhận hàng!' });
-      load();
-    } catch {
-      notification.error({ message: 'Xác nhận thất bại' });
+      const res = await getProofOfPharmacyById(id);
+      const detail =
+        res?.data?.data
+          ? res.data.data
+          : res?.data || null;
+      if (detail) {
+        setData(detail);
+        form.setFieldsValue({
+          status: detail.status || 'pending',
+          notes: detail.notes || '',
+        });
+      } else {
+        notification.error({ message: 'Không tìm thấy đơn giao hàng' });
+        navigate(-1);
+      }
+    } catch (error) {
+      console.error('Load delivery error:', error);
+      notification.error({ message: 'Không tải được chi tiết đơn giao hàng' });
+      navigate(-1);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,8 +50,8 @@ export default function DistributionDetail() {
     if (!id) return;
     setUpdating(true);
     try {
-      await updateDistributionStatus(id, values);
-      notification.success({ message: 'Cập nhật trạng thái thành công!' });
+      await updatePharmacyDeliveryStatus(id, values);
+      notification.success({ message: 'Cập nhật thành công!' });
       load();
     } catch (error) {
       console.error('Update status error:', error);
@@ -80,6 +75,12 @@ export default function DistributionDetail() {
 
   if (!data) return null;
 
+  const statusColor = {
+    confirmed: 'green',
+    pending: 'orange',
+    cancelled: 'red',
+  };
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {/* Banner đồng nhất */}
@@ -91,95 +92,69 @@ export default function DistributionDetail() {
         </div>
         <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">
-            Chi tiết đơn phân phối
+            Chi tiết đơn giao hàng
           </h1>
           <p className="mt-2 text-white/90">
-            Thông tin chi tiết về đơn hàng nhận từ nhà sản xuất.
+            Thông tin chi tiết về đơn giao hàng đến nhà thuốc.
           </p>
         </div>
       </section>
 
       <div className="mt-6 space-y-6">
-        {/* Thông tin chính */}
+        {/* Thông tin đơn hàng */}
         <Card
-          title="Thông tin đơn hàng"
+          title="Thông tin đơn giao hàng"
           className="rounded-2xl shadow-lg border border-gray-100"
         >
           <Descriptions column={{ xs: 1, sm: 2 }}>
             <Descriptions.Item label="Mã đơn">
-              <span className="font-mono font-semibold">{data.code || 'N/A'}</span>
+              <span className="font-mono font-semibold">
+                {data.code || data.verificationCode || 'N/A'}
+              </span>
             </Descriptions.Item>
             <Descriptions.Item label="Mã xác minh">
               <span className="font-mono">{data.verificationCode || 'N/A'}</span>
             </Descriptions.Item>
-            <Descriptions.Item label="Tên thuốc">
-              {data.drug?.name || 
-               data.drug?.tradeName || 
-               data.proofOfProduction?.drug?.name ||
-               data.proofOfProduction?.drug?.tradeName ||
-               data.nftInfo?.drug?.name ||
-               data.nftInfo?.drug?.tradeName ||
-               data.drugName || 
-               'N/A'}
+            <Descriptions.Item label="Nhà thuốc">
+              {data.toPharmacy?.name ||
+                data.toPharmacy?.fullName ||
+                data.pharmacyName ||
+                'N/A'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Thuốc">
+              {data.drug?.name ||
+                data.drug?.tradeName ||
+                data.proofOfDistribution?.drug?.name ||
+                data.proofOfDistribution?.drug?.tradeName ||
+                data.drugName ||
+                'N/A'}
             </Descriptions.Item>
             <Descriptions.Item label="Số lượng">
-              <span className="font-medium">{data.quantity || 0}</span>
+              <span className="font-medium">
+                {data.receivedQuantity || data.quantity || 0}
+              </span>
             </Descriptions.Item>
             <Descriptions.Item label="Trạng thái">
-              <Tag color={data.status === 'confirmed' ? 'green' : 'orange'}>
-                {data.status === 'confirmed' ? 'Đã xác nhận' : 'Chờ xác nhận'}
+              <Tag color={statusColor[data.status] || 'default'}>
+                {data.status === 'confirmed'
+                  ? 'Đã xác nhận'
+                  : data.status === 'pending'
+                  ? 'Chờ xác nhận'
+                  : data.status === 'cancelled'
+                  ? 'Đã hủy'
+                  : data.status}
               </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Địa chỉ giao hàng">
+              {data.receiptAddress || data.deliveryAddress || 'N/A'}
             </Descriptions.Item>
             <Descriptions.Item label="Ngày tạo">
               {data.createdAt
                 ? new Date(data.createdAt).toLocaleString('vi-VN')
                 : 'N/A'}
             </Descriptions.Item>
-            {data.manufacturer && (
-              <Descriptions.Item label="Nhà sản xuất">
-                {data.manufacturer.name || data.manufacturer.username || 'N/A'}
-              </Descriptions.Item>
-            )}
           </Descriptions>
         </Card>
-
-        {/* Timeline */}
-        {Array.isArray(data.timeline) && data.timeline.length > 0 && (
-          <Card
-            title="Lịch sử cập nhật"
-            className="rounded-2xl shadow-lg border border-gray-100"
-          >
-            <Timeline
-              items={data.timeline.map((t, i) => ({
-                key: i,
-                color: t.status === 'confirmed' ? 'green' : 'orange',
-                children: (
-                  <div>
-                    <span className="font-medium text-gray-800">{t.content}</span>
-                    <div className="text-gray-500 text-sm">{t.time}</div>
-                  </div>
-                ),
-              }))}
-            />
-          </Card>
-        )}
-
-        {/* Actions */}
-        {data.status === 'pending' && (
-          <Card
-            title="Xác nhận nhận hàng"
-            className="rounded-2xl shadow-lg border border-gray-100"
-          >
-            <Button
-              type="primary"
-              size="large"
-              onClick={onConfirm}
-              className="bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] border-0"
-            >
-              Xác nhận nhận lô hàng
-            </Button>
-          </Card>
-        )}
 
         {/* Form cập nhật trạng thái */}
         <Card
@@ -199,7 +174,7 @@ export default function DistributionDetail() {
               </Select>
             </Form.Item>
             <Form.Item name="notes" label="Ghi chú">
-              <Input.TextArea rows={3} placeholder="Nhập ghi chú" />
+              <TextArea rows={3} placeholder="Nhập ghi chú" />
             </Form.Item>
             <Form.Item>
               <Button
