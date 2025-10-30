@@ -36,7 +36,7 @@ export default function ProofList() {
     loadProofs(1);
   }, []);
 
-  const navigationItems = getManufacturerNavigationItems(location.pathname);
+  const navigationItems = getManufacturerNavigationItems();
 
   return (
     <DashboardLayout navigationItems={navigationItems}>

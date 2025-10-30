@@ -204,7 +204,7 @@ export default function CreateProofOfProduction() {
     }
   };
 
-  const navigationItems = getManufacturerNavigationItems(location.pathname);
+  const navigationItems = getManufacturerNavigationItems();
 
   return (
     <DashboardLayout navigationItems={navigationItems}>

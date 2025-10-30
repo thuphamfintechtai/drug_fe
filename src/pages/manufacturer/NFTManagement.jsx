@@ -63,7 +63,7 @@ export default function NFTManagement() {
     );
   };
 
-  const navigationItems = getManufacturerNavigationItems(location.pathname);
+  const navigationItems = getManufacturerNavigationItems();
 
   return (
     <DashboardLayout navigationItems={navigationItems}>

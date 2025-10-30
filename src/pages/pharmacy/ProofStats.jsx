@@ -27,7 +27,7 @@ export default function PharmacyProofStats() {
     }
   };
 
-  const navigationItems = getPharmacyNavigationItems(location.pathname);
+  const navigationItems = getPharmacyNavigationItems();
 
   return (
     <DashboardLayout navigationItems={navigationItems}>

@@ -36,7 +36,7 @@ export default function ProofDetail() {
     }
   };
 
-  const navigationItems = getManufacturerNavigationItems(location.pathname);
+  const navigationItems = getManufacturerNavigationItems();
 
   if (loading) {
     return (

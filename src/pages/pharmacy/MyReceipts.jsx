@@ -15,7 +15,7 @@ export default function PharmacyMyReceipts() {
   const page = Number(searchParams.get('page') || 1);
   const status = searchParams.get('status') || '';
 
-  const navigationItems = getPharmacyNavigationItems(location.pathname);
+  const navigationItems = getPharmacyNavigationItems();
 
   useEffect(() => {
     const load = async () => {

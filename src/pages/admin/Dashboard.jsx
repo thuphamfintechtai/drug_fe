@@ -1,33 +1,66 @@
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { getRegistrationStats } from '../../services/admin/statsService';
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState({
+    totalPending: 0,
+    totalApproved: 0,
+    totalRejected: 0,
+    totalBlockchainFailed: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      const response = await getRegistrationStats();
+      if (response.success) {
+        setStats({
+          totalPending: response.data.summary.totalPending || 0,
+          totalApproved: response.data.summary.totalApproved || 0,
+          totalRejected: response.data.summary.totalRejected || 0,
+          totalBlockchainFailed: response.data.summary.totalBlockchainFailed || 0,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading admin stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const metrics = [
     {
-      title: 'Tổng quan',
-      value: '21',
-      subtitle: 'Yêu cầu chờ duyệt',
-      detail: 'Đã duyệt: 13',
+      title: 'Chờ duyệt',
+      value: loading ? '...' : stats.totalPending.toString(),
+      subtitle: 'Yêu cầu đăng ký',
+      detail: `Đã duyệt: ${stats.totalApproved}`,
       color: 'blue',
     },
     {
-      title: 'Quá hạn',
-      value: '5',
+      title: 'Blockchain Failed',
+      value: loading ? '...' : stats.totalBlockchainFailed.toString(),
       subtitle: 'Yêu cầu',
-      detail: 'Từ hôm qua: 2',
+      detail: 'Cần xử lý lại',
       color: 'red',
     },
     {
-      title: 'Vấn đề',
-      value: '8',
-      subtitle: 'Cần xử lý',
-      detail: 'Đã xử lý hôm nay: 6',
+      title: 'Từ chối',
+      value: loading ? '...' : stats.totalRejected.toString(),
+      subtitle: 'Yêu cầu',
+      detail: 'Đã bị từ chối',
       color: 'orange',
     },
     {
-      title: 'Người dùng',
-      value: '154',
-      subtitle: 'Tổng số',
-      detail: 'Hoạt động: 142',
+      title: 'Đã duyệt',
+      value: loading ? '...' : stats.totalApproved.toString(),
+      subtitle: 'Yêu cầu',
+      detail: 'Thành công',
       color: 'green',
     },
   ];

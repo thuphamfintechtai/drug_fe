@@ -91,7 +91,7 @@ export default function ManufacturerDashboard() {
     },
   ];
 
-  const navigationItems = getManufacturerNavigationItems(location.pathname);
+  const navigationItems = getManufacturerNavigationItems();
 
   return (
     <DashboardLayout 

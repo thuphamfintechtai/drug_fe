@@ -1,33 +1,67 @@
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { getDistributionStats } from '../../services/distributor/proofService';
 
 export default function DistributorDashboard() {
+  const [stats, setStats] = useState({
+    totalDistributions: 0,
+    confirmedDistributions: 0,
+    pendingDistributions: 0,
+    totalQuantity: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      const response = await getDistributionStats();
+      if (response.success) {
+        const data = response.data;
+        setStats({
+          totalDistributions: data.totalDistributions || 0,
+          confirmedDistributions: data.statusBreakdown?.find(s => s._id === 'confirmed')?.count || 0,
+          pendingDistributions: data.statusBreakdown?.find(s => s._id === 'pending')?.count || 0,
+          totalQuantity: data.totalQuantity || 0,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading distributor stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const metrics = [
     {
-      title: 'Lô hàng',
-      value: '35',
-      subtitle: 'Đã nhận',
-      detail: 'Đã chuyển: 32',
+      title: 'Tổng phân phối',
+      value: loading ? '...' : stats.totalDistributions.toString(),
+      subtitle: 'Đã tạo',
+      detail: `Đã xác nhận: ${stats.confirmedDistributions}`,
       color: 'cyan',
     },
     {
-      title: 'Đang vận chuyển',
-      value: '12',
+      title: 'Chờ xử lý',
+      value: loading ? '...' : stats.pendingDistributions.toString(),
       subtitle: 'Lô hàng',
-      detail: 'Từ hôm qua: 5',
+      detail: 'Cần xác nhận',
       color: 'orange',
     },
     {
-      title: 'Proof of Distribution',
-      value: '48',
-      subtitle: 'Đã tạo',
-      detail: 'Đã ký: 46',
+      title: 'Đã xác nhận',
+      value: loading ? '...' : stats.confirmedDistributions.toString(),
+      subtitle: 'Lô hàng',
+      detail: 'Hoàn tất',
       color: 'green',
     },
     {
-      title: 'NFT',
-      value: '89',
-      subtitle: 'Đã cập nhật',
-      detail: 'Hoạt động: 87',
+      title: 'Tổng số lượng',
+      value: loading ? '...' : stats.totalQuantity.toString(),
+      subtitle: 'Sản phẩm',
+      detail: 'Đã phân phối',
       color: 'blue',
     },
   ];

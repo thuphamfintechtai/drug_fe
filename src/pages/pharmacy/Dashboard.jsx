@@ -1,43 +1,76 @@
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { getPharmacyNavigationItems } from '../../utils/pharmacyNavigation.jsx';
+import { getPharmacyStats } from '../../services/pharmacy/proofOfPharmacyService';
 
 export default function PharmacyDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalProofs: 0,
+    confirmedProofs: 0,
+    pendingProofs: 0,
+    totalQuantity: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      const response = await getPharmacyStats();
+      if (response.data && response.data.success) {
+        const data = response.data.data;
+        setStats({
+          totalProofs: data.totalPharmacies || 0,
+          confirmedProofs: data.statusBreakdown?.find(s => s._id === 'confirmed')?.count || 0,
+          pendingProofs: data.statusBreakdown?.find(s => s._id === 'pending')?.count || 0,
+          totalQuantity: data.totalQuantity || 0,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading pharmacy stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const metrics = [
     {
-      title: 'Đơn hàng',
-      value: '67',
+      title: 'Tổng đơn hàng',
+      value: loading ? '...' : stats.totalProofs.toString(),
       subtitle: 'Đã nhận',
-      detail: 'Đã xác nhận: 64',
+      detail: `Đã xác nhận: ${stats.confirmedProofs}`,
       color: 'cyan',
     },
     {
       title: 'Chờ xác nhận',
-      value: '9',
+      value: loading ? '...' : stats.pendingProofs.toString(),
       subtitle: 'Đơn hàng',
-      detail: 'Từ hôm qua: 4',
+      detail: 'Cần xử lý',
       color: 'orange',
     },
     {
-      title: 'Proof of Pharmacy',
-      value: '52',
-      subtitle: 'Đã tạo',
-      detail: 'Đã ký: 50',
+      title: 'Đã xác nhận',
+      value: loading ? '...' : stats.confirmedProofs.toString(),
+      subtitle: 'Đơn hàng',
+      detail: 'Hoàn tất',
       color: 'green',
     },
     {
-      title: 'Tra cứu',
-      value: '128',
-      subtitle: 'Lượt tra cứu',
-      detail: 'Hôm nay: 15',
+      title: 'Tổng số lượng',
+      value: loading ? '...' : stats.totalQuantity.toString(),
+      subtitle: 'Sản phẩm',
+      detail: 'Đã nhận',
       color: 'blue',
     },
   ];
 
-  const navigationItems = getPharmacyNavigationItems(location.pathname);
+  const navigationItems = getPharmacyNavigationItems();
 
   return (
     <DashboardLayout metrics={metrics} navigationItems={navigationItems}>

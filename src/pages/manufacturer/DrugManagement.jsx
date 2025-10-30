@@ -77,7 +77,7 @@ export default function DrugManagement() {
     });
   };
 
-  const navigationItems = getManufacturerNavigationItems(location.pathname);
+  const navigationItems = getManufacturerNavigationItems();
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
