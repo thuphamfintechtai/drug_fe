@@ -1,13 +1,36 @@
 import React, { useState } from 'react';
 import { createProofToPharmacy } from '../../services/distributor/proofOfPharmacyService';
-import { Input, Button, notification, Form, InputNumber } from 'antd';
+import { Input, Button, notification, Form, InputNumber, Select } from 'antd';
 import DashboardLayout from '../../components/DashboardLayout';
 import { useNavigate } from 'react-router-dom';
+import { listPharmacies } from '../../services/admin/proofOfPharmacyService';
 
 export default function CreateProofToPharmacy() {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const [pharmacies, setPharmacies] = useState([]);
+  const [fetchingPharmacy, setFetchingPharmacy] = useState(true);
+
+  React.useEffect(() => {
+    async function fetchPharmacies() {
+      setFetchingPharmacy(true);
+      try {
+        const res = await listPharmacies();
+        setPharmacies(
+          (res?.data?.data || res?.data || []).map((pharmacy) => ({
+            value: pharmacy._id,
+            label: pharmacy.name || pharmacy._id,
+          }))
+        );
+      } catch (error) {
+        setPharmacies([]);
+      } finally {
+        setFetchingPharmacy(false);
+      }
+    }
+    fetchPharmacies();
+  }, []);
 
   const onFinish = async (values) => {
     setLoading(true);
@@ -148,7 +171,15 @@ export default function CreateProofToPharmacy() {
             label="Nhà thuốc"
             rules={[{ required: true, message: 'Vui lòng nhập hoặc chọn nhà thuốc' }]}
           >
-            <Input placeholder="Nhập ID hoặc tên nhà thuốc" />
+            <Select
+              showSearch
+              options={pharmacies}
+              loading={fetchingPharmacy}
+              placeholder="Chọn nhà thuốc"
+              filterOption={(input, option) =>
+                option.label?.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }
+            />
           </Form.Item>
 
           <Form.Item
