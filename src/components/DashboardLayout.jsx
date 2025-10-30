@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { connectWallet, isWalletConnected, getCurrentWalletAddress, isMetaMaskInstalled } from '../utils/web3Helper';
 
 const MetricCard = ({ title, value, subtitle, detail, color }) => {
   const colorClasses = {
@@ -43,6 +44,9 @@ export default function DashboardLayout({
   });
   const navigate = useNavigate();
   const location = useLocation();
+  const [walletAddress, setWalletAddress] = useState(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [showCopied, setShowCopied] = useState(false);
   // Default admin navigation (always shown under /admin regardless of page-provided items)
   const adminNavigationItems = [
     {
@@ -135,6 +139,72 @@ export default function DashboardLayout({
   useEffect(() => {
     localStorage.setItem('sidebarOpen', sidebarOpen ? 'true' : 'false');
   }, [sidebarOpen]);
+
+  // Check if wallet is already connected on mount
+  useEffect(() => {
+    const checkWalletConnection = async () => {
+      try {
+        const connected = await isWalletConnected();
+        if (connected) {
+          const address = await getCurrentWalletAddress();
+          setWalletAddress(address);
+        }
+      } catch (error) {
+        console.error('Error checking wallet connection:', error);
+      }
+    };
+
+    checkWalletConnection();
+
+    // Listen for account changes
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length > 0) {
+          setWalletAddress(accounts[0]);
+        } else {
+          setWalletAddress(null);
+        }
+      });
+    }
+
+    return () => {
+      if (window.ethereum) {
+        window.ethereum.removeListener('accountsChanged', () => {});
+      }
+    };
+  }, []);
+
+  const handleConnectWallet = async () => {
+    if (!isMetaMaskInstalled()) {
+      alert('Vui lòng cài đặt MetaMask để kết nối ví!');
+      window.open('https://metamask.io/download/', '_blank');
+      return;
+    }
+
+    setIsConnecting(true);
+    try {
+      const result = await connectWallet();
+      setWalletAddress(result.address);
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+      alert('Không thể kết nối ví. Vui lòng thử lại!');
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleCopyAddress = () => {
+    if (walletAddress) {
+      navigator.clipboard.writeText(walletAddress);
+      setShowCopied(true);
+      setTimeout(() => setShowCopied(false), 2000);
+    }
+  };
+
+  const formatAddress = (address) => {
+    if (!address) return '';
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
 
   const getRoleLabel = (role) => {
     const labels = {
@@ -277,26 +347,53 @@ export default function DashboardLayout({
         {/* Header */}
         <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200">
           <div className="px-6 py-4 flex items-center justify-end">
-            <div className="flex items-center gap-4">
-              <button className="p-2 hover:bg-gray-100 rounded-lg relative">
-                <svg
-                  className="w-6 h-6 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            <div className="flex items-center gap-3">
+              {/* Wallet Connect Button */}
+              {walletAddress ? (
+                <div className="relative group">
+                  <button
+                    onClick={handleCopyAddress}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-600 text-white hover:from-cyan-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    <span className="font-medium text-sm">{formatAddress(walletAddress)}</span>
+                    {showCopied && (
+                      <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap">
+                        Đã sao chép!
+                      </span>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleConnectWallet}
+                  disabled={isConnecting}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-600 text-white hover:from-cyan-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                  />
-                </svg>
-                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
+                  {isConnecting ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="font-medium text-sm">Đang kết nối...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                      <span className="font-medium text-sm">Kết nối ví</span>
+                    </>
+                  )}
+                </button>
+              )}
+              
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#0077b6] hover:opacity-90 transition"
+                className="px-4 py-2 rounded-xl text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg font-medium text-sm"
               >
                 Đăng xuất
               </button>
@@ -311,19 +408,6 @@ export default function DashboardLayout({
           initial="hidden"
           animate="show"
         >
-          {/* Welcome Section */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">
-              {welcomeMessage ||
-                `Chào mừng trở lại, ${
-                  user?.fullName || user?.username || "User"
-                }!`}
-            </h1>
-            <p className="text-slate-600">
-              Bạn có 2 tin nhắn mới và 15 nhiệm vụ mới
-            </p>
-          </div>
-  
           {/* Metrics Cards */}
           {metrics.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -332,7 +416,7 @@ export default function DashboardLayout({
               ))}
             </div>
           )}
-  
+
           {/* Main Content */}
           {children}
         </motion.main>

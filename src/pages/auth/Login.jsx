@@ -46,10 +46,15 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cyan-50 via-teal-50 to-cyan-100 px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border-t-4 border-cyan-500 p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cyan-50 via-teal-50 to-cyan-100 px-4 pt-16">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-cyan-700 mb-2">Đăng Nhập</h1>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-cyan-500 to-teal-600 rounded-2xl mb-4 shadow-lg">
+            <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-teal-600 bg-clip-text text-transparent mb-2">Đăng Nhập</h1>
           <p className="text-gray-600">Chào mừng bạn trở lại</p>
         </div>
 
@@ -93,15 +98,33 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-cyan-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="w-full bg-gradient-to-r from-cyan-500 to-teal-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-cyan-600 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
           >
-            {loading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
+            {loading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Đang đăng nhập...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                <span>Đăng Nhập</span>
+              </>
+            )}
           </button>
         </form>
 
         <div className="mt-6 text-center">
-          <Link to="/forgot-password" className="text-sm text-cyan-600 hover:text-cyan-800">
-            Quên mật khẩu?
+          <Link to="/forgot-password" className="text-sm text-cyan-600 hover:text-cyan-800 font-medium inline-flex items-center gap-1 group">
+            <span>Quên mật khẩu?</span>
+            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Link>
         </div>
 
@@ -112,15 +135,15 @@ export default function Login() {
           <div className="grid grid-cols-2 gap-3">
             <Link
               to="/register"
-              className="text-center py-2 px-4 border border-cyan-300 rounded-lg text-sm font-medium text-cyan-700 hover:bg-cyan-50 transition"
+              className="text-center py-2.5 px-4 border-2 border-cyan-500 rounded-xl text-sm font-semibold text-cyan-700 hover:bg-cyan-50 transition-all"
             >
               Đăng ký User
             </Link>
             <Link
               to="/register-business"
-              className="text-center py-2 px-4 border border-cyan-300 rounded-lg text-sm font-medium text-cyan-700 hover:bg-cyan-50 transition"
+              className="text-center py-2.5 px-4 bg-gradient-to-r from-cyan-500 to-teal-600 rounded-xl text-sm font-semibold text-white hover:from-cyan-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg"
             >
-              Đăng ký Doanh nghiệp
+              Đăng ký DN
             </Link>
           </div>
         </div>

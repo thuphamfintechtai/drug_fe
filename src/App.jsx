@@ -25,6 +25,11 @@ import AdminNftTracking from './pages/admin/NftTracking';
 import ManufacturerDashboard from './pages/manufacturer/Dashboard';
 import ManufactorProductionList from './pages/manufacturer/ManufactorProductionList';
 import ManufactorSearchPage from './pages/manufacturer/ManufactorSearchPage';
+import DrugManagement from './pages/manufacturer/DrugManagement';
+import CreateProofOfProduction from './pages/manufacturer/CreateProofOfProduction';
+import ProofList from './pages/manufacturer/ProofList';
+import ProofDetail from './pages/manufacturer/ProofDetail';
+import NFTManagement from './pages/manufacturer/NFTManagement';
 import DistributorDashboard from './pages/distributor/Dashboard';
 import PharmacyDashboard from './pages/pharmacy/Dashboard';
 import PharmacyInvoices from './pages/pharmacy/Invoices';
@@ -136,6 +141,46 @@ function AppContent() {
           element={
             <ProtectedRoute allowedRoles={['pharma_company']}>
               <ManufactorSearchPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manufacturer/drugs"
+          element={
+            <ProtectedRoute allowedRoles={['pharma_company']}>
+              <DrugManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manufacturer/proofs"
+          element={
+            <ProtectedRoute allowedRoles={['pharma_company']}>
+              <ProofList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manufacturer/proofs/create"
+          element={
+            <ProtectedRoute allowedRoles={['pharma_company']}>
+              <CreateProofOfProduction />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manufacturer/proofs/:id"
+          element={
+            <ProtectedRoute allowedRoles={['pharma_company']}>
+              <ProofDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manufacturer/nfts"
+          element={
+            <ProtectedRoute allowedRoles={['pharma_company']}>
+              <NFTManagement />
             </ProtectedRoute>
           }
         />
