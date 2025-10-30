@@ -1,29 +1,11 @@
 import api from '../../utils/api';
 
-// Lấy thống kê Proof of Distribution
-export const getDistributionStats = async (params = {}) => {
-  try {
-    const response = await api.get('/proof-of-distribution/stats/overview', { params });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching distribution stats:', error);
-    throw error;
-  }
-};
+export const getDistributions = () =>
+  api.get('/proof-of-distribution/distributor/my-distributions');
 
-// Lấy danh sách Proof of Distribution của distributor
-export const getMyDistributions = async (page = 1, limit = 10) => {
-  try {
-    const response = await api.get(`/proof-of-distribution/distributor/my-distributions?page=${page}&limit=${limit}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching my distributions:', error);
-    throw error;
-  }
-};
+export const confirmDistribution = (distributionId) =>
+  api.post(`/proof-of-distribution/${distributionId}/confirm-receipt`);
 
-export default {
-  getDistributionStats,
-  getMyDistributions,
-};
+export const getDistributionDetail = (id) =>
+  api.get(`/proof-of-distribution/${id}`);
 
