@@ -48,6 +48,13 @@ import VerifyToken from './pages/user/VerifyToken';
 import MetaMaskConnect from './pages/MetaMaskConnect';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
+import Distributions from "./pages/distributor/Distributions";
+import DistributionDetail from "./pages/distributor/DistributionDetail";
+import CreateProofToPharmacy from "./pages/distributor/CreateProofToPharmacy";
+import DeliveriesToPharmacy from "./pages/distributor/DeliveriesToPharmacy";
+import Invoices from "./pages/distributor/Invoices";
+import NFTTracking from "./pages/distributor/NFTTracking";
+import Stats from "./pages/distributor/Stats";
 
 function App() {
   return (
@@ -223,6 +230,25 @@ function AppContent() {
         <Route path="/metamask" element={<MetaMaskConnect />} />
         <Route path="/verifyToken" element={<VerifyToken />} />
         <Route path="/" element={<UserHome />} />
+
+        {/* Distributor routes */}
+        <Route path="/distributor" element={<DistributorDashboard />} />
+        <Route path="/distributor/distributions" element={<Distributions />} />
+        <Route
+          path="/distributor/distributions/:id"
+          element={<DistributionDetail />}
+        />
+        <Route
+          path="/distributor/create-proof"
+          element={<CreateProofToPharmacy />}
+        />
+        <Route
+          path="/distributor/deliveries"
+          element={<DeliveriesToPharmacy />}
+        />
+        <Route path="/distributor/invoices" element={<Invoices />} />
+        <Route path="/distributor/nft-tracking" element={<NFTTracking />} />        
+        <Route path="/distributor/stats" element={<Stats />} />
       </Routes>
     </>
   );
