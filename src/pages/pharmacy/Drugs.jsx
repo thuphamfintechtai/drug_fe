@@ -11,6 +11,16 @@ export default function PharmacyDrugs() {
   const page = Number(searchParams.get('page') || 1);
   const q = searchParams.get('q') || '';
 
+  const normalizeList = (raw) => {
+    const r = raw?.data ?? raw;
+    if (Array.isArray(r)) return r;
+    if (Array.isArray(r?.items)) return r.items;
+    if (Array.isArray(r?.results)) return r.results;
+    if (Array.isArray(r?.drugs)) return r.drugs;
+    if (Array.isArray(r?.data)) return r.data;
+    return [];
+  };
+
   const navigationItems = [
     { path: '/pharmacy', label: 'Trang chủ', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>) },
     { path: '/pharmacy/drugs', label: 'Danh sách thuốc', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7.5h18M7.5 3v18M6 12h12M12 6v12" /></svg>), active: true },
@@ -21,7 +31,7 @@ export default function PharmacyDrugs() {
       setLoading(true);
       try {
         const res = await listDrugs({ page, q });
-        setItems(res.data?.data || res.data || []);
+        setItems(normalizeList(res.data));
         setPagination(res.data?.pagination || null);
       } finally { setLoading(false); }
     };
@@ -71,7 +81,7 @@ export default function PharmacyDrugs() {
       {/* Lưới danh sách */}
       <div className="mt-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {items.map((d, idx) => (
+          {(Array.isArray(items) ? items : []).map((d, idx) => (
             <Link
               to={`/pharmacy/drugs/${d._id}`}
               key={d._id}
