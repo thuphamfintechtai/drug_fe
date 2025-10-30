@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import DashboardLayout from '../../components/DashboardLayout';
-import { getAllDrugs, createDrug } from '../../services/manufacturer/drugService';
+import { getDrugsByManufacturerId, createDrug } from '../../services/manufacturer/drugService';
 import { getManufacturerNavigationItems } from '../../utils/manufacturerNavigation.jsx';
 
 export default function DrugManagement() {
@@ -27,7 +27,8 @@ export default function DrugManagement() {
   const loadDrugs = async () => {
     setLoading(true);
     try {
-      const response = await getAllDrugs();
+      // Gọi API theo manufacturer id lấy từ user đăng nhập
+      const response = await getDrugsByManufacturerId(user._id);
       if (response.success) {
         setDrugs(response.data.drugs || response.data || []);
       }

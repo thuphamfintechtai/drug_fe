@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
-import { getAllDrugs } from '../../services/manufacturer/drugService';
+import { getDrugsByManufacturerId } from '../../services/manufacturer/drugService';
 import { generateNFTMetadata, createProofOfProduction } from '../../services/manufacturer/proofService';
 import { mintNFT, isMetaMaskInstalled, connectWallet } from '../../utils/web3Helper';
 import { uploadMetadataToIPFS } from '../../utils/ipfsHelper';
@@ -58,7 +58,7 @@ export default function CreateProofOfProduction() {
 
   const loadDrugs = async () => {
     try {
-      const response = await getAllDrugs();
+      const response = await getDrugsByManufacturerId(user._id);
       if (response.success) {
         setDrugs(response.data.drugs || response.data || []);
       }

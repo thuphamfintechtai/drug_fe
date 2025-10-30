@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import DashboardLayout from '../../components/DashboardLayout';
 import { getMyProofs } from '../../services/manufacturer/proofService';
 import { getMyNFTs } from '../../services/manufacturer/nftService';
-import { getAllDrugs } from '../../services/manufacturer/drugService';
+import { getDrugsByManufacturerId } from '../../services/manufacturer/drugService';
 import { getManufacturerNavigationItems } from '../../utils/manufacturerNavigation.jsx';
 
 export default function ManufacturerDashboard() {
@@ -31,7 +31,7 @@ export default function ManufacturerDashboard() {
       const [proofsRes, nftsRes, drugsRes] = await Promise.allSettled([
         getMyProofs(1, 5),
         getMyNFTs(),
-        getAllDrugs()
+        getDrugsByManufacturerId(user._id)
       ]);
 
       const totalProofs = proofsRes.status === 'fulfilled' ? (proofsRes.value.data?.pagination?.total || 0) : 0;
