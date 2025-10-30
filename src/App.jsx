@@ -24,6 +24,10 @@ import AdminManufacturers from './pages/admin/Manufacturers';
 import AdminNftTracking from './pages/admin/NftTracking';
 import ManufacturerDashboard from './pages/manufacturer/Dashboard';
 import DistributorDashboard from './pages/distributor/Dashboard';
+import DistributorProofOfDistribution from './pages/distributor/ProofOfDistribution';
+import DistributorProofOfDistributionDetail from './pages/distributor/ProofOfDistributionDetail';
+import DistributorNFT from './pages/distributor/NFT';
+import DistributorShipping from './pages/distributor/Shipping';
 import PharmacyDashboard from './pages/pharmacy/Dashboard';
 import UserHome from './pages/public/UserHome';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -114,6 +118,38 @@ function AppContent() {
           element={
             <ProtectedRoute allowedRoles={['distributor']}>
               <DistributorDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/proof-of-distribution"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <DistributorProofOfDistribution />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/proof-of-distribution/:id"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <DistributorProofOfDistributionDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/nft"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <DistributorNFT />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/shipping"
+          element={
+            <ProtectedRoute allowedRoles={['distributor']}>
+              <DistributorShipping />
             </ProtectedRoute>
           }
         />

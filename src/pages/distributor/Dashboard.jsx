@@ -44,7 +44,7 @@ export default function DistributorDashboard() {
       active: true,
     },
     {
-      path: '#',
+      path: '/distributor/proof-of-distribution',
       label: 'Proof of Distribution',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,7 +54,7 @@ export default function DistributorDashboard() {
       active: false,
     },
     {
-      path: '#',
+      path: '/distributor/shipping',
       label: 'Theo dõi vận chuyển',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,7 +64,7 @@ export default function DistributorDashboard() {
       active: false,
     },
     {
-      path: '#',
+      path: '/distributor/nft',
       label: 'Quản lý NFT',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
