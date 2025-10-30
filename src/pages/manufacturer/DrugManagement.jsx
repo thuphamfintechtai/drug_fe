@@ -21,6 +21,7 @@ export default function DrugManagement() {
     packaging: '',
     storage: '',
     warnings: '',
+    manufacturer : user.userId,
     activeIngredients: []
   });
 
