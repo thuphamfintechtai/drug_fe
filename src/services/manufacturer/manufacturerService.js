@@ -1,29 +1,63 @@
 import api from '../../utils/api';
 
-// Lấy danh sách tất cả manufacturers
-export const getAllManufacturers = async () => {
-  try {
-    const response = await api.get('/manufactors');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching manufacturers:', error);
-    throw error;
-  }
-};
+// ============ QUẢN LÝ THUỐC ============
+export const getDrugs = (params = {}) => api.get('/pharma-company/drugs', { params });
+export const getDrugById = (drugId) => api.get(`/pharma-company/drugs/${drugId}`);
+export const searchDrugByATC = (atcCode) => api.get('/pharma-company/drugs/search', { params: { atcCode } });
+export const addDrug = (data) => api.post('/pharma-company/drugs', data);
+export const updateDrug = (drugId, data) => api.put(`/pharma-company/drugs/${drugId}`, data);
+export const deleteDrug = (drugId) => api.delete(`/pharma-company/drugs/${drugId}`);
 
-// Tìm kiếm manufacturer theo tên
-export const searchManufacturerByName = async (name) => {
-  try {
-    const response = await api.get(`/manufactors/${name}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error searching manufacturer:', error);
-    throw error;
-  }
-};
+// ============ QUẢN LÝ SẢN XUẤT VÀ PHÂN PHỐI ============
+// Bước 1: Upload lên IPFS
+export const uploadToIPFS = (data) => api.post('/pharma-company/production/upload-ipfs', data);
+
+// Bước 2: Lưu NFT sau khi mint trên smart contract
+export const saveMintedNFTs = (data) => api.post('/pharma-company/production/save-minted', data);
+
+// Chuyển giao: Bước 1 - Tạo invoice pending
+export const createTransferToDistributor = (data) => api.post('/pharma-company/production/transfer', data);
+
+// Chuyển giao: Bước 2 - Lưu transaction hash
+export const saveTransferTransaction = (data) => api.post('/pharma-company/production/save-transfer', data);
+
+// Lịch sử sản xuất
+export const getProductionHistory = (params = {}) => api.get('/pharma-company/production/history', { params });
+
+// Lịch sử chuyển giao
+export const getTransferHistory = (params = {}) => api.get('/pharma-company/transfer/history', { params });
+
+// Thống kê
+export const getStatistics = () => api.get('/pharma-company/statistics');
+
+// ============ QUẢN LÝ THÔNG TIN CÁ NHÂN ============
+export const getProfile = () => api.get('/pharma-company/profile');
+
+// ============ DANH SÁCH DISTRIBUTORS ============
+export const getDistributors = (params = {}) => api.get('/pharma-company/distributors', { params });
 
 export default {
-  getAllManufacturers,
-  searchManufacturerByName
+  // Thuốc
+  getDrugs,
+  getDrugById,
+  searchDrugByATC,
+  addDrug,
+  updateDrug,
+  deleteDrug,
+  
+  // Sản xuất & Phân phối
+  uploadToIPFS,
+  saveMintedNFTs,
+  createTransferToDistributor,
+  saveTransferTransaction,
+  getProductionHistory,
+  getTransferHistory,
+  getStatistics,
+  
+  // Profile
+  getProfile,
+  
+  // Distributors
+  getDistributors,
 };
 
