@@ -3,7 +3,7 @@ import api from '../../utils/api';
 // Lấy thống kê đăng ký
 export const getRegistrationStats = async () => {
   try {
-    const response = await api.get('/admin/stats');
+    const response = await api.get('/admin/registration/statistics');
     return response.data;
   } catch (error) {
     console.error('Error fetching registration stats:', error);
@@ -14,12 +14,32 @@ export const getRegistrationStats = async () => {
 // Lấy thống kê users
 export const getUserStats = async () => {
   try {
-    // TODO: Backend cần có API này
-    // const response = await api.get('/admin/users/stats');
-    // return response.data;
-    return { success: true, data: { total: 0, active: 0 } };
+    const response = await api.get('/users/stats');
+    return response.data;
   } catch (error) {
     console.error('Error fetching user stats:', error);
+    throw error;
+  }
+};
+
+// Lấy thống kê thuốc
+export const getDrugStats = async () => {
+  try {
+    const response = await api.get('/admin/drugs/statistics');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching drug stats:', error);
+    throw error;
+  }
+};
+
+// Lấy thống kê tổng quan hệ thống
+export const getSystemStats = async () => {
+  try {
+    const response = await api.get('/admin/statistics');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching system stats:', error);
     throw error;
   }
 };
@@ -27,5 +47,7 @@ export const getUserStats = async () => {
 export default {
   getRegistrationStats,
   getUserStats,
+  getDrugStats,
+  getSystemStats,
 };
 
