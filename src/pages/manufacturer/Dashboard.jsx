@@ -1,179 +1,222 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
-import { getMyProofs } from '../../services/manufacturer/proofService';
-import { getMyNFTs } from '../../services/manufacturer/nftService';
-import { getDrugsByManufacturerId } from '../../services/manufacturer/drugService';
-import { getManufacturerNavigationItems } from '../../utils/manufacturerNavigation.jsx';
+import { getStatistics } from '../../services/manufacturer/manufacturerService';
 
 export default function ManufacturerDashboard() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  const [stats, setStats] = useState({
-    totalProofs: 0,
-    totalNFTs: 0,
-    totalDrugs: 0,
-    recentProofs: []
-  });
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadDashboardData();
+    loadStats();
   }, []);
 
-  const loadDashboardData = async () => {
+  const loadStats = async () => {
     try {
       setLoading(true);
-      
-      const [proofsRes, nftsRes, drugsRes] = await Promise.allSettled([
-        getMyProofs(1, 5),
-        getMyNFTs(),
-        getDrugsByManufacturerId(user._id)
-      ]);
-
-      const totalProofs = proofsRes.status === 'fulfilled' ? (proofsRes.value.data?.pagination?.total || 0) : 0;
-      const recentProofs = proofsRes.status === 'fulfilled' ? (proofsRes.value.data?.proofs || []) : [];
-      const totalNFTs = nftsRes.status === 'fulfilled' ? (nftsRes.value.data?.nfts?.length || 0) : 0;
-      const totalDrugs = drugsRes.status === 'fulfilled' ? (drugsRes.value.data?.drugs?.length || 0) : 0;
-
-      setStats({
-        totalProofs,
-        totalNFTs,
-        totalDrugs,
-        recentProofs
-      });
+      const response = await getStatistics();
+      if (response.data.success) {
+        setStats(response.data.data);
+      }
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.error('Lỗi khi tải thống kê:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const metrics = [
+  const navigationItems = [
     {
-      title: 'Proof of Production',
-      value: loading ? '...' : stats.totalProofs.toString(),
-      subtitle: 'Đã tạo',
-      detail: 'Chứng nhận sản xuất',
-      color: 'cyan',
-      icon: '📦',
-      onClick: () => navigate('/manufacturer/proofs')
+      path: '/manufacturer',
+      label: 'Tổng quan',
+      icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>),
+      active: true,
     },
     {
-      title: 'NFT',
-      value: loading ? '...' : stats.totalNFTs.toString(),
-      subtitle: 'Đã mint',
-      detail: 'NFT hoạt động',
-      color: 'cyan',
-      icon: '🎨',
-      onClick: () => navigate('/manufacturer/nfts')
+      path: '/manufacturer/drugs',
+      label: 'Quản lý thuốc',
+      icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>),
+      active: false,
     },
     {
-      title: 'Thuốc',
-      value: loading ? '...' : stats.totalDrugs.toString(),
-      subtitle: 'Đã đăng ký',
-      detail: 'Sản phẩm',
-      color: 'green',
-      icon: '💊',
-      onClick: () => navigate('/manufacturer/drugs')
+      path: '/manufacturer/production',
+      label: 'Sản xuất thuốc',
+      icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>),
+      active: false,
     },
     {
-      title: 'Nhà sản xuất',
-      value: user?.fullName || user?.username || 'N/A',
-      subtitle: 'Tài khoản',
-      detail: 'Đang hoạt động',
-      color: 'blue',
-      icon: '🏭',
-      isText: true
+      path: '/manufacturer/transfer',
+      label: 'Chuyển giao',
+      icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>),
+      active: false,
+    },
+    {
+      path: '/manufacturer/production-history',
+      label: 'Lịch sử sản xuất',
+      icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>),
+      active: false,
+    },
+    {
+      path: '/manufacturer/transfer-history',
+      label: 'Lịch sử chuyển giao',
+      icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>),
+      active: false,
+    },
+    {
+      path: '/manufacturer/profile',
+      label: 'Hồ sơ',
+      icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>),
+      active: false,
     },
   ];
 
-  const navigationItems = getManufacturerNavigationItems();
+  const fadeUp = {
+    hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
+    show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  };
 
   return (
-    <DashboardLayout 
-      metrics={metrics.map(m => ({...m, onClick: m.onClick}))} 
-      navigationItems={navigationItems}
-    >
-      <div className="space-y-6">
-        {/* Quick Actions */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>⚡</span> Thao tác nhanh
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
-              onClick={() => navigate('/manufacturer/proofs/create')}
-              className="p-6 border-2 border-dashed border-cyan-300 hover:border-cyan-500 rounded-xl hover:bg-cyan-50 transition-all group"
-            >
-              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">🏭</div>
-              <h3 className="font-semibold text-gray-800 group-hover:text-cyan-700 mb-1">Tạo Proof of Production</h3>
-              <p className="text-sm text-gray-600">Tạo chứng nhận sản xuất và mint NFT</p>
-            </button>
-
-            <button
-              onClick={() => navigate('/manufacturer/drugs')}
-              className="p-6 border-2 border-dashed border-cyan-300 hover:border-cyan-500 rounded-xl hover:bg-cyan-50 transition-all group"
-            >
-              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">💊</div>
-              <h3 className="font-semibold text-gray-800 group-hover:text-cyan-700 mb-1">Quản lý thuốc</h3>
-              <p className="text-sm text-gray-600">Thêm và quản lý danh sách thuốc</p>
-            </button>
-
-            <button
-              onClick={() => navigate('/manufacturer/nfts')}
-              className="p-6 border-2 border-dashed border-teal-300 hover:border-teal-500 rounded-xl hover:bg-teal-50 transition-all group"
-            >
-              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">🎨</div>
-              <h3 className="font-semibold text-gray-800 group-hover:text-teal-700 mb-1">Xem NFT</h3>
-              <p className="text-sm text-gray-600">Quản lý NFT đã tạo</p>
-            </button>
-          </div>
+    <DashboardLayout navigationItems={navigationItems}>
+      {/* Banner */}
+      <motion.section
+        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
+        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">Tổng quan nhà sản xuất</h1>
+          <p className="text-white/90 mt-2 text-lg">Quản lý sản xuất và phân phối thuốc trên blockchain</p>
         </div>
+      </motion.section>
 
-        {/* Recent Proofs */}
-        {stats.recentProofs.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <span>📋</span> Proof gần đây
-              </h2>
-              <button
-                onClick={() => navigate('/manufacturer/proofs')}
-                className="text-cyan-600 hover:text-cyan-700 font-semibold text-sm"
-              >
-                Xem tất cả →
-              </button>
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-lg text-slate-600">Đang tải dữ liệu...</div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Thống kê thuốc */}
+          <motion.div variants={fadeUp} initial="hidden" animate="show">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">💊 Quản lý thuốc</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Link to="/manufacturer/drugs" className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border border-blue-200 shadow-[0_10px_24px_rgba(59,130,246,0.15)] p-5 hover:shadow-[0_14px_36px_rgba(59,130,246,0.25)] transition">
+                <div className="text-sm text-blue-700 mb-1">Tổng số thuốc</div>
+                <div className="text-3xl font-bold text-blue-600">{stats?.drugs?.total || 0}</div>
+                <div className="text-xs text-blue-600/70 mt-2">
+                  Active: {stats?.drugs?.active || 0} | Inactive: {stats?.drugs?.inactive || 0}
+                </div>
+              </Link>
+              
+              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
+                <div className="text-sm text-slate-600 mb-1">Thuốc hoạt động</div>
+                <div className="text-3xl font-bold text-emerald-600">{stats?.drugs?.active || 0}</div>
+                <div className="text-xs text-slate-500 mt-2">Đang lưu thông</div>
+              </div>
+              
+              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
+                <div className="text-sm text-slate-600 mb-1">Thuốc ngừng hoạt động</div>
+                <div className="text-3xl font-bold text-slate-500">{stats?.drugs?.inactive || 0}</div>
+                <div className="text-xs text-slate-500 mt-2">Tạm ngừng</div>
+              </div>
             </div>
-            <div className="space-y-3">
-              {stats.recentProofs.map((proof, idx) => (
-                <div
-                  key={proof._id || idx}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer transition-all"
-                  onClick={() => navigate(`/manufacturer/proofs/${proof._id}`)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-teal-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-bold">{idx + 1}</span>
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-800">{proof.drug?.tradeName || proof.drugName || 'N/A'}</div>
-                      <div className="text-sm text-gray-500">Batch: {proof.batchNumber || 'N/A'}</div>
-                    </div>
+          </motion.div>
+
+          {/* Thống kê sản xuất & NFT */}
+          <motion.div variants={fadeUp} initial="hidden" animate="show">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">🏭 Sản xuất & NFT</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Link to="/manufacturer/production-history" className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border border-purple-200 shadow-[0_10px_24px_rgba(168,85,247,0.15)] p-5 hover:shadow-[0_14px_36px_rgba(168,85,247,0.25)] transition">
+                <div className="text-sm text-purple-700 mb-1">Tổng sản xuất</div>
+                <div className="text-3xl font-bold text-purple-600">{stats?.productions?.total || 0}</div>
+                <div className="text-xs text-purple-600/70 mt-2">Lô sản xuất</div>
+              </Link>
+              
+              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
+                <div className="text-sm text-slate-600 mb-1">Tổng NFT</div>
+                <div className="text-3xl font-bold text-[#003544]">{stats?.nfts?.total || 0}</div>
+                <div className="text-xs text-slate-500 mt-2">Token đã mint</div>
+              </div>
+              
+              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
+                <div className="text-sm text-slate-600 mb-1">NFT Minted</div>
+                <div className="text-3xl font-bold text-cyan-600">{stats?.nfts?.byStatus?.minted || 0}</div>
+                <div className="text-xs text-slate-500 mt-2">Chưa chuyển giao</div>
+              </div>
+              
+              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
+                <div className="text-sm text-slate-600 mb-1">NFT Transferred</div>
+                <div className="text-3xl font-bold text-emerald-600">{stats?.nfts?.byStatus?.transferred || 0}</div>
+                <div className="text-xs text-emerald-600/70 mt-2">Đã chuyển giao</div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="bg-white/90 rounded-xl border border-slate-200 p-4">
+                <div className="text-sm text-slate-600 mb-3">Trạng thái NFT</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-xs text-slate-500">Sold</div>
+                    <div className="text-lg font-semibold text-emerald-600">{stats?.nfts?.byStatus?.sold || 0}</div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-gray-800">{proof.quantity?.toLocaleString() || 0}</div>
-                    <div className="text-sm text-gray-500">viên</div>
+                  <div>
+                    <div className="text-xs text-slate-500">Expired</div>
+                    <div className="text-lg font-semibold text-red-500">{stats?.nfts?.byStatus?.expired || 0}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-500">Recalled</div>
+                    <div className="text-lg font-semibold text-orange-500">{stats?.nfts?.byStatus?.recalled || 0}</div>
                   </div>
                 </div>
-              ))}
+              </div>
+              
+              <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl border border-cyan-200 p-4">
+                <div className="text-sm text-cyan-700 mb-2">Hành động nhanh</div>
+                <div className="space-y-2">
+                  <Link to="/manufacturer/production" className="block text-sm text-cyan-600 hover:text-cyan-700 hover:underline">
+                    → Tạo lô sản xuất mới (Mint NFT)
+                  </Link>
+                  <Link to="/manufacturer/transfer" className="block text-sm text-cyan-600 hover:text-cyan-700 hover:underline">
+                    → Chuyển giao cho nhà phân phối
+                  </Link>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          </motion.div>
+
+          {/* Thống kê chuyển giao */}
+          <motion.div variants={fadeUp} initial="hidden" animate="show">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">🚚 Chuyển giao</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Link to="/manufacturer/transfer-history" className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl border border-orange-200 shadow-[0_10px_24px_rgba(249,115,22,0.15)] p-5 hover:shadow-[0_14px_36px_rgba(249,115,22,0.25)] transition">
+                <div className="text-sm text-orange-700 mb-1">Tổng chuyển giao</div>
+                <div className="text-3xl font-bold text-orange-600">{stats?.transfers?.total || 0}</div>
+                <div className="text-xs text-orange-600/70 mt-2">Lượt chuyển</div>
+              </Link>
+              
+              <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl border border-amber-200 p-5">
+                <div className="text-sm text-amber-700 mb-1">Đang chờ</div>
+                <div className="text-3xl font-bold text-amber-600">{stats?.transfers?.byStatus?.pending || 0}</div>
+                <div className="text-xs text-amber-600/70 mt-2">Pending</div>
+              </div>
+              
+              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
+                <div className="text-sm text-slate-600 mb-1">Đã gửi</div>
+                <div className="text-3xl font-bold text-cyan-600">{stats?.transfers?.byStatus?.sent || 0}</div>
+                <div className="text-xs text-slate-500 mt-2">Sent</div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl border border-emerald-200 p-5">
+                <div className="text-sm text-emerald-700 mb-1">Đã thanh toán</div>
+                <div className="text-3xl font-bold text-emerald-600">{stats?.transfers?.byStatus?.paid || 0}</div>
+                <div className="text-xs text-emerald-600/70 mt-2">Paid</div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
