@@ -15,8 +15,8 @@ const MetricCard = ({ title, value, subtitle, detail, color }) => {
   };
 
   return (
-    <div className="p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-200 relative transition-shadow duration-300 hover:shadow-[0_10px_30px_rgba(2,132,199,0.08)]">
-      <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+    <div className="p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-200 relative transition-shadow duration-200 hover:shadow-[0_6px_20px_rgba(2,132,199,0.08)]">
+      <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors duration-150">
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
         </svg>
@@ -47,7 +47,12 @@ export default function DashboardLayout({
   const [walletAddress, setWalletAddress] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
-  // Default admin navigation (always shown under /admin regardless of page-provided items)
+  const [showLabels, setShowLabels] = useState(() => {
+    const saved = localStorage.getItem('sidebarOpen');
+    const initialOpen = saved === null ? true : saved === 'true';
+    return initialOpen;
+  });
+
   const adminNavigationItems = [
     {
       path: '/admin',
@@ -140,7 +145,6 @@ export default function DashboardLayout({
     localStorage.setItem('sidebarOpen', sidebarOpen ? 'true' : 'false');
   }, [sidebarOpen]);
 
-  // Check if wallet is already connected on mount
   useEffect(() => {
     const checkWalletConnection = async () => {
       try {
@@ -156,7 +160,6 @@ export default function DashboardLayout({
 
     checkWalletConnection();
 
-    // Listen for account changes
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', (accounts) => {
         if (accounts.length > 0) {
@@ -206,159 +209,95 @@ export default function DashboardLayout({
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
-  const getRoleLabel = (role) => {
-    const labels = {
-      system_admin: 'Quản trị viên',
-      pharma_company: 'Nhà sản xuất',
-      distributor: 'Nhà phân phối',
-      pharmacy: 'Nhà thuốc',
-      user: 'Người dùng',
-    };
-    return labels[role] || role;
-  };
-
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
   const fadeUp = {
-    hidden: { opacity: 0, y: 12, filter: 'blur(6px)' },
-    show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+    hidden: { opacity: 0, y: 6 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } },
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-cyan-100">
+    <div className="min-h-screen bg-white">
       {/* Sidebar */}
       <aside
-        className={`bg-gradient-to-b from-[#007b91] to-[#009fbf] text-white transition-all duration-300 ${
-          sidebarOpen ? 'w-64' : 'w-20'
-        } fixed left-0 top-0 h-full min-h-screen overflow-y-auto z-50`}
+        onTransitionEnd={() => setShowLabels(sidebarOpen)}
+        className={`fixed left-0 top-0 h-full z-50 text-white
+        bg-gradient-to-b from-[#007b91] to-[#009fbf] shadow-lg
+        transition-all duration-200 ease-linear
+        ${sidebarOpen ? 'w-64' : 'w-20'}`}
       >
-        <div className="p-4">
-          {/* Logo & Header */}
-          <div
-            className={`flex items-center ${
-              sidebarOpen ? 'justify-between' : 'justify-center'
-            } mb-8 border-b border-white/10 pb-3`}
-          >
-            <div
-              className="flex items-center gap-2 cursor-pointer"
-              onClick={() => !sidebarOpen && setSidebarOpen(true)}
-            >
-              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 11.09a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3a1 1 0 00-.787 0l-7 3a1 1 0 000 1.838l7 3z" />
-                </svg>
-              </div>
-              {sidebarOpen && (
-                <span
-                  className="font-medium text-lg"
-                  style={{ fontFamily: 'Inter, sans-serif' }}
-                >
-                  DrugTrace
-                </span>
-              )}
-            </div>
+        <div className="flex flex-col h-full p-3">
+          <div className={`flex items-center mb-6 ${showLabels ? 'justify-between' : 'justify-center'}`}>
+            {showLabels && <h2 className="text-lg font-semibold">DrugTrace</h2>}
             <button
-              onClick={() => setSidebarOpen((v) => !v)}
-              className="p-1 hover:bg-white/10 rounded"
-              aria-label={sidebarOpen ? 'Thu gọn sidebar' : 'Mở rộng sidebar'}
+              onClick={() => {
+                // Khi thu gọn: ẩn label ngay để tránh giật khi width đang đổi
+                if (sidebarOpen) setShowLabels(false);
+                setSidebarOpen((v) => !v);
+              }}
+              className="p-2 rounded-md hover:bg-white/10 transition-colors duration-150 w-8 h-8 flex items-center justify-center"
             >
               {sidebarOpen ? (
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               ) : (
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               )}
             </button>
           </div>
-  
-          {/* Navigation */}
-          <nav className="space-y-3">
-            {navItems.map((item, index) => {
-              const isActive =
-                item.active !== undefined
-                  ? item.active
-                  : location.pathname === item.path ||
-                    location.pathname.startsWith(item.path + '/');
-              return (
-                <Link
-                  key={index}
-                  to={item.path}
-                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition 
-                    ${
-                      isActive
-                        ? 'text-white bg-white/10'
-                        : 'text-white/90 hover:text-white hover:bg-white/10'
-                    }`}
-                >
-                  <span className="w-5 h-5 flex items-center justify-center">
-                    {item.icon}
-                  </span>
-                  {sidebarOpen && (
-                    <span
-                      className="font-medium"
-                      style={{ fontFamily: 'Inter, sans-serif' }}
+
+          {/* Search removed by request */}
+
+          <nav className="flex-1 flex flex-col justify-start pt-4">
+            <ul className="space-y-2">
+              {navItems.map((item, i) => {
+                const isActive =
+                  location.pathname === item.path ||
+                  (item.path !== '/admin' && location.pathname.startsWith(item.path + '/'));
+                return (
+                  <li key={i}>
+                    <Link
+                      to={item.path}
+                      className={`w-full h-11 flex items-center ${showLabels ? 'px-3 justify-start' : 'justify-center'} gap-3 rounded-md transition-colors duration-150 ease-out
+                      ${isActive ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-white/90'}`}
                     >
-                      {item.label}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+                      <span className="text-xl shrink-0">{item.icon}</span>
+                      {showLabels && <span className="font-medium whitespace-nowrap">{item.label}</span>}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </nav>
+
+          {/* Avatar removed by request */}
         </div>
       </aside>
-  
+
       {/* Main Content */}
-      <div
-        className={`transition-all duration-300 min-h-screen ${
-          sidebarOpen ? 'ml-64' : 'ml-20'
-        }`}
-      >
-        {/* Header */}
+      <div className={`min-h-screen ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
         <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200">
-          <div className="px-6 py-4 flex items-center justify-end">
+          <div className="px-6 h-16 flex items-center justify-between">
+            <div className="text-slate-700 font-semibold">
+              {showLabels ? (welcomeMessage || 'Dashboard') : null}
+            </div>
             <div className="flex items-center gap-3">
-              {/* Wallet Connect Button */}
               {walletAddress ? (
                 <div className="relative group">
                   <button
                     onClick={handleCopyAddress}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-600 text-white hover:from-cyan-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg"
+                    className="flex items-center gap-2 h-10 px-4 rounded-full bg-gradient-to-r from-cyan-500 to-teal-600 text-white hover:from-cyan-600 hover:to-teal-700 transition-colors shadow-sm hover:shadow-md"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
-                    <span className="font-medium text-sm">{formatAddress(walletAddress)}</span>
+                    <span className="font-medium text-sm text-white">{formatAddress(walletAddress)}</span>
                     {showCopied && (
                       <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap">
                         Đã sao chép!
@@ -370,7 +309,7 @@ export default function DashboardLayout({
                 <button
                   onClick={handleConnectWallet}
                   disabled={isConnecting}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-600 text-white hover:from-cyan-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 h-10 px-4 rounded-full bg-gradient-to-r from-cyan-500 to-teal-600 text-white hover:from-cyan-600 hover:to-teal-700 transition-colors shadow-sm hover:shadow-md disabled:opacity-50"
                 >
                   {isConnecting ? (
                     <>
@@ -378,37 +317,30 @@ export default function DashboardLayout({
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <span className="font-medium text-sm">Đang kết nối...</span>
+                      <span className="font-medium text-sm text-white">Đang kết nối...</span>
                     </>
                   ) : (
                     <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
-                      <span className="font-medium text-sm">Kết nối ví</span>
+                      <span className="font-medium text-sm text-white">Kết nối ví</span>
                     </>
                   )}
                 </button>
               )}
-              
+
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 rounded-xl text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg font-medium text-sm"
+                className="h-10 px-4 rounded-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-colors shadow-sm hover:shadow-md font-medium text-sm"
               >
-                Đăng xuất
+                <span className="text-white">Đăng xuất</span>
               </button>
             </div>
           </div>
         </header>
-  
-        {/* Content */}
-        <motion.main
-          className="p-6"
-          variants={fadeUp}
-          initial="hidden"
-          animate="show"
-        >
-          {/* Metrics Cards */}
+
+        <motion.main className="p-6" variants={fadeUp} initial="hidden" animate="show">
           {metrics.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {metrics.map((metric, index) => (
@@ -416,13 +348,9 @@ export default function DashboardLayout({
               ))}
             </div>
           )}
-
-          {/* Main Content */}
           {children}
         </motion.main>
       </div>
     </div>
   );
-  
 }
-

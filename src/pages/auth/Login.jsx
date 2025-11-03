@@ -19,6 +19,7 @@ export default function Login() {
 
     try {
       const result = await login(email, password);
+      
       if (result.success) {
         const userRole = result.data.user.role;
         switch (userRole) {

@@ -78,145 +78,212 @@ export default function ManufacturerDashboard() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Banner */}
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">Tổng quan nhà sản xuất</h1>
-          <p className="text-white/90 mt-2 text-lg">Quản lý sản xuất và phân phối thuốc trên blockchain</p>
-        </div>
-      </motion.section>
+      <div className="space-y-8">
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-lg text-slate-600">Đang tải dữ liệu...</div>
+        {/* Header banner */}
+        <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#007b91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
+              </svg>
+              Quản lý nhà sản xuất
+            </h1>
+            <p className="text-slate-500 text-sm mt-1">Tổng quan hệ thống và các chức năng chính</p>
+          </div>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {/* Thống kê thuốc */}
-          <motion.div variants={fadeUp} initial="hidden" animate="show">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">💊 Quản lý thuốc</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Link to="/manufacturer/drugs" className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border border-blue-200 shadow-[0_10px_24px_rgba(59,130,246,0.15)] p-5 hover:shadow-[0_14px_36px_rgba(59,130,246,0.25)] transition">
-                <div className="text-sm text-blue-700 mb-1">Tổng số thuốc</div>
-                <div className="text-3xl font-bold text-blue-600">{stats?.drugs?.total || 0}</div>
-                <div className="text-xs text-blue-600/70 mt-2">
-                  Active: {stats?.drugs?.active || 0} | Inactive: {stats?.drugs?.inactive || 0}
-                </div>
-              </Link>
-              
-              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
-                <div className="text-sm text-slate-600 mb-1">Thuốc hoạt động</div>
-                <div className="text-3xl font-bold text-emerald-600">{stats?.drugs?.active || 0}</div>
-                <div className="text-xs text-slate-500 mt-2">Đang lưu thông</div>
-              </div>
-              
-              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
-                <div className="text-sm text-slate-600 mb-1">Thuốc ngừng hoạt động</div>
-                <div className="text-3xl font-bold text-slate-500">{stats?.drugs?.inactive || 0}</div>
-                <div className="text-xs text-slate-500 mt-2">Tạm ngừng</div>
-              </div>
-            </div>
-          </motion.div>
 
-          {/* Thống kê sản xuất & NFT */}
-          <motion.div variants={fadeUp} initial="hidden" animate="show">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">🏭 Sản xuất & NFT</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Link to="/manufacturer/production-history" className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border border-purple-200 shadow-[0_10px_24px_rgba(168,85,247,0.15)] p-5 hover:shadow-[0_14px_36px_rgba(168,85,247,0.25)] transition">
-                <div className="text-sm text-purple-700 mb-1">Tổng sản xuất</div>
-                <div className="text-3xl font-bold text-purple-600">{stats?.productions?.total || 0}</div>
-                <div className="text-xs text-purple-600/70 mt-2">Lô sản xuất</div>
-              </Link>
-              
-              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
-                <div className="text-sm text-slate-600 mb-1">Tổng NFT</div>
-                <div className="text-3xl font-bold text-[#003544]">{stats?.nfts?.total || 0}</div>
-                <div className="text-xs text-slate-500 mt-2">Token đã mint</div>
-              </div>
-              
-              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
-                <div className="text-sm text-slate-600 mb-1">NFT Minted</div>
-                <div className="text-3xl font-bold text-cyan-600">{stats?.nfts?.byStatus?.minted || 0}</div>
-                <div className="text-xs text-slate-500 mt-2">Chưa chuyển giao</div>
-              </div>
-              
-              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
-                <div className="text-sm text-slate-600 mb-1">NFT Transferred</div>
-                <div className="text-3xl font-bold text-emerald-600">{stats?.nfts?.byStatus?.transferred || 0}</div>
-                <div className="text-xs text-emerald-600/70 mt-2">Đã chuyển giao</div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="bg-white/90 rounded-xl border border-slate-200 p-4">
-                <div className="text-sm text-slate-600 mb-3">Trạng thái NFT</div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="text-xs text-slate-500">Sold</div>
-                    <div className="text-lg font-semibold text-emerald-600">{stats?.nfts?.byStatus?.sold || 0}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-slate-500">Expired</div>
-                    <div className="text-lg font-semibold text-red-500">{stats?.nfts?.byStatus?.expired || 0}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-slate-500">Recalled</div>
-                    <div className="text-lg font-semibold text-orange-500">{stats?.nfts?.byStatus?.recalled || 0}</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl border border-cyan-200 p-4">
-                <div className="text-sm text-cyan-700 mb-2">Hành động nhanh</div>
-                <div className="space-y-2">
-                  <Link to="/manufacturer/production" className="block text-sm text-cyan-600 hover:text-cyan-700 hover:underline">
-                    → Tạo lô sản xuất mới (Mint NFT)
-                  </Link>
-                  <Link to="/manufacturer/transfer" className="block text-sm text-cyan-600 hover:text-cyan-700 hover:underline">
-                    → Chuyển giao cho nhà phân phối
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+        {/* Loading */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-lg text-slate-600">Đang tải dữ liệu...</div>
+          </div>
+        ) : (
+          <div className="space-y-8">
 
-          {/* Thống kê chuyển giao */}
-          <motion.div variants={fadeUp} initial="hidden" animate="show">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">🚚 Chuyển giao</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Link to="/manufacturer/transfer-history" className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl border border-orange-200 shadow-[0_10px_24px_rgba(249,115,22,0.15)] p-5 hover:shadow-[0_14px_36px_rgba(249,115,22,0.25)] transition">
-                <div className="text-sm text-orange-700 mb-1">Tổng chuyển giao</div>
-                <div className="text-3xl font-bold text-orange-600">{stats?.transfers?.total || 0}</div>
-                <div className="text-xs text-orange-600/70 mt-2">Lượt chuyển</div>
-              </Link>
-              
-              <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl border border-amber-200 p-5">
-                <div className="text-sm text-amber-700 mb-1">Đang chờ</div>
-                <div className="text-3xl font-bold text-amber-600">{stats?.transfers?.byStatus?.pending || 0}</div>
-                <div className="text-xs text-amber-600/70 mt-2">Pending</div>
+            {/* Thống kê thuốc */}
+            <motion.div variants={fadeUp} initial="hidden" animate="show">
+              <h2 className="text-lg font-semibold text-slate-800 mb-4">Quản lý thuốc</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+                {/* Tổng số thuốc */}
+                <Link
+                  to="/manufacturer/drugs"
+                  className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                >
+                  <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-cyan-400 to-sky-400 rounded-t-2xl" />
+                  <div className="p-5 pt-7 text-center">
+                    <div className="text-sm text-slate-600 mb-1">Tổng số thuốc</div>
+                    <div className="text-3xl font-bold text-cyan-600">{stats?.drugs?.total || 0}</div>
+                    <div className="text-xs text-slate-500 mt-2">
+                      Hoạt động: {stats?.drugs?.active || 0} | Không hoạt động: {stats?.drugs?.inactive || 0}
+                    </div>
+                  </div>
+                </Link>
+
+                {/* Thuốc hoạt động */}
+                <Link
+                  to="/manufacturer/drugs?status=active"
+                  className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                >
+                  <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
+                  <div className="p-5 pt-7 text-center">
+                    <div className="text-sm text-slate-600 mb-1">Thuốc hoạt động</div>
+                    <div className="text-3xl font-bold text-emerald-600">{stats?.drugs?.active || 0}</div>
+                    <div className="text-xs text-slate-500 mt-2">Đang lưu thông</div>
+                  </div>
+                </Link>
+
+                {/* Thuốc ngừng hoạt động */}
+                <Link
+                  to="/manufacturer/drugs?status=inactive"
+                  className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                >
+                  <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-slate-400 to-gray-300 rounded-t-2xl" />
+                  <div className="p-5 pt-7 text-center">
+                    <div className="text-sm text-slate-600 mb-1">Thuốc ngừng hoạt động</div>
+                    <div className="text-3xl font-bold text-slate-500">{stats?.drugs?.inactive || 0}</div>
+                    <div className="text-xs text-slate-500 mt-2">Tạm ngừng</div>
+                  </div>
+                </Link>
+
               </div>
-              
-              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
-                <div className="text-sm text-slate-600 mb-1">Đã gửi</div>
-                <div className="text-3xl font-bold text-cyan-600">{stats?.transfers?.byStatus?.sent || 0}</div>
-                <div className="text-xs text-slate-500 mt-2">Sent</div>
+            </motion.div>
+
+
+            {/* Thống kê sản xuất & NFT */}
+            <motion.div variants={fadeUp} initial="hidden" animate="show">
+              <h2 className="text-lg font-semibold text-slate-800 mb-4">Sản xuất & NFT</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+
+                {/* Tổng sản xuất */}
+                <Link
+                  to="/manufacturer/production-history"
+                  className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                >
+                  <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-purple-400 to-pink-400 rounded-t-2xl" />
+                  <div className="p-5 pt-7 text-center">
+                    <div className="text-sm text-slate-600 mb-1">Tổng sản xuất</div>
+                    <div className="text-3xl font-bold text-purple-600">{stats?.productions?.total || 0}</div>
+                    <div className="text-xs text-slate-500 mt-2">Lô sản xuất</div>
+                  </div>
+                </Link>
+
+                {/* Tổng NFT */}
+                <Link
+                  to="/manufacturer/nfts"
+                  className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                >
+                  <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-cyan-400 to-sky-400 rounded-t-2xl" />
+                  <div className="p-5 pt-7 text-center">
+                    <div className="text-sm text-slate-600 mb-1">Tổng NFT</div>
+                    <div className="text-3xl font-bold text-cyan-600">{stats?.nfts?.total || 0}</div>
+                    <div className="text-xs text-slate-500 mt-2">Token đã mint</div>
+                  </div>
+                </Link>
+
+                {/* NFT Minted */}
+                <Link
+                  to="/manufacturer/nfts?status=minted"
+                  className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                >
+                  <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-blue-400 to-cyan-400 rounded-t-2xl" />
+                  <div className="p-5 pt-7 text-center">
+                    <div className="text-sm text-slate-600 mb-1">NFT Minted</div>
+                    <div className="text-3xl font-bold text-blue-600">{stats?.nfts?.byStatus?.minted || 0}</div>
+                    <div className="text-xs text-slate-500 mt-2">Chưa chuyển giao</div>
+                  </div>
+                </Link>
+
+                {/* NFT Transferred */}
+                <Link
+                  to="/manufacturer/nfts?status=transferred"
+                  className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                >
+                  <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
+                  <div className="p-5 pt-7 text-center">
+                    <div className="text-sm text-slate-600 mb-1">NFT Transferred</div>
+                    <div className="text-3xl font-bold text-emerald-600">{stats?.nfts?.byStatus?.transferred || 0}</div>
+                    <div className="text-xs text-emerald-600/70 mt-2">Đã chuyển giao</div>
+                  </div>
+                </Link>
+
               </div>
-              
-              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl border border-emerald-200 p-5">
-                <div className="text-sm text-emerald-700 mb-1">Đã thanh toán</div>
-                <div className="text-3xl font-bold text-emerald-600">{stats?.transfers?.byStatus?.paid || 0}</div>
-                <div className="text-xs text-emerald-600/70 mt-2">Paid</div>
+            </motion.div>
+
+
+            {/* Thống kê chuyển giao */}
+            <motion.div variants={fadeUp} initial="hidden" animate="show">
+              <h2 className="text-lg font-semibold text-slate-800 mb-4">Chuyển giao</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+
+                {/* Tổng chuyển giao */}
+                <Link
+                  to="/manufacturer/transfer-history"
+                  className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                >
+                  <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-orange-400 to-amber-400 rounded-t-2xl" />
+                  <div className="p-5 pt-7 text-center">
+                    <div className="text-sm text-slate-600 mb-1">Tổng chuyển giao</div>
+                    <div className="text-3xl font-bold text-orange-600">
+                      {stats?.transfers?.total || 0}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-2">Lượt chuyển</div>
+                  </div>
+                </Link>
+
+                {/* Đang chờ */}
+                <Link
+                  to="/manufacturer/transfer-history?status=pending"
+                  className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                >
+                  <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-amber-400 to-yellow-400 rounded-t-2xl" />
+                  <div className="p-5 pt-7 text-center">
+                    <div className="text-sm text-slate-600 mb-1">Đang chờ</div>
+                    <div className="text-3xl font-bold text-amber-600">
+                      {stats?.transfers?.byStatus?.pending || 0}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-2">Pending</div>
+                  </div>
+                </Link>
+
+                {/* Đã gửi */}
+                <Link
+                  to="/manufacturer/transfer-history?status=sent"
+                  className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                >
+                  <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-sky-400 to-cyan-400 rounded-t-2xl" />
+                  <div className="p-5 pt-7 text-center">
+                    <div className="text-sm text-slate-600 mb-1">Đã gửi</div>
+                    <div className="text-3xl font-bold text-cyan-600">
+                      {stats?.transfers?.byStatus?.sent || 0}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-2">Sent</div>
+                  </div>
+                </Link>
+
+                {/* Đã thanh toán */}
+                <Link
+                  to="/manufacturer/transfer-history?status=paid"
+                  className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                >
+                  <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-green-400 to-emerald-400 rounded-t-2xl" />
+                  <div className="p-5 pt-7 text-center">
+                    <div className="text-sm text-slate-600 mb-1">Đã thanh toán</div>
+                    <div className="text-3xl font-bold text-emerald-600">
+                      {stats?.transfers?.byStatus?.paid || 0}
+                    </div>
+                    <div className="text-xs text-emerald-600/70 mt-2">Paid</div>
+                  </div>
+                </Link>
+
               </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
+            </motion.div>
+
+          </div>
+        )}
+      </div>
     </DashboardLayout>
   );
+  
 }

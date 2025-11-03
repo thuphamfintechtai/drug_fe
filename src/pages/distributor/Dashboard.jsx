@@ -84,17 +84,24 @@ export default function DistributorDashboard() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Banner */}
+      {/* Banner card (trắng, viền top gradient) */}
       <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#0077b6] via-[#0096c7] to-[#00b4d8]"
+        className="relative mb-6"
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">Tổng quan nhà phân phối</h1>
-          <p className="text-white/90 mt-2 text-lg">Quản lý phân phối thuốc từ nhà sản xuất đến nhà thuốc</p>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_6px_24px_rgba(0,0,0,0.06)]">
+          <div className="h-[3px] w-full rounded-t-2xl bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef]" />
+          <div className="px-6 py-5 flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00b4d8] to-[#48cae4] text-white flex items-center justify-center shadow-sm">
+              <span className="text-xl">🚚</span>
+            </div>
+            <div>
+              <h1 className="text-lg md:text-xl font-semibold text-slate-800">Quản lý nhà phân phối</h1>
+              <p className="text-slate-500 text-sm">Tổng quan hệ thống và các chức năng chính</p>
+            </div>
+          </div>
         </div>
       </motion.section>
 
@@ -104,32 +111,28 @@ export default function DistributorDashboard() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Thống kê đơn hàng từ Manufacturer */}
+          {/* Hàng thẻ thống kê (4 box, viền top màu) */}
           <motion.div variants={fadeUp} initial="hidden" animate="show">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">📦 Đơn hàng từ nhà sản xuất</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Link to="/distributor/invoices" className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border border-blue-200 shadow-[0_10px_24px_rgba(59,130,246,0.15)] p-5 hover:shadow-[0_14px_36px_rgba(59,130,246,0.25)] transition">
-                <div className="text-sm text-blue-700 mb-1">Tổng đơn nhận</div>
-                <div className="text-3xl font-bold text-blue-600">{stats?.invoicesFromManufacturer?.total || 0}</div>
-                <div className="text-xs text-blue-600/70 mt-2">Đơn hàng</div>
+              <Link to="/distributor/invoices" className="relative overflow-hidden bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                <div className="absolute left-3 right-3 top-2 h-1.5 rounded-full bg-gradient-to-r from-sky-500 to-cyan-500" />
+                <div className="text-sm text-slate-500 mt-2">Tổng đơn nhận</div>
+                <div className="text-3xl font-bold text-sky-600">{stats?.invoicesFromManufacturer?.total || 0}</div>
               </Link>
-              
-              <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl border border-amber-200 p-5">
-                <div className="text-sm text-amber-700 mb-1">Chờ nhận</div>
+              <div className="relative overflow-hidden bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                <div className="absolute left-3 right-3 top-2 h-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500" />
+                <div className="text-sm text-slate-500 mt-2">Chờ nhận</div>
                 <div className="text-3xl font-bold text-amber-600">{stats?.invoicesFromManufacturer?.pending || 0}</div>
-                <div className="text-xs text-amber-600/70 mt-2">Pending</div>
               </div>
-              
-              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
-                <div className="text-sm text-slate-600 mb-1">Đã nhận</div>
-                <div className="text-3xl font-bold text-cyan-600">{stats?.invoicesFromManufacturer?.received || 0}</div>
-                <div className="text-xs text-slate-500 mt-2">Received</div>
+              <div className="relative overflow-hidden bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                <div className="absolute left-3 right-3 top-2 h-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-green-500" />
+                <div className="text-sm text-slate-500 mt-2">Đã nhận</div>
+                <div className="text-3xl font-bold text-emerald-600">{stats?.invoicesFromManufacturer?.received || 0}</div>
               </div>
-              
-              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl border border-emerald-200 p-5">
-                <div className="text-sm text-emerald-700 mb-1">Đã thanh toán</div>
-                <div className="text-3xl font-bold text-emerald-600">{stats?.invoicesFromManufacturer?.paid || 0}</div>
-                <div className="text-xs text-emerald-600/70 mt-2">Paid</div>
+              <div className="relative overflow-hidden bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                <div className="absolute left-3 right-3 top-2 h-1.5 rounded-full bg-gradient-to-r from-rose-500 to-red-500" />
+                <div className="text-sm text-slate-500 mt-2">Đã thanh toán</div>
+                <div className="text-3xl font-bold text-rose-600">{stats?.invoicesFromManufacturer?.paid || 0}</div>
               </div>
             </div>
           </motion.div>
