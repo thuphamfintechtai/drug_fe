@@ -1,78 +1,63 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
-import { listDrugs, searchDrugByAtc, getDrugStats, getDrugCodes } from '../../services/admin/drugService';
+import { getAllDrugs, getDrugStatistics } from '../../services/admin/adminService';
 
 export default function AdminDrugs() {
-  const normalizeList = (raw) => {
-    const r = raw?.data ?? raw;
-    if (Array.isArray(r)) return r;
-    if (Array.isArray(r?.items)) return r.items;
-    if (Array.isArray(r?.results)) return r.results;
-    if (Array.isArray(r?.drugs)) return r.drugs;
-    if (Array.isArray(r?.data)) return r.data; // in case BE double-nests
-    return [];
-  };
-  const normalizeCodes = (raw) => {
-    const r = raw?.data ?? raw;
-    const arr = Array.isArray(r)
-      ? r
-      : Array.isArray(r?.items)
-      ? r.items
-      : Array.isArray(r?.results)
-      ? r.results
-      : Array.isArray(r?.codes)
-      ? r.codes
-      : Array.isArray(r?.data)
-      ? r.data
-      : [];
-    return arr
-      .map((item) => {
-        if (item == null) return '';
-        if (typeof item === 'string' || typeof item === 'number') return String(item);
-        return item.atcCode || item.code || item.name || item.tradeName || '';
-      })
-      .filter(Boolean);
-  };
+  const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [atc, setAtc] = useState('');
   const [stats, setStats] = useState(null);
-  const [codes, setCodes] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
+
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const search = searchParams.get('search') || '';
+  const status = searchParams.get('status') || '';
 
   const navigationItems = useMemo(() => ([
-    { path: '/admin', label: 'Trang chủ', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>), active: false },
-    { path: '/admin/drugs', label: 'Quản lý thuốc', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-7 7-7-7" /></svg>), active: true },
+    { path: '/admin', label: 'Tổng quan', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>), active: false },
+    { path: '/admin/drugs', label: 'Quản lý thuốc', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>), active: true },
   ]), []);
 
   const load = async () => {
-    setLoading(true); setError('');
+    setLoading(true); 
+    setError('');
     try {
-      const [{ data: listRes }, { data: statsRes }, { data: codesRes }] = await Promise.all([
-        listDrugs({}),
-        getDrugStats(),
-        getDrugCodes(),
+      const params = { page, limit: 10 };
+      if (search) params.search = search;
+      if (status) params.status = status;
+
+      const [drugsRes, statsRes] = await Promise.all([
+        getAllDrugs(params),
+        getDrugStatistics(),
       ]);
-      setItems(normalizeList(listRes));
-      setStats(statsRes?.data || statsRes || null);
-      setCodes(normalizeCodes(codesRes));
-    } catch (e) { setError(e?.response?.data?.message || 'Không thể tải dữ liệu'); }
-    finally { setLoading(false); }
+      
+      if (drugsRes.data.success) {
+        setItems(drugsRes.data.data.drugs || []);
+        setPagination(drugsRes.data.data.pagination || { page: 1, limit: 10, total: 0, pages: 0 });
+      }
+      
+      if (statsRes.data.success) {
+        setStats(statsRes.data.data);
+      }
+    } catch (e) { 
+      setError(e?.response?.data?.message || 'Không thể tải dữ liệu'); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [page, search, status]);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!atc.trim()) { load(); return; }
-    setLoading(true); setError('');
-    try {
-      const { data } = await searchDrugByAtc(atc.trim());
-      const list = normalizeList(data);
-      setItems(list.length ? list : (data?.data ? [data.data] : []));
-    } catch (e2) { setError(e2?.response?.data?.message || 'Không thể tìm kiếm'); }
-    finally { setLoading(false); }
+  const updateFilter = (next) => {
+    const nextParams = new URLSearchParams(searchParams);
+    Object.entries(next).forEach(([k, v]) => {
+      if (v === '' || v === undefined || v === null) nextParams.delete(k); 
+      else nextParams.set(k, String(v));
+    });
+    setSearchParams(nextParams);
   };
 
   const fadeUp = {
@@ -90,56 +75,84 @@ export default function AdminDrugs() {
         transition={{ duration: 0.5 }}
       >
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/30 blur-xl" />
-          <div className="absolute top-8 right-6 w-16 h-8 rounded-full bg-white/25 blur-md rotate-6" />
-        </div>
         <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
           <h2 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">Quản lý thuốc</h2>
-          <p className="mt-1 text-white/90">Danh mục thuốc minh bạch – chuẩn y tế.</p>
+          <p className="mt-1 text-white/90">Xem tất cả thông tin thuốc và thống kê trong hệ thống</p>
         </div>
       </motion.section>
 
-      {/* Thanh tác vụ: tìm kiếm + tạo mới */}
+      {/* Filters */}
       <motion.div
         className="rounded-2xl bg-white/85 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
         variants={fadeUp}
         initial="hidden"
         animate="show"
       >
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <form onSubmit={handleSearch} className="flex gap-2 w-full md:w-auto">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end">
+          <div className="flex-1">
+            <label className="block text-sm text-[#003544]/70 mb-1">Tìm kiếm</label>
             <input
-              value={atc}
-              onChange={e => setAtc(e.target.value)}
-              placeholder="Tìm theo ATC code"
-              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition w-full md:w-[320px]"
+              value={search}
+              onChange={e => updateFilter({ search: e.target.value, page: 1 })}
+              placeholder="Tìm theo tên thuốc, ATC code..."
+              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition w-full"
             />
-            <button className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] transition">Tìm</button>
-          </form>
-          <a href="/admin/drugs/new" className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] transition text-center">Tạo thuốc</a>
+          </div>
+          <div>
+            <label className="block text-sm text-[#003544]/70 mb-1">Trạng thái</label>
+            <select
+              value={status}
+              onChange={e => updateFilter({ status: e.target.value, page: 1 })}
+              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
+            >
+              <option value="">Tất cả</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="recalled">Recalled</option>
+            </select>
+          </div>
         </div>
       </motion.div>
 
       {/* Stats */}
       {stats && (
-        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5" variants={fadeUp} initial="hidden" animate="show">
+        <motion.div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5" variants={fadeUp} initial="hidden" animate="show">
+          <div className="p-5 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border border-blue-200 shadow-sm">
+            <div className="text-sm text-blue-700 mb-1">Tổng thuốc</div>
+            <div className="text-3xl font-bold text-blue-600">{stats.drugs?.total || 0}</div>
+            <div className="text-xs text-blue-600/70 mt-2">Trong hệ thống</div>
+          </div>
+          
           <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-sm text-slate-600">Tổng thuốc</div>
-            <div className="text-3xl font-bold text-slate-800 mt-1">{stats.total || 0}</div>
+            <div className="text-sm text-slate-600 mb-1">Active</div>
+            <div className="text-3xl font-bold text-emerald-600">{stats.drugs?.byStatus?.active || 0}</div>
+            <div className="text-xs text-slate-500 mt-2">Đang hoạt động</div>
+          </div>
+          
+          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div className="text-sm text-slate-600 mb-1">Inactive</div>
+            <div className="text-3xl font-bold text-slate-500">{stats.drugs?.byStatus?.inactive || 0}</div>
+            <div className="text-xs text-slate-500 mt-2">Ngừng hoạt động</div>
+          </div>
+          
+          <div className="p-5 bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl border border-red-200 shadow-sm">
+            <div className="text-sm text-red-700 mb-1">Recalled</div>
+            <div className="text-3xl font-bold text-red-600">{stats.drugs?.byStatus?.recalled || 0}</div>
+            <div className="text-xs text-red-600/70 mt-2">Thu hồi</div>
           </div>
         </motion.div>
       )}
 
-      {/* Codes cloud */}
-      {codes && codes.length > 0 && (
+      {/* Top manufacturers */}
+      {stats?.drugs?.byManufacturer?.length > 0 && (
         <motion.div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] p-5 mb-5" variants={fadeUp} initial="hidden" animate="show">
-          <h3 className="font-semibold mb-3 text-slate-800">Drug codes</h3>
-          <div className="flex flex-wrap gap-2 max-h-40 overflow-auto">
-            {codes.map((c, idx) => (
-              <span key={idx} className="px-2.5 py-1 rounded-full text-sm bg-[#f5fcff] text-[#003544] border border-[#90e0ef55]">
-                {c}
-              </span>
+          <h3 className="font-semibold mb-3 text-slate-800">Top nhà sản xuất</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {stats.drugs.byManufacturer.slice(0, 6).map((item, idx) => (
+              <div key={idx} className="flex justify-between items-center p-3 bg-[#f5fcff] rounded-lg border border-[#90e0ef55]">
+                <span className="text-sm text-slate-700 truncate">{item.manufacturerName || 'N/A'}</span>
+                <span className="text-lg font-bold text-[#00b4d8] ml-2">{item.count}</span>
+              </div>
             ))}
           </div>
         </motion.div>
@@ -155,32 +168,70 @@ export default function AdminDrugs() {
           <table className="min-w-full">
             <thead>
               <tr className="text-left text-[#003544]">
-                <th className="p-3 bg-[#f5fcff]">Tên</th>
-                <th className="p-3 bg-[#f5fcff]">ATC</th>
+                <th className="p-3 bg-[#f5fcff]">Tên thuốc</th>
+                <th className="p-3 bg-[#f5fcff]">Generic Name</th>
+                <th className="p-3 bg-[#f5fcff]">ATC Code</th>
                 <th className="p-3 bg-[#f5fcff]">Nhà sản xuất</th>
+                <th className="p-3 bg-[#f5fcff]">Trạng thái</th>
                 <th className="p-3 bg-[#f5fcff] text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody>
-              {(Array.isArray(items) ? items : []).map((d) => (
+              {items.map((d) => (
                 <tr key={d._id} className="border-t border-[#90e0ef40] hover:bg-[#f5fcff] transition">
                   <td className="p-3 font-medium text-[#003544]">{d.tradeName}</td>
-                  <td className="p-3 text-[#003544]/80">{d.atcCode}</td>
-                  <td className="p-3 text-[#003544]/80">{d.tradeName || 'Không có tên thương mại'}</td>
+                  <td className="p-3 text-[#003544]/80 text-sm">{d.genericName || '-'}</td>
+                  <td className="p-3 text-[#003544]/80 font-mono text-sm">{d.atcCode}</td>
+                  <td className="p-3 text-[#003544]/80 text-sm">{d.manufacturer?.name || 'N/A'}</td>
+                  <td className="p-3">
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      d.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
+                      d.status === 'inactive' ? 'bg-slate-100 text-slate-600' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {d.status}
+                    </span>
+                  </td>
                   <td className="p-3 text-right">
-                    <a href={`/admin/drugs/${d._id}`} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#90e0ef55] text-[#003544] hover:bg-[#90e0ef22] transition">Chi tiết
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6"/><path d="M3 12h12"/></svg>
-                    </a>
+                    <Link to={`/admin/drugs/${d._id}`} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#90e0ef55] text-[#003544] hover:bg-[#90e0ef22] transition text-sm">
+                      Chi tiết
+                    </Link>
                   </td>
                 </tr>
               ))}
-              {(Array.isArray(items) && items.length === 0) && (
-                <tr><td className="p-4 text-slate-600" colSpan={4}>Không có dữ liệu</td></tr>
+              {items.length === 0 && (
+                <tr><td className="p-6 text-center text-slate-600" colSpan={6}>Không có dữ liệu</td></tr>
               )}
             </tbody>
           </table>
         )}
       </motion.div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-slate-600">
+          Hiển thị {items.length} / {pagination.total} thuốc
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            disabled={page <= 1}
+            onClick={() => updateFilter({ page: page - 1 })}
+            className={`px-3 py-2 rounded-xl ${page <= 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white/90 border border-[#90e0ef55] hover:bg-[#f5fcff]'}`}
+          >
+            Trước
+          </button>
+          <span className="text-sm text-slate-700">
+            Trang {page} / {pagination.pages || 1}
+          </span>
+          <button
+            disabled={page >= pagination.pages}
+            onClick={() => updateFilter({ page: page + 1 })}
+            className={`px-3 py-2 rounded-xl ${page >= pagination.pages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]'}`}
+          >
+            Sau
+          </button>
+        </div>
+      </div>
     </DashboardLayout>
   );
 }

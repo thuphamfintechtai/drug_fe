@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
-import { getPendingRegistrations, getRegistrationStats } from '../../services/admin/adminService';
+import { getPendingRegistrations } from '../../services/admin/adminService';
+import { getRegistrationStats } from '../../services/admin/statsService';
 
 export default function AdminRegistrations() {
   const [searchParams, setSearchParams] = useSearchParams();
