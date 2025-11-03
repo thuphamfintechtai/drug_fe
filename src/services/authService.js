@@ -46,9 +46,9 @@ export const authService = {
     return response.data;
   },
 
-  // Quên mật khẩu
-  forgotPassword: async (email) => {
-    const response = await api.post('/auth/forgot-password', { email });
+  // Quên mật khẩu (tự động detect: user thông thường hoặc business user)
+  forgotPassword: async (data) => {
+    const response = await api.post('/auth/forgot-password', data);
     return response.data;
   },
 
@@ -57,6 +57,26 @@ export const authService = {
     const response = await api.post('/auth/reset-password', {
       token,
       newPassword,
+    });
+    return response.data;
+  },
+
+  // Admin: Lấy danh sách yêu cầu reset mật khẩu
+  getPasswordResetRequests: async () => {
+    const response = await api.get('/auth/password-reset-requests');
+    return response.data;
+  },
+
+  // Admin: Duyệt yêu cầu reset mật khẩu
+  approvePasswordReset: async (resetRequestId) => {
+    const response = await api.post(`/auth/password-reset-requests/${resetRequestId}/approve`);
+    return response.data;
+  },
+
+  // Admin: Từ chối yêu cầu reset mật khẩu
+  rejectPasswordReset: async (resetRequestId, rejectionReason) => {
+    const response = await api.post(`/auth/password-reset-requests/${resetRequestId}/reject`, {
+      rejectionReason,
     });
     return response.data;
   },
