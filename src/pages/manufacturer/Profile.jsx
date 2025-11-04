@@ -45,38 +45,37 @@ export default function Profile() {
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {/* Banner */}
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">👤 Thông tin cá nhân</h1>
-          <p className="text-white/90 mt-2">Xem thông tin tài khoản và công ty (chỉ đọc)</p>
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#007b91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
+            </svg>
+            Thông tin cá nhân
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">Xem thông tin tài khoản và công ty (chỉ đọc)</p>
         </div>
-      </motion.section>
+      </div>
 
       {loading ? (
-        <div className="bg-white/90 rounded-2xl border border-[#90e0ef55] p-10 text-center text-slate-600">
+        <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center text-slate-600">
           Đang tải...
         </div>
       ) : !profile ? (
-        <div className="bg-white/90 rounded-2xl border border-[#90e0ef55] p-10 text-center text-red-600">
+        <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center text-red-600">
           Không thể tải thông tin
         </div>
       ) : (
         <div className="space-y-5">
           {/* User Info */}
           <motion.div
-            className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] overflow-hidden"
+            className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden"
             variants={fadeUp}
             initial="hidden"
             animate="show"
           >
             <div className="px-6 py-4 bg-gradient-to-r from-[#00b4d8] to-[#48cae4]">
-              <h2 className="text-xl font-bold text-white">📋 Thông tin tài khoản</h2>
+              <h2 className="text-xl font-bold text-white">Thông tin tài khoản</h2>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -111,7 +110,7 @@ export default function Profile() {
               </div>
 
               <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
-                <div className="text-xs text-cyan-700 mb-1">👛 Wallet Address</div>
+                <div className="text-xs text-cyan-700 mb-1">Wallet Address</div>
                 <div className="font-mono text-sm text-cyan-800 break-all">
                   {profile.user?.walletAddress || 'Chưa có'}
                 </div>
@@ -122,19 +121,19 @@ export default function Profile() {
           {/* Company Info */}
           {profile.company && (
             <motion.div
-              className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] overflow-hidden"
+              className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden"
               variants={fadeUp}
               initial="hidden"
               animate="show"
             >
-              <div className="px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600">
-                <h2 className="text-xl font-bold text-white">🏢 Thông tin công ty</h2>
+              <div className="px-6 py-4 bg-gradient-to-r from-[#00b4d8] to-[#48cae4]">
+                <h2 className="text-xl font-bold text-white">Thông tin công ty</h2>
               </div>
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
-                    <div className="text-xs text-purple-700 mb-1">Tên công ty</div>
-                    <div className="font-bold text-purple-900 text-lg">{profile.company.name || 'N/A'}</div>
+                  <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
+                    <div className="text-xs text-cyan-700 mb-1">Tên công ty</div>
+                    <div className="font-bold text-cyan-900 text-lg">{profile.company.name || 'N/A'}</div>
                   </div>
                   <div className="bg-slate-50 rounded-xl p-4">
                     <div className="text-xs text-slate-500 mb-1">Mã số thuế</div>
@@ -159,17 +158,17 @@ export default function Profile() {
                 </div>
 
                 <div className="bg-slate-50 rounded-xl p-4">
-                  <div className="text-xs text-slate-500 mb-1">📍 Địa chỉ</div>
+                  <div className="text-xs text-slate-500 mb-1">Địa chỉ</div>
                   <div className="font-medium text-slate-800">{profile.company.address || 'N/A'}</div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">📞 Số điện thoại</div>
+                    <div className="text-xs text-slate-500 mb-1">Số điện thoại</div>
                     <div className="font-medium text-slate-800">{profile.company.phone || 'N/A'}</div>
                   </div>
                   <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">🌐 Website</div>
+                    <div className="text-xs text-slate-500 mb-1">Website</div>
                     <div className="font-medium text-slate-800">{profile.company.website || 'N/A'}</div>
                   </div>
                 </div>
@@ -194,7 +193,6 @@ export default function Profile() {
             animate="show"
           >
             <div className="flex items-start gap-3">
-              <div className="text-2xl">ℹ️</div>
               <div>
                 <div className="font-semibold text-yellow-800 mb-1">Lưu ý quan trọng</div>
                 <div className="text-sm text-yellow-700">

@@ -86,22 +86,21 @@ export default function ProductionHistory() {
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {/* Banner */}
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-purple-600 via-purple-500 to-pink-500"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">📋 Lịch sử sản xuất</h1>
-          <p className="text-white/90 mt-2">Xem tất cả các lô sản xuất và trạng thái chuyển giao NFT</p>
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#007b91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
+            </svg>
+            Lịch sử sản xuất
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">Xem tất cả các lô sản xuất và trạng thái chuyển giao NFT</p>
         </div>
-      </motion.section>
+      </div>
 
       {/* Filters */}
       <motion.div
-        className="rounded-2xl bg-white/85 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
+        className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
         variants={fadeUp}
         initial="hidden"
         animate="show"
@@ -113,7 +112,7 @@ export default function ProductionHistory() {
               value={search}
               onChange={e => updateFilter({ search: e.target.value, page: 1 })}
               placeholder="Tìm theo tên thuốc, số lô..."
-              className="w-full border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
+              className="w-full border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
             />
           </div>
           <div>
@@ -121,7 +120,7 @@ export default function ProductionHistory() {
             <select
               value={status}
               onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
+              className="border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
             >
               <option value="">Tất cả</option>
               <option value="minted">Minted (chưa chuyển)</option>
@@ -142,18 +141,18 @@ export default function ProductionHistory() {
         animate="show"
       >
         {loading ? (
-          <div className="bg-white/90 rounded-2xl border border-[#90e0ef55] p-10 text-center text-slate-600">
+          <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center text-slate-600">
             Đang tải...
           </div>
         ) : items.length === 0 ? (
-          <div className="bg-white/90 rounded-2xl border border-[#90e0ef55] p-10 text-center">
+          <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
             <div className="text-5xl mb-4">📦</div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lịch sử sản xuất</h3>
             <p className="text-slate-600">Các lô sản xuất của bạn sẽ hiển thị ở đây</p>
           </div>
         ) : (
           items.map((item, idx) => (
-            <div key={idx} className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] overflow-hidden hover:shadow-lg transition">
+            <div key={idx} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
               <div className="p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
