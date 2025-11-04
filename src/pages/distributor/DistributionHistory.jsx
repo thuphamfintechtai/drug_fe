@@ -137,35 +137,105 @@ export default function DistributionHistory() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold text-[#003544]">
-                        Từ: {item.invoice?.fromManufacturer?.fullName || 'N/A'}
+                        Từ: {item.fromManufacturer?.fullName || item.fromManufacturer?.username || 'N/A'}
                       </h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
                         {item.status}
                       </span>
                     </div>
-                    <div className="space-y-1 text-sm text-slate-600">
-                      <div>📦 Đơn hàng: <span className="font-mono font-medium text-slate-800">{item.invoice?.invoiceNumber}</span></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-600 mb-4">
+                      <div>📦 Đơn hàng: <span className="font-mono font-medium text-slate-800">{item.manufacturerInvoice?.invoiceNumber || 'N/A'}</span></div>
                       <div>💊 Số lượng: <span className="font-bold text-purple-700">{item.distributedQuantity} NFT</span></div>
-                      <div>📍 Địa chỉ: <span className="font-medium">{item.deliveryAddress}</span></div>
-                      <div>🕒 Ngày nhận: <span className="font-medium">{new Date(item.distributionDate).toLocaleString('vi-VN')}</span></div>
+                      <div>📍 Địa chỉ: <span className="font-medium">
+                        {typeof item.deliveryAddress === 'object' && item.deliveryAddress !== null
+                          ? `${item.deliveryAddress.street || ''}${item.deliveryAddress.street && item.deliveryAddress.city ? ', ' : ''}${item.deliveryAddress.city || ''}`.trim() || 'Chưa có'
+                          : item.deliveryAddress || 'Chưa có'}
+                      </span></div>
+                      <div>🕒 Ngày nhận: <span className="font-medium">
+                        {item.distributionDate ? new Date(item.distributionDate).toLocaleDateString('vi-VN') : 'Chưa có'}
+                      </span></div>
                     </div>
                   </div>
                 </div>
 
+                {/* Thông tin nhà sản xuất */}
+                {item.fromManufacturer && (
+                  <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200 text-sm mb-3">
+                    <div className="font-semibold text-emerald-800 mb-2">🏭 Thông tin nhà sản xuất:</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-emerald-700">
+                      <div>Tên: <span className="font-medium">{item.fromManufacturer.fullName || item.fromManufacturer.username || 'N/A'}</span></div>
+                      <div>Email: <span className="font-medium">{item.fromManufacturer.email || 'N/A'}</span></div>
+                      <div>Username: <span className="font-mono text-xs">{item.fromManufacturer.username || 'N/A'}</span></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Thông tin hóa đơn */}
+                {item.manufacturerInvoice && (
+                  <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-200 text-sm mb-3">
+                    <div className="font-semibold text-indigo-800 mb-2">🧾 Thông tin hóa đơn:</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-indigo-700">
+                      <div>Số hóa đơn: <span className="font-mono font-medium">{item.manufacturerInvoice.invoiceNumber}</span></div>
+                      <div>Ngày hóa đơn: <span className="font-medium">
+                        {item.manufacturerInvoice.invoiceDate ? new Date(item.manufacturerInvoice.invoiceDate).toLocaleDateString('vi-VN') : 'N/A'}
+                      </span></div>
+                      <div>Số lượng: <span className="font-medium">{item.manufacturerInvoice.quantity}</span></div>
+                      <div>Đơn giá: <span className="font-medium">{item.manufacturerInvoice.unitPrice?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
+                      <div>Tổng tiền: <span className="font-bold text-indigo-800">{item.manufacturerInvoice.totalAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
+                      <div>VAT ({item.manufacturerInvoice.vatRate || 0}%): <span className="font-medium">{item.manufacturerInvoice.vatAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
+                      <div>Thành tiền: <span className="font-bold text-indigo-800">{item.manufacturerInvoice.finalAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
+                      <div>Trạng thái: <span className={`px-2 py-0.5 rounded text-xs font-medium ${item.manufacturerInvoice.status === 'sent' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{item.manufacturerInvoice.status || 'N/A'}</span></div>
+                    </div>
+                    {item.manufacturerInvoice.notes && (
+                      <div className="mt-2 pt-2 border-t border-indigo-200">
+                        <span className="text-indigo-600">Ghi chú: {item.manufacturerInvoice.notes}</span>
+                      </div>
+                    )}
+                    {item.manufacturerInvoice.chainTxHash && (
+                      <div className="mt-2 pt-2 border-t border-indigo-200">
+                        <span className="text-indigo-600">Chain TX Hash: <span className="font-mono text-xs">{item.manufacturerInvoice.chainTxHash}</span></span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Người nhận */}
                 {item.receivedBy && (
                   <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200 text-sm mb-3">
                     <div className="font-semibold text-cyan-800 mb-1">👤 Người nhận:</div>
-                    <div className="text-cyan-700">{item.receivedBy}</div>
+                    <div className="text-cyan-700">
+                      {typeof item.receivedBy === 'object' && item.receivedBy !== null ? (
+                        <div className="space-y-1">
+                          <div>{item.receivedBy.fullName || item.receivedBy.name || item.receivedBy.username || 'Chưa có'}</div>
+                          {item.receivedBy.signature && (
+                            <div className="text-xs">Chữ ký: <span className="font-mono">{item.receivedBy.signature}</span></div>
+                          )}
+                        </div>
+                      ) : (
+                        item.receivedBy
+                      )}
+                    </div>
                   </div>
                 )}
 
+                {/* Thông tin vận chuyển */}
                 {item.shippingInfo && (
                   <div className="bg-blue-50 rounded-xl p-3 border border-blue-200 text-sm mb-3">
                     <div className="font-semibold text-blue-800 mb-1">🚚 Thông tin vận chuyển:</div>
-                    <div className="text-blue-700">{item.shippingInfo}</div>
+                    <div className="text-blue-700">
+                      {typeof item.shippingInfo === 'object' && item.shippingInfo !== null ? (
+                        <div className="space-y-1">
+                          {item.shippingInfo.carrier && <div>Đơn vị: <span className="font-medium">{item.shippingInfo.carrier}</span></div>}
+                          {item.shippingInfo.trackingNumber && <div>Mã vận đơn: <span className="font-mono font-medium">{item.shippingInfo.trackingNumber}</span></div>}
+                        </div>
+                      ) : (
+                        item.shippingInfo
+                      )}
+                    </div>
                   </div>
                 )}
 
+                {/* Ghi chú */}
                 {item.notes && (
                   <div className="bg-slate-50 rounded-xl p-3 text-sm">
                     <div className="font-semibold text-slate-700 mb-1">📝 Ghi chú:</div>

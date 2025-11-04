@@ -45,8 +45,12 @@ export default function TransferManagement() {
       if (prodRes.data.success) {
         setProductions(prodRes.data.data.productions || []);
       }
-      if (distRes.data.success) {
-        setDistributors(distRes.data.data || []);
+      if (distRes.data.success && distRes.data.data) {
+        setDistributors(Array.isArray(distRes.data.data.distributors) 
+          ? distRes.data.data.distributors 
+          : []);
+      } else {
+        setDistributors([]);
       }
     } catch (error) {
       console.error('Lỗi khi tải dữ liệu:', error);
@@ -103,7 +107,17 @@ export default function TransferManagement() {
     show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
   };
 
-  const selectedDistributor = distributors.find(d => d._id === formData.distributorId);
+  // Helper function để format date an toàn
+  const formatDate = (dateValue) => {
+    if (!dateValue) return 'Chưa có';
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return 'Không hợp lệ';
+    return date.toLocaleDateString('vi-VN');
+  };
+
+  // Đảm bảo distributors luôn là array
+  const safeDistributors = Array.isArray(distributors) ? distributors : [];
+  const selectedDistributor = safeDistributors.find(d => d._id === formData.distributorId);
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
@@ -203,10 +217,10 @@ export default function TransferManagement() {
                       <span className="text-xs text-slate-500 ml-1">NFT</span>
                     </td>
                     <td className="px-6 py-4 text-slate-700 text-sm">
-                      {new Date(prod.manufacturingDate).toLocaleDateString('vi-VN')}
+                      {formatDate(prod.manufacturingDate)}
                     </td>
                     <td className="px-6 py-4 text-slate-700 text-sm">
-                      {new Date(prod.expiryDate).toLocaleDateString('vi-VN')}
+                      {formatDate(prod.expiryDate)}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <button
@@ -280,7 +294,7 @@ export default function TransferManagement() {
                   className="w-full border-2 border-orange-300 rounded-xl p-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
                 >
                   <option value="">-- Chọn distributor --</option>
-                  {distributors.map(dist => (
+                  {safeDistributors.map(dist => (
                     <option key={dist._id} value={dist._id}>
                       {dist.name} ({dist.taxCode})
                     </option>
@@ -291,11 +305,27 @@ export default function TransferManagement() {
               {selectedDistributor && (
                 <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
                   <div className="text-sm font-semibold text-cyan-800 mb-2">📍 Thông tin distributor:</div>
-                  <div className="space-y-1 text-sm">
-                    <div><span className="text-slate-600">Tên:</span> <span className="font-medium">{selectedDistributor.name}</span></div>
-                    <div><span className="text-slate-600">Địa chỉ:</span> <span className="font-medium">{selectedDistributor.address}</span></div>
-                    <div><span className="text-slate-600">Wallet:</span> <span className="font-mono text-xs">{selectedDistributor.walletAddress || 'Chưa có'}</span></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-slate-600">Tên:</span> <span className="font-medium">{selectedDistributor.name || 'N/A'}</span></div>
+                    <div><span className="text-slate-600">Mã số thuế:</span> <span className="font-medium">{selectedDistributor.taxCode || 'N/A'}</span></div>
+                    <div><span className="text-slate-600">Số giấy phép:</span> <span className="font-medium">{selectedDistributor.licenseNo || 'N/A'}</span></div>
+                    <div><span className="text-slate-600">Quốc gia:</span> <span className="font-medium">{selectedDistributor.country || 'N/A'}</span></div>
+                    <div className="md:col-span-2"><span className="text-slate-600">Địa chỉ:</span> <span className="font-medium">{selectedDistributor.address || 'N/A'}</span></div>
+                    <div><span className="text-slate-600">Email liên hệ:</span> <span className="font-medium">{selectedDistributor.contactEmail || 'N/A'}</span></div>
+                    <div><span className="text-slate-600">SĐT liên hệ:</span> <span className="font-medium">{selectedDistributor.contactPhone || 'N/A'}</span></div>
+                    <div className="md:col-span-2"><span className="text-slate-600">Wallet Address:</span> <span className="font-mono text-xs break-all">{selectedDistributor.walletAddress || selectedDistributor.user?.walletAddress || 'Chưa có'}</span></div>
                   </div>
+                  
+                  {selectedDistributor.user && (
+                    <div className="mt-3 pt-3 border-t border-cyan-200">
+                      <div className="text-xs font-semibold text-cyan-700 mb-1">👤 Thông tin tài khoản:</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs">
+                        <div><span className="text-slate-600">Tên:</span> <span className="font-medium">{selectedDistributor.user.fullName || selectedDistributor.user.username || 'N/A'}</span></div>
+                        <div><span className="text-slate-600">Username:</span> <span className="font-mono">{selectedDistributor.user.username || 'N/A'}</span></div>
+                        <div className="md:col-span-2"><span className="text-slate-600">Email:</span> <span className="font-medium">{selectedDistributor.user.email || 'N/A'}</span></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

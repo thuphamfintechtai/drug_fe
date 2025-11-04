@@ -46,8 +46,12 @@ export default function TransferToPharmacy() {
       if (distRes.data.success) {
         setDistributions(distRes.data.data.distributions || []);
       }
-      if (pharmRes.data.success) {
-        setPharmacies(pharmRes.data.data || []);
+      if (pharmRes.data.success && pharmRes.data.data) {
+        setPharmacies(Array.isArray(pharmRes.data.data.pharmacies) 
+          ? pharmRes.data.data.pharmacies 
+          : []);
+      } else {
+        setPharmacies([]);
       }
     } catch (error) {
       console.error('Lỗi khi tải dữ liệu:', error);
@@ -57,6 +61,7 @@ export default function TransferToPharmacy() {
   };
 
   const handleSelectDistribution = (dist) => {
+    console.log('Selected distribution:', dist);
     setSelectedDistribution(dist);
     setFormData({
       distributionId: dist._id,
@@ -103,7 +108,9 @@ export default function TransferToPharmacy() {
     show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
   };
 
-  const selectedPharmacy = pharmacies.find(p => p._id === formData.pharmacyId);
+  // Đảm bảo pharmacies luôn là array
+  const safePharmacies = Array.isArray(pharmacies) ? pharmacies : [];
+  const selectedPharmacy = safePharmacies.find(p => p._id === formData.pharmacyId);
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
@@ -189,11 +196,11 @@ export default function TransferToPharmacy() {
                 {distributions.map((dist, index) => (
                   <tr key={dist._id || index} className="hover:bg-orange-50 transition group">
                     <td className="px-6 py-4 font-semibold text-[#003544]">
-                      {dist.invoice?.fromManufacturer?.fullName || 'N/A'}
+                      {dist.fromManufacturer?.fullName || dist.fromManufacturer?.username || 'N/A'}
                     </td>
                     <td className="px-6 py-4">
                       <span className="font-mono text-sm bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                        {dist.invoice?.invoiceNumber || 'N/A'}
+                        {dist.manufacturerInvoice?.invoiceNumber || 'N/A'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -201,7 +208,7 @@ export default function TransferToPharmacy() {
                       <span className="text-xs text-slate-500 ml-1">NFT</span>
                     </td>
                     <td className="px-6 py-4 text-slate-700 text-sm">
-                      {new Date(dist.distributionDate).toLocaleDateString('vi-VN')}
+                      {dist.distributionDate ? new Date(dist.distributionDate).toLocaleDateString('vi-VN') : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <button
@@ -248,15 +255,33 @@ export default function TransferToPharmacy() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-600">Đơn hàng:</span>
-                    <span className="font-mono font-medium">{selectedDistribution.invoice?.invoiceNumber}</span>
+                    <span className="font-mono font-medium">
+                      {selectedDistribution.manufacturerInvoice?.invoiceNumber 
+                        || selectedDistribution.invoice?.invoiceNumber 
+                        || 'N/A'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Từ:</span>
-                    <span className="font-medium">{selectedDistribution.invoice?.fromManufacturer?.fullName}</span>
+                    <span className="font-medium">
+                      {selectedDistribution.fromManufacturer?.fullName 
+                        || selectedDistribution.fromManufacturer?.username
+                        || selectedDistribution.invoice?.fromManufacturer?.fullName
+                        || selectedDistribution.invoice?.fromManufacturer?.username
+                        || 'N/A'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Tổng số NFT:</span>
-                    <span className="font-bold text-orange-700">{selectedDistribution.distributedQuantity}</span>
+                    <span className="font-bold text-orange-700">{selectedDistribution.distributedQuantity || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Ngày nhận:</span>
+                    <span className="font-medium">
+                      {selectedDistribution.distributionDate 
+                        ? new Date(selectedDistribution.distributionDate).toLocaleDateString('vi-VN') 
+                        : 'N/A'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -270,7 +295,7 @@ export default function TransferToPharmacy() {
                   className="w-full border-2 border-orange-300 rounded-xl p-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
                 >
                   <option value="">-- Chọn pharmacy --</option>
-                  {pharmacies.map(pharm => (
+                  {safePharmacies.map(pharm => (
                     <option key={pharm._id} value={pharm._id}>
                       {pharm.name} ({pharm.taxCode})
                     </option>
@@ -281,11 +306,27 @@ export default function TransferToPharmacy() {
               {selectedPharmacy && (
                 <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
                   <div className="text-sm font-semibold text-cyan-800 mb-2">🏥 Thông tin nhà thuốc:</div>
-                  <div className="space-y-1 text-sm">
-                    <div><span className="text-slate-600">Tên:</span> <span className="font-medium">{selectedPharmacy.name}</span></div>
-                    <div><span className="text-slate-600">Địa chỉ:</span> <span className="font-medium">{selectedPharmacy.address}</span></div>
-                    <div><span className="text-slate-600">Wallet:</span> <span className="font-mono text-xs">{selectedPharmacy.walletAddress || 'Chưa có'}</span></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-slate-600">Tên:</span> <span className="font-medium">{selectedPharmacy.name || 'N/A'}</span></div>
+                    <div><span className="text-slate-600">Mã số thuế:</span> <span className="font-medium">{selectedPharmacy.taxCode || 'N/A'}</span></div>
+                    <div><span className="text-slate-600">Số giấy phép:</span> <span className="font-medium">{selectedPharmacy.licenseNo || 'N/A'}</span></div>
+                    <div><span className="text-slate-600">Quốc gia:</span> <span className="font-medium">{selectedPharmacy.country || 'N/A'}</span></div>
+                    <div className="md:col-span-2"><span className="text-slate-600">Địa chỉ:</span> <span className="font-medium">{selectedPharmacy.address || 'N/A'}</span></div>
+                    <div><span className="text-slate-600">Email liên hệ:</span> <span className="font-medium">{selectedPharmacy.contactEmail || 'N/A'}</span></div>
+                    <div><span className="text-slate-600">SĐT liên hệ:</span> <span className="font-medium">{selectedPharmacy.contactPhone || 'N/A'}</span></div>
+                    <div className="md:col-span-2"><span className="text-slate-600">Wallet Address:</span> <span className="font-mono text-xs break-all">{selectedPharmacy.walletAddress || selectedPharmacy.user?.walletAddress || 'Chưa có'}</span></div>
                   </div>
+                  
+                  {selectedPharmacy.user && (
+                    <div className="mt-3 pt-3 border-t border-cyan-200">
+                      <div className="text-xs font-semibold text-cyan-700 mb-1">👤 Thông tin tài khoản:</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs">
+                        <div><span className="text-slate-600">Tên:</span> <span className="font-medium">{selectedPharmacy.user.fullName || selectedPharmacy.user.username || 'N/A'}</span></div>
+                        <div><span className="text-slate-600">Username:</span> <span className="font-mono">{selectedPharmacy.user.username || 'N/A'}</span></div>
+                        <div className="md:col-span-2"><span className="text-slate-600">Email:</span> <span className="font-medium">{selectedPharmacy.user.email || 'N/A'}</span></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
