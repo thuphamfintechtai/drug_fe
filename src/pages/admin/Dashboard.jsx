@@ -119,19 +119,11 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Banner */}
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">Tổng quan hệ thống</h1>
-          <p className="text-white/90 mt-2 text-lg">Giám sát và quản lý toàn bộ hệ thống truy xuất nguồn gốc thuốc</p>
-        </div>
-      </motion.section>
+      {/* Banner (đồng bộ kiểu card trắng viền cyan) */}
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
+        <h1 className="text-xl font-semibold text-[#007b91]">Tổng quan hệ thống</h1>
+        <p className="text-slate-500 text-sm mt-1">Giám sát và quản lý toàn bộ hệ thống truy xuất nguồn gốc thuốc</p>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
@@ -143,7 +135,7 @@ export default function AdminDashboard() {
           <motion.div variants={fadeUp} initial="hidden" animate="show">
             <h2 className="text-xl font-semibold text-slate-800 mb-4">👥 Người dùng & Đơn đăng ký</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] p-5">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <div className="text-sm text-[#003544]/70 mb-1">Tổng người dùng</div>
                 <div className="text-3xl font-bold text-[#003544]">{systemStats?.users?.total || 0}</div>
                 <div className="text-xs text-[#003544]/60 mt-2">
@@ -151,27 +143,36 @@ export default function AdminDashboard() {
                 </div>
               </div>
               
-              <Link to="/admin/registrations?status=pending" className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border border-amber-200 shadow-[0_10px_24px_rgba(251,191,36,0.15)] p-5 hover:shadow-[0_14px_36px_rgba(251,191,36,0.25)] transition">
-                <div className="text-sm text-amber-700 mb-1">Chờ duyệt</div>
-                <div className="text-3xl font-bold text-amber-600">{registrationStats?.byStatus?.pending || 0}</div>
-                <div className="text-xs text-amber-600/70 mt-2">Đơn đăng ký cần xử lý</div>
+              <Link to="/admin/registrations?status=pending" className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition">
+                <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-amber-400 to-yellow-400 rounded-t-2xl" />
+                <div className="p-5 pt-7">
+                  <div className="text-sm text-slate-600 mb-1">Chờ duyệt</div>
+                  <div className="text-3xl font-bold text-amber-600">{registrationStats?.byStatus?.pending || 0}</div>
+                  <div className="text-xs text-slate-500 mt-2">Đơn đăng ký cần xử lý</div>
+                </div>
               </Link>
               
-              <Link to="/admin/registrations?status=blockchain_failed" className="bg-gradient-to-br from-red-50 to-rose-50 rounded-2xl border border-red-200 shadow-[0_10px_24px_rgba(239,68,68,0.15)] p-5 hover:shadow-[0_14px_36px_rgba(239,68,68,0.25)] transition">
-                <div className="text-sm text-red-700 mb-1">Blockchain Failed</div>
-                <div className="text-3xl font-bold text-red-600">{registrationStats?.byStatus?.blockchain_failed || 0}</div>
-                <div className="text-xs text-red-600/70 mt-2">Cần retry blockchain</div>
+              <Link to="/admin/registrations?status=blockchain_failed" className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition">
+                <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-rose-400 to-red-400 rounded-t-2xl" />
+                <div className="p-5 pt-7">
+                  <div className="text-sm text-slate-600 mb-1">Blockchain Failed</div>
+                  <div className="text-3xl font-bold text-rose-600">{registrationStats?.byStatus?.blockchain_failed || 0}</div>
+                  <div className="text-xs text-slate-500 mt-2">Cần retry blockchain</div>
+                </div>
               </Link>
               
-              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl border border-emerald-200 shadow-[0_10px_24px_rgba(16,185,129,0.15)] p-5">
-                <div className="text-sm text-emerald-700 mb-1">Đã duyệt</div>
-                <div className="text-3xl font-bold text-emerald-600">{registrationStats?.byStatus?.approved || 0}</div>
-                <div className="text-xs text-emerald-600/70 mt-2">Thành công</div>
+              <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
+                <div className="p-5 pt-7">
+                  <div className="text-sm text-slate-600 mb-1">Đã duyệt</div>
+                  <div className="text-3xl font-bold text-emerald-600">{registrationStats?.byStatus?.approved || 0}</div>
+                  <div className="text-xs text-slate-500 mt-2">Thành công</div>
+                </div>
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <div className="bg-white/90 rounded-xl border border-slate-200 p-4">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
                 <div className="text-sm text-slate-600 mb-2">Doanh nghiệp</div>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
@@ -189,7 +190,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
               
-              <div className="bg-white/90 rounded-xl border border-slate-200 p-4">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
                 <div className="text-sm text-slate-600 mb-2">Đơn đăng ký theo vai trò</div>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
@@ -227,19 +228,19 @@ export default function AdminDashboard() {
                 </div>
               </Link>
               
-              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <div className="text-sm text-slate-600 mb-1">Tổng NFT</div>
                 <div className="text-3xl font-bold text-[#003544]">{drugStats?.nfts?.total || 0}</div>
                 <div className="text-xs text-slate-500 mt-2">Token đã mint</div>
               </div>
               
-              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <div className="text-sm text-slate-600 mb-1">NFT Transferred</div>
                 <div className="text-3xl font-bold text-[#003544]">{drugStats?.nfts?.byStatus?.transferred || 0}</div>
                 <div className="text-xs text-slate-500 mt-2">Đang lưu thông</div>
               </div>
               
-              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <div className="text-sm text-slate-600 mb-1">NFT Sold</div>
                 <div className="text-3xl font-bold text-emerald-600">{drugStats?.nfts?.byStatus?.sold || 0}</div>
                 <div className="text-xs text-emerald-600/70 mt-2">Đã bán cho nhà thuốc</div>
@@ -247,7 +248,7 @@ export default function AdminDashboard() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="bg-white/90 rounded-xl border border-slate-200 p-4">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
                 <div className="text-sm text-slate-600 mb-3">Top nhà sản xuất</div>
                 <div className="space-y-2">
                   {drugStats?.drugs?.byManufacturer?.slice(0, 5).map((item, idx) => (
@@ -262,7 +263,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
               
-              <div className="bg-white/90 rounded-xl border border-slate-200 p-4">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
                 <div className="text-sm text-slate-600 mb-3">Trạng thái NFT</div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>

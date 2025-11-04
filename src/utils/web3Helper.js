@@ -202,6 +202,38 @@ export const transferNFTToDistributor = async (tokenIds, distributorAddress) => 
 };
 
 /**
+ * Transfer batch ERC1155 NFTs with amounts to distributor
+ */
+export const transferBatchNFTToDistributor = async (tokenIds, amounts, distributorAddress) => {
+  try {
+    console.log('📦 Batch transfer NFTs to distributor...');
+    console.log('Token IDs:', tokenIds);
+    console.log('Amounts:', amounts);
+    console.log('Distributor Address:', distributorAddress);
+
+    const contract = await getNFTContract();
+
+    // Call manufacturerTransferToDistributor(tokenIds, amounts, distributor)
+    const tx = await contract.manufacturerTransferToDistributor(tokenIds, amounts, distributorAddress);
+
+    console.log('⏳ Transaction submitted:', tx.hash);
+
+    const receipt = await tx.wait();
+
+    console.log('✅ Batch transfer confirmed:', receipt);
+
+    return {
+      success: true,
+      transactionHash: tx.hash,
+      blockNumber: receipt.blockNumber
+    };
+  } catch (error) {
+    console.error('❌ Error batch transferring NFT:', error);
+    throw error;
+  }
+};
+
+/**
  * Check if MetaMask is installed
  */
 export const isMetaMaskInstalled = () => {

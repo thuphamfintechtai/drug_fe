@@ -24,6 +24,9 @@ export const saveTransferTransaction = (data) => api.post('/pharma-company/produ
 // Lịch sử sản xuất
 export const getProductionHistory = (params = {}) => api.get('/pharma-company/production/history', { params });
 
+// Lấy danh sách tokenId còn khả dụng theo lô sản xuất
+export const getAvailableTokensForProduction = (productionId) => api.get(`/pharma-company/production/${productionId}/available-tokens`);
+
 // Lịch sử chuyển giao
 export const getTransferHistory = (params = {}) => api.get('/pharma-company/transfer/history', { params });
 
@@ -51,6 +54,7 @@ export default {
   createTransferToDistributor,
   saveTransferTransaction,
   getProductionHistory,
+  getAvailableTokensForProduction,
   getTransferHistory,
   getStatistics,
   
