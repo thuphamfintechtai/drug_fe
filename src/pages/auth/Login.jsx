@@ -19,9 +19,21 @@ export default function Login() {
 
     try {
       const result = await login(email, password);
+      console.log('Login result:', result);
       
       if (result.success) {
-        const userRole = result.data.user.role;
+        // Lấy user từ response.data hoặc result.data
+        const user = result.data?.user || result.data;
+        const userRole = user?.role;
+        
+        console.log('Login successful, user:', user);
+        console.log('User role:', userRole);
+        
+        if (!userRole) {
+          setError('Không thể xác định vai trò người dùng');
+          return;
+        }
+        
         switch (userRole) {
           case 'system_admin':
             navigate('/admin');
@@ -42,7 +54,8 @@ export default function Login() {
         setError(result.message || 'Đăng nhập thất bại');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || err.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }

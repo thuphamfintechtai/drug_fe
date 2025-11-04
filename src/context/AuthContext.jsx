@@ -49,19 +49,27 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authService.login(email, password);
+      console.log('AuthService response:', response);
+      
       if (response.success) {
-        const { user, token } = response.data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        setUser(user);
-        setIsAuthenticated(true);
-        return { success: true, data: response.data };
+        const { user, token } = response.data || {};
+        if (token && user) {
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(user));
+          setUser(user);
+          setIsAuthenticated(true);
+          return { success: true, data: response.data };
+        } else {
+          console.error('Missing token or user in response:', response);
+          return { success: false, message: 'Thiếu thông tin xác thực từ server' };
+        }
       }
-      return { success: false, message: response.message };
+      return { success: false, message: response.message || 'Đăng nhập thất bại' };
     } catch (error) {
+      console.error('Login error:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Đăng nhập thất bại',
+        message: error.response?.data?.message || error.message || 'Đăng nhập thất bại',
       };
     }
   };
