@@ -53,13 +53,20 @@ export default function TransferHistory() {
           distributor: invoice.toDistributor || invoice.distributor,
           // Map chainTxHash thành transactionHash
           transactionHash: invoice.chainTxHash || invoice.transactionHash,
+          // Đảm bảo tokenIds được lấy từ invoice (nếu chưa có trong root level)
+          tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
+          amounts: invoice.amounts || invoice.invoice?.amounts || [],
           // Thêm invoice object để handleRetry có thể dùng
           invoice: {
             _id: invoice._id,
             invoiceNumber: invoice.invoiceNumber,
             invoiceDate: invoice.invoiceDate,
+            tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
           },
         })) : [];
+        
+        console.log('Mapped items:', mappedItems);
+        console.log('Items with pending/sent status:', mappedItems.filter(item => ['pending', 'sent'].includes(item.status) && !item.transactionHash));
         
         setItems(mappedItems);
         setPagination(paginationData);
@@ -114,16 +121,28 @@ export default function TransferHistory() {
   };
 
   const handleRetry = async (item) => {
+    console.log('handleRetry called with item:', item);
+    
     if (!item.invoice?._id || !item.distributor?.walletAddress) {
       alert('Thiếu thông tin cần thiết để retry. Vui lòng kiểm tra lại invoice và distributor address.');
+      console.error('Missing invoice._id or distributor.walletAddress', {
+        hasInvoiceId: !!item.invoice?._id,
+        hasDistributorWallet: !!item.distributor?.walletAddress,
+        item: item
+      });
       return;
     }
 
-    const tokenIds = item.tokenIds || [];
-    const amounts = item.amounts || [];
+    // Lấy tokenIds từ nhiều nguồn có thể
+    const tokenIds = item.tokenIds || item.invoice?.tokenIds || [];
+    const amounts = item.amounts || item.invoice?.amounts || [];
+
+    console.log('TokenIds found:', tokenIds);
+    console.log('Amounts found:', amounts);
 
     if (tokenIds.length === 0) {
-      alert('Không tìm thấy token IDs để chuyển giao.');
+      alert('Không tìm thấy token IDs để chuyển giao. Vui lòng kiểm tra lại invoice đã có tokenIds chưa.');
+      console.error('No tokenIds found in item:', item);
       return;
     }
 
@@ -318,16 +337,31 @@ export default function TransferHistory() {
                   </div>
                 )}
 
-                {/* Retry Button - chỉ hiển thị khi status = pending và chưa có transactionHash */}
-                {item.status === 'pending' && !item.transactionHash && item.distributor?.walletAddress && (
+                {/* Nút chuyển NFT - hiển thị khi status = pending hoặc sent (distributor đã xác nhận) và chưa có transactionHash */}
+                {(['pending', 'sent'].includes(item.status)) && !item.transactionHash && item.distributor?.walletAddress && (
                   <div className="mt-4 pt-4 border-t border-slate-200">
+                    <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 text-sm text-amber-800 mb-3">
+                      {item.status === 'sent' 
+                        ? 'Distributor đã xác nhận nhận hàng. Vui lòng chuyển quyền sở hữu NFT on-chain.'
+                        : 'Chưa chuyển NFT on-chain. Vui lòng xác nhận chuyển quyền sở hữu NFT.'}
+                    </div>
                     <button
                       onClick={() => handleRetry(item)}
                       disabled={retryingId === item._id}
                       className="w-full px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 font-semibold"
                     >
-                      {retryingId === item._id ? 'Đang xử lý...' : 'Thử lại chuyển giao'}
+                      {retryingId === item._id ? 'Đang xử lý...' : (item.status === 'sent' ? 'Xác nhận chuyển NFT' : 'Thử lại chuyển giao')}
                     </button>
+                  </div>
+                )}
+                
+                {/* Debug info - chỉ hiển thị trong development */}
+                {process.env.NODE_ENV === 'development' && !item.transactionHash && (
+                  <div className="mt-2 text-xs text-slate-500 p-2 bg-slate-50 rounded">
+                    <div>Status: {item.status}</div>
+                    <div>Has distributor wallet: {item.distributor?.walletAddress ? 'Yes' : 'No'}</div>
+                    <div>Has tokenIds: {item.tokenIds?.length > 0 ? `Yes (${item.tokenIds.length})` : 'No'}</div>
+                    <div>Has transactionHash: {item.transactionHash ? 'Yes' : 'No'}</div>
                   </div>
                 )}
 

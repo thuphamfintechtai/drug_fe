@@ -485,6 +485,111 @@ export const transferBatchNFTToDistributor = async (tokenIds, amounts, distribut
 };
 
 /**
+ * Transfer NFT to pharmacy (from distributor)
+ * @param {string[]} tokenIds - Array of token IDs to transfer
+ * @param {string[]} amounts - Array of amounts (must match tokenIds length)
+ * @param {string} pharmacyAddress - Pharmacy wallet address
+ * @returns {Object} - { success: true, transactionHash: string, blockNumber: number }
+ */
+export const transferNFTToPharmacy = async (tokenIds, amounts, pharmacyAddress) => {
+  try {
+    console.log('📦 Transferring NFTs to pharmacy...');
+    console.log('Token IDs:', tokenIds);
+    console.log('Amounts:', amounts);
+    console.log('Pharmacy Address:', pharmacyAddress);
+
+    // Basic validations
+    if (!Array.isArray(tokenIds) || tokenIds.length === 0) {
+      throw new Error('tokenIds must be a non-empty array');
+    }
+    if (!Array.isArray(amounts) || amounts.length === 0 || amounts.length !== tokenIds.length) {
+      throw new Error('amounts must be a non-empty array and match the length of tokenIds');
+    }
+    if (!ethers.isAddress(pharmacyAddress)) {
+      throw new Error('Invalid pharmacy address');
+    }
+
+    const provider = await getWeb3Provider();
+    const signer = await provider.getSigner();
+    const signerAddress = await signer.getAddress();
+
+    // Ensure contracts are deployed on this network
+    await ensureDeployed(provider, NFT_CONTRACT_ADDRESS);
+    await ensureDeployed(provider, ACCESS_CONTROL_ADDRESS);
+
+    // TODO: Check distributor role on-chain if needed
+    // For now, we'll skip role check as it might not be in the access control contract
+
+    const contract = await getNFTContract();
+
+    // Normalize tokenIds to BigInt[]
+    const normalizedTokenIds = tokenIds.map((id) => {
+      if (typeof id === 'bigint') return id;
+      if (typeof id === 'string' && id.startsWith('0x')) return BigInt(id);
+      return BigInt(id);
+    });
+
+    // Normalize amounts to BigInt[]
+    const normalizedAmounts = amounts.map((amt) => {
+      if (typeof amt === 'bigint') return amt;
+      if (typeof amt === 'string') return BigInt(amt);
+      if (typeof amt === 'number') return BigInt(amt);
+      return BigInt(amt);
+    });
+
+    // Check balances before transfer
+    console.log('🔍 Checking balances before transfer...');
+    for (let i = 0; i < normalizedTokenIds.length; i++) {
+      const tokenId = normalizedTokenIds[i];
+      const amountNeeded = normalizedAmounts[i];
+      const balance = await contract.balanceOf(signerAddress, tokenId);
+      if (balance < amountNeeded) {
+        throw new Error(`Insufficient balance for token ID ${tokenId}: have ${balance}, need ${amountNeeded}. Please ensure the token IDs are correct and belong to this distributor.`);
+      }
+    }
+
+    // Call distributorTransferToPharmacy(pharmaAddress, tokenIds, amount)
+    console.log('📤 Calling distributorTransferToPharmacy...');
+    console.log('Pharmacy Address:', pharmacyAddress);
+    console.log('TokenIds:', normalizedTokenIds);
+    console.log('Amounts:', normalizedAmounts);
+
+    const tx = await contract.distributorTransferToPharmacy(
+      pharmacyAddress,
+      normalizedTokenIds,
+      normalizedAmounts
+    );
+
+    console.log('⏳ Transaction submitted:', tx.hash);
+    const receipt = await tx.wait();
+    console.log('✅ Transfer confirmed:', receipt);
+
+    return {
+      success: true,
+      transactionHash: tx.hash,
+      blockNumber: receipt.blockNumber
+    };
+  } catch (error) {
+    console.error('❌ Error transferring NFT to pharmacy:', error);
+    // Friendly error messages
+    if (error?.code === 'ACTION_REJECTED' || error?.code === 4001) {
+      throw new Error('User rejected the transaction');
+    }
+    if (error?.code === 'CALL_EXCEPTION') {
+      const reason = error.reason || (error.data && ethers.toUtf8String(error.data)) || 'unknown reason';
+      if (reason.includes("insufficient balance")) {
+        throw new Error(`Contract reverted: Insufficient balance. Please check if the distributor owns the NFTs being transferred. Details: ${reason}`);
+      }
+      throw new Error(`Contract call exception (reverted). Please check ownership and network. Details: ${reason}`);
+    }
+    if (/Contract not deployed/.test(error?.message || '')) {
+      throw new Error(error.message);
+    }
+    throw new Error(error?.message || 'Failed to transfer NFTs to pharmacy');
+  }
+};
+
+/**
  * Check if MetaMask is installed
  */
 export const isMetaMaskInstalled = () => {

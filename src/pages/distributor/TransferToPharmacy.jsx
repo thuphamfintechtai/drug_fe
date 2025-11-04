@@ -4,10 +4,15 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { 
   getDistributionHistory,
   getPharmacies,
-  transferToPharmacy
+  transferToPharmacy,
+  saveTransferToPharmacyTransaction,
+  getInvoiceDetail
 } from '../../services/distributor/distributorService';
+import { transferNFTToPharmacy, getCurrentWalletAddress } from '../../utils/web3Helper';
+import { useAuth } from '../../context/AuthContext';
 
 export default function TransferToPharmacy() {
+  const { user } = useAuth();
   const [distributions, setDistributions] = useState([]);
   const [pharmacies, setPharmacies] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -60,16 +65,164 @@ export default function TransferToPharmacy() {
     }
   };
 
-  const handleSelectDistribution = (dist) => {
+  const handleSelectDistribution = async (dist) => {
     console.log('Selected distribution:', dist);
-    setSelectedDistribution(dist);
-    setFormData({
-      distributionId: dist._id,
-      pharmacyId: '',
-      quantity: dist.distributedQuantity?.toString() || '',
-      notes: '',
-    });
-    setShowDialog(true);
+    console.log('Distribution keys:', Object.keys(dist || {}));
+    console.log('manufacturerInvoice:', dist?.manufacturerInvoice);
+    console.log('manufacturerInvoice keys:', dist?.manufacturerInvoice ? Object.keys(dist.manufacturerInvoice) : 'N/A');
+    console.log('manufacturerInvoice.tokenIds:', dist?.manufacturerInvoice?.tokenIds);
+    
+    // Hàm helper để tìm tokenIds từ distribution object
+    const extractTokenIds = (distributionObj, source = 'unknown') => {
+      console.log(`[extractTokenIds] Source: ${source}, Object:`, distributionObj);
+      let tokenIds = [];
+      
+      // Ưu tiên 1: Lấy từ manufacturerInvoice.tokenIds (từ ManufacturerInvoice model)
+      if (distributionObj.manufacturerInvoice?.tokenIds && Array.isArray(distributionObj.manufacturerInvoice.tokenIds)) {
+        tokenIds = distributionObj.manufacturerInvoice.tokenIds.map(id => String(id));
+        console.log('✅ Found tokenIds from manufacturerInvoice.tokenIds:', tokenIds);
+        return tokenIds;
+      }
+      // Ưu tiên 1b: manufacturerInvoice có thể là string ID, không phải object
+      if (distributionObj.manufacturerInvoice && typeof distributionObj.manufacturerInvoice === 'string') {
+        console.log('⚠️ manufacturerInvoice là string ID, không phải object được populate');
+      }
+      
+      // Ưu tiên 2: Lấy từ invoice.tokenIds (nếu API trả về với tên field khác)
+      if (distributionObj.invoice?.tokenIds && Array.isArray(distributionObj.invoice.tokenIds)) {
+        tokenIds = distributionObj.invoice.tokenIds.map(id => String(id));
+        console.log('✅ Found tokenIds from invoice.tokenIds:', tokenIds);
+        return tokenIds;
+      }
+      
+      // Ưu tiên 3: Thử lấy từ distribution.nftInfos (nếu có)
+      if (distributionObj.nftInfos && Array.isArray(distributionObj.nftInfos)) {
+        tokenIds = distributionObj.nftInfos.map(nft => {
+          if (typeof nft === 'string') return nft;
+          return String(nft.tokenId || nft._id || (nft.nftInfo && nft.nftInfo.tokenId) || '');
+        }).filter(Boolean);
+        if (tokenIds.length > 0) {
+          console.log('✅ Found tokenIds from nftInfos:', tokenIds);
+          return tokenIds;
+        }
+      }
+      
+      // Ưu tiên 4: Thử lấy từ distribution.tokenIds (nếu có trực tiếp)
+      if (distributionObj.tokenIds && Array.isArray(distributionObj.tokenIds)) {
+        tokenIds = distributionObj.tokenIds.map(id => String(id));
+        console.log('✅ Found tokenIds from distribution.tokenIds:', tokenIds);
+        return tokenIds;
+      }
+      
+      console.log(`❌ Không tìm thấy tokenIds trong ${source}`);
+      return [];
+    };
+    
+    // Thử lấy tokenIds từ distribution object ngay từ list trước
+    let tokenIds = extractTokenIds(dist, 'distribution list');
+    
+    setLoading(true);
+    try {
+      // Nếu chưa có tokenIds, mới gọi API detail
+      if (tokenIds.length === 0) {
+        console.log('Không tìm thấy tokenIds trong distribution list, đang thử lấy từ các nguồn khác...');
+        
+        // Lấy manufacturerInvoiceId (có thể là object._id hoặc string)
+        const manufacturerInvoiceId = dist?.manufacturerInvoice?._id || dist?.manufacturerInvoice;
+        
+        // Thử 1: Gọi getDistributionDetail (có thể không tồn tại)
+        if (!tokenIds.length) {
+          try {
+                        const detailRes = await getDistributionDetail(dist._id);
+            const detail = detailRes?.data?.data || detailRes?.data || dist;
+            console.log('Distribution detail from API:', detail);
+            console.log('Detail keys:', Object.keys(detail || {}));
+            console.log('Detail manufacturerInvoice:', detail?.manufacturerInvoice);
+            tokenIds = extractTokenIds(detail, 'API detail');
+          } catch (apiError) {
+            console.warn('API getDistributionDetail không khả dụng:', apiError.response?.status || apiError.message);
+            // Tiếp tục với phương án khác
+          }
+        }
+        
+        // Thử 2: Nếu vẫn chưa có tokenIds và có manufacturerInvoiceId, gọi API lấy invoice detail
+        if (!tokenIds.length && manufacturerInvoiceId && typeof manufacturerInvoiceId === 'string') {
+          console.log('Đang gọi API getInvoiceDetail để lấy tokenIds từ invoice ID:', manufacturerInvoiceId);
+          try {
+            const invoiceDetailRes = await getInvoiceDetail(manufacturerInvoiceId);
+            if (invoiceDetailRes?.data?.success && invoiceDetailRes.data.data) {
+              const invoiceDetail = invoiceDetailRes.data.data;
+              if (invoiceDetail.tokenIds && Array.isArray(invoiceDetail.tokenIds) && invoiceDetail.tokenIds.length > 0) {
+                tokenIds = invoiceDetail.tokenIds.map(id => String(id));
+                console.log('✅ Lấy được tokenIds từ API getInvoiceDetail:', tokenIds);
+              } else {
+                console.warn('⚠️ API getInvoiceDetail không trả về tokenIds hoặc tokenIds rỗng:', invoiceDetail);
+              }
+            }
+          } catch (invoiceError) {
+            console.warn('Lỗi khi gọi getInvoiceDetail:', invoiceError);
+            console.warn('Chi tiết lỗi:', invoiceError.response?.data || invoiceError.message);
+          }
+        }
+        
+        // Nếu vẫn không có tokenIds
+        if (tokenIds.length === 0) {
+          console.warn('⚠️ Không thể lấy tokenIds từ bất kỳ nguồn nào');
+        }
+      }
+      
+      // Lưu distribution với tokenIds vào state
+      const distributionWithTokens = {
+        ...dist,
+        tokenIds: tokenIds,
+      };
+      
+      setSelectedDistribution(distributionWithTokens);
+      setFormData({
+        distributionId: dist._id,
+        pharmacyId: '',
+        quantity: dist.distributedQuantity?.toString() || '',
+        notes: '',
+      });
+      
+      if (tokenIds.length === 0) {
+        console.warn('⚠️ Không tìm thấy tokenIds trong distribution:', dist._id);
+        const manufacturerInvoiceId = dist?.manufacturerInvoice?._id || dist?.manufacturerInvoice;
+        
+        // Hiển thị cảnh báo chi tiết hơn
+        let warningMessage = 'Cảnh báo: Không tìm thấy token IDs trong distribution.\n\n';
+        warningMessage += `Distribution ID: ${dist._id}\n`;
+        if (manufacturerInvoiceId) {
+          warningMessage += `Manufacturer Invoice ID: ${manufacturerInvoiceId}\n`;
+        }
+        warningMessage += '\nVui lòng kiểm tra:\n';
+        warningMessage += '1. Distribution đã có NFT được gán chưa?\n';
+        warningMessage += '2. Invoice từ manufacturer đã có tokenIds chưa?\n';
+        warningMessage += '3. Hoặc liên hệ quản trị viên để kiểm tra.\n\n';
+        warningMessage += 'Bạn vẫn có thể tiếp tục, nhưng sẽ không thể tạo chuyển giao nếu không có tokenIds.';
+        
+        alert(warningMessage);
+        console.error('Full distribution object:', JSON.stringify(dist, null, 2));
+      }
+      
+      setShowDialog(true);
+    } catch (error) {
+      console.error('Lỗi khi xử lý distribution:', error);
+      // Fallback: vẫn mở dialog với distribution từ list
+      setSelectedDistribution({
+        ...dist,
+        tokenIds: tokenIds, // Dùng tokenIds đã tìm được (nếu có)
+      });
+      setFormData({
+        distributionId: dist._id,
+        pharmacyId: '',
+        quantity: dist.distributedQuantity?.toString() || '',
+        notes: '',
+      });
+      setShowDialog(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -83,17 +236,178 @@ export default function TransferToPharmacy() {
       return;
     }
 
-    setLoading(true);
-    try {
-      const response = await transferToPharmacy({
-        ...formData,
-        quantity: parseInt(formData.quantity),
-      });
+    // Lấy tokenIds từ distribution (đã được lưu vào state từ handleSelectDistribution)
+    // Theo backend code, tokenIds nằm trong ManufacturerInvoice, không phải ProofOfDistribution
+    let tokenIds = [];
+    
+    // Ưu tiên 1: Dùng tokenIds đã được lưu trong state (từ API getDistributionDetail)
+    if (selectedDistribution.tokenIds && Array.isArray(selectedDistribution.tokenIds) && selectedDistribution.tokenIds.length > 0) {
+      tokenIds = selectedDistribution.tokenIds.map(id => String(id));
+    }
+    // Ưu tiên 2: Lấy từ manufacturerInvoice.tokenIds (từ ManufacturerInvoice model)
+    else if (selectedDistribution.manufacturerInvoice?.tokenIds && Array.isArray(selectedDistribution.manufacturerInvoice.tokenIds)) {
+      tokenIds = selectedDistribution.manufacturerInvoice.tokenIds.map(id => String(id));
+    }
+    // Ưu tiên 3: Lấy từ invoice.tokenIds (nếu API trả về với tên field khác)
+    else if (selectedDistribution.invoice?.tokenIds && Array.isArray(selectedDistribution.invoice.tokenIds)) {
+      tokenIds = selectedDistribution.invoice.tokenIds.map(id => String(id));
+    }
+    // Fallback: Thử lấy từ distribution.nftInfos
+    else if (selectedDistribution.nftInfos && Array.isArray(selectedDistribution.nftInfos)) {
+      tokenIds = selectedDistribution.nftInfos.map(nft => {
+        if (typeof nft === 'string') return nft;
+        return String(nft.tokenId || nft._id || (nft.nftInfo && nft.nftInfo.tokenId) || '');
+      }).filter(Boolean);
+    }
+
+         // Lấy số lượng cần chuyển
+     const requestedQty = parseInt(formData.quantity);
+     
+     // Nếu không có tokenIds, thử gửi manufacturerInvoiceId hoặc distributionId để backend tự lấy
+     if (tokenIds.length === 0) {
+       const manufacturerInvoiceId = selectedDistribution?.manufacturerInvoice?._id || selectedDistribution?.manufacturerInvoice;
+       
+       console.warn('⚠️ Không tìm thấy tokenIds, sẽ gửi manufacturerInvoiceId để backend tự động lấy:', manufacturerInvoiceId);
+       
+       // Nếu có manufacturerInvoiceId, vẫn tiếp tục - backend sẽ tự động lấy tokenIds
+       if (!manufacturerInvoiceId) {
+         alert('Không tìm thấy token IDs và không có manufacturerInvoiceId. Vui lòng liên hệ quản trị viên hoặc kiểm tra lại distribution đã có NFT chưa.');
+         console.error('Distribution không có tokenIds và không có manufacturerInvoiceId:', selectedDistribution);
+         return;
+       }
+       
+       // Thông báo cho user biết backend sẽ tự động lấy tokenIds
+       const confirmContinue = window.confirm(
+         'Không tìm thấy token IDs trong distribution.\n\n' +
+         'Backend sẽ tự động lấy tokenIds từ manufacturerInvoiceId.\n\n' +
+         'Bạn có muốn tiếp tục không?'
+       );
+       
+       if (!confirmContinue) {
+         return;
+       }
+     }
+
+         // Lấy số lượng tokenIds cần thiết (slice theo quantity)
+     // Nếu không có tokenIds, backend sẽ tự động lấy từ manufacturerInvoiceId
+     const selectedTokenIds = tokenIds.length > 0 ? tokenIds.slice(0, requestedQty) : [];
+     
+     // Tạo amounts array (mỗi token = 1) - đảm bảo là số, không phải BigInt
+     // Theo API spec: amounts[] phải là array số
+     // Quan trọng: amounts phải có cùng length với tokenIds
+     const amounts = selectedTokenIds.length > 0 
+       ? selectedTokenIds.map(() => 1)
+       : []; // Nếu không có tokenIds, gửi mảng rỗng (backend sẽ tự tạo sau khi lấy tokenIds)
+
+     if (tokenIds.length > 0 && selectedTokenIds.length < requestedQty) {
+       alert(`Cảnh báo: Chỉ có ${selectedTokenIds.length} token ID khả dụng, nhưng bạn yêu cầu ${requestedQty}. Chỉ chuyển ${selectedTokenIds.length} token.`);
+     }
+
+     setLoading(true);
+     try {
+       // Bước 1: Tạo invoice với status "draft"
+       // Theo API spec: POST /distributor/transfer/pharmacy
+       // Required: pharmacyId, tokenIds[], amounts[]
+       // Optional: invoiceNumber, invoiceDate, quantity, unitPrice, totalAmount, vatRate, vatAmount, finalAmount, deliveryAddress, notes
+       
+       // Chuẩn bị payload
+       const manufacturerInvoiceId = selectedDistribution?.manufacturerInvoice?._id || selectedDistribution?.manufacturerInvoice;
+       const distributionId = selectedDistribution?._id;
+       
+       const payload = {
+         pharmacyId: formData.pharmacyId,
+         quantity: requestedQty,
+         notes: formData.notes || undefined,
+       };
+       
+       // Luôn gửi tokenIds và amounts (có thể rỗng nếu không tìm thấy)
+       // Backend sẽ tự động lấy tokenIds nếu tokenIds rỗng và có manufacturerInvoiceId/distributionId
+       payload.tokenIds = selectedTokenIds; // Array of strings (có thể rỗng)
+       payload.amounts = amounts; // Array of numbers (có thể rỗng, backend sẽ tự tạo)
+       
+       // Nếu không có tokenIds, gửi thêm manufacturerInvoiceId hoặc distributionId để backend tự lấy
+       // Backend sẽ kiểm tra: nếu tokenIds rỗng và có manufacturerInvoiceId/distributionId, sẽ tự động lấy tokenIds
+       if (selectedTokenIds.length === 0) {
+         if (manufacturerInvoiceId) {
+           payload.manufacturerInvoiceId = manufacturerInvoiceId;
+           console.log('⚠️ Gửi manufacturerInvoiceId để backend tự động lấy tokenIds:', manufacturerInvoiceId);
+         }
+         if (distributionId) {
+           payload.distributionId = distributionId;
+           console.log('⚠️ Gửi distributionId để backend tự động lấy tokenIds:', distributionId);
+         }
+       }
+       
+       console.log('Payload gửi lên backend:', payload);
+       
+       const response = await transferToPharmacy(payload);
 
       if (response.data.success) {
-        alert('✅ Tạo yêu cầu chuyển giao thành công!\n\nTrạng thái: Pending\n\nBước tiếp theo: Gọi smart contract để chuyển quyền sở hữu NFT cho pharmacy.');
-        setShowDialog(false);
-        loadData();
+        const { commercialInvoice, pharmacyAddress, tokenIds: responseTokenIds, amounts: responseAmounts } = response.data.data || {};
+        
+        if (!commercialInvoice?._id || !pharmacyAddress) {
+          alert('✅ Đã tạo invoice thành công nhưng thiếu thông tin để chuyển NFT on-chain.\n\nVui lòng thử lại từ lịch sử chuyển giao.');
+          setShowDialog(false);
+          loadData();
+          return;
+        }
+
+        // Hỏi người dùng có muốn chuyển NFT on-chain ngay không
+        const proceed = window.confirm(
+          '✅ Đã tạo invoice thành công (status: draft).\n\n' +
+          'Bạn có muốn ký giao dịch trên blockchain ngay bây giờ không?\n\n' +
+          'Nếu chọn "Cancel", bạn có thể thử lại từ lịch sử chuyển giao sau.'
+        );
+
+        if (proceed) {
+          try {
+            // Kiểm tra ví hiện tại khớp ví distributor trong hệ thống
+            const currentWallet = await getCurrentWalletAddress();
+            if (user?.walletAddress && currentWallet.toLowerCase() !== user.walletAddress.toLowerCase()) {
+              alert('Ví đang kết nối không khớp với ví của distributor trong hệ thống.\nVui lòng chuyển tài khoản MetaMask sang: ' + user.walletAddress);
+              throw new Error('Wrong wallet connected');
+            }
+
+            // Bước 2: Gọi smart contract để chuyển NFT
+            // Smart contract yêu cầu amounts là BigInt, nhưng API trả về là số
+            // Convert amounts từ số sang BigInt nếu cần
+            const contractTokenIds = responseTokenIds || selectedTokenIds;
+            const contractAmounts = responseAmounts || amounts;
+            
+            console.log('Gọi smart contract với:', {
+              pharmacyAddress,
+              tokenIds: contractTokenIds,
+              amounts: contractAmounts
+            });
+
+            const onchain = await transferNFTToPharmacy(
+              contractTokenIds,
+              contractAmounts, // web3Helper sẽ tự convert sang BigInt
+              pharmacyAddress
+            );
+
+            // Bước 3: Lưu transaction hash vào backend
+            await saveTransferToPharmacyTransaction({
+              invoiceId: commercialInvoice._id,
+              transactionHash: onchain.transactionHash,
+              tokenIds: responseTokenIds || selectedTokenIds,
+            });
+
+            alert('🎉 Đã chuyển NFT on-chain và lưu transaction thành công!\n\nInvoice status: sent');
+            setShowDialog(false);
+            loadData();
+          } catch (e) {
+            console.error('Lỗi khi ký giao dịch hoặc lưu transaction:', e);
+            const msg = e?.message || 'Giao dịch on-chain thất bại hoặc bị hủy.';
+            alert(msg + '\n\nInvoice đã được tạo với status "draft". Bạn có thể thử lại từ lịch sử chuyển giao.');
+            setShowDialog(false);
+            loadData();
+          }
+        } else {
+          alert('✅ Tạo invoice thành công! Trạng thái: draft\n\nBước tiếp theo: Gọi smart contract để chuyển quyền sở hữu NFT cho pharmacy.\n\nBạn có thể thử lại từ lịch sử chuyển giao.');
+          setShowDialog(false);
+          loadData();
+        }
       }
     } catch (error) {
       console.error('Lỗi khi tạo chuyển giao:', error);
@@ -139,8 +453,8 @@ export default function TransferToPharmacy() {
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">2</div>
             <div>
-              <div className="font-semibold text-slate-800">Xác nhận trên hệ thống</div>
-              <div className="text-sm text-slate-600">Frontend gọi API Backend để lưu vào database với trạng thái "pending"</div>
+              <div className="font-semibold text-slate-800">Tạo invoice (Bước 1)</div>
+              <div className="text-sm text-slate-600">Frontend gọi API Backend để tạo invoice với trạng thái "draft"</div>
             </div>
           </div>
           <div className="flex items-start gap-3">
@@ -148,6 +462,13 @@ export default function TransferToPharmacy() {
             <div>
               <div className="font-semibold text-slate-800">Chuyển quyền sở hữu NFT</div>
               <div className="text-sm text-slate-600">Frontend gọi Smart Contract để transfer NFT từ Distributor wallet → Pharmacy wallet</div>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">4</div>
+            <div>
+              <div className="font-semibold text-slate-800">Lưu transaction hash (Bước 2)</div>
+              <div className="text-sm text-slate-600">Frontend gọi API Backend để lưu transaction hash, invoice status chuyển từ "draft" → "sent"</div>
             </div>
           </div>
         </div>
@@ -360,8 +681,8 @@ export default function TransferToPharmacy() {
 
               <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
                 <div className="text-sm text-yellow-800">
-                  ⚠️ Sau khi xác nhận, yêu cầu chuyển giao sẽ được lưu với trạng thái <strong>"pending"</strong>. 
-                  Bước tiếp theo cần gọi smart contract để chuyển quyền sở hữu NFT.
+                  ⚠️ Sau khi xác nhận, invoice sẽ được tạo với trạng thái <strong>"draft"</strong>. 
+                  Bạn sẽ được hỏi có muốn chuyển NFT on-chain ngay không. Nếu chọn "Cancel", bạn có thể thử lại từ lịch sử chuyển giao sau.
                 </div>
               </div>
             </div>
