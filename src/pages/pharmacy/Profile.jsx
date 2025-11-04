@@ -42,7 +42,8 @@ export default function PharmacyProfile() {
   return (
     <DashboardLayout navigationItems={navigationItems}>
       <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-teal-600 via-emerald-500 to-green-500"
+        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
+        style={{ background: 'linear-gradient(to top right, #4BADD1, #7AC3DE, #4BADD1)' }}
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -69,7 +70,8 @@ export default function PharmacyProfile() {
           {/* Thông tin người dùng */}
           <motion.div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] p-6" variants={fadeUp} initial="hidden" animate="show">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg"
+                style={{ background: 'linear-gradient(to bottom right, #4BADD1, #7AC3DE)' }}>
                 {profile.user?.fullName?.charAt(0).toUpperCase() || 'P'}
               </div>
               <div>
@@ -79,9 +81,13 @@ export default function PharmacyProfile() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl border border-emerald-200 p-4">
-                <div className="text-sm text-emerald-700 mb-1">📧 Email</div>
-                <div className="font-semibold text-emerald-900">{profile.user?.email || 'N/A'}</div>
+              <div className="rounded-xl border p-4"
+                style={{ 
+                  background: 'linear-gradient(to bottom right, rgba(75, 173, 209, 0.1), rgba(122, 195, 222, 0.1))',
+                  borderColor: '#7AC3DE'
+                }}>
+                <div className="text-sm mb-1 text-black">📧 Email</div>
+                <div className="font-semibold text-black">{profile.user?.email || 'N/A'}</div>
               </div>
               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200 p-4">
                 <div className="text-sm text-blue-700 mb-1">👤 Username</div>
@@ -114,9 +120,13 @@ export default function PharmacyProfile() {
               </h3>
               
               <div className="space-y-4">
-                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl border border-emerald-200 p-5">
-                  <div className="text-sm text-emerald-700 mb-1">🏢 Tên nhà thuốc</div>
-                  <div className="text-lg font-bold text-emerald-900">{profile.pharmacy.name || 'N/A'}</div>
+                <div className="rounded-xl border p-5"
+                  style={{ 
+                    background: 'linear-gradient(to bottom right, rgba(75, 173, 209, 0.1), rgba(122, 195, 222, 0.1))',
+                    borderColor: '#7AC3DE'
+                  }}>
+                  <div className="text-sm mb-1 text-black">🏢 Tên nhà thuốc</div>
+                  <div className="text-lg font-bold text-black">{profile.pharmacy.name || 'N/A'}</div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -143,7 +153,8 @@ export default function PharmacyProfile() {
                   <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
                     <div className="text-sm text-slate-700 mb-1">📊 Trạng thái</div>
                     <div className="font-semibold text-slate-900">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${profile.pharmacy.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${profile.pharmacy.status === 'active' ? '' : 'bg-red-100 text-red-700'}`}
+                        style={profile.pharmacy.status === 'active' ? { backgroundColor: 'rgba(75, 173, 209, 0.15)', color: '#000000' } : {}}>
                         {profile.pharmacy.status === 'active' ? '✓ Active' : profile.pharmacy.status || 'N/A'}
                       </span>
                     </div>
@@ -196,4 +207,3 @@ export default function PharmacyProfile() {
     </DashboardLayout>
   );
 }
-

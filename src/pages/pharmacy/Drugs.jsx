@@ -27,7 +27,7 @@ export default function PharmacyDrugs() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  // Debounce search: đợi 1.5 giây sau khi người dùng dừng nhập
+  // Debounce search theo tên: đợi 1.5 giây sau khi người dùng dừng nhập
   useEffect(() => {
     // Bỏ qua nếu localSearch trống và search cũng trống
     if (localSearch === search) {
@@ -40,10 +40,14 @@ export default function PharmacyDrugs() {
 
     const debounceTimer = setTimeout(() => {
       // Clear ATC search khi tìm kiếm theo tên
-      setAtcSearch('');
-      updateFilter({ search: localSearch, page: 1 });
-      setIsSearching(false);
-      setSearchType('name');
+      if (localSearch.trim()) {
+        setAtcSearch('');
+        updateFilter({ search: localSearch, page: 1 });
+        setIsSearching(false);
+        setSearchType('name');
+      } else {
+        setIsSearching(false);
+      }
     }, 1500);
 
     return () => {
@@ -52,6 +56,75 @@ export default function PharmacyDrugs() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localSearch]);
+
+  // Debounce search theo ATC: đợi 1.5 giây sau khi người dùng dừng nhập
+  useEffect(() => {
+    // Bỏ qua nếu atcSearch trống
+    if (!atcSearch.trim()) {
+      setIsSearchingATC(false);
+      // Nếu atcSearch bị xóa, reset về search theo tên nếu có
+      if (localSearch.trim()) {
+        updateFilter({ search: localSearch, page: 1 });
+        setSearchType('name');
+      }
+      return;
+    }
+
+    // Bắt đầu debounce cho ATC search
+    setIsSearchingATC(true);
+    setLoading(true);
+
+    const debounceTimer = setTimeout(async () => {
+      try {
+        // Clear name search khi tìm kiếm theo ATC
+        setLocalSearch('');
+        updateFilter({ search: '', page: 1 });
+        setSearchType('atc');
+
+        const response = await pharmacyService.searchDrugByATCCode(atcSearch.trim());
+        console.log('ATC Search Response:', response.data);
+        
+        if (response.data.success) {
+          const drugsData = response.data.data;
+          let drugs = [];
+          
+          // Xử lý nhiều trường hợp response
+          if (Array.isArray(drugsData)) {
+            drugs = drugsData;
+          } else if (drugsData?.drugs && Array.isArray(drugsData.drugs)) {
+            drugs = drugsData.drugs;
+          } else if (drugsData?.drug && typeof drugsData.drug === 'object') {
+            drugs = [drugsData.drug];
+          } else if (drugsData && typeof drugsData === 'object' && !Array.isArray(drugsData)) {
+            if (drugsData.tradeName || drugsData.atcCode || drugsData.genericName) {
+              drugs = [drugsData];
+            }
+          }
+          
+          console.log('Processed drugs:', drugs);
+          setItems(drugs);
+          setPagination({ page: 1, limit: 10, total: drugs.length, pages: 1 });
+        } else {
+          console.log('Response success is false:', response.data);
+          setItems([]);
+        }
+      } catch (error) {
+        console.error('Lỗi khi tìm kiếm ATC:', error);
+        console.error('Error response:', error.response?.data);
+        setItems([]);
+      } finally {
+        setLoading(false);
+        setIsSearchingATC(false);
+      }
+    }, 1500);
+
+    return () => {
+      clearTimeout(debounceTimer);
+      setIsSearchingATC(false);
+      setLoading(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atcSearch]);
 
   const navigationItems = [
     { path: '/pharmacy', label: 'Tổng quan', active: false },
@@ -89,45 +162,42 @@ export default function PharmacyDrugs() {
   };
 
   const handleATCSearch = async () => {
+    // Hàm này giờ chỉ được gọi khi người dùng bấm Enter hoặc click button
+    // Debounce đã được xử lý trong useEffect
     if (!atcSearch.trim()) {
-      alert('Vui lòng nhập mã ATC');
       return;
     }
 
+    // Trigger search ngay lập tức (bỏ qua debounce)
+    setIsSearchingATC(true);
+    setLoading(true);
+    setSearchType('atc');
+    
     // Clear name search khi tìm kiếm theo ATC
     setLocalSearch('');
     updateFilter({ search: '', page: 1 });
 
-    setIsSearchingATC(true);
-    setLoading(true);
-    setSearchType('atc');
     try {
       const response = await pharmacyService.searchDrugByATCCode(atcSearch.trim());
-      console.log('ATC Search Response:', response.data); // Debug log
+      console.log('ATC Search Response:', response.data);
       
       if (response.data.success) {
         const drugsData = response.data.data;
         let drugs = [];
         
-        // Xử lý nhiều trường hợp response
         if (Array.isArray(drugsData)) {
-          // Trường hợp 1: data là array
           drugs = drugsData;
         } else if (drugsData?.drugs && Array.isArray(drugsData.drugs)) {
-          // Trường hợp 2: data có property drugs là array
           drugs = drugsData.drugs;
         } else if (drugsData?.drug && typeof drugsData.drug === 'object') {
-          // Trường hợp 3: data có property drug là object đơn lẻ
           drugs = [drugsData.drug];
         } else if (drugsData && typeof drugsData === 'object' && !Array.isArray(drugsData)) {
-          // Trường hợp 4: data là object đơn lẻ (không phải array)
-          // Kiểm tra xem có phải là drug object không (có các property như tradeName, atcCode, etc.)
           if (drugsData.tradeName || drugsData.atcCode || drugsData.genericName) {
             drugs = [drugsData];
           }
         }
         
-        console.log('Processed drugs:', drugs); // Debug log
+        console.log('Processed drugs:', drugs);
         setItems(drugs);
         setPagination({ page: 1, limit: 10, total: drugs.length, pages: 1 });
       } else {
@@ -136,7 +206,7 @@ export default function PharmacyDrugs() {
       }
     } catch (error) {
       console.error('Lỗi khi tìm kiếm ATC:', error);
-      console.error('Error response:', error.response?.data); // Debug log
+      console.error('Error response:', error.response?.data);
       setItems([]);
     } finally {
       setLoading(false);
@@ -250,11 +320,11 @@ export default function PharmacyDrugs() {
           <div className="p-12 text-center">
             <div className="flex justify-center mb-6">
               <div className="relative">
-                <svg className="w-24 h-24 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <svg className="w-24 h-24 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                 </svg>
                 <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                   </svg>
                 </div>
@@ -267,7 +337,7 @@ export default function PharmacyDrugs() {
                   <p className="text-slate-700 text-lg mb-2">
                     Không tìm thấy thuốc với từ khóa:
                   </p>
-                  <span className="inline-block px-4 py-2 bg-gradient-to-r from-[#4BADD1]/10 to-[#7AC3DE]/10 border-2 border-[#4BADD1] rounded-lg text-[#4BADD1] font-bold text-lg">
+                  <span className="inline-block px-4 py-2 bg-gradient-to-r from-[#4BADD1]/10 to-[#7AC3DE]/10 border-2 border-[#4BADD1] rounded-lg text-black font-bold text-lg">
                     "{search}"
                   </span>
                 </div>
@@ -280,7 +350,7 @@ export default function PharmacyDrugs() {
                   <p className="text-slate-700 text-lg mb-2">
                     Không tìm thấy thuốc với mã ATC:
                   </p>
-                  <span className="inline-block px-4 py-2 bg-gradient-to-r from-[#4BADD1]/10 to-[#7AC3DE]/10 border-2 border-[#4BADD1] rounded-lg text-[#4BADD1] font-bold text-lg font-mono">
+                  <span className="inline-block px-4 py-2 bg-gradient-to-r from-[#4BADD1]/10 to-[#7AC3DE]/10 border-2 border-[#4BADD1] rounded-lg text-black font-bold text-lg font-mono">
                     "{atcSearch}"
                   </span>
                 </div>
@@ -341,25 +411,25 @@ export default function PharmacyDrugs() {
                     className="grid grid-cols-12 gap-4 px-4 py-4 hover:bg-gradient-to-r hover:from-[#4BADD1]/15 hover:to-[#7AC3DE]/15 cursor-pointer transition-all duration-200"
                   >
                     <div className="col-span-2 flex items-center gap-2 text-slate-900">
-                      <svg className="w-5 h-5 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-5 h-5 text-slate-900 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                       </svg>
                       <span className="font-mono text-sm font-semibold text-slate-900">{item.atcCode || 'N/A'}</span>
                     </div>
                     <div className="col-span-3 flex items-center gap-2 text-slate-900">
-                      <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-5 h-5 text-slate-900 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                       </svg>
                       <span className="text-sm font-semibold text-slate-900">{item.tradeName || 'N/A'}</span>
                     </div>
                     <div className="col-span-3 flex items-center gap-2 text-slate-700 text-sm font-medium">
-                      <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-5 h-5 text-slate-900 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                       <span>{item.manufacturer?.name || 'N/A'}</span>
                     </div>
                     <div className="col-span-2 flex items-center gap-2 text-slate-700 text-sm font-medium">
-                      <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-5 h-5 text-slate-900 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
                       <span>{item.dosageForm || 'N/A'}</span>
@@ -367,9 +437,16 @@ export default function PharmacyDrugs() {
                     <div className="col-span-2 flex items-center gap-2">
                       <span className={`px-3 py-1.5 rounded-md text-xs font-semibold ${
                         item.status === 'active' 
-                          ? 'bg-green-100 text-green-800 border border-green-300' 
+                          ? '' 
                           : 'bg-red-100 text-red-800 border border-red-300'
-                      }`}>
+                      }`}
+                      style={item.status === 'active' ? { 
+                        backgroundColor: 'rgba(75, 173, 209, 0.15)', 
+                        color: '#000000',
+                        borderColor: '#7AC3DE',
+                        borderWidth: '1px',
+                        borderStyle: 'solid'
+                      } : {}}>
                         {item.status === 'active' ? 'Hoạt động' : 'Ngừng'}
                       </span>
                     </div>
@@ -407,7 +484,7 @@ export default function PharmacyDrugs() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="bg-white rounded-lg p-4 border-2 border-slate-300 shadow-sm">
                             <div className="flex items-center gap-2 mb-3">
-                              <svg className="w-5 h-5 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <svg className="w-5 h-5 text-slate-900 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
                               <span className="font-bold text-slate-900 text-base">Tên hoạt chất</span>
@@ -416,7 +493,7 @@ export default function PharmacyDrugs() {
                           </div>
                           <div className="bg-white rounded-lg p-4 border-2 border-slate-300 shadow-sm">
                             <div className="flex items-center gap-2 mb-3">
-                              <svg className="w-5 h-5 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <svg className="w-5 h-5 text-slate-900 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                               </svg>
                               <span className="font-bold text-slate-900 text-base">Hàm lượng</span>
@@ -425,7 +502,7 @@ export default function PharmacyDrugs() {
                           </div>
                           <div className="bg-white rounded-lg p-4 border-2 border-slate-300 shadow-sm">
                             <div className="flex items-center gap-2 mb-3">
-                              <svg className="w-5 h-5 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <svg className="w-5 h-5 text-slate-900 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                               </svg>
                               <span className="font-bold text-slate-900 text-base">Quy cách đóng gói</span>
@@ -434,7 +511,7 @@ export default function PharmacyDrugs() {
                           </div>
                           <div className="bg-white rounded-lg p-4 border-2 border-slate-300 shadow-sm">
                             <div className="flex items-center gap-2 mb-3">
-                              <svg className="w-5 h-5 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <svg className="w-5 h-5 text-slate-900 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                               </svg>
                               <span className="font-bold text-slate-900 text-base">Đường dùng</span>
@@ -443,7 +520,7 @@ export default function PharmacyDrugs() {
                       </div>
                           <div className="bg-white rounded-lg p-4 border-2 border-slate-300 shadow-sm">
                             <div className="flex items-center gap-2 mb-3">
-                              <svg className="w-5 h-5 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <svg className="w-5 h-5 text-slate-900 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                               </svg>
                               <span className="font-bold text-slate-900 text-base">Bảo quản</span>
@@ -452,7 +529,7 @@ export default function PharmacyDrugs() {
                       </div>
                           <div className="bg-white rounded-lg p-4 border-2 border-slate-300 shadow-sm">
                             <div className="flex items-center gap-2 mb-3">
-                              <svg className="w-5 h-5 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <svg className="w-5 h-5 text-slate-900 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                               </svg>
                               <span className="font-bold text-slate-900 text-base">Ngày tạo</span>
@@ -467,7 +544,7 @@ export default function PharmacyDrugs() {
                     {item.activeIngredients && item.activeIngredients.length > 0 && (
                           <div className="bg-white rounded-lg p-4 border-2 border-slate-300 shadow-sm">
                             <div className="flex items-center gap-2 mb-3">
-                              <svg className="w-5 h-5 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <svg className="w-5 h-5 text-slate-900 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                               </svg>
                               <span className="font-bold text-slate-900 text-base">Thành phần hoạt chất</span>
