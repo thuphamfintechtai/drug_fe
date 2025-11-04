@@ -63,19 +63,41 @@ export default function ProductionHistory() {
       sold: 'bg-emerald-100 text-emerald-700 border-emerald-200',
       expired: 'bg-red-100 text-red-700 border-red-200',
       recalled: 'bg-orange-100 text-orange-700 border-orange-200',
+      none: 'bg-slate-100 text-slate-600 border-slate-200',
+      pending: 'bg-amber-100 text-amber-700 border-amber-200',
     };
     return colors[status] || 'bg-slate-100 text-slate-600 border-slate-200';
   };
 
   const getStatusLabel = (status) => {
     const labels = {
-      minted: '🟦 Đã Mint',
-      transferred: '🟪 Đã chuyển',
-      sold: '🟩 Đã bán',
-      expired: '🟥 Hết hạn',
-      recalled: '🟧 Thu hồi',
+      minted: 'Đã Mint',
+      transferred: 'Đã chuyển',
+      sold: 'Đã bán',
+      expired: 'Hết hạn',
+      recalled: 'Thu hồi',
+      none: 'Chưa chuyển',
+      pending: 'Đang chờ',
     };
     return labels[status] || status;
+  };
+
+  const getTransferStatusColor = (transferStatus) => {
+    const colors = {
+      none: 'bg-slate-100 text-slate-700 border-slate-200',
+      pending: 'bg-amber-100 text-amber-700 border-amber-200',
+      transferred: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    };
+    return colors[transferStatus] || 'bg-slate-100 text-slate-600 border-slate-200';
+  };
+
+  const getTransferStatusLabel = (transferStatus) => {
+    const labels = {
+      none: 'Chưa chuyển',
+      pending: 'Đang chờ chuyển',
+      transferred: 'Đã chuyển',
+    };
+    return labels[transferStatus] || transferStatus;
   };
 
   const fadeUp = {
@@ -146,64 +168,97 @@ export default function ProductionHistory() {
           </div>
         ) : items.length === 0 ? (
           <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
-            <div className="text-5xl mb-4">📦</div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lịch sử sản xuất</h3>
             <p className="text-slate-600">Các lô sản xuất của bạn sẽ hiển thị ở đây</p>
           </div>
         ) : (
           items.map((item, idx) => (
-            <div key={idx} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
+            <div key={item._id || idx} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
               <div className="p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <h3 className="text-lg font-semibold text-[#003544]">
                         {item.drug?.tradeName || 'N/A'}
                       </h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
-                        {getStatusLabel(item.status)}
-                      </span>
+                      {item.transferStatus && (
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getTransferStatusColor(item.transferStatus)}`}>
+                          {getTransferStatusLabel(item.transferStatus)}
+                        </span>
+                      )}
+                      {item.status && (
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
+                          {getStatusLabel(item.status)}
+                        </span>
+                      )}
                     </div>
                     <div className="space-y-1 text-sm text-slate-600">
-                      <div>📝 Số lô: <span className="font-mono font-medium text-slate-800">{item.batchNumber}</span></div>
-                      <div>💊 Số lượng NFT: <span className="font-bold text-purple-700">{item.quantity}</span></div>
-                      <div>🏷️ ATC Code: <span className="font-mono text-cyan-700">{item.drug?.atcCode}</span></div>
+                      <div>Số lô: <span className="font-mono font-medium text-slate-800">{item.batchNumber || 'N/A'}</span></div>
+                      <div>Số lượng sản xuất: <span className="font-bold text-purple-700">{item.quantity || 0}</span></div>
+                      {item.nftCount !== undefined && (
+                        <div>Số lượng NFT đã mint: <span className="font-bold text-cyan-700">{item.nftCount}</span></div>
+                      )}
+                      <div>ATC Code: <span className="font-mono text-cyan-700">{item.drug?.atcCode || 'N/A'}</span></div>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                  <div className="bg-slate-50 rounded-xl p-3">
-                    <div className="text-xs text-slate-500 mb-1">Ngày sản xuất</div>
-                    <div className="font-semibold text-slate-800">
-                      {new Date(item.manufacturingDate).toLocaleDateString('vi-VN')}
+                  <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+                    <div className="text-xs text-blue-600 mb-1">Ngày sản xuất</div>
+                    <div className="font-semibold text-blue-800">
+                      {item.mfgDate ? new Date(item.mfgDate).toLocaleDateString('vi-VN') : 'N/A'}
                     </div>
                   </div>
-                  <div className="bg-slate-50 rounded-xl p-3">
-                    <div className="text-xs text-slate-500 mb-1">Hạn sử dụng</div>
-                    <div className="font-semibold text-slate-800">
-                      {new Date(item.expiryDate).toLocaleDateString('vi-VN')}
+                  <div className="bg-red-50 rounded-xl p-3 border border-red-200">
+                    <div className="text-xs text-red-600 mb-1">Hạn sử dụng</div>
+                    <div className="font-semibold text-red-800">
+                      {item.expDate ? new Date(item.expDate).toLocaleDateString('vi-VN') : 'N/A'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                    <div className="text-xs text-slate-500 mb-1">Ngày tạo</div>
+                    <div className="font-medium text-slate-700 text-sm">
+                      {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A'}
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                    <div className="text-xs text-slate-500 mb-1">Cập nhật lần cuối</div>
+                    <div className="font-medium text-slate-700 text-sm">
+                      {item.updatedAt ? new Date(item.updatedAt).toLocaleString('vi-VN') : 'N/A'}
                     </div>
                   </div>
                 </div>
 
                 {item.ipfsHash && (
-                  <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200 text-sm">
-                    <div className="font-semibold text-cyan-800 mb-1">🗂️ IPFS:</div>
+                  <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200 text-sm mb-3">
+                    <div className="font-semibold text-cyan-800 mb-1">IPFS Hash:</div>
                     <div className="font-mono text-xs text-cyan-700 break-all">{item.ipfsHash}</div>
                   </div>
                 )}
 
-                {item.notes && (
-                  <div className="mt-3 text-sm text-slate-600">
-                    <span className="font-medium">Ghi chú:</span> {item.notes}
+                {item.chainTxHash && (
+                  <div className="bg-purple-50 rounded-xl p-3 border border-purple-200 text-sm mb-3">
+                    <div className="font-semibold text-purple-800 mb-1">Transaction Hash (Blockchain):</div>
+                    <div className="font-mono text-xs text-purple-700 break-all">{item.chainTxHash}</div>
+                    <a 
+                      href={`https://zeroscan.org/tx/${item.chainTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-purple-600 hover:text-purple-800 underline mt-1 inline-block"
+                    >
+                      Xem trên ZeroScan →
+                    </a>
                   </div>
                 )}
 
-                {item.transactionHash && (
-                  <div className="mt-3 bg-purple-50 rounded-xl p-3 border border-purple-200 text-sm">
-                    <div className="font-semibold text-purple-800 mb-1">⛓️ Transaction Hash:</div>
-                    <div className="font-mono text-xs text-purple-700 break-all">{item.transactionHash}</div>
+                {item.notes && (
+                  <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 text-sm mb-3">
+                    <div className="font-semibold text-amber-800 mb-1">Ghi chú:</div>
+                    <div className="text-amber-700">{item.notes}</div>
                   </div>
                 )}
               </div>

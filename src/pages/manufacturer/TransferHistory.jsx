@@ -40,12 +40,43 @@ export default function TransferHistory() {
       if (status) params.status = status;
 
       const response = await getTransferHistory(params);
-      if (response.data.success) {
-        setItems(response.data.data.transfers || []);
-        setPagination(response.data.data.pagination || { page: 1, limit: 10, total: 0, pages: 0 });
+      
+      if (response?.data?.success) {
+        // Backend trả về invoices, không phải transfers
+        const invoices = response.data.data?.invoices || response.data.data?.transfers || [];
+        const paginationData = response.data.data?.pagination || { page: 1, limit: 10, total: 0, pages: 0 };
+        
+        // Map invoices sang format mà UI đang mong đợi
+        const mappedItems = Array.isArray(invoices) ? invoices.map(invoice => ({
+          ...invoice,
+          // Map toDistributor thành distributor để UI hiển thị
+          distributor: invoice.toDistributor || invoice.distributor,
+          // Map chainTxHash thành transactionHash
+          transactionHash: invoice.chainTxHash || invoice.transactionHash,
+          // Thêm invoice object để handleRetry có thể dùng
+          invoice: {
+            _id: invoice._id,
+            invoiceNumber: invoice.invoiceNumber,
+            invoiceDate: invoice.invoiceDate,
+          },
+        })) : [];
+        
+        setItems(mappedItems);
+        setPagination(paginationData);
+      } else {
+        console.warn('API không trả về success:', response?.data);
+        setItems([]);
       }
     } catch (error) {
       console.error('Lỗi khi tải lịch sử chuyển giao:', error);
+      console.error('Error response:', error?.response?.data);
+      setItems([]);
+      // Hiển thị lỗi cho user nếu cần
+      if (error?.response?.status === 401) {
+        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else if (error?.response?.status >= 500) {
+        alert('Lỗi server. Vui lòng thử lại sau.');
+      }
     } finally {
       setLoading(false);
     }
@@ -73,18 +104,18 @@ export default function TransferHistory() {
 
   const getStatusLabel = (status) => {
     const labels = {
-      pending: '⏳ Pending',
-      sent: '📦 Sent',
-      received: '✅ Received',
-      paid: '💰 Paid',
-      cancelled: '❌ Cancelled',
+      pending: 'Pending',
+      sent: 'Sent',
+      received: 'Received',
+      paid: 'Paid',
+      cancelled: 'Cancelled',
     };
     return labels[status] || status;
   };
 
   const handleRetry = async (item) => {
     if (!item.invoice?._id || !item.distributor?.walletAddress) {
-      alert('❌ Thiếu thông tin cần thiết để retry. Vui lòng kiểm tra lại invoice và distributor address.');
+      alert('Thiếu thông tin cần thiết để retry. Vui lòng kiểm tra lại invoice và distributor address.');
       return;
     }
 
@@ -92,7 +123,7 @@ export default function TransferHistory() {
     const amounts = item.amounts || [];
 
     if (tokenIds.length === 0) {
-      alert('❌ Không tìm thấy token IDs để chuyển giao.');
+      alert('Không tìm thấy token IDs để chuyển giao.');
       return;
     }
 
@@ -133,12 +164,12 @@ export default function TransferHistory() {
         tokenIds,
       });
 
-      alert('🎉 Đã chuyển NFT on-chain và lưu transaction thành công!');
+      alert('Đã chuyển NFT on-chain và lưu transaction thành công!');
       loadData(); // Reload để cập nhật trạng thái
     } catch (error) {
       console.error('Lỗi khi retry transfer:', error);
       const msg = error?.message || 'Giao dịch on-chain thất bại hoặc bị hủy.';
-      alert('❌ ' + msg);
+      alert(msg);
     } finally {
       setRetryingId(null);
     }
@@ -221,29 +252,42 @@ export default function TransferHistory() {
               <div className="p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-[#003544]">
-                        → {item.distributor?.name || 'N/A'}
-                      </h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
-                        {getStatusLabel(item.status)}
-                      </span>
-                    </div>
-                    <div className="space-y-1 text-sm text-slate-600">
-                      <div>Thuốc: <span className="font-medium text-slate-800">{item.production?.drug?.tradeName || 'N/A'}</span></div>
-                      <div>Số lô: <span className="font-mono font-medium text-slate-800">{item.production?.batchNumber}</span></div>
-                      <div>Số lượng: <span className="font-bold text-orange-700">{item.quantity} NFT</span></div>
-                      <div>Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
-                    </div>
+                                         <div className="flex items-center gap-3 mb-2">
+                       <h3 className="text-lg font-semibold text-[#003544]">
+                         {item.distributor?.fullName || item.distributor?.name || 'N/A'}
+                       </h3>
+                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
+                         {getStatusLabel(item.status)}
+                       </span>
+                     </div>
+                                         <div className="space-y-1 text-sm text-slate-600">
+                       <div>Số hóa đơn: <span className="font-mono font-medium text-slate-800">{item.invoiceNumber || 'N/A'}</span></div>
+                       {item.production?.drug?.tradeName && (
+                         <div>Thuốc: <span className="font-medium text-slate-800">{item.production.drug.tradeName}</span></div>
+                       )}
+                       {item.production?.batchNumber && (
+                         <div>Số lô: <span className="font-mono font-medium text-slate-800">{item.production.batchNumber}</span></div>
+                       )}
+                       <div>Số lượng: <span className="font-bold text-orange-700">{item.quantity} NFT</span></div>
+                       <div>Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
+                       {item.invoiceDate && (
+                         <div>Ngày hóa đơn: <span className="font-medium">{new Date(item.invoiceDate).toLocaleString('vi-VN')}</span></div>
+                       )}
+                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                  <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200">
-                    <div className="text-xs text-cyan-700 mb-1">Nhà phân phối</div>
-                    <div className="font-semibold text-cyan-800">{item.distributor?.name}</div>
-                    <div className="text-xs text-cyan-600 mt-1">{item.distributor?.address}</div>
-                  </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                   <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200">
+                     <div className="text-xs text-cyan-700 mb-1">Nhà phân phối</div>
+                     <div className="font-semibold text-cyan-800">{item.distributor?.fullName || item.distributor?.name || 'N/A'}</div>
+                     {item.distributor?.email && (
+                       <div className="text-xs text-cyan-600 mt-1">{item.distributor.email}</div>
+                     )}
+                     {item.distributor?.address && (
+                       <div className="text-xs text-cyan-600 mt-1">{item.distributor.address}</div>
+                     )}
+                   </div>
                   {item.distributor?.walletAddress && (
                     <div className="bg-purple-50 rounded-xl p-3 border border-purple-200">
                       <div className="text-xs text-purple-700 mb-1">Wallet Address</div>
@@ -261,8 +305,16 @@ export default function TransferHistory() {
 
                 {item.transactionHash && (
                   <div className="mt-3 bg-emerald-50 rounded-xl p-3 border border-emerald-200 text-sm">
-                    <div className="font-semibold text-emerald-800 mb-1">Transaction Hash:</div>
+                    <div className="font-semibold text-emerald-800 mb-1">Transaction Hash (Blockchain):</div>
                     <div className="font-mono text-xs text-emerald-700 break-all">{item.transactionHash}</div>
+                    <a 
+                      href={`https://zeroscan.org/tx/${item.transactionHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-emerald-600 hover:text-emerald-800 underline mt-1 inline-block"
+                    >
+                      Xem trên ZeroScan →
+                    </a>
                   </div>
                 )}
 
@@ -274,7 +326,7 @@ export default function TransferHistory() {
                       disabled={retryingId === item._id}
                       className="w-full px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 font-semibold"
                     >
-                      {retryingId === item._id ? '⏳ Đang xử lý...' : '🔄 Thử lại chuyển giao'}
+                      {retryingId === item._id ? 'Đang xử lý...' : 'Thử lại chuyển giao'}
                     </button>
                   </div>
                 )}
