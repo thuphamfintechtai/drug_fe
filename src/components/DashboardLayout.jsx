@@ -254,27 +254,27 @@ export default function DashboardLayout({
 
           {/* Search removed by request */}
 
-          <nav className="flex-1 flex flex-col justify-start pt-4">
-            <ul className="space-y-2">
-              {navItems.map((item, i) => {
-                const isActive =
-                  location.pathname === item.path ||
-                  (item.path !== '/admin' && location.pathname.startsWith(item.path + '/'));
-                return (
-                  <li key={i}>
-                    <Link
-                      to={item.path}
-                      className={`w-full h-11 flex items-center ${showLabels ? 'px-3 justify-start' : 'justify-center'} gap-3 rounded-md transition-colors duration-150 ease-out
-                      ${isActive ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-white/90'}`}
-                    >
-                      <span className="text-xl shrink-0">{item.icon}</span>
-                      {showLabels && <span className="font-medium whitespace-nowrap">{item.label}</span>}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+            <nav className="flex-1 flex flex-col justify-start pt-4">
+              <ul className="space-y-2">
+                {navItems.map((item, i) => {
+                  const isActive =
+                    location.pathname === item.path ||
+                    (item.path !== '/admin' && location.pathname.startsWith(item.path + '/'));
+                  return (
+                    <li key={i}>
+                      <Link
+                        to={item.path}
+                        className={`w-full h-11 flex items-center ${showLabels ? 'px-3 justify-start' : 'justify-center'} gap-3 rounded-md transition-colors duration-150 ease-out
+                        ${isActive ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-white/90'}`}
+                      >
+                        <span className="text-xl shrink-0">{item.icon}</span>
+                        {showLabels && <span className="font-medium whitespace-nowrap">{item.label}</span>}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
 
           {/* Avatar removed by request */}
         </div>
