@@ -285,7 +285,7 @@ export default function DashboardLayout({
         <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200">
           <div className="px-6 h-16 flex items-center justify-between">
             <div className="text-slate-700 font-semibold">
-              {showLabels ? (welcomeMessage || 'Dashboard') : null}
+              {showLabels ? welcomeMessage : null}
             </div>
             <div className="flex items-center gap-3">
               {walletAddress ? (
