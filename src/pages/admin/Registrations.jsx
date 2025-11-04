@@ -27,17 +27,54 @@ export default function AdminRegistrations() {
       setLoading(true);
       setError('');
       try {
-        const [{ data: listRes }, { data: statsRes }] = await Promise.all([
+        const [listResponse, statsResponse] = await Promise.all([
           getPendingRegistrations({ page, limit, role: role || undefined, status }),
           getRegistrationStats(),
         ]);
-        setItems(listRes?.data?.registrations || []);
-        setStats(statsRes?.data);
-      } catch (e) {
-        setError(e?.response?.data?.message || 'Không thể tải dữ liệu');
-      } finally {
-        setLoading(false);
-      }
+        
+        // Debug: Log response để kiểm tra cấu trúc
+        console.log('📥 Registration response:', listResponse);
+        console.log('📥 Response data:', listResponse?.data);
+        
+        // Xử lý response - kiểm tra nhiều cấu trúc có thể có
+        const listRes = listResponse?.data;
+        const items = 
+          listRes?.data?.registrations || 
+          listRes?.registrations || 
+          (Array.isArray(listRes?.data) ? listRes.data : []) ||
+          (Array.isArray(listRes) ? listRes : []) ||
+          [];
+        
+        console.log('📋 Parsed items:', items);
+        
+        setItems(items);
+        
+        const statsRes = statsResponse?.data;
+        setStats(statsRes?.data || statsRes);
+             } catch (e) {
+         console.error('❌ Error loading registrations:', e);
+         console.error('❌ Error response:', e?.response);
+         console.error('❌ Error status:', e?.response?.status);
+         console.error('❌ Error data:', e?.response?.data);
+         
+         // Hiển thị lỗi chi tiết hơn
+         let errorMsg = 'Không thể tải dữ liệu';
+         if (e?.response?.status === 500) {
+           errorMsg = 'Lỗi server (500): Vui lòng kiểm tra backend hoặc thử lại sau.';
+         } else if (e?.response?.status === 401) {
+           errorMsg = 'Bạn chưa đăng nhập hoặc token đã hết hạn.';
+         } else if (e?.response?.status === 403) {
+           errorMsg = 'Bạn không có quyền truy cập trang này.';
+         } else if (e?.response?.data?.message) {
+           errorMsg = e.response.data.message;
+         } else if (e?.message) {
+           errorMsg = e.message;
+         }
+         
+         setError(errorMsg);
+       } finally {
+         setLoading(false);
+       }
     };
     load();
   }, [page, role, status]);

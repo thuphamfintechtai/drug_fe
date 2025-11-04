@@ -2,12 +2,16 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
-import { getTransferHistory } from '../../services/manufacturer/manufacturerService';
+import { getTransferHistory, saveTransferTransaction } from '../../services/manufacturer/manufacturerService';
+import { transferNFTToDistributor, transferBatchNFTToDistributor, getCurrentWalletAddress } from '../../utils/web3Helper';
+import { useAuth } from '../../context/AuthContext';
 
 export default function TransferHistory() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [retryingId, setRetryingId] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
 
   const page = parseInt(searchParams.get('page') || '1', 10);
@@ -76,6 +80,68 @@ export default function TransferHistory() {
       cancelled: '❌ Cancelled',
     };
     return labels[status] || status;
+  };
+
+  const handleRetry = async (item) => {
+    if (!item.invoice?._id || !item.distributor?.walletAddress) {
+      alert('❌ Thiếu thông tin cần thiết để retry. Vui lòng kiểm tra lại invoice và distributor address.');
+      return;
+    }
+
+    const tokenIds = item.tokenIds || [];
+    const amounts = item.amounts || [];
+
+    if (tokenIds.length === 0) {
+      alert('❌ Không tìm thấy token IDs để chuyển giao.');
+      return;
+    }
+
+    setRetryingId(item._id);
+    try {
+      // Kiểm tra ví hiện tại khớp ví manufacturer trong hệ thống
+      const currentWallet = await getCurrentWalletAddress();
+      if (user?.walletAddress && currentWallet.toLowerCase() !== user.walletAddress.toLowerCase()) {
+        alert('Ví đang kết nối không khớp với ví của manufacturer trong hệ thống.\nVui lòng chuyển tài khoản MetaMask sang: ' + user.walletAddress);
+        return;
+      }
+
+      // Gọi smart contract để transfer NFT
+      // Nếu có amounts từ backend, dùng transferBatchNFTToDistributor
+      // Nếu không có, dùng transferNFTToDistributor (mặc định amounts = [1, 1, ...])
+      let onchain;
+      if (amounts && amounts.length > 0 && amounts.length === tokenIds.length) {
+        // Normalize amounts to BigInt[]
+        const normalizedAmounts = amounts.map((amt) => {
+          if (typeof amt === 'bigint') return amt;
+          if (typeof amt === 'string') return BigInt(amt);
+          return BigInt(amt);
+        });
+        // Normalize tokenIds to BigInt[]
+        const normalizedTokenIds = tokenIds.map((id) => {
+          if (typeof id === 'string' && id.startsWith('0x')) return BigInt(id);
+          return BigInt(id);
+        });
+        onchain = await transferBatchNFTToDistributor(normalizedTokenIds, normalizedAmounts, item.distributor.walletAddress);
+      } else {
+        onchain = await transferNFTToDistributor(tokenIds, item.distributor.walletAddress);
+      }
+      
+      // Lưu transaction hash vào backend (Bước 2 theo API spec)
+      await saveTransferTransaction({
+        invoiceId: item.invoice._id,
+        transactionHash: onchain.transactionHash,
+        tokenIds,
+      });
+
+      alert('🎉 Đã chuyển NFT on-chain và lưu transaction thành công!');
+      loadData(); // Reload để cập nhật trạng thái
+    } catch (error) {
+      console.error('Lỗi khi retry transfer:', error);
+      const msg = error?.message || 'Giao dịch on-chain thất bại hoặc bị hủy.';
+      alert('❌ ' + msg);
+    } finally {
+      setRetryingId(null);
+    }
   };
 
   const fadeUp = {
@@ -197,6 +263,19 @@ export default function TransferHistory() {
                   <div className="mt-3 bg-emerald-50 rounded-xl p-3 border border-emerald-200 text-sm">
                     <div className="font-semibold text-emerald-800 mb-1">Transaction Hash:</div>
                     <div className="font-mono text-xs text-emerald-700 break-all">{item.transactionHash}</div>
+                  </div>
+                )}
+
+                {/* Retry Button - chỉ hiển thị khi status = pending và chưa có transactionHash */}
+                {item.status === 'pending' && !item.transactionHash && item.distributor?.walletAddress && (
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <button
+                      onClick={() => handleRetry(item)}
+                      disabled={retryingId === item._id}
+                      className="w-full px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 font-semibold"
+                    >
+                      {retryingId === item._id ? '⏳ Đang xử lý...' : '🔄 Thử lại chuyển giao'}
+                    </button>
                   </div>
                 )}
 

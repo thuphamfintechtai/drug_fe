@@ -166,8 +166,10 @@ export default function CreateProofOfProduction() {
       console.log('✅ Token URI:', tokenURI);
 
       // Mint NFT on blockchain
+      // Lưu ý: contract.mintNFT nhận số lượng (uint256[]), không phải tokenURI
       console.log('🎨 Minting NFT on blockchain...');
-      const mintResult = await mintNFT(tokenURI);
+      const quantity = parseInt(formData.quantity) || 1;
+      const mintResult = await mintNFT(quantity);
       console.log('✅ NFT Minted:', mintResult);
 
       setMintedNFT({

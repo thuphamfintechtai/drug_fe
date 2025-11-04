@@ -5,7 +5,8 @@ import {
   getProductionHistory,
   getDistributors,
   createTransferToDistributor,
-  getAvailableTokensForProduction
+  getAvailableTokensForProduction,
+  saveTransferTransaction
 } from '../../services/manufacturer/manufacturerService';
 import { transferNFTToDistributor, getCurrentWalletAddress } from '../../utils/web3Helper';
 import { useAuth } from '../../context/AuthContext';
