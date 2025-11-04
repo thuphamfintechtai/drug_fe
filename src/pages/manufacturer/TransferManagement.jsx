@@ -39,16 +39,15 @@ export default function TransferManagement() {
     try {
       const [prodRes, distRes] = await Promise.all([
         getProductionHistory({ status: 'minted' }), // Chỉ lấy NFT chưa chuyển
-        getDistributors()
+        getDistributors({ page: 1, limit: 100 })
       ]);
       
       if (prodRes.data.success) {
         setProductions(prodRes.data.data.productions || []);
       }
-      if (distRes.data.success && distRes.data.data) {
-        setDistributors(Array.isArray(distRes.data.data.distributors) 
-          ? distRes.data.data.distributors 
-          : []);
+      if (distRes.data?.success && distRes.data?.data) {
+        const list = distRes.data.data.distributors;
+        setDistributors(Array.isArray(list) ? list : []);
       } else {
         setDistributors([]);
       }
@@ -81,11 +80,51 @@ export default function TransferManagement() {
       return;
     }
 
+    // Chuẩn hóa tokenIds/amounts theo yêu cầu API (ERC1155 batch)
+    const requestedQty = parseInt(formData.quantity);
+    let tokenIds = [];
+
+    // 1) Nếu backend trả sẵn mảng tokenIds
+    if (Array.isArray(selectedProduction.tokenIds) && selectedProduction.tokenIds.length > 0) {
+      tokenIds = selectedProduction.tokenIds.slice(0, requestedQty);
+    }
+
+    // 2) Nếu backend trả dải startTokenId/endTokenId hoặc startTokenId + quantity
+    if (tokenIds.length === 0) {
+      const start = selectedProduction.startTokenId ?? selectedProduction.tokenIdStart;
+      const end = selectedProduction.endTokenId ?? selectedProduction.tokenIdEnd;
+      const total = selectedProduction.quantity ?? (typeof start === 'number' && typeof end === 'number' ? (end - start + 1) : undefined);
+      if (typeof start === 'number' && (typeof total === 'number' || typeof end === 'number')) {
+        const take = Math.min(requestedQty, typeof total === 'number' ? total : (end - start + 1));
+        for (let i = 0; i < take; i += 1) {
+          tokenIds.push(start + i);
+        }
+      }
+    }
+
+    // 3) Nếu là một tokenId duy nhất (ERC1155 cùng id, chuyển bằng amount)
+    let amounts = [];
+    if (tokenIds.length > 0) {
+      amounts = tokenIds.map(() => 1);
+    } else if (typeof selectedProduction.tokenId === 'number') {
+      tokenIds = [selectedProduction.tokenId];
+      amounts = [requestedQty];
+    }
+
+    if (tokenIds.length === 0 || amounts.length === 0) {
+      console.error('Transfer payload build failed. selectedProduction = ', selectedProduction);
+      alert('Không tìm thấy tokenId phù hợp để chuyển. Vui lòng kiểm tra lại dữ liệu lô (tokenIds/startTokenId/tokenId).');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await createTransferToDistributor({
-        ...formData,
-        quantity: parseInt(formData.quantity),
+        productionId: selectedProduction._id,
+        distributorId: formData.distributorId,
+        tokenIds,
+        amounts,
+        notes: formData.notes || '',
       });
 
       if (response.data.success) {
@@ -122,44 +161,43 @@ export default function TransferManagement() {
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {/* Banner */}
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">🚚 Chuyển giao cho nhà phân phối</h1>
-          <p className="text-white/90 mt-2">Chọn lô sản xuất và distributor để chuyển quyền sở hữu NFT</p>
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#007b91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
+            </svg>
+            Chuyển giao cho nhà phân phối
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">Chọn lô sản xuất và distributor để chuyển quyền sở hữu NFT</p>
         </div>
-      </motion.section>
+      </div>
 
       {/* Instructions */}
       <motion.div
-        className="rounded-2xl bg-white/85 backdrop-blur-xl border border-orange-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-6 mb-5"
+        className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-6 mb-5"
         variants={fadeUp}
         initial="hidden"
         animate="show"
       >
-        <h2 className="text-xl font-bold text-orange-800 mb-4">📋 Quy trình chuyển giao</h2>
+        <h2 className="text-xl font-bold text-[#007b91] mb-4">Quy trình chuyển giao</h2>
         <div className="space-y-3">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-700 font-bold flex items-center justify-center flex-shrink-0">1</div>
+            <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">1</div>
             <div>
               <div className="font-semibold text-slate-800">Chọn lô sản xuất & Distributor</div>
               <div className="text-sm text-slate-600">Chọn NFT cần chuyển và nhà phân phối nhận hàng</div>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-700 font-bold flex items-center justify-center flex-shrink-0">2</div>
+            <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">2</div>
             <div>
               <div className="font-semibold text-slate-800">Xác nhận trên hệ thống</div>
               <div className="text-sm text-slate-600">Frontend gọi API Backend để lưu vào database với trạng thái "pending"</div>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-700 font-bold flex items-center justify-center flex-shrink-0">3</div>
+            <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">3</div>
             <div>
               <div className="font-semibold text-slate-800">Chuyển quyền sở hữu NFT</div>
               <div className="text-sm text-slate-600">Frontend gọi Smart Contract để transfer NFT từ Manufacturer wallet → Distributor wallet. Sau khi thành công, cập nhật trạng thái thành "sent"</div>
@@ -170,65 +208,76 @@ export default function TransferManagement() {
 
       {/* Productions List */}
       <motion.div
-        className="bg-white/90 rounded-2xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] overflow-hidden"
+        className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden mt-6"
         variants={fadeUp}
         initial="hidden"
         animate="show"
       >
-        <div className="px-6 py-4 bg-gradient-to-r from-orange-500 to-amber-500">
-          <h2 className="text-xl font-bold text-white">Lô sản xuất có sẵn (NFT chưa chuyển)</h2>
-        </div>
-
         {loading ? (
-          <div className="p-12 text-center text-slate-600">Đang tải...</div>
+          <div className="p-12 text-center text-gray-500">Đang tải...</div>
         ) : productions.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="text-5xl mb-4">📦</div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lô sản xuất nào</h3>
-            <p className="text-slate-600">Hãy tạo lô sản xuất trước khi chuyển giao</p>
+          <div className="p-16 flex flex-col items-center justify-center text-gray-400">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-12 h-12 mb-3 opacity-60"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 7h18M5 10h14M4 14h16M6 18h12"
+              />
+            </svg>
+            <p className="text-gray-500 text-sm">Không có dữ liệu</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-orange-100 to-amber-100">
+            <table className="w-full border-collapse">
+              {/* Header */}
+              <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-orange-800 uppercase">Thuốc</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-orange-800 uppercase">Số lô</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-orange-800 uppercase">Số lượng NFT</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-orange-800 uppercase">Ngày SX</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-orange-800 uppercase">HSD</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-orange-800 uppercase">Hành động</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Thuốc</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Số lô</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Số lượng NFT</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Ngày SX</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">HSD</th>
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">Hành động</th>
                 </tr>
               </thead>
+              {/* Body */}
               <tbody className="divide-y divide-gray-100">
                 {productions.map((prod, index) => (
-                  <tr key={prod._id || index} className="hover:bg-orange-50 transition group">
-                    <td className="px-6 py-4 font-semibold text-[#003544]">
+                  <tr
+                    key={prod._id || index}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-6 py-4 font-medium text-gray-800">
                       {prod.drug?.tradeName || 'N/A'}
                       <div className="text-xs text-slate-500">{prod.drug?.atcCode}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-mono text-sm bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">
                         {prod.batchNumber}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="font-bold text-orange-700">{prod.quantity}</span>
+                    <td className="px-6 py-4 text-gray-600">
+                      <span className="font-semibold text-gray-800">{prod.quantity}</span>
                       <span className="text-xs text-slate-500 ml-1">NFT</span>
                     </td>
-                    <td className="px-6 py-4 text-slate-700 text-sm">
-                      {formatDate(prod.manufacturingDate)}
-                    </td>
-                    <td className="px-6 py-4 text-slate-700 text-sm">
-                      {formatDate(prod.expiryDate)}
-                    </td>
+                    <td className="px-6 py-4 text-gray-600">{formatDate(prod.manufacturingDate)}</td>
+                    <td className="px-6 py-4 text-gray-600">{formatDate(prod.expiryDate)}</td>
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleSelectProduction(prod)}
-                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 text-sm font-medium transition shadow"
-                      >
-                        🚚 Chuyển giao
-                      </button>
+                      <div className="flex items-center justify-center">
+                        <button
+                          onClick={() => handleSelectProduction(prod)}
+                          className="px-4 py-2 border-2 border-[#3db6d9] bg-[#b3e9f4] text-black rounded-full font-semibold hover:bg-[#3db6d9] hover:text-white transition-all duration-200"
+                        >
+                          Chuyển giao
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -240,16 +289,21 @@ export default function TransferManagement() {
 
       {/* Transfer Dialog */}
       {showDialog && selectedProduction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll">
+            <style>{`
+              .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+              .custom-scroll::-webkit-scrollbar { width: 0; height: 0; }
+              .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+              .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
+            `}</style>
             {/* Header */}
-            <div className="bg-gradient-to-r from-orange-600 to-amber-600 px-8 py-6 rounded-t-3xl">
+            <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                  <span className="text-3xl">🚚</span>
                   <div>
                     <h2 className="text-2xl font-bold text-white">Chuyển giao NFT</h2>
-                    <p className="text-orange-100 text-sm">Chọn distributor và số lượng</p>
+                    <p className="text-cyan-100 text-sm">Chọn distributor và số lượng</p>
                   </div>
                 </div>
                 <button
@@ -263,8 +317,8 @@ export default function TransferManagement() {
 
             <div className="p-8 space-y-4">
               {/* Production Info */}
-              <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
-                <div className="font-bold text-orange-800 mb-3">📦 Thông tin lô sản xuất:</div>
+              <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
+                <div className="font-bold text-cyan-800 mb-3">Thông tin lô sản xuất:</div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-600">Thuốc:</span>
@@ -291,7 +345,7 @@ export default function TransferManagement() {
                 <select
                   value={formData.distributorId}
                   onChange={(e) => setFormData({...formData, distributorId: e.target.value})}
-                  className="w-full border-2 border-orange-300 rounded-xl p-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                 >
                   <option value="">-- Chọn distributor --</option>
                   {safeDistributors.map(dist => (
@@ -304,7 +358,7 @@ export default function TransferManagement() {
 
               {selectedDistributor && (
                 <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
-                  <div className="text-sm font-semibold text-cyan-800 mb-2">📍 Thông tin distributor:</div>
+                  <div className="text-sm font-semibold text-cyan-800 mb-2">Thông tin distributor:</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                     <div><span className="text-slate-600">Tên:</span> <span className="font-medium">{selectedDistributor.name || 'N/A'}</span></div>
                     <div><span className="text-slate-600">Mã số thuế:</span> <span className="font-medium">{selectedDistributor.taxCode || 'N/A'}</span></div>
@@ -318,7 +372,7 @@ export default function TransferManagement() {
                   
                   {selectedDistributor.user && (
                     <div className="mt-3 pt-3 border-t border-cyan-200">
-                      <div className="text-xs font-semibold text-cyan-700 mb-1">👤 Thông tin tài khoản:</div>
+                      <div className="text-xs font-semibold text-cyan-700 mb-1">Thông tin tài khoản:</div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs">
                         <div><span className="text-slate-600">Tên:</span> <span className="font-medium">{selectedDistributor.user.fullName || selectedDistributor.user.username || 'N/A'}</span></div>
                         <div><span className="text-slate-600">Username:</span> <span className="font-mono">{selectedDistributor.user.username || 'N/A'}</span></div>
@@ -336,12 +390,12 @@ export default function TransferManagement() {
                   type="number"
                   value={formData.quantity}
                   onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                  className="w-full border-2 border-orange-300 rounded-xl p-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                   placeholder="Nhập số lượng"
                   min="1"
                   max={selectedProduction.quantity}
                 />
-                <div className="text-xs text-orange-600 mt-1">
+                <div className="text-xs text-cyan-600 mt-1">
                   Tối đa: {selectedProduction.quantity} NFT
                 </div>
               </div>
@@ -352,7 +406,7 @@ export default function TransferManagement() {
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                  className="w-full border-2 border-orange-300 rounded-xl p-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                   rows="3"
                   placeholder="Ghi chú về đơn chuyển giao..."
                 />
@@ -360,7 +414,7 @@ export default function TransferManagement() {
 
               <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
                 <div className="text-sm text-yellow-800">
-                  ⚠️ Sau khi xác nhận, yêu cầu chuyển giao sẽ được lưu với trạng thái <strong>"pending"</strong>. 
+                  Sau khi xác nhận, yêu cầu chuyển giao sẽ được lưu với trạng thái <strong>"pending"</strong>. 
                   Bước tiếp theo cần gọi smart contract để chuyển quyền sở hữu NFT.
                 </div>
               </div>
@@ -369,17 +423,11 @@ export default function TransferManagement() {
             {/* Footer */}
             <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end space-x-3">
               <button
-                onClick={() => setShowDialog(false)}
-                className="px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition"
-              >
-                Hủy
-              </button>
-              <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium shadow-lg hover:shadow-xl disabled:opacity-50 transition"
+                className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 transition"
               >
-                {loading ? 'Đang xử lý...' : '✓ Xác nhận chuyển giao'}
+                <a className="text-white">{loading ? 'Đang xử lý...' : 'Xác nhận chuyển giao'}</a>
               </button>
             </div>
           </div>
