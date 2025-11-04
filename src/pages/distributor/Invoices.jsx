@@ -121,37 +121,24 @@ export default function Invoices() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Banner đồng nhất */}
-      <section className="relative overflow-hidden rounded-2xl border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/30 blur-xl animate-float-slow" />
-          <div className="absolute top-8 right-6 w-16 h-8 rounded-full bg-white/25 blur-md rotate-6 animate-float-slower" />
+      {/* Banner kiểu Manufacturer (card trắng, viền cyan) */}
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-[#007b91]">Hóa đơn thương mại</h1>
+          <p className="text-slate-500 text-sm mt-1">Quản lý các hóa đơn đã tạo cho nhà thuốc.</p>
         </div>
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">
-                Hóa đơn thương mại
-              </h1>
-              <p className="mt-2 text-white/90">
-                Quản lý các hóa đơn đã tạo cho nhà thuốc.
-              </p>
-            </div>
-            <Button
-              type="primary"
-              size="large"
-              onClick={() => navigate('/distributor/invoices/create')}
-              className="bg-white/20 hover:bg-white/30 border-white/30"
-            >
-              + Tạo hóa đơn
-            </Button>
-          </div>
-        </div>
-      </section>
+        <Button
+          type="primary"
+          size="large"
+          onClick={() => navigate('/distributor/invoices/create')}
+          className="bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] border-0"
+        >
+          + Tạo hóa đơn
+        </Button>
+      </div>
 
       {/* Content */}
-      <div className="mt-6 bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+      <div className="mt-6 bg-white rounded-2xl shadow-sm border border-cyan-100 p-6">
         <h2 className="text-xl font-bold text-gray-800 mb-4">Danh sách hóa đơn</h2>
         <Spin spinning={loading}>
           <Table

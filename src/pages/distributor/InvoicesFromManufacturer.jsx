@@ -141,23 +141,15 @@ export default function InvoicesFromManufacturer() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Banner */}
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-blue-600 via-blue-500 to-cyan-500"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">📦 Đơn hàng từ nhà sản xuất</h1>
-          <p className="text-white/90 mt-2">Xem và xác nhận nhận hàng từ pharma company</p>
-        </div>
-      </motion.section>
+      {/* Banner kiểu Manufacturer */}
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
+        <h1 className="text-xl font-semibold text-[#007b91]">Đơn hàng từ nhà sản xuất</h1>
+        <p className="text-slate-500 text-sm mt-1">Xem và xác nhận nhận hàng từ pharma company</p>
+      </div>
 
       {/* Filters */}
       <motion.div
-        className="rounded-2xl bg-white/85 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
+        className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
         variants={fadeUp}
         initial="hidden"
         animate="show"
@@ -169,7 +161,7 @@ export default function InvoicesFromManufacturer() {
               value={search}
               onChange={e => updateFilter({ search: e.target.value, page: 1 })}
               placeholder="Tìm theo số đơn, ghi chú..."
-              className="w-full border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
+              className="w-full border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
             />
           </div>
           <div>
@@ -177,7 +169,7 @@ export default function InvoicesFromManufacturer() {
             <select
               value={status}
               onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
+              className="border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
             >
               <option value="">Tất cả</option>
               <option value="pending">Pending</option>
@@ -193,18 +185,17 @@ export default function InvoicesFromManufacturer() {
       {/* List */}
       <motion.div className="space-y-4" variants={fadeUp} initial="hidden" animate="show">
         {loading ? (
-          <div className="bg-white/90 rounded-2xl border border-[#90e0ef55] p-10 text-center text-slate-600">
+          <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center text-slate-600">
             Đang tải...
           </div>
         ) : items.length === 0 ? (
-          <div className="bg-white/90 rounded-2xl border border-[#90e0ef55] p-10 text-center">
-            <div className="text-5xl mb-4">📦</div>
+          <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
             <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có đơn hàng nào</h3>
             <p className="text-slate-600">Đơn hàng từ nhà sản xuất sẽ hiển thị ở đây</p>
           </div>
         ) : (
           items.map((item, idx) => (
-            <div key={idx} className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] overflow-hidden hover:shadow-lg transition">
+            <div key={idx} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
               <div className="p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -217,9 +208,9 @@ export default function InvoicesFromManufacturer() {
                       </span>
                     </div>
                     <div className="space-y-1 text-sm text-slate-600">
-                      <div>👤 Từ: <span className="font-medium text-slate-800">{item.fromManufacturer?.fullName || item.fromManufacturer?.username || 'N/A'}</span></div>
-                      <div>📦 Số lượng: <span className="font-bold text-blue-700">{item.totalQuantity} NFT</span></div>
-                      <div>🕒 Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
+                      <div>Từ: <span className="font-medium text-slate-800">{item.fromManufacturer?.fullName || item.fromManufacturer?.username || 'N/A'}</span></div>
+                      <div>Số lượng: <span className="font-bold text-blue-700">{item.totalQuantity} NFT</span></div>
+                      <div>Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
                     </div>
                   </div>
 
@@ -228,21 +219,21 @@ export default function InvoicesFromManufacturer() {
                       onClick={() => handleOpenConfirm(item)}
                       className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:from-emerald-600 hover:to-green-700 text-sm font-medium transition shadow"
                     >
-                      ✅ Xác nhận nhận hàng
+                      Xác nhận nhận hàng
                     </button>
                   )}
                 </div>
 
                 {item.notes && (
                   <div className="bg-slate-50 rounded-xl p-3 text-sm mb-3">
-                    <div className="font-semibold text-slate-700 mb-1">📝 Ghi chú:</div>
+                    <div className="font-semibold text-slate-700 mb-1">Ghi chú:</div>
                     <div className="text-slate-600">{item.notes}</div>
                   </div>
                 )}
 
                 {item.proofOfProduction && (
                   <div className="bg-purple-50 rounded-xl p-3 border border-purple-200 text-sm">
-                    <div className="font-semibold text-purple-800 mb-2">🏭 Thông tin sản xuất:</div>
+                    <div className="font-semibold text-purple-800 mb-2">Thông tin sản xuất:</div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>Số lô: <span className="font-mono">{item.proofOfProduction.batchNumber}</span></div>
                       <div>NSX: {new Date(item.proofOfProduction.manufacturingDate).toLocaleDateString('vi-VN')}</div>
@@ -283,32 +274,35 @@ export default function InvoicesFromManufacturer() {
 
       {/* Confirm Receipt Dialog */}
       {showConfirmDialog && selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="bg-gradient-to-r from-emerald-600 to-green-600 px-8 py-6 rounded-t-3xl">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">✅</span>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">Xác nhận nhận hàng</h2>
-                    <p className="text-emerald-100 text-sm">Đơn: {selectedInvoice.invoiceNumber}</p>
-                  </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowConfirmDialog(false)}>
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll" onClick={(e) => e.stopPropagation()}>
+            <style>{`
+              .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+              .custom-scroll::-webkit-scrollbar { width: 0; height: 0; }
+              .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+              .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
+            `}</style>
+            <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Xác nhận nhận hàng</h2>
+                  <p className="text-cyan-100 text-sm">Đơn: {selectedInvoice.invoiceNumber}</p>
                 </div>
-                <button
-                  onClick={() => setShowConfirmDialog(false)}
-                  className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition"
-                >
-                  ✕
-                </button>
               </div>
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="p-8 space-y-4">
-              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                <div className="font-bold text-blue-800 mb-2">📦 Thông tin đơn hàng:</div>
+              <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
+                <div className="font-bold text-cyan-800 mb-2">Thông tin đơn hàng:</div>
                 <div className="space-y-1 text-sm">
                   <div>Số đơn: <span className="font-mono">{selectedInvoice.invoiceNumber}</span></div>
-                  <div>Số lượng: <span className="font-bold text-blue-700">{selectedInvoice.totalQuantity} NFT</span></div>
+                  <div>Số lượng: <span className="font-bold text-cyan-700">{selectedInvoice.totalQuantity} NFT</span></div>
                   <div>Từ: {selectedInvoice.fromManufacturer?.fullName}</div>
                 </div>
               </div>
@@ -320,7 +314,7 @@ export default function InvoicesFromManufacturer() {
                     type="text"
                     value={confirmForm.receivedBy}
                     onChange={(e) => setConfirmForm({...confirmForm, receivedBy: e.target.value})}
-                    className="w-full border-2 border-emerald-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                     placeholder="Tên người nhận"
                   />
                 </div>
@@ -330,7 +324,7 @@ export default function InvoicesFromManufacturer() {
                     type="number"
                     value={confirmForm.distributedQuantity}
                     onChange={(e) => setConfirmForm({...confirmForm, distributedQuantity: e.target.value})}
-                    className="w-full border-2 border-emerald-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                     placeholder="Số lượng"
                   />
                 </div>
@@ -342,7 +336,7 @@ export default function InvoicesFromManufacturer() {
                   type="text"
                   value={confirmForm.deliveryAddress}
                   onChange={(e) => setConfirmForm({...confirmForm, deliveryAddress: e.target.value})}
-                  className="w-full border-2 border-emerald-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                   placeholder="Địa chỉ nhận hàng"
                 />
               </div>
@@ -353,7 +347,7 @@ export default function InvoicesFromManufacturer() {
                   type="text"
                   value={confirmForm.shippingInfo}
                   onChange={(e) => setConfirmForm({...confirmForm, shippingInfo: e.target.value})}
-                  className="w-full border-2 border-emerald-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                   placeholder="Thông tin vận chuyển, mã đơn..."
                 />
               </div>
@@ -364,7 +358,7 @@ export default function InvoicesFromManufacturer() {
                   type="date"
                   value={confirmForm.distributionDate}
                   onChange={(e) => setConfirmForm({...confirmForm, distributionDate: e.target.value})}
-                  className="w-full border-2 border-emerald-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                 />
               </div>
 
@@ -373,7 +367,7 @@ export default function InvoicesFromManufacturer() {
                 <textarea
                   value={confirmForm.notes}
                   onChange={(e) => setConfirmForm({...confirmForm, notes: e.target.value})}
-                  className="w-full border-2 border-emerald-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                   rows="3"
                   placeholder="Ghi chú thêm..."
                 />
@@ -381,7 +375,7 @@ export default function InvoicesFromManufacturer() {
 
               <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
                 <div className="text-sm text-yellow-800">
-                  ⚠️ Sau khi xác nhận, trạng thái sẽ chuyển thành <strong>"Đang chờ Manufacturer xác nhận"</strong>. 
+                  Sau khi xác nhận, trạng thái sẽ chuyển thành <strong>"Đang chờ Manufacturer xác nhận"</strong>. 
                   Manufacturer cần xác nhận để chuyển quyền sở hữu NFT cho bạn.
                 </div>
               </div>
@@ -390,16 +384,16 @@ export default function InvoicesFromManufacturer() {
             <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end space-x-3">
               <button
                 onClick={() => setShowConfirmDialog(false)}
-                className="px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition"
+                className="px-6 py-2.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition"
               >
                 Hủy
               </button>
               <button
                 onClick={handleConfirmReceipt}
                 disabled={loading}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium shadow-lg hover:shadow-xl disabled:opacity-50 transition"
+                className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 transition"
               >
-                {loading ? 'Đang xử lý...' : '✓ Xác nhận nhận hàng'}
+                {loading ? 'Đang xử lý...' : 'Xác nhận nhận hàng'}
               </button>
             </div>
           </div>

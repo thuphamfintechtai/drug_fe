@@ -78,28 +78,17 @@ export default function InvoiceDetail() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Banner đồng nhất */}
-      <section className="relative overflow-hidden rounded-2xl border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/30 blur-xl animate-float-slow" />
-          <div className="absolute top-8 right-6 w-16 h-8 rounded-full bg-white/25 blur-md rotate-6 animate-float-slower" />
-        </div>
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">
-            Chi tiết hóa đơn
-          </h1>
-          <p className="mt-2 text-white/90">
-            Xem và cập nhật thông tin hóa đơn thương mại.
-          </p>
-        </div>
-      </section>
+      {/* Banner kiểu Manufacturer */}
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5">
+        <h1 className="text-xl font-semibold text-[#007b91]">Chi tiết hóa đơn</h1>
+        <p className="text-slate-500 text-sm mt-1">Xem và cập nhật thông tin hóa đơn thương mại.</p>
+      </div>
 
       <div className="mt-6 space-y-6">
         {/* Thông tin hóa đơn */}
         <Card
           title="Thông tin hóa đơn"
-          className="rounded-2xl shadow-lg border border-gray-100"
+          className="rounded-2xl shadow-sm border border-cyan-100"
         >
           <Descriptions column={{ xs: 1, sm: 2 }}>
             <Descriptions.Item label="Mã hóa đơn">
@@ -150,7 +139,7 @@ export default function InvoiceDetail() {
         {/* Form cập nhật trạng thái */}
         <Card
           title="Cập nhật trạng thái"
-          className="rounded-2xl shadow-lg border border-gray-100"
+          className="rounded-2xl shadow-sm border border-cyan-100"
         >
           <Form form={form} onFinish={onStatusUpdate} layout="vertical">
             <Form.Item
