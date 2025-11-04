@@ -27,11 +27,16 @@ export default function Drugs() {
     setLoading(true);
     try {
       const response = await getDrugs();
-      if (response.data.success) {
-        setDrugs(response.data.data || []);
+      if (response.data.success && response.data.data) {
+        setDrugs(Array.isArray(response.data.data.drugs) 
+          ? response.data.data.drugs 
+          : []);
+      } else {
+        setDrugs([]);
       }
     } catch (error) {
       console.error('Lỗi khi tải danh sách thuốc:', error);
+      setDrugs([]);
     } finally {
       setLoading(false);
     }
@@ -47,11 +52,20 @@ export default function Drugs() {
     try {
       const response = await searchDrugByATCCode(searchAtc);
       if (response.data.success) {
-        setDrugs(response.data.data || []);
+        // Search có thể trả về mảng trực tiếp hoặc object với drugs
+        const drugsData = response.data.data;
+        setDrugs(Array.isArray(drugsData) 
+          ? drugsData 
+          : Array.isArray(drugsData?.drugs) 
+            ? drugsData.drugs 
+            : []);
+      } else {
+        setDrugs([]);
       }
     } catch (error) {
       console.error('Lỗi khi tìm kiếm:', error);
       alert('Không thể tìm kiếm thuốc');
+      setDrugs([]);
     } finally {
       setLoading(false);
     }
@@ -61,6 +75,9 @@ export default function Drugs() {
     hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
     show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
   };
+
+  // Đảm bảo drugs luôn là array
+  const safeDrugs = Array.isArray(drugs) ? drugs : [];
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
@@ -114,7 +131,7 @@ export default function Drugs() {
       >
         {loading ? (
           <div className="p-12 text-center text-slate-600">Đang tải...</div>
-        ) : drugs.length === 0 ? (
+        ) : safeDrugs.length === 0 ? (
           <div className="p-12 text-center">
             <div className="text-5xl mb-4">💊</div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có thuốc nào</h3>
@@ -134,7 +151,7 @@ export default function Drugs() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {drugs.map((drug, index) => (
+                {safeDrugs.map((drug, index) => (
                   <tr key={drug._id || index} className="hover:bg-[#f5fcff] transition group">
                     <td className="px-6 py-4 font-semibold text-[#003544]">{drug.tradeName}</td>
                     <td className="px-6 py-4 text-slate-700">{drug.genericName}</td>

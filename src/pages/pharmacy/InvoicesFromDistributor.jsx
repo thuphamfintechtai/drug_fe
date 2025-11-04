@@ -182,14 +182,18 @@ export default function InvoicesFromDistributor() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-[#003544]">Từ: {item.fromDistributor?.name || 'N/A'}</h3>
+                      <h3 className="text-lg font-semibold text-[#003544]">
+                        Từ: {item.fromDistributor?.fullName || item.fromDistributor?.username || 'N/A'}
+                      </h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
                         {item.status}
                       </span>
                     </div>
-                    <div className="space-y-1 text-sm text-slate-600">
-                      <div>📦 Số lượng: <span className="font-bold text-emerald-700">{item.quantity} NFT</span></div>
-                      <div>🕒 Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-600 mb-4">
+                      <div>📦 Số đơn: <span className="font-mono font-medium text-slate-800">{item.invoiceNumber || 'N/A'}</span></div>
+                      <div>💊 Số lượng: <span className="font-bold text-emerald-700">{item.quantity} NFT</span></div>
+                      <div>📅 Ngày đơn: <span className="font-medium">{item.invoiceDate ? new Date(item.invoiceDate).toLocaleDateString('vi-VN') : 'N/A'}</span></div>
+                      <div>🕒 Ngày tạo: <span className="font-medium">{item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A'}</span></div>
                     </div>
                   </div>
 
@@ -203,6 +207,50 @@ export default function InvoicesFromDistributor() {
                   )}
                 </div>
 
+                {/* Thông tin nhà phân phối */}
+                {item.fromDistributor && (
+                  <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200 text-sm mb-3">
+                    <div className="font-semibold text-cyan-800 mb-2">🏢 Thông tin nhà phân phối:</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-cyan-700">
+                      <div>Tên: <span className="font-medium">{item.fromDistributor.fullName || item.fromDistributor.username || 'N/A'}</span></div>
+                      <div>Email: <span className="font-medium">{item.fromDistributor.email || 'N/A'}</span></div>
+                      <div>Username: <span className="font-mono text-xs">{item.fromDistributor.username || 'N/A'}</span></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Thông tin thuốc */}
+                {item.drug && (
+                  <div className="bg-blue-50 rounded-xl p-3 border border-blue-200 text-sm mb-3">
+                    <div className="font-semibold text-blue-800 mb-2">💊 Thông tin thuốc:</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-blue-700">
+                      <div>Tên thương mại: <span className="font-medium">{item.drug.tradeName || 'N/A'}</span></div>
+                      <div>Tên hoạt chất: <span className="font-medium">{item.drug.genericName || 'N/A'}</span></div>
+                      <div>Mã ATC: <span className="font-mono font-medium">{item.drug.atcCode || 'N/A'}</span></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Thông tin tài chính */}
+                <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-200 text-sm mb-3">
+                  <div className="font-semibold text-indigo-800 mb-2">💰 Thông tin tài chính:</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-indigo-700">
+                    <div>Đơn giá: <span className="font-medium">{item.unitPrice?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
+                    <div>Tổng tiền: <span className="font-bold text-indigo-800">{item.totalAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
+                    <div>VAT ({item.vatRate || 0}%): <span className="font-medium">{item.vatAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
+                    <div>Thành tiền: <span className="font-bold text-indigo-800">{item.finalAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
+                  </div>
+                </div>
+
+                {/* Chain Transaction Hash */}
+                {item.chainTxHash && (
+                  <div className="bg-purple-50 rounded-xl p-3 border border-purple-200 text-sm mb-3">
+                    <div className="font-semibold text-purple-800 mb-1">🔗 Chain TX Hash:</div>
+                    <div className="text-purple-700 font-mono text-xs break-all">{item.chainTxHash}</div>
+                  </div>
+                )}
+
+                {/* Ghi chú */}
                 {item.notes && (
                   <div className="bg-slate-50 rounded-xl p-3 text-sm">
                     <div className="font-semibold text-slate-700 mb-1">📝 Ghi chú:</div>
@@ -243,9 +291,18 @@ export default function InvoicesFromDistributor() {
             <div className="p-8 space-y-4">
               <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
                 <div className="font-bold text-emerald-800 mb-2">📦 Thông tin đơn hàng:</div>
-                <div className="space-y-1 text-sm">
-                  <div>Từ: {selectedInvoice.fromDistributor?.name}</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                  <div>Số đơn: <span className="font-mono font-medium">{selectedInvoice.invoiceNumber || 'N/A'}</span></div>
+                  <div>Từ: <span className="font-medium">{selectedInvoice.fromDistributor?.fullName || selectedInvoice.fromDistributor?.username || 'N/A'}</span></div>
                   <div>Số lượng: <span className="font-bold text-emerald-700">{selectedInvoice.quantity} NFT</span></div>
+                  <div>Ngày đơn: <span className="font-medium">{selectedInvoice.invoiceDate ? new Date(selectedInvoice.invoiceDate).toLocaleDateString('vi-VN') : 'N/A'}</span></div>
+                  {selectedInvoice.drug && (
+                    <>
+                      <div>Thuốc: <span className="font-medium">{selectedInvoice.drug.tradeName || 'N/A'}</span></div>
+                      <div>Mã ATC: <span className="font-mono text-xs">{selectedInvoice.drug.atcCode || 'N/A'}</span></div>
+                    </>
+                  )}
+                  <div className="md:col-span-2">Thành tiền: <span className="font-bold text-emerald-800">{selectedInvoice.finalAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
                 </div>
               </div>
 

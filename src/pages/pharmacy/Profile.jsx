@@ -84,8 +84,8 @@ export default function PharmacyProfile() {
                 <div className="font-semibold text-emerald-900">{profile.user?.email || 'N/A'}</div>
               </div>
               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200 p-4">
-                <div className="text-sm text-blue-700 mb-1">📱 Số điện thoại</div>
-                <div className="font-semibold text-blue-900">{profile.user?.phone || 'N/A'}</div>
+                <div className="text-sm text-blue-700 mb-1">👤 Username</div>
+                <div className="font-mono font-semibold text-blue-900">{profile.user?.username || 'N/A'}</div>
               </div>
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200 p-4">
                 <div className="text-sm text-purple-700 mb-1">🏷️ Vai trò</div>
@@ -97,6 +97,12 @@ export default function PharmacyProfile() {
                   {profile.user?.createdAt ? new Date(profile.user.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
                 </div>
               </div>
+              {profile.user?.walletAddress && (
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 p-4">
+                  <div className="text-sm text-indigo-700 mb-1">💼 Wallet Address</div>
+                  <div className="font-mono text-xs text-indigo-900 break-all">{profile.user.walletAddress}</div>
+                </div>
+              )}
             </div>
           </motion.div>
 
@@ -119,16 +125,28 @@ export default function PharmacyProfile() {
                     <div className="font-mono font-semibold text-slate-900">{profile.pharmacy.taxCode || 'N/A'}</div>
                   </div>
                   <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                    <div className="text-sm text-slate-700 mb-1">📞 Số điện thoại</div>
-                    <div className="font-semibold text-slate-900">{profile.pharmacy.phone || 'N/A'}</div>
+                    <div className="text-sm text-slate-700 mb-1">📋 Số giấy phép</div>
+                    <div className="font-semibold text-slate-900">{profile.pharmacy.licenseNo || 'N/A'}</div>
                   </div>
                   <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                    <div className="text-sm text-slate-700 mb-1">✉️ Email</div>
-                    <div className="font-semibold text-slate-900">{profile.pharmacy.email || 'N/A'}</div>
+                    <div className="text-sm text-slate-700 mb-1">✉️ Email liên hệ</div>
+                    <div className="font-semibold text-slate-900">{profile.pharmacy.contactEmail || 'N/A'}</div>
                   </div>
                   <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                    <div className="text-sm text-slate-700 mb-1">🌐 Website</div>
-                    <div className="font-semibold text-slate-900">{profile.pharmacy.website || 'N/A'}</div>
+                    <div className="text-sm text-slate-700 mb-1">📞 SĐT liên hệ</div>
+                    <div className="font-semibold text-slate-900">{profile.pharmacy.contactPhone || 'N/A'}</div>
+                  </div>
+                  <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                    <div className="text-sm text-slate-700 mb-1">🌍 Quốc gia</div>
+                    <div className="font-semibold text-slate-900">{profile.pharmacy.country || 'N/A'}</div>
+                  </div>
+                  <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                    <div className="text-sm text-slate-700 mb-1">📊 Trạng thái</div>
+                    <div className="font-semibold text-slate-900">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${profile.pharmacy.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {profile.pharmacy.status === 'active' ? '✓ Active' : profile.pharmacy.status || 'N/A'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -144,19 +162,25 @@ export default function PharmacyProfile() {
                   </div>
                 )}
 
-                {profile.pharmacy.licenseNumber && (
-                  <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border border-amber-200 p-4">
-                    <div className="text-sm text-amber-700 mb-1">📋 Số giấy phép</div>
-                    <div className="font-semibold text-amber-900">{profile.pharmacy.licenseNumber}</div>
-                  </div>
-                )}
-
-                {profile.pharmacy.description && (
-                  <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                    <div className="text-sm text-slate-700 mb-1">📝 Mô tả</div>
-                    <div className="text-slate-900">{profile.pharmacy.description}</div>
-                  </div>
-                )}
+                {/* Thông tin timestamps */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {profile.pharmacy.createdAt && (
+                    <div className="bg-indigo-50 rounded-xl border border-indigo-200 p-4">
+                      <div className="text-sm text-indigo-700 mb-1">📅 Ngày tạo</div>
+                      <div className="font-semibold text-indigo-900 text-xs">
+                        {new Date(profile.pharmacy.createdAt).toLocaleString('vi-VN')}
+                      </div>
+                    </div>
+                  )}
+                  {profile.pharmacy.updatedAt && (
+                    <div className="bg-indigo-50 rounded-xl border border-indigo-200 p-4">
+                      <div className="text-sm text-indigo-700 mb-1">🔄 Cập nhật lần cuối</div>
+                      <div className="font-semibold text-indigo-900 text-xs">
+                        {new Date(profile.pharmacy.updatedAt).toLocaleString('vi-VN')}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.div>
           )}
