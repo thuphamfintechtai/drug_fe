@@ -157,19 +157,33 @@ export default function InvoicesFromManufacturer() {
         <div className="flex flex-col md:flex-row gap-3 md:items-end">
           <div className="flex-1">
             <label className="block text-sm text-[#003544]/70 mb-1">Tìm kiếm</label>
-            <input
-              value={search}
-              onChange={e => updateFilter({ search: e.target.value, page: 1 })}
-              placeholder="Tìm theo số đơn, ghi chú..."
-              className="w-full border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
-            />
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                </svg>
+              </span>
+              <input
+                value={search}
+                onChange={e => updateFilter({ search: e.target.value, page: 1 })}
+                onKeyDown={e => e.key === 'Enter' && updateFilter({ search, page: 1 })}
+                placeholder="Tìm theo số đơn, ghi chú..."
+                className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+              />
+              <button
+                onClick={() => updateFilter({ search, page: 1 })}
+                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+              >
+                Tìm Kiếm
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-sm text-[#003544]/70 mb-1">Trạng thái</label>
             <select
               value={status}
               onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-              className="border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
+              className="h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
             >
               <option value="">Tất cả</option>
               <option value="pending">Pending</option>
@@ -181,6 +195,7 @@ export default function InvoicesFromManufacturer() {
           </div>
         </div>
       </motion.div>
+
 
       {/* List */}
       <motion.div className="space-y-4" variants={fadeUp} initial="hidden" animate="show">
@@ -382,12 +397,6 @@ export default function InvoicesFromManufacturer() {
             </div>
 
             <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end space-x-3">
-              <button
-                onClick={() => setShowConfirmDialog(false)}
-                className="px-6 py-2.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition"
-              >
-                Hủy
-              </button>
               <button
                 onClick={handleConfirmReceipt}
                 disabled={loading}

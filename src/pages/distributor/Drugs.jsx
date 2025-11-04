@@ -81,42 +81,41 @@ export default function Drugs() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">💊 Danh sách thuốc</h1>
-          <p className="text-white/90 mt-2">Xem thông tin thuốc và tìm kiếm theo ATC code</p>
-        </div>
-      </motion.section>
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
+        <h1 className="text-xl font-semibold text-[#007b91]">Danh sách thuốc</h1>
+        <p className="text-slate-500 text-sm mt-1">Xem thông tin thuốc và tìm kiếm theo ATC code</p>
+      </div>
 
       <motion.div
-        className="rounded-2xl bg-white/85 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-5 mb-5"
+        className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-5 mb-5"
         variants={fadeUp}
         initial="hidden"
         animate="show"
       >
-        <div className="flex gap-3">
-          <input
-            value={searchAtc}
-            onChange={e => setSearchAtc(e.target.value)}
-            placeholder="Tìm kiếm theo mã ATC code..."
-            className="flex-1 border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
-          />
-          <button
-            onClick={handleSearch}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-lg hover:shadow-xl transition"
-          >
-            🔍 Tìm kiếm
-          </button>
+        <div className="flex gap-3 items-center">
+          <div className="relative flex-1">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+              </svg>
+            </span>
+            <input
+              value={searchAtc}
+              onChange={e => setSearchAtc(e.target.value)}
+              placeholder="Tìm kiếm theo mã ATC code..."
+              className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+              onKeyDown={e => e.key === 'Enter' && handleSearch()}
+            />
+            <button
+              onClick={handleSearch}
+              className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+            >
+              Tìm Kiếm
+            </button>
+          </div>
           <button
             onClick={() => { setSearchAtc(''); loadDrugs(); }}
-            className="px-4 py-2.5 rounded-xl border border-[#90e0ef55] text-slate-700 hover:bg-[#90e0ef22] transition"
+            className="px-4 h-12 rounded-full border border-[#90e0ef55] text-slate-700 hover:bg-[#90e0ef22] transition"
           >
             ↻ Reset
           </button>
@@ -124,7 +123,7 @@ export default function Drugs() {
       </motion.div>
 
       <motion.div
-        className="bg-white/90 rounded-2xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] overflow-hidden"
+        className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden"
         variants={fadeUp}
         initial="hidden"
         animate="show"
@@ -139,24 +138,24 @@ export default function Drugs() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4]">
+            <table className="w-full border-collapse">
+              <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Tên thương mại</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Tên hoạt chất</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Mã ATC</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Dạng bào chế</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Hàm lượng</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Trạng thái</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tên thương mại</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tên hoạt chất</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Mã ATC</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Dạng bào chế</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Hàm lượng</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Trạng thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {safeDrugs.map((drug, index) => (
-                  <tr key={drug._id || index} className="hover:bg-[#f5fcff] transition group">
+                  <tr key={drug._id || index} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 font-semibold text-[#003544]">{drug.tradeName}</td>
                     <td className="px-6 py-4 text-slate-700">{drug.genericName}</td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-mono font-semibold bg-cyan-100 text-cyan-800">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">
                         {drug.atcCode}
                       </span>
                     </td>
