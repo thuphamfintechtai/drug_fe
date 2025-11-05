@@ -40,20 +40,35 @@ export default function TransferHistory() {
       if (response.data.success) {
         const data = response.data.data || {};
         const invoices = Array.isArray(data.invoices) ? data.invoices : [];
-        const mapped = invoices.map(inv => ({
-          _id: inv._id,
-          pharmacy: inv.toPharmacy,
-          drug: inv.drug,
-          invoiceNumber: inv.invoiceNumber,
-          invoiceDate: inv.invoiceDate,
-          quantity: inv.quantity,
-          status: inv.status,
-          createdAt: inv.createdAt,
-          transactionHash: inv.chainTxHash,
-          chainTxHash: inv.chainTxHash,
-        }));
+        const distributions = Array.isArray(data.distributions) ? data.distributions : [];
+        const source = invoices.length ? invoices : distributions;
+
+        const mapped = source.map((row) => {
+          // Hợp nhất 2 schema: invoice (distributor → pharmacy) và distribution (pharmacy history)
+          const pharmacy = row.toPharmacy || row.pharmacy || row.commercialInvoice?.toPharmacy || null;
+          const transactionHash = row.chainTxHash || row.receiptTxHash || row.commercialInvoice?.chainTxHash || null;
+          const quantity = row.quantity ?? row.receivedQuantity ?? row.commercialInvoice?.quantity ?? 0;
+          const createdAt = row.createdAt || row.commercialInvoice?.createdAt;
+          const invoiceNumber = row.invoiceNumber || row.commercialInvoice?.invoiceNumber;
+          const invoiceDate = row.invoiceDate || row.commercialInvoice?.invoiceDate;
+          const status = row.status || row.commercialInvoice?.status;
+
+        return {
+            _id: row._id,
+            pharmacy,
+            drug: row.drug,
+            invoiceNumber,
+            invoiceDate,
+            quantity,
+            status,
+            createdAt,
+            transactionHash,
+            chainTxHash: transactionHash,
+          };
+        });
+
         setItems(mapped);
-        setPagination(data.pagination || { page: 1, limit: 10, total: invoices.length, pages: 1 });
+        setPagination(data.pagination || { page: 1, limit: 10, total: mapped.length, pages: 1 });
       }
     } catch (error) {
       console.error('Lỗi khi tải lịch sử:', error);

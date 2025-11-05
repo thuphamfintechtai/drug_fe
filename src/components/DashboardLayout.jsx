@@ -82,47 +82,29 @@ export default function DashboardLayout({
       ),
     },
     {
-      path: '/admin/proof-of-production',
-      label: 'Proof of Production',
+      path: '/admin/supply-chain',
+      label: 'Lịch sử chuỗi cung ứng',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.5 6.75h15M6.75 4.5v15M8.25 9.75h7.5m-7.5 4.5h7.5" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h10M4 18h7" />
         </svg>
       ),
     },
     {
-      path: '/admin/proof-of-distribution',
-      label: 'Proof of Distribution',
+      path: '/admin/distribution',
+      label: 'Lịch sử phân phối',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 15l2.25-6.75h12l2.25 6.75M6 15h12m-9 0v3.75m6-3.75v3.75" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M6 12h12M10 17h8" />
         </svg>
       ),
     },
     {
-      path: '/admin/proof-of-pharmacy',
-      label: 'Proof of Pharmacy',
+      path: '/admin/password-reset-requests',
+      label: 'Yêu cầu đặt lại mật khẩu',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7.5 4.5h9a2 2 0 012 2v11a2 2 0 01-2 2h-9a2 2 0 01-2-2v-11a2 2 0 012-2zM9.75 9.75h4.5M9.75 13.5h4.5" />
-        </svg>
-      ),
-    },
-    {
-      path: '/admin/invoices',
-      label: 'Invoices',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 3.75h7.5L19.5 7.5v12a.75.75 0 01-.75.75H5.25A.75.75 0 014.5 19.5v-15a.75.75 0 01.75-.75zM8.25 9h7.5M8.25 12.75h7.5M8.25 16.5h4.5" />
-        </svg>
-      ),
-    },
-    {
-      path: '/admin/manufacturers',
-      label: 'Nhà sản xuất',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 9.75L12 3l8.25 6.75V20.25H3.75zM8.25 20.25v-6h7.5v6" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3zm0 2a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       ),
     },

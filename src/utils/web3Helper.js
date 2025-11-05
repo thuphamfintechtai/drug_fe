@@ -82,12 +82,10 @@ const trySwitchToPioneNetwork = async () => {
   
   try {
     const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-    console.log('[trySwitchToPioneNetwork] Current chainId:', currentChainId);
     
     // Thử lấy danh sách networks từ MetaMask (API mới)
     try {
       const networkList = await window.ethereum.request({ method: 'wallet_getEthereumChains' });
-      console.log('[trySwitchToPioneNetwork] Available networks:', networkList);
       
       // Tìm PIONE network trong danh sách
       const pioneNetwork = networkList?.find(network => {
@@ -96,14 +94,13 @@ const trySwitchToPioneNetwork = async () => {
       });
       
       if (pioneNetwork && pioneNetwork.chainId !== currentChainId) {
-        console.log('[trySwitchToPioneNetwork] Found PIONE network:', pioneNetwork);
         // Request switch sang PIONE network
         try {
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
             params: [{ chainId: pioneNetwork.chainId }],
           });
-          console.log('[trySwitchToPioneNetwork] Successfully switched to PIONE network');
+          
           return true;
         } catch (switchError) {
           // Nếu network chưa được thêm vào MetaMask, thử add network
@@ -119,17 +116,17 @@ const trySwitchToPioneNetwork = async () => {
                   blockExplorerUrls: pioneNetwork.blockExplorerUrls || [],
                 }],
               });
-              console.log('[trySwitchToPioneNetwork] Successfully added and switched to PIONE network');
+              
               return true;
             } catch (addError) {
-              console.warn('[trySwitchToPioneNetwork] Failed to add network:', addError);
+              
             }
           }
-          console.warn('[trySwitchToPioneNetwork] Failed to switch network:', switchError);
+          
         }
       }
     } catch (apiError) {
-      console.warn('[trySwitchToPioneNetwork] wallet_getEthereumChains not supported:', apiError);
+      
     }
     
     // Fallback: Thử các chainId phổ biến của PIONE network
@@ -140,14 +137,14 @@ const trySwitchToPioneNetwork = async () => {
     
     for (const chainId of commonPioneChainIds) {
       if (currentChainId === chainId) {
-        console.log('[trySwitchToPioneNetwork] Already on PIONE network');
+        
         return true;
       }
     }
     
     return false;
   } catch (error) {
-    console.warn('[trySwitchToPioneNetwork] Error:', error);
+    
     return false;
   }
 };
@@ -159,27 +156,21 @@ const ensureDeployed = async (provider, address) => {
   const network = await provider.getNetwork();
   const code = await provider.getCode(address);
   
-  console.log('[ensureDeployed] Checking contract:', {
-    address,
-    networkName: network.name,
-    chainId: network.chainId.toString(),
-    hasCode: code !== '0x',
-    codeLength: code.length,
-  });
+  
   
   if (code === '0x') {
     // Contract không tồn tại trên network này
     // Contract ĐÃ TỒN TẠI trên PIONE network (đã verify trên Zero Scan)
     // Vậy vấn đề là MetaMask đang ở network khác
     
-    console.log('[ensureDeployed] Contract not found, attempting to switch to PIONE network...');
+    
     
     // Thử tự động switch sang PIONE network
     const switchSuccess = await trySwitchToPioneNetwork();
     
     if (switchSuccess) {
       // Đã switch thành công, thử lại check contract
-      console.log('[ensureDeployed] Network switched, re-checking contract...');
+      
       // Wait a bit for network switch to complete
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -188,14 +179,10 @@ const ensureDeployed = async (provider, address) => {
       const newNetwork = await newProvider.getNetwork();
       const newCode = await newProvider.getCode(address);
       
-      console.log('[ensureDeployed] After switch:', {
-        networkName: newNetwork.name,
-        chainId: newNetwork.chainId.toString(),
-        hasCode: newCode !== '0x',
-      });
+      
       
       if (newCode !== '0x') {
-        console.log('[ensureDeployed] Contract found on new network!');
+        
         return; // Contract đã tồn tại trên network mới
       }
     }
@@ -218,16 +205,7 @@ const ensureDeployed = async (provider, address) => {
       `4. Sau khi chuyển, thử lại chuyển NFT\n\n` +
       `🔗 Kiểm tra contract: zeroscan.org/address/${address}`;
     
-    console.error('[ensureDeployed] Contract not found on current network:', {
-      currentNetwork: network.name,
-      currentChainId: network.chainId.toString(),
-      currentChainIdHex,
-      contractAddress: address,
-      switchAttempted: true,
-      switchSuccess,
-      error: 'Contract exists on PIONE network but MetaMask is on different network',
-      suggestion: 'Switch to "Pione Network" in MetaMask manually',
-    });
+    
     
     throw new Error(errorMessage);
   }
@@ -240,9 +218,9 @@ const ensureDeployed = async (provider, address) => {
     if (!functionFragment) {
       throw new Error('Function distributorTransferToPharmacy not found in contract ABI');
     }
-    console.log('[ensureDeployed] Function distributorTransferToPharmacy exists:', functionFragment.format());
+    
   } catch (funcError) {
-    console.warn('[ensureDeployed] Warning checking function:', funcError.message);
+    
     // Không throw error ở đây vì có thể do ABI không khớp, nhưng contract vẫn tồn tại
   }
 };
@@ -441,7 +419,6 @@ export const transferNFTToDistributor = async (tokenIds, distributorAddress) => 
     const contract = await getNFTContract();
 
     // Check balances before transfer
-    console.log('🔍 Checking balances before transfer...');
     const balanceChecks = await Promise.all(
       normalizedTokenIds.map(async (tokenId) => {
         const balance = await contract.balanceOf(signerAddress, tokenId);
@@ -466,19 +443,15 @@ export const transferNFTToDistributor = async (tokenIds, distributorAddress) => 
 
     // Call manufacturerTransferToDistributor(tokenIds, amounts, distributorAddress)
     // This is the correct function name from the ABI
-    console.log('📤 Calling manufacturerTransferToDistributor...');
-    console.log('TokenIds:', normalizedTokenIds);
-    console.log('Amounts:', normalizedAmounts);
-    console.log('Distributor:', distributorAddress);
     
     const tx = await contract.manufacturerTransferToDistributor(
       normalizedTokenIds,
       normalizedAmounts,
       distributorAddress
     );
-    console.log('⏳ Transaction submitted:', tx.hash);
+    
     const receipt = await tx.wait();
-    console.log('✅ Transfer confirmed:', receipt);
+    
 
     return { success: true, transactionHash: tx.hash, blockNumber: receipt.blockNumber };
   } catch (error) {
@@ -495,7 +468,7 @@ export const transferNFTToDistributor = async (tokenIds, distributorAddress) => 
       const errorMessage = error?.message || error?.reason || '';
       if (/insufficient balance/i.test(errorMessage)) {
         throw new Error(
-          '❌ Không đủ số lượng token để chuyển giao. ' +
+          'Không đủ số lượng token để chuyển giao. ' +
           'Vui lòng kiểm tra:\n' +
           '1. Token IDs có tồn tại và đã được mint chưa?\n' +
           '2. Token IDs có thuộc sở hữu của manufacturer này không?\n' +
@@ -519,10 +492,6 @@ export const transferNFTToDistributor = async (tokenIds, distributorAddress) => 
  */
 export const transferBatchNFTToDistributor = async (tokenIds, amounts, distributorAddress) => {
   try {
-    console.log('📦 Batch transfer NFTs to distributor...');
-    console.log('Token IDs:', tokenIds);
-    console.log('Amounts:', amounts);
-    console.log('Distributor Address:', distributorAddress);
 
     // Basic validations
     if (!Array.isArray(tokenIds) || tokenIds.length === 0) {
@@ -571,7 +540,7 @@ export const transferBatchNFTToDistributor = async (tokenIds, amounts, distribut
     const contract = await getNFTContract();
 
     // Check balances before transfer
-    console.log('🔍 Checking balances before transfer...');
+    
     const balanceChecks = await Promise.all(
       normalizedTokenIds.map(async (tokenId) => {
         const balance = await contract.balanceOf(signerAddress, tokenId);
@@ -595,10 +564,7 @@ export const transferBatchNFTToDistributor = async (tokenIds, amounts, distribut
     }
 
     // Call manufacturerTransferToDistributor(tokenIds, amounts, distributorAddress)
-    console.log('📤 Calling manufacturerTransferToDistributor...');
-    console.log('TokenIds:', normalizedTokenIds);
-    console.log('Amounts:', normalizedAmounts);
-    console.log('Distributor:', distributorAddress);
+    
 
     const tx = await contract.manufacturerTransferToDistributor(
       normalizedTokenIds,
@@ -606,9 +572,8 @@ export const transferBatchNFTToDistributor = async (tokenIds, amounts, distribut
       distributorAddress
     );
 
-    console.log('⏳ Transaction submitted:', tx.hash);
     const receipt = await tx.wait();
-    console.log('✅ Batch transfer confirmed:', receipt);
+    
 
     return {
       success: true,
@@ -616,7 +581,7 @@ export const transferBatchNFTToDistributor = async (tokenIds, amounts, distribut
       blockNumber: receipt.blockNumber
     };
   } catch (error) {
-    console.error('❌ Error batch transferring NFT:', error);
+    console.error('Error batch transferring NFT:', error);
     // Friendly error messages
     if (error?.code === 'ACTION_REJECTED' || error?.code === 4001) {
       throw new Error('User rejected the transaction');
@@ -629,7 +594,7 @@ export const transferBatchNFTToDistributor = async (tokenIds, amounts, distribut
       const errorMessage = error?.message || error?.reason || '';
       if (/insufficient balance/i.test(errorMessage)) {
         throw new Error(
-          '❌ Không đủ số lượng token để chuyển giao. ' +
+          'Không đủ số lượng token để chuyển giao. ' +
           'Vui lòng kiểm tra:\n' +
           '1. Token IDs có tồn tại và đã được mint chưa?\n' +
           '2. Token IDs có thuộc sở hữu của manufacturer này không?\n' +
@@ -657,10 +622,6 @@ export const transferBatchNFTToDistributor = async (tokenIds, amounts, distribut
  */
 export const transferNFTToPharmacy = async (tokenIds, amounts, pharmacyAddress) => {
   try {
-    console.log('📦 Transferring NFTs to pharmacy...');
-    console.log('Token IDs:', tokenIds);
-    console.log('Amounts:', amounts);
-    console.log('Pharmacy Address:', pharmacyAddress);
 
     // Basic validations
     if (!Array.isArray(tokenIds) || tokenIds.length === 0) {
@@ -702,13 +663,13 @@ export const transferNFTToPharmacy = async (tokenIds, amounts, pharmacyAddress) 
     });
 
     // Check balances before transfer
-    console.log('🔍 Checking balances before transfer...');
+    
     const balanceIssues = [];
     for (let i = 0; i < normalizedTokenIds.length; i++) {
       const tokenId = normalizedTokenIds[i];
       const amountNeeded = normalizedAmounts[i];
       const balance = await contract.balanceOf(signerAddress, tokenId);
-      console.log(`[Balance Check] Token ID ${tokenId}: balance=${balance}, needed=${amountNeeded}`);
+      
       
       if (balance < amountNeeded) {
         balanceIssues.push({
@@ -749,10 +710,7 @@ export const transferNFTToPharmacy = async (tokenIds, amounts, pharmacyAddress) 
     }
 
     // Call distributorTransferToPharmacy(pharmaAddress, tokenIds, amount)
-    console.log('📤 Calling distributorTransferToPharmacy...');
-    console.log('Pharmacy Address:', pharmacyAddress);
-    console.log('TokenIds:', normalizedTokenIds);
-    console.log('Amounts:', normalizedAmounts);
+    
 
     const tx = await contract.distributorTransferToPharmacy(
       pharmacyAddress,
@@ -760,9 +718,9 @@ export const transferNFTToPharmacy = async (tokenIds, amounts, pharmacyAddress) 
       normalizedAmounts
     );
 
-    console.log('⏳ Transaction submitted:', tx.hash);
+    
     const receipt = await tx.wait();
-    console.log('✅ Transfer confirmed:', receipt);
+    
 
     return {
       success: true,
