@@ -38,8 +38,22 @@ export default function TransferHistory() {
 
       const response = await getTransferToPharmacyHistory(params);
       if (response.data.success) {
-        setItems(response.data.data.transfers || []);
-        setPagination(response.data.data.pagination || { page: 1, limit: 10, total: 0, pages: 0 });
+        const data = response.data.data || {};
+        const invoices = Array.isArray(data.invoices) ? data.invoices : [];
+        const mapped = invoices.map(inv => ({
+          _id: inv._id,
+          pharmacy: inv.toPharmacy,
+          drug: inv.drug,
+          invoiceNumber: inv.invoiceNumber,
+          invoiceDate: inv.invoiceDate,
+          quantity: inv.quantity,
+          status: inv.status,
+          createdAt: inv.createdAt,
+          transactionHash: inv.chainTxHash,
+          chainTxHash: inv.chainTxHash,
+        }));
+        setItems(mapped);
+        setPagination(data.pagination || { page: 1, limit: 10, total: invoices.length, pages: 1 });
       }
     } catch (error) {
       console.error('Lỗi khi tải lịch sử:', error);
