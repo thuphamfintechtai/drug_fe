@@ -27,17 +27,54 @@ export default function AdminRegistrations() {
       setLoading(true);
       setError('');
       try {
-        const [{ data: listRes }, { data: statsRes }] = await Promise.all([
+        const [listResponse, statsResponse] = await Promise.all([
           getPendingRegistrations({ page, limit, role: role || undefined, status }),
           getRegistrationStats(),
         ]);
-        setItems(listRes?.data?.registrations || []);
-        setStats(statsRes?.data);
-      } catch (e) {
-        setError(e?.response?.data?.message || 'Không thể tải dữ liệu');
-      } finally {
-        setLoading(false);
-      }
+        
+        // Debug: Log response để kiểm tra cấu trúc
+        console.log('📥 Registration response:', listResponse);
+        console.log('📥 Response data:', listResponse?.data);
+        
+        // Xử lý response - kiểm tra nhiều cấu trúc có thể có
+        const listRes = listResponse?.data;
+        const items = 
+          listRes?.data?.registrations || 
+          listRes?.registrations || 
+          (Array.isArray(listRes?.data) ? listRes.data : []) ||
+          (Array.isArray(listRes) ? listRes : []) ||
+          [];
+        
+        console.log('📋 Parsed items:', items);
+        
+        setItems(items);
+        
+        const statsRes = statsResponse?.data;
+        setStats(statsRes?.data || statsRes);
+             } catch (e) {
+         console.error('❌ Error loading registrations:', e);
+         console.error('❌ Error response:', e?.response);
+         console.error('❌ Error status:', e?.response?.status);
+         console.error('❌ Error data:', e?.response?.data);
+         
+         // Hiển thị lỗi chi tiết hơn
+         let errorMsg = 'Không thể tải dữ liệu';
+         if (e?.response?.status === 500) {
+           errorMsg = 'Lỗi server (500): Vui lòng kiểm tra backend hoặc thử lại sau.';
+         } else if (e?.response?.status === 401) {
+           errorMsg = 'Bạn chưa đăng nhập hoặc token đã hết hạn.';
+         } else if (e?.response?.status === 403) {
+           errorMsg = 'Bạn không có quyền truy cập trang này.';
+         } else if (e?.response?.data?.message) {
+           errorMsg = e.response.data.message;
+         } else if (e?.message) {
+           errorMsg = e.message;
+         }
+         
+         setError(errorMsg);
+       } finally {
+         setLoading(false);
+       }
     };
     load();
   }, [page, role, status]);
@@ -58,31 +95,23 @@ export default function AdminRegistrations() {
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {/* Banner */}
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-4 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">Duyệt đăng ký</h2>
-          <p className="text-white/90 mt-1">Lọc theo vai trò và trạng thái – xử lý nhanh, chính xác.</p>
-        </div>
-      </motion.section>
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-4">
+        <h2 className="text-xl font-semibold text-[#007b91]">Duyệt đăng ký</h2>
+        <p className="text-slate-500 text-sm mt-1">Lọc theo vai trò và trạng thái – xử lý nhanh, chính xác.</p>
+      </div>
 
       {/* Filters */}
       <motion.div
-        className="rounded-2xl bg-white/90 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-4"
+        className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-4"
         variants={fadeUp}
         initial="hidden"
         animate="show"
       >
         <div className="flex flex-col md:flex-row gap-3 md:items-end">
-          <div>
+          <div className="flex-1 max-w-xs">
             <label className="block text-sm text-[#003544]/70 mb-1">Role</label>
             <select
-              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4]"
+              className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
               value={role}
               onChange={e => updateFilter({ role: e.target.value, page: 1 })}
             >
@@ -92,10 +121,10 @@ export default function AdminRegistrations() {
               <option value="pharmacy">Nhà thuốc</option>
             </select>
           </div>
-          <div>
+          <div className="flex-1 max-w-xs">
             <label className="block text-sm text-[#003544]/70 mb-1">Trạng thái</label>
             <select
-              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4]"
+              className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
               value={status}
               onChange={e => updateFilter({ status: e.target.value, page: 1 })}
             >
@@ -112,57 +141,66 @@ export default function AdminRegistrations() {
       {/* Stats */}
       {stats && (
         <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4" variants={fadeUp} initial="hidden" animate="show">
-          <div className="p-4 bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)]">
-            <div className="text-sm text-[#003544]/70">Pending</div>
-            <div className="text-2xl font-semibold text-[#003544]">{stats.summary?.totalPending || 0}</div>
+          <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-amber-400 to-yellow-400 rounded-t-2xl" />
+            <div className="p-5 pt-7">
+              <div className="text-sm text-slate-600">Pending</div>
+              <div className="text-2xl font-bold text-amber-600">{stats.summary?.totalPending || 0}</div>
+            </div>
           </div>
-          <div className="p-4 bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)]">
-            <div className="text-sm text-[#003544]/70">Approved</div>
-            <div className="text-2xl font-semibold text-[#003544]">{stats.summary?.totalApproved || 0}</div>
+          <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
+            <div className="p-5 pt-7">
+              <div className="text-sm text-slate-600">Approved</div>
+              <div className="text-2xl font-bold text-emerald-600">{stats.summary?.totalApproved || 0}</div>
+            </div>
           </div>
-          <div className="p-4 bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)]">
-            <div className="text-sm text-[#003544]/70">Blockchain failed</div>
-            <div className="text-2xl font-semibold text-[#003544]">{stats.summary?.totalBlockchainFailed || 0}</div>
+          <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-rose-400 to-red-400 rounded-t-2xl" />
+            <div className="p-5 pt-7">
+              <div className="text-sm text-slate-600">Blockchain failed</div>
+              <div className="text-2xl font-bold text-rose-600">{stats.summary?.totalBlockchainFailed || 0}</div>
+            </div>
           </div>
         </motion.div>
       )}
 
       {/* Table */}
-      <motion.div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] overflow-x-auto" variants={fadeUp} initial="hidden" animate="show">
+      <motion.div className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-x-auto" variants={fadeUp} initial="hidden" animate="show">
         {loading ? (
           <div className="p-6">Đang tải...</div>
         ) : error ? (
           <div className="p-6 text-red-600">{error}</div>
         ) : (
-          <table className="min-w-full">
-            <thead>
-              <tr className="text-left text-[#003544]">
-                <th className="p-3 bg-[#f5fcff]">Người dùng</th>
-                <th className="p-3 bg-[#f5fcff]">Vai trò</th>
-                <th className="p-3 bg-[#f5fcff]">Trạng thái</th>
-                <th className="p-3 bg-[#f5fcff]">Ngày tạo</th>
-                <th className="p-3 bg-[#f5fcff]"></th>
+          <table className="min-w-full border-collapse">
+            <thead className="bg-gray-50 border-b border-gray-100">
+              <tr className="text-left text-gray-700">
+                <th className="px-4 py-3">Người dùng</th>
+                <th className="px-4 py-3">Vai trò</th>
+                <th className="px-4 py-3">Trạng thái</th>
+                <th className="px-4 py-3">Ngày tạo</th>
+                <th className="px-4 py-3"></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100">
               {items.map((r) => (
-                <tr key={r._id} className="border-t border-[#90e0ef40] hover:bg-[#f5fcff] transition">
-                  <td className="p-3">
+                <tr key={r._id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3">
                     <div className="font-medium text-[#003544]">{r?.user?.fullName || r?.user?.username}</div>
                     <div className="text-sm text-[#003544]/70">{r?.user?.email}</div>
                   </td>
-                  <td className="p-3 text-[#003544]/80">{r.role}</td>
-                  <td className="p-3 text-[#003544]/80">{r.status}</td>
-                  <td className="p-3 text-[#003544]/80">{new Date(r.createdAt).toLocaleString()}</td>
-                  <td className="p-3 text-right">
-                    <Link to={`/admin/registrations/${r._id}`} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#90e0ef55] text-[#003544] hover:bg-[#90e0ef22] transition">Chi tiết
+                  <td className="px-4 py-3 text-[#003544]/80">{r.role}</td>
+                  <td className="px-4 py-3 text-[#003544]/80">{r.status}</td>
+                  <td className="px-4 py-3 text-[#003544]/80">{new Date(r.createdAt).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right">
+                    <Link to={`/admin/registrations/${r._id}`} className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-cyan-200 text-[#003544] hover:bg-[#90e0ef22] transition">Chi tiết
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6"/><path d="M3 12h12"/></svg>
                     </Link>
                   </td>
                 </tr>
               ))}
               {items.length === 0 && (
-                <tr><td className="p-4 text-slate-600" colSpan={5}>Không có dữ liệu</td></tr>
+                <tr><td className="px-4 py-4 text-slate-600" colSpan={5}>Không có dữ liệu</td></tr>
               )}
             </tbody>
           </table>
@@ -174,7 +212,7 @@ export default function AdminRegistrations() {
         <button
           disabled={page <= 1}
           onClick={() => updateFilter({ page: page - 1 })}
-          className={`px-3 py-2 rounded-xl ${page <= 1 ? 'bg-slate-200 text-slate-400' : 'bg-white/90 border border-[#90e0ef55] hover:bg-[#f5fcff]'}`}
+          className={`px-3 py-2 rounded-xl ${page <= 1 ? 'bg-slate-200 text-slate-400' : 'bg-white border border-cyan-200 hover:bg-[#f5fcff]'}`}
         >Trước</button>
         <span className="text-sm text-slate-700">Trang {page}</span>
         <button

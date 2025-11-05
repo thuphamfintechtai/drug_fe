@@ -10,14 +10,17 @@ export default function InvoicesFromDistributor() {
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [expandedInvoice, setExpandedInvoice] = useState(null);
   const [localSearch, setLocalSearch] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [confirmForm, setConfirmForm] = useState({
-    receivedBy: '',
-    deliveryAddress: '',
+    receivedByName: '',
+    receiptAddressStreet: '',
+    receiptAddressCity: '',
+    receiptAddressState: '',
+    receiptAddressPostalCode: '',
+    receiptAddressCountry: 'Vietnam',
     shippingInfo: '',
     notes: '',
     receivedDate: new Date().toISOString().split('T')[0],
@@ -128,32 +131,15 @@ export default function InvoicesFromDistributor() {
     setSearchParams(nextParams);
   };
 
-  const handleOpenDetail = (invoice) => {
-    setSelectedInvoice(invoice);
-    setShowDetailDialog(true);
-  };
-
   const toggleExpand = (idx) => {
     setExpandedInvoice(expandedInvoice === idx ? null : idx);
   };
 
-  const handleOpenConfirm = (invoice) => {
-    setSelectedInvoice(invoice);
-    setConfirmForm({
-      receivedBy: '',
-      deliveryAddress: '',
-      shippingInfo: '',
-      notes: '',
-      receivedDate: new Date().toISOString().split('T')[0],
-      receivedQuantity: invoice.quantity?.toString() || '',
-    });
-    setShowConfirmDialog(true);
-  };
 
   const handleConfirmReceipt = async () => {
     if (!selectedInvoice) return;
-    if (!confirmForm.receivedBy || !confirmForm.deliveryAddress) {
-      alert('Vui lòng điền đầy đủ thông tin bắt buộc');
+    if (!confirmForm.receivedByName || !confirmForm.receiptAddressStreet) {
+      alert('Vui lòng điền đầy đủ thông tin bắt buộc (Tên người nhận và Địa chỉ)');
       return;
     }
 
@@ -443,7 +429,22 @@ export default function InvoicesFromDistributor() {
                         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           {item.status === 'sent' && (
                             <button
-                              onClick={() => handleOpenConfirm(item)}
+                              onClick={() => {
+                                setSelectedInvoice(item);
+                                setConfirmForm({
+                                  receivedByName: '',
+                                  receiptAddressStreet: '',
+                                  receiptAddressCity: '',
+                                  receiptAddressState: '',
+                                  receiptAddressPostalCode: '',
+                                  receiptAddressCountry: 'Vietnam',
+                                  shippingInfo: '',
+                                  notes: '',
+                                  receivedDate: new Date().toISOString().split('T')[0],
+                                  receivedQuantity: item.quantity?.toString() || '',
+                                });
+                                setShowConfirmDialog(true);
+                              }}
                               className="px-3 py-1.5 rounded-lg bg-[#4BADD1] text-white hover:bg-[#7AC3DE] text-sm font-medium transition flex items-center gap-1"
                             >
                               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -670,7 +671,7 @@ export default function InvoicesFromDistributor() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Người nhận *</label>
-                  <input type="text" value={confirmForm.receivedBy} onChange={(e) => setConfirmForm({...confirmForm, receivedBy: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Tên người nhận" />
+                  <input type="text" value={confirmForm.receivedByName} onChange={(e) => setConfirmForm({...confirmForm, receivedByName: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Tên người nhận" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Số lượng</label>
@@ -679,8 +680,30 @@ export default function InvoicesFromDistributor() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Địa chỉ nhận *</label>
-                <input type="text" value={confirmForm.deliveryAddress} onChange={(e) => setConfirmForm({...confirmForm, deliveryAddress: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Địa chỉ" />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Địa chỉ nhận * (Số nhà, tên đường)</label>
+                <input type="text" value={confirmForm.receiptAddressStreet} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressStreet: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Số nhà, tên đường" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Thành phố</label>
+                  <input type="text" value={confirmForm.receiptAddressCity} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressCity: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Thành phố" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tỉnh/Thành</label>
+                  <input type="text" value={confirmForm.receiptAddressState} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressState: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Tỉnh/Thành" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Mã bưu điện</label>
+                  <input type="text" value={confirmForm.receiptAddressPostalCode} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressPostalCode: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Mã bưu điện" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Quốc gia</label>
+                  <input type="text" value={confirmForm.receiptAddressCountry} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressCountry: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Quốc gia" />
+                </div>
               </div>
 
               <div>
@@ -721,188 +744,6 @@ export default function InvoicesFromDistributor() {
         </div>
       )}
 
-      {showDetailDialog && selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="bg-[#4BADD1] px-8 py-6 rounded-t-3xl">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">Chi tiết đơn hàng</h2>
-                    <p className="text-white/90 text-sm">Mã đơn: {selectedInvoice.invoiceNumber || 'N/A'}</p>
-                  </div>
-                </div>
-                <button onClick={() => setShowDetailDialog(false)} className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="p-8 space-y-6">
-              {/* Thông tin cơ bản */}
-              <div className="bg-white rounded-xl p-5 border-2 border-[#4BADD1]">
-                <div className="flex items-center gap-2 mb-4">
-                  <svg className="w-5 h-5 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <h3 className="text-lg font-bold text-[#4BADD1]">Thông tin đơn hàng</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-slate-600">Mã đơn:</span>
-                    <span className="ml-2 font-mono font-semibold text-slate-800">{selectedInvoice.invoiceNumber || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-600">Trạng thái:</span>
-                    <span className={`ml-2 px-3 py-1 rounded-full text-xs font-medium border-2 ${getStatusColor(selectedInvoice.status)}`}>
-                      {getStatusLabel(selectedInvoice.status)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-600">Ngày tạo:</span>
-                    <span className="ml-2 font-medium text-slate-800">
-                      {selectedInvoice.createdAt ? new Date(selectedInvoice.createdAt).toLocaleString('vi-VN') : 'N/A'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-600">Ngày đơn:</span>
-                    <span className="ml-2 font-medium text-slate-800">
-                      {selectedInvoice.invoiceDate ? new Date(selectedInvoice.invoiceDate).toLocaleDateString('vi-VN') : 'N/A'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-600">Số lượng:</span>
-                    <span className="ml-2 font-bold text-[#4BADD1]">{selectedInvoice.quantity || '0'} NFT</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Thông tin nhà phân phối */}
-              {selectedInvoice.fromDistributor && (
-                <div className="bg-white rounded-xl p-5 border-2 border-slate-200">
-                  <div className="flex items-center gap-2 mb-4">
-                    <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    <h3 className="text-lg font-bold text-slate-800">Thông tin nhà phân phối</h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-700">
-                    <div>
-                      <span className="text-slate-600">Tên:</span>
-                      <span className="ml-2 font-medium">{selectedInvoice.fromDistributor.fullName || selectedInvoice.fromDistributor.username || 'N/A'}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-600">Email:</span>
-                      <span className="ml-2 font-medium">{selectedInvoice.fromDistributor.email || 'N/A'}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-600">Username:</span>
-                      <span className="ml-2 font-mono text-xs">{selectedInvoice.fromDistributor.username || 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Thông tin thuốc */}
-              {selectedInvoice.drug && (
-                <div className="bg-white rounded-xl p-5 border-2 border-slate-200">
-                  <div className="flex items-center gap-2 mb-4">
-                    <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                    </svg>
-                    <h3 className="text-lg font-bold text-slate-800">Thông tin thuốc</h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-700">
-                    <div>
-                      <span className="text-slate-600">Tên thương mại:</span>
-                      <span className="ml-2 font-medium">{selectedInvoice.drug.tradeName || selectedInvoice.drug.name || 'N/A'}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-600">Tên hoạt chất:</span>
-                      <span className="ml-2 font-medium">{selectedInvoice.drug.genericName || 'N/A'}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-600">Mã ATC:</span>
-                      <span className="ml-2 font-mono font-medium">{selectedInvoice.drug.atcCode || 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Thông tin tài chính */}
-              <div className="bg-white rounded-xl p-5 border-2 border-[#4BADD1]">
-                <div className="flex items-center gap-2 mb-4">
-                  <svg className="w-5 h-5 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <h3 className="text-lg font-bold text-[#4BADD1]">Thông tin tài chính</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-700">
-                  <div>
-                    <span className="text-slate-600">Đơn giá:</span>
-                    <span className="ml-2 font-medium">{selectedInvoice.unitPrice?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-600">Tổng tiền:</span>
-                    <span className="ml-2 font-bold text-[#4BADD1]">{selectedInvoice.totalAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-600">VAT ({selectedInvoice.vatRate || 0}%):</span>
-                    <span className="ml-2 font-medium">{selectedInvoice.vatAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-600">Thành tiền:</span>
-                    <span className="ml-2 font-bold text-[#4BADD1]">{selectedInvoice.finalAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Chain Transaction Hash */}
-              {selectedInvoice.chainTxHash && (
-                <div className="bg-white rounded-xl p-5 border-2 border-slate-200">
-                  <div className="flex items-center gap-2 mb-4">
-                    <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <h3 className="text-lg font-bold text-slate-800">Chain Transaction Hash</h3>
-                  </div>
-                  <div className="text-slate-700 font-mono text-xs break-all bg-slate-50 p-3 rounded-lg">
-                    {selectedInvoice.chainTxHash}
-                  </div>
-                </div>
-              )}
-
-              {/* Ghi chú */}
-              {selectedInvoice.notes && (
-                <div className="bg-white rounded-xl p-5 border-2 border-slate-200">
-                  <div className="flex items-center gap-2 mb-4">
-                    <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    <h3 className="text-lg font-bold text-slate-800">Ghi chú</h3>
-                  </div>
-                  <div className="text-slate-600">{selectedInvoice.notes}</div>
-                </div>
-              )}
-            </div>
-
-            <div className="px-8 py-6 border-t border-gray-200 bg-white rounded-b-3xl flex justify-end">
-              <button onClick={() => setShowDetailDialog(false)} className="px-6 py-3 rounded-xl bg-[#4BADD1] text-white font-medium shadow-[0_4px_12px_rgba(75,173,209,0.3)] hover:bg-[#7AC3DE] hover:shadow-[0_6px_16px_rgba(75,173,209,0.4)] transition flex items-center gap-2">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <span>Đóng</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </DashboardLayout>
   );
 }

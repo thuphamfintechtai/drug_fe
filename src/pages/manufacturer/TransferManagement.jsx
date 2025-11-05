@@ -4,15 +4,21 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { 
   getProductionHistory,
   getDistributors,
-  createTransferToDistributor
+  createTransferToDistributor,
+  getAvailableTokensForProduction,
+  saveTransferTransaction
 } from '../../services/manufacturer/manufacturerService';
+import { transferNFTToDistributor, getCurrentWalletAddress } from '../../utils/web3Helper';
+import { useAuth } from '../../context/AuthContext';
 
 export default function TransferManagement() {
+  const { user } = useAuth();
   const [productions, setProductions] = useState([]);
   const [distributors, setDistributors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [selectedProduction, setSelectedProduction] = useState(null);
+  const [availableTokenIds, setAvailableTokenIds] = useState([]);
   const [formData, setFormData] = useState({
     productionId: '',
     distributorId: '',
@@ -24,7 +30,7 @@ export default function TransferManagement() {
     { path: '/manufacturer', label: 'Tổng quan', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>), active: false },
     { path: '/manufacturer/drugs', label: 'Quản lý thuốc', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>), active: false },
     { path: '/manufacturer/production', label: 'Sản xuất thuốc', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>), active: false },
-    { path: '/manufacturer/transfer', label: 'Chuyển giao', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>), active: true },
+    { path: '/manufacturer/transfer', label: 'Chuyển giao', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>), active: false },
     { path: '/manufacturer/production-history', label: 'Lịch sử sản xuất', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>), active: false },
     { path: '/manufacturer/transfer-history', label: 'Lịch sử chuyển giao', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>), active: false },
     { path: '/manufacturer/profile', label: 'Hồ sơ', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>), active: false },
@@ -58,7 +64,7 @@ export default function TransferManagement() {
     }
   };
 
-  const handleSelectProduction = (production) => {
+  const handleSelectProduction = async (production) => {
     setSelectedProduction(production);
     setFormData({
       productionId: production._id,
@@ -66,7 +72,19 @@ export default function TransferManagement() {
       quantity: production.quantity.toString(),
       notes: '',
     });
-    setShowDialog(true);
+    // Lấy danh sách tokenId còn minted cho lô này
+    try {
+      setLoading(true);
+      const res = await getAvailableTokensForProduction(production._id);
+      const ids = res?.data?.data?.availableTokenIds || res?.data?.availableTokenIds || [];
+      setAvailableTokenIds(Array.isArray(ids) ? ids : []);
+    } catch (e) {
+      console.error('Không thể tải token khả dụng:', e);
+      setAvailableTokenIds([]);
+    } finally {
+      setLoading(false);
+      setShowDialog(true);
+    }
   };
 
   const handleSubmit = async () => {
@@ -80,40 +98,14 @@ export default function TransferManagement() {
       return;
     }
 
-    // Chuẩn hóa tokenIds/amounts theo yêu cầu API (ERC1155 batch)
+    // Dùng danh sách tokenIds khả dụng từ backend
     const requestedQty = parseInt(formData.quantity);
-    let tokenIds = [];
+    const tokenIds = (availableTokenIds || []).slice(0, requestedQty);
+    const amounts = tokenIds.map(() => 1);
 
-    // 1) Nếu backend trả sẵn mảng tokenIds
-    if (Array.isArray(selectedProduction.tokenIds) && selectedProduction.tokenIds.length > 0) {
-      tokenIds = selectedProduction.tokenIds.slice(0, requestedQty);
-    }
-
-    // 2) Nếu backend trả dải startTokenId/endTokenId hoặc startTokenId + quantity
     if (tokenIds.length === 0) {
-      const start = selectedProduction.startTokenId ?? selectedProduction.tokenIdStart;
-      const end = selectedProduction.endTokenId ?? selectedProduction.tokenIdEnd;
-      const total = selectedProduction.quantity ?? (typeof start === 'number' && typeof end === 'number' ? (end - start + 1) : undefined);
-      if (typeof start === 'number' && (typeof total === 'number' || typeof end === 'number')) {
-        const take = Math.min(requestedQty, typeof total === 'number' ? total : (end - start + 1));
-        for (let i = 0; i < take; i += 1) {
-          tokenIds.push(start + i);
-        }
-      }
-    }
-
-    // 3) Nếu là một tokenId duy nhất (ERC1155 cùng id, chuyển bằng amount)
-    let amounts = [];
-    if (tokenIds.length > 0) {
-      amounts = tokenIds.map(() => 1);
-    } else if (typeof selectedProduction.tokenId === 'number') {
-      tokenIds = [selectedProduction.tokenId];
-      amounts = [requestedQty];
-    }
-
-    if (tokenIds.length === 0 || amounts.length === 0) {
-      console.error('Transfer payload build failed. selectedProduction = ', selectedProduction);
-      alert('Không tìm thấy tokenId phù hợp để chuyển. Vui lòng kiểm tra lại dữ liệu lô (tokenIds/startTokenId/tokenId).');
+      console.error('Không có tokenId khả dụng cho lô:', selectedProduction?._id);
+      alert('Không tìm thấy tokenId phù hợp để chuyển. Vui lòng đảm bảo lô còn NFT ở trạng thái minted.');
       return;
     }
 
@@ -128,9 +120,37 @@ export default function TransferManagement() {
       });
 
       if (response.data.success) {
-        alert('✅ Tạo yêu cầu chuyển giao thành công! Trạng thái: Pending\n\n' +
-          'Bước tiếp theo: Gọi smart contract để chuyển quyền sở hữu NFT cho distributor.');
+        const { invoice, distributorAddress } = response.data.data || {};
+        const proceed = window.confirm('✅ Đã tạo yêu cầu chuyển giao (pending).\n\nBạn có muốn ký giao dịch trên blockchain ngay bây giờ không?');
+
+        if (proceed && invoice && distributorAddress) {
+          try {
+            // Kiểm tra ví hiện tại khớp ví manufacturer trong hệ thống
+            const currentWallet = await getCurrentWalletAddress();
+            if (user?.walletAddress && currentWallet.toLowerCase() !== user.walletAddress.toLowerCase()) {
+              alert('Ví đang kết nối không khớp với ví của manufacturer trong hệ thống.\nVui lòng chuyển tài khoản MetaMask sang: ' + user.walletAddress);
+              throw new Error('Wrong wallet connected');
+            }
+
+            // Contract hiện tại (ERC721) chỉ nhận tokenIds + distributorAddress
+            const onchain = await transferNFTToDistributor(tokenIds, distributorAddress);
+            await saveTransferTransaction({
+              invoiceId: invoice._id,
+              transactionHash: onchain.transactionHash,
+              tokenIds,
+            });
+            alert('🎉 Đã chuyển NFT on-chain và lưu transaction thành công!');
+          } catch (e) {
+            console.error('Lỗi khi ký giao dịch hoặc lưu transaction:', e);
+            const msg = e?.message || 'Giao dịch on-chain thất bại hoặc bị hủy.';
+            alert(msg + ' Bạn có thể thử lại từ lịch sử chuyển giao.');
+          }
+        } else {
+          alert('✅ Tạo yêu cầu chuyển giao thành công! Trạng thái: Pending\n\nBước tiếp theo: Gọi smart contract để chuyển quyền sở hữu NFT cho distributor.');
+        }
+
         setShowDialog(false);
+        setAvailableTokenIds([]);
         loadData();
       }
     } catch (error) {
@@ -244,6 +264,7 @@ export default function TransferManagement() {
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Số lượng NFT</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Ngày SX</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">HSD</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Trạng thái</th>
                   <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">Hành động</th>
                 </tr>
               </thead>
@@ -267,15 +288,38 @@ export default function TransferManagement() {
                       <span className="font-semibold text-gray-800">{prod.quantity}</span>
                       <span className="text-xs text-slate-500 ml-1">NFT</span>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">{formatDate(prod.manufacturingDate)}</td>
-                    <td className="px-6 py-4 text-gray-600">{formatDate(prod.expiryDate)}</td>
+                    <td className="px-6 py-4 text-gray-600">{formatDate(prod.mfgDate)}</td>
+                    <td className="px-6 py-4 text-gray-600">{formatDate(prod.expDate)}</td>
+                    <td className="px-6 py-4">
+                      {(() => {
+                        const status = prod.transferStatus;
+                        if (status === 'transferred') {
+                          return (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">Đã chuyển</span>
+                          );
+                        }
+                        if (status === 'pending') {
+                          return (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">Chưa chuyển</span>
+                          );
+                        }
+                        return (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">Không xác định</span>
+                        );
+                      })()}
+                    </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center">
                         <button
                           onClick={() => handleSelectProduction(prod)}
-                          className="px-4 py-2 border-2 border-[#3db6d9] bg-[#b3e9f4] text-black rounded-full font-semibold hover:bg-[#3db6d9] hover:text-white transition-all duration-200"
+                          disabled={prod.transferStatus === 'transferred'}
+                          className={`px-4 py-2 border-2 rounded-full font-semibold transition-all duration-200 ${
+                            prod.transferStatus === 'transferred'
+                              ? 'border-gray-300 bg-gray-200 text-gray-500 cursor-not-allowed'
+                              : 'border-[#3db6d9] bg-[#b3e9f4] text-black hover:bg-[#3db6d9] hover:text-white'
+                          }`}
                         >
-                          Chuyển giao
+                          {prod.transferStatus === 'transferred' ? 'Đã chuyển' : 'Chuyển giao'}
                         </button>
                       </div>
                     </td>
@@ -326,11 +370,25 @@ export default function TransferManagement() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Số lô:</span>
-                    <span className="font-mono font-medium">{selectedProduction.batchNumber}</span>
+                    <span className="font-mono font-medium">{selectedProduction.batchNumber || '—'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Tổng số NFT:</span>
                     <span className="font-bold text-orange-700">{selectedProduction.quantity}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Trạng thái chuyển giao:</span>
+                    <span className="font-semibold">
+                      {selectedProduction.transferStatus === 'transferred' && (
+                        <span className="text-green-700">Đã chuyển</span>
+                      )}
+                      {selectedProduction.transferStatus === 'pending' && (
+                        <span className="text-yellow-700">Chưa chuyển</span>
+                      )}
+                      {!['transferred','pending'].includes(selectedProduction.transferStatus) && (
+                        <span className="text-gray-600">Không xác định</span>
+                      )}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">IPFS Hash:</span>

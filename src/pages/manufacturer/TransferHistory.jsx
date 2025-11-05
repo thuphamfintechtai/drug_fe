@@ -2,12 +2,16 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
-import { getTransferHistory } from '../../services/manufacturer/manufacturerService';
+import { getTransferHistory, saveTransferTransaction } from '../../services/manufacturer/manufacturerService';
+import { transferNFTToDistributor, transferBatchNFTToDistributor, getCurrentWalletAddress } from '../../utils/web3Helper';
+import { useAuth } from '../../context/AuthContext';
 
 export default function TransferHistory() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [retryingId, setRetryingId] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
 
   const page = parseInt(searchParams.get('page') || '1', 10);
@@ -20,7 +24,7 @@ export default function TransferHistory() {
     { path: '/manufacturer/production', label: 'Sản xuất thuốc', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>), active: false },
     { path: '/manufacturer/transfer', label: 'Chuyển giao', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>), active: false },
     { path: '/manufacturer/production-history', label: 'Lịch sử sản xuất', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>), active: false },
-    { path: '/manufacturer/transfer-history', label: 'Lịch sử chuyển giao', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>), active: true },
+    { path: '/manufacturer/transfer-history', label: 'Lịch sử chuyển giao', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>), active: false },
     { path: '/manufacturer/profile', label: 'Hồ sơ', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>), active: false },
   ];
 
@@ -36,12 +40,50 @@ export default function TransferHistory() {
       if (status) params.status = status;
 
       const response = await getTransferHistory(params);
-      if (response.data.success) {
-        setItems(response.data.data.transfers || []);
-        setPagination(response.data.data.pagination || { page: 1, limit: 10, total: 0, pages: 0 });
+      
+      if (response?.data?.success) {
+        // Backend trả về invoices, không phải transfers
+        const invoices = response.data.data?.invoices || response.data.data?.transfers || [];
+        const paginationData = response.data.data?.pagination || { page: 1, limit: 10, total: 0, pages: 0 };
+        
+        // Map invoices sang format mà UI đang mong đợi
+        const mappedItems = Array.isArray(invoices) ? invoices.map(invoice => ({
+          ...invoice,
+          // Map toDistributor thành distributor để UI hiển thị
+          distributor: invoice.toDistributor || invoice.distributor,
+          // Map chainTxHash thành transactionHash
+          transactionHash: invoice.chainTxHash || invoice.transactionHash,
+          // Đảm bảo tokenIds được lấy từ invoice (nếu chưa có trong root level)
+          tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
+          amounts: invoice.amounts || invoice.invoice?.amounts || [],
+          // Thêm invoice object để handleRetry có thể dùng
+          invoice: {
+            _id: invoice._id,
+            invoiceNumber: invoice.invoiceNumber,
+            invoiceDate: invoice.invoiceDate,
+            tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
+          },
+        })) : [];
+        
+        console.log('Mapped items:', mappedItems);
+        console.log('Items with pending/sent status:', mappedItems.filter(item => ['pending', 'sent'].includes(item.status) && !item.transactionHash));
+        
+        setItems(mappedItems);
+        setPagination(paginationData);
+      } else {
+        console.warn('API không trả về success:', response?.data);
+        setItems([]);
       }
     } catch (error) {
       console.error('Lỗi khi tải lịch sử chuyển giao:', error);
+      console.error('Error response:', error?.response?.data);
+      setItems([]);
+      // Hiển thị lỗi cho user nếu cần
+      if (error?.response?.status === 401) {
+        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else if (error?.response?.status >= 500) {
+        alert('Lỗi server. Vui lòng thử lại sau.');
+      }
     } finally {
       setLoading(false);
     }
@@ -69,13 +111,87 @@ export default function TransferHistory() {
 
   const getStatusLabel = (status) => {
     const labels = {
-      pending: '⏳ Pending',
-      sent: '📦 Sent',
-      received: '✅ Received',
-      paid: '💰 Paid',
-      cancelled: '❌ Cancelled',
+      pending: 'Pending',
+      sent: 'Sent',
+      received: 'Received',
+      paid: 'Paid',
+      cancelled: 'Cancelled',
     };
     return labels[status] || status;
+  };
+
+  const handleRetry = async (item) => {
+    console.log('handleRetry called with item:', item);
+    
+    if (!item.invoice?._id || !item.distributor?.walletAddress) {
+      alert('Thiếu thông tin cần thiết để retry. Vui lòng kiểm tra lại invoice và distributor address.');
+      console.error('Missing invoice._id or distributor.walletAddress', {
+        hasInvoiceId: !!item.invoice?._id,
+        hasDistributorWallet: !!item.distributor?.walletAddress,
+        item: item
+      });
+      return;
+    }
+
+    // Lấy tokenIds từ nhiều nguồn có thể
+    const tokenIds = item.tokenIds || item.invoice?.tokenIds || [];
+    const amounts = item.amounts || item.invoice?.amounts || [];
+
+    console.log('TokenIds found:', tokenIds);
+    console.log('Amounts found:', amounts);
+
+    if (tokenIds.length === 0) {
+      alert('Không tìm thấy token IDs để chuyển giao. Vui lòng kiểm tra lại invoice đã có tokenIds chưa.');
+      console.error('No tokenIds found in item:', item);
+      return;
+    }
+
+    setRetryingId(item._id);
+    try {
+      // Kiểm tra ví hiện tại khớp ví manufacturer trong hệ thống
+      const currentWallet = await getCurrentWalletAddress();
+      if (user?.walletAddress && currentWallet.toLowerCase() !== user.walletAddress.toLowerCase()) {
+        alert('Ví đang kết nối không khớp với ví của manufacturer trong hệ thống.\nVui lòng chuyển tài khoản MetaMask sang: ' + user.walletAddress);
+        return;
+      }
+
+      // Gọi smart contract để transfer NFT
+      // Nếu có amounts từ backend, dùng transferBatchNFTToDistributor
+      // Nếu không có, dùng transferNFTToDistributor (mặc định amounts = [1, 1, ...])
+      let onchain;
+      if (amounts && amounts.length > 0 && amounts.length === tokenIds.length) {
+        // Normalize amounts to BigInt[]
+        const normalizedAmounts = amounts.map((amt) => {
+          if (typeof amt === 'bigint') return amt;
+          if (typeof amt === 'string') return BigInt(amt);
+          return BigInt(amt);
+        });
+        // Normalize tokenIds to BigInt[]
+        const normalizedTokenIds = tokenIds.map((id) => {
+          if (typeof id === 'string' && id.startsWith('0x')) return BigInt(id);
+          return BigInt(id);
+        });
+        onchain = await transferBatchNFTToDistributor(normalizedTokenIds, normalizedAmounts, item.distributor.walletAddress);
+      } else {
+        onchain = await transferNFTToDistributor(tokenIds, item.distributor.walletAddress);
+      }
+      
+      // Lưu transaction hash vào backend (Bước 2 theo API spec)
+      await saveTransferTransaction({
+        invoiceId: item.invoice._id,
+        transactionHash: onchain.transactionHash,
+        tokenIds,
+      });
+
+      alert('Đã chuyển NFT on-chain và lưu transaction thành công!');
+      loadData(); // Reload để cập nhật trạng thái
+    } catch (error) {
+      console.error('Lỗi khi retry transfer:', error);
+      const msg = error?.message || 'Giao dịch on-chain thất bại hoặc bị hủy.';
+      alert(msg);
+    } finally {
+      setRetryingId(null);
+    }
   };
 
   const fadeUp = {
@@ -155,29 +271,42 @@ export default function TransferHistory() {
               <div className="p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-[#003544]">
-                        → {item.distributor?.name || 'N/A'}
-                      </h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
-                        {getStatusLabel(item.status)}
-                      </span>
-                    </div>
-                    <div className="space-y-1 text-sm text-slate-600">
-                      <div>Thuốc: <span className="font-medium text-slate-800">{item.production?.drug?.tradeName || 'N/A'}</span></div>
-                      <div>Số lô: <span className="font-mono font-medium text-slate-800">{item.production?.batchNumber}</span></div>
-                      <div>Số lượng: <span className="font-bold text-orange-700">{item.quantity} NFT</span></div>
-                      <div>Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
-                    </div>
+                                         <div className="flex items-center gap-3 mb-2">
+                       <h3 className="text-lg font-semibold text-[#003544]">
+                         {item.distributor?.fullName || item.distributor?.name || 'N/A'}
+                       </h3>
+                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
+                         {getStatusLabel(item.status)}
+                       </span>
+                     </div>
+                                         <div className="space-y-1 text-sm text-slate-600">
+                       <div>Số hóa đơn: <span className="font-mono font-medium text-slate-800">{item.invoiceNumber || 'N/A'}</span></div>
+                       {item.production?.drug?.tradeName && (
+                         <div>Thuốc: <span className="font-medium text-slate-800">{item.production.drug.tradeName}</span></div>
+                       )}
+                       {item.production?.batchNumber && (
+                         <div>Số lô: <span className="font-mono font-medium text-slate-800">{item.production.batchNumber}</span></div>
+                       )}
+                       <div>Số lượng: <span className="font-bold text-orange-700">{item.quantity} NFT</span></div>
+                       <div>Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
+                       {item.invoiceDate && (
+                         <div>Ngày hóa đơn: <span className="font-medium">{new Date(item.invoiceDate).toLocaleString('vi-VN')}</span></div>
+                       )}
+                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                  <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200">
-                    <div className="text-xs text-cyan-700 mb-1">Nhà phân phối</div>
-                    <div className="font-semibold text-cyan-800">{item.distributor?.name}</div>
-                    <div className="text-xs text-cyan-600 mt-1">{item.distributor?.address}</div>
-                  </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                   <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200">
+                     <div className="text-xs text-cyan-700 mb-1">Nhà phân phối</div>
+                     <div className="font-semibold text-cyan-800">{item.distributor?.fullName || item.distributor?.name || 'N/A'}</div>
+                     {item.distributor?.email && (
+                       <div className="text-xs text-cyan-600 mt-1">{item.distributor.email}</div>
+                     )}
+                     {item.distributor?.address && (
+                       <div className="text-xs text-cyan-600 mt-1">{item.distributor.address}</div>
+                     )}
+                   </div>
                   {item.distributor?.walletAddress && (
                     <div className="bg-purple-50 rounded-xl p-3 border border-purple-200">
                       <div className="text-xs text-purple-700 mb-1">Wallet Address</div>
@@ -195,8 +324,44 @@ export default function TransferHistory() {
 
                 {item.transactionHash && (
                   <div className="mt-3 bg-emerald-50 rounded-xl p-3 border border-emerald-200 text-sm">
-                    <div className="font-semibold text-emerald-800 mb-1">Transaction Hash:</div>
+                    <div className="font-semibold text-emerald-800 mb-1">Transaction Hash (Blockchain):</div>
                     <div className="font-mono text-xs text-emerald-700 break-all">{item.transactionHash}</div>
+                    <a 
+                      href={`https://zeroscan.org/tx/${item.transactionHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-emerald-600 hover:text-emerald-800 underline mt-1 inline-block"
+                    >
+                      Xem trên ZeroScan →
+                    </a>
+                  </div>
+                )}
+
+                {/* Nút chuyển NFT - hiển thị khi status = pending hoặc sent (distributor đã xác nhận) và chưa có transactionHash */}
+                {(['pending', 'sent'].includes(item.status)) && !item.transactionHash && item.distributor?.walletAddress && (
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 text-sm text-amber-800 mb-3">
+                      {item.status === 'sent' 
+                        ? 'Distributor đã xác nhận nhận hàng. Vui lòng chuyển quyền sở hữu NFT on-chain.'
+                        : 'Chưa chuyển NFT on-chain. Vui lòng xác nhận chuyển quyền sở hữu NFT.'}
+                    </div>
+                    <button
+                      onClick={() => handleRetry(item)}
+                      disabled={retryingId === item._id}
+                      className="w-full px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 font-semibold"
+                    >
+                      {retryingId === item._id ? 'Đang xử lý...' : (item.status === 'sent' ? 'Xác nhận chuyển NFT' : 'Thử lại chuyển giao')}
+                    </button>
+                  </div>
+                )}
+                
+                {/* Debug info - chỉ hiển thị trong development */}
+                {process.env.NODE_ENV === 'development' && !item.transactionHash && (
+                  <div className="mt-2 text-xs text-slate-500 p-2 bg-slate-50 rounded">
+                    <div>Status: {item.status}</div>
+                    <div>Has distributor wallet: {item.distributor?.walletAddress ? 'Yes' : 'No'}</div>
+                    <div>Has tokenIds: {item.tokenIds?.length > 0 ? `Yes (${item.tokenIds.length})` : 'No'}</div>
+                    <div>Has transactionHash: {item.transactionHash ? 'Yes' : 'No'}</div>
                   </div>
                 )}
 

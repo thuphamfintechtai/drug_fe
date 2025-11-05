@@ -65,23 +65,15 @@ export default function AdminDrugForm() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Banner nhỏ với gradient xanh y tế */}
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">{isEdit ? 'Cập nhật thuốc' : 'Tạo thuốc mới'}</h2>
-          <p className="mt-1 text-white/90">Dữ liệu chuẩn, minh bạch.</p>
-        </div>
-      </motion.section>
+      {/* Banner kiểu card trắng viền cyan */}
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
+        <h2 className="text-xl font-semibold text-[#007b91]">{isEdit ? 'Cập nhật thuốc' : 'Tạo thuốc mới'}</h2>
+        <p className="text-slate-500 text-sm mt-1">Dữ liệu chuẩn, minh bạch.</p>
+      </div>
 
-      {/* Card form kiểu glass + animation reveal */}
+      {/* Card form kiểu cyan đồng nhất */}
       <motion.div
-        className="rounded-2xl bg-white/90 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-6"
+        className="rounded-2xl bg-white border border-cyan-100 shadow-sm p-6"
         variants={fadeUp}
         initial="hidden"
         animate="show"
@@ -94,28 +86,28 @@ export default function AdminDrugForm() {
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-slate-700 mb-2">Tên thuốc</label>
+            <label className="block text-sm text-[#003544]/70 mb-2">Tên thuốc</label>
             <input
               name="name" value={form.name} onChange={handleChange}
-              className="w-full rounded-xl border border-[#90e0ef55] bg-white/60 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
+              className="w-full rounded-xl border-2 border-cyan-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
               placeholder="VD: Paracetamol" required
             />
           </div>
 
           <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-slate-700 mb-2">ATC code</label>
+            <label className="block text-sm text-[#003544]/70 mb-2">ATC code</label>
             <input
               name="atcCode" value={form.atcCode} onChange={handleChange}
-              className="w-full rounded-xl border border-[#90e0ef55] bg-white/60 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
+              className="w-full rounded-xl border-2 border-cyan-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
               placeholder="VD: N02BE01" required
             />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-slate-700 mb-2">Mô tả</label>
+            <label className="block text-sm text-[#003544]/70 mb-2">Mô tả</label>
             <textarea
               name="description" value={form.description} onChange={handleChange}
-              className="w-full rounded-xl border border-[#90e0ef55] bg-white/60 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
+              className="w-full rounded-xl border-2 border-cyan-300 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
               rows={4} placeholder="Công dụng, dạng bào chế, chỉ định, v.v."
             />
           </div>
@@ -124,7 +116,7 @@ export default function AdminDrugForm() {
             <motion.button
               type="submit" disabled={loading}
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}
-              className="px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] disabled:opacity-60"
+              className="px-6 py-2.5 rounded-full text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] disabled:opacity-60"
             >
               {isEdit ? 'Cập nhật' : 'Tạo mới'}
             </motion.button>
@@ -133,7 +125,7 @@ export default function AdminDrugForm() {
               <motion.button
                 type="button" onClick={handleDelete} disabled={loading}
                 whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}
-                className="px-5 py-2.5 rounded-xl text-white bg-red-600/90 hover:bg-red-600 shadow disabled:opacity-60"
+                className="px-5 py-2.5 rounded-full text-white bg-red-600/90 hover:bg-red-600 shadow disabled:opacity-60"
               >
                 Xóa
               </motion.button>

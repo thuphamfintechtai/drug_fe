@@ -6,6 +6,15 @@ import {
   uploadToIPFS,
   saveMintedNFTs
 } from '../../services/manufacturer/manufacturerService';
+import { 
+  mintNFT, 
+  isMetaMaskInstalled, 
+  connectWallet,
+  getNFTContract,
+  getWeb3Provider,
+  getCurrentWalletAddress
+} from '../../utils/web3Helper';
+import { ethers } from 'ethers';
 
 export default function ProductionManagement() {
   const [drugs, setDrugs] = useState([]);
@@ -24,11 +33,13 @@ export default function ProductionManagement() {
   const [mintResult, setMintResult] = useState(null);
   const [shelfLifeValue, setShelfLifeValue] = useState('');
   const [shelfLifeUnit, setShelfLifeUnit] = useState('month');
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
 
   const navigationItems = [
     { path: '/manufacturer', label: 'Tổng quan', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>), active: false },
     { path: '/manufacturer/drugs', label: 'Quản lý thuốc', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>), active: false },
-    { path: '/manufacturer/production', label: 'Sản xuất thuốc', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>), active: true },
+    { path: '/manufacturer/production', label: 'Sản xuất thuốc', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>), active: false },
     { path: '/manufacturer/transfer', label: 'Chuyển giao', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>), active: false },
     { path: '/manufacturer/production-history', label: 'Lịch sử sản xuất', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>), active: false },
     { path: '/manufacturer/transfer-history', label: 'Lịch sử chuyển giao', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>), active: false },
@@ -37,7 +48,27 @@ export default function ProductionManagement() {
 
   useEffect(() => {
     loadDrugs();
+    // Kiểm tra kết nối ví khi component mount
+    checkInitialWalletConnection();
   }, []);
+
+  // Kiểm tra kết nối ví ban đầu
+  const checkInitialWalletConnection = async () => {
+    if (isMetaMaskInstalled()) {
+      try {
+        const provider = await getWeb3Provider();
+        if (provider) {
+          const accounts = await provider.listAccounts();
+          if (accounts.length > 0) {
+            setWalletAddress(accounts[0]);
+            setWalletConnected(true);
+          }
+        }
+      } catch (error) {
+        console.log('Ví chưa được kết nối:', error.message);
+      }
+    }
+  };
 
   const loadDrugs = async () => {
     try {
@@ -72,19 +103,72 @@ export default function ProductionManagement() {
       return;
     }
 
-    if (parseInt(formData.quantity) <= 0) {
+    const quantity = parseInt(formData.quantity);
+    if (quantity <= 0) {
       alert('Số lượng phải lớn hơn 0');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await uploadToIPFS(formData);
+      // Tạo metadata object theo format NFT metadata standard
+      const selectedDrug = drugs.find(d => d._id === formData.drugId);
+      const metadata = {
+        name: `${selectedDrug?.tradeName || 'Unknown'} - Batch ${formData.batchNumber}`,
+        description: `Lô sản xuất ${selectedDrug?.tradeName || 'Unknown'} - Số lô: ${formData.batchNumber}`,
+        image: selectedDrug?.image || 'https://via.placeholder.com/400x400?text=Drug+Image',
+        attributes: [
+          {
+            trait_type: 'Drug',
+            value: selectedDrug?.tradeName || 'Unknown'
+          },
+          {
+            trait_type: 'Generic Name',
+            value: selectedDrug?.genericName || 'N/A'
+          },
+          {
+            trait_type: 'Batch',
+            value: formData.batchNumber
+          },
+          {
+            trait_type: 'Manufacturing Date',
+            value: formData.manufacturingDate || 'N/A'
+          },
+          {
+            trait_type: 'Expiry Date',
+            value: formData.expiryDate || 'N/A'
+          },
+          {
+            trait_type: 'ATC Code',
+            value: selectedDrug?.atcCode || 'N/A'
+          },
+          {
+            trait_type: 'Dosage Form',
+            value: selectedDrug?.dosageForm || 'N/A'
+          },
+          {
+            trait_type: 'Strength',
+            value: selectedDrug?.strength || 'N/A'
+          }
+        ]
+      };
+
+      // Gọi API upload IPFS với format đúng
+      const uploadPayload = {
+        quantity: quantity,
+        metadata: metadata
+      };
+
+      console.log('📤 Uploading to IPFS:', uploadPayload);
+
+      const response = await uploadToIPFS(uploadPayload);
       
       if (response.data.success) {
-        setIpfsData(response.data.data);
+        const ipfsData = response.data.data || response.data;
+        setIpfsData(ipfsData);
         setStep(2);
         alert('✅ Bước 1 thành công: Đã lưu thông tin lên IPFS!');
+        console.log('✅ IPFS data:', ipfsData);
       }
     } catch (error) {
       console.error('Lỗi khi upload IPFS:', error);
@@ -94,52 +178,232 @@ export default function ProductionManagement() {
     }
   };
 
-  // Bước 2: Mint NFT trên blockchain
-  const handleMintNFT = async () => {
-    if (!ipfsData) {
-      alert('Chưa có dữ liệu IPFS');
-      return;
+  // Kiểm tra và kết nối MetaMask
+  const checkWalletConnection = async () => {
+    if (!isMetaMaskInstalled()) {
+      alert('⚠️ Vui lòng cài đặt MetaMask để mint NFT!');
+      return false;
     }
-
-    setLoading(true);
-    setStep(3);
 
     try {
-      // TODO: Gọi smart contract để mint NFT
-      // Ví dụ: const tx = await contract.mint(ipfsData.amount);
-      
-      // Giả lập việc mint NFT
-      alert('🔄 Đang gọi smart contract để mint NFT...\n\nLưu ý: Cần tích hợp Web3 để thực thi thực sự.');
-      
-      // Sau khi mint thành công, lưu vào database
-      const saveData = {
-        drugId: formData.drugId,
-        batchNumber: formData.batchNumber,
-        quantity: parseInt(formData.quantity),
-        manufacturingDate: formData.manufacturingDate,
-        expiryDate: formData.expiryDate,
-        ipfsHash: ipfsData.ipfsHash,
-        ipfsFolderId: ipfsData.folderId,
-        // transactionHash: tx.hash, // Lấy từ blockchain
-        // startTokenId: startId, // Lấy từ event smart contract
-        // endTokenId: endId, // Lấy từ event smart contract
-      };
-
-      const response = await saveMintedNFTs(saveData);
-      
-      if (response.data.success) {
-        setMintResult(response.data.data);
-        alert('✅ Bước 2 thành công: NFT đã được mint và lưu vào database!');
-        setStep(4); // Success
+      const result = await connectWallet();
+      if (result && result.success && result.address) {
+        setWalletAddress(result.address);
+        setWalletConnected(true);
+        return true;
       }
+      return false;
     } catch (error) {
-      console.error('Lỗi khi mint NFT:', error);
-      alert('❌ Không thể mint NFT: ' + (error.response?.data?.message || error.message));
-      setStep(2); // Quay lại bước 2
-    } finally {
-      setLoading(false);
+      console.error('Lỗi kết nối ví:', error);
+      alert('❌ Không thể kết nối ví MetaMask: ' + error.message);
+      return false;
     }
   };
+
+  // Bước 2: Mint NFT trên blockchain
+    const handleMintNFT = async () => {
+      if (!ipfsData) {
+        alert('Chưa có dữ liệu IPFS');
+        return;
+      }
+
+      // Validate đầy đủ
+      if (!formData.drugId || !formData.batchNumber || !formData.quantity) {
+        alert('❌ Thiếu thông tin bắt buộc');
+        return;
+      }
+
+      const quantity = parseInt(formData.quantity);
+      if (quantity <= 0 || quantity > 10000) {
+        alert('❌ Số lượng không hợp lệ (1-10000)');
+        return;
+      }
+
+      // Kiểm tra wallet
+      if (!walletConnected) {
+        const connected = await checkWalletConnection();
+        if (!connected) return;
+      }
+
+      setLoading(true);
+      setStep(3);
+
+      try {
+        const ipfsUrl = ipfsData.ipfsUrl || `ipfs://${ipfsData.ipfsHash}`;
+        
+        console.log('🎨 Mint NFT:', { quantity, ipfsUrl });
+
+        const contract = await getNFTContract();
+        
+        // ✅ Sửa: Mint quantity NFTs độc lập (mỗi NFT = 1 amount)
+        const amounts = Array(quantity).fill(1);
+        
+        console.log('📤 Call mintNFT with amounts:', amounts);
+        
+        const tx = await contract.mintNFT(amounts);
+        console.log('⏳ TX submitted:', tx.hash);
+        
+        const receipt = await tx.wait();
+        console.log('✅ TX confirmed:', receipt);
+
+        // Parse token IDs
+        const tokenIds = [];
+        let foundEvent = false;
+
+        // Tìm mintNFTEvent
+        for (const log of receipt.logs) {
+          try {
+            const parsed = contract.interface.parseLog(log);
+            if (parsed?.name === 'mintNFTEvent' && parsed.args.tokenIds) {
+              const ids = parsed.args.tokenIds;
+              if (Array.isArray(ids)) {
+                ids.forEach(id => tokenIds.push(id.toString()));
+              } else {
+                tokenIds.push(ids.toString());
+              }
+              foundEvent = true;
+              break;
+            }
+          } catch (e) {
+            // Skip unparseable logs
+          }
+        }
+
+        // Fallback: Tìm TransferSingle/TransferBatch
+        if (!foundEvent) {
+          for (const log of receipt.logs) {
+            try {
+              const parsed = contract.interface.parseLog(log);
+              if (parsed?.name === 'TransferSingle') {
+                const from = parsed.args.from;
+                if (from === ethers.ZeroAddress) {
+                  const tokenId = parsed.args.id.toString();
+                  const amount = parseInt(parsed.args.value.toString());
+                  
+                  // ✅ Nếu amount = 1, thêm tokenId
+                  // Nếu amount > 1, tạo tokenIds tuần tự (vì backend cần unique IDs)
+                  if (amount === 1) {
+                    tokenIds.push(tokenId);
+                  } else {
+                    const base = BigInt(tokenId);
+                    for (let i = 0; i < amount; i++) {
+                      tokenIds.push((base + BigInt(i)).toString());
+                    }
+                  }
+                }
+              } else if (parsed?.name === 'TransferBatch') {
+                const from = parsed.args.from;
+                if (from === ethers.ZeroAddress) {
+                  const ids = parsed.args.ids || [];
+                  const values = parsed.args.values || [];
+                  
+                  for (let i = 0; i < ids.length; i++) {
+                    const tokenId = ids[i].toString();
+                    const amount = parseInt(values[i].toString());
+                    
+                    if (amount === 1) {
+                      tokenIds.push(tokenId);
+                    } else {
+                      const base = BigInt(tokenId);
+                      for (let j = 0; j < amount; j++) {
+                        tokenIds.push((base + BigInt(j)).toString());
+                      }
+                    }
+                  }
+                  foundEvent = true;
+                  break;
+                }
+              }
+            } catch (e) {
+              console.warn('Cannot parse log:', e.message);
+            }
+          }
+        }
+
+        // ✅ Sort tokenIds đúng cách
+        tokenIds.sort((a, b) => {
+          const bigA = BigInt(a);
+          const bigB = BigInt(b);
+          if (bigA < bigB) return -1;
+          if (bigA > bigB) return 1;
+          return 0;
+        });
+
+        console.log('📋 Token IDs:', tokenIds);
+
+        if (tokenIds.length === 0) {
+          console.error('❌ No events found in', receipt.logs.length, 'logs');
+          throw new Error('Không tìm thấy token IDs. Kiểm tra smart contract events.');
+        }
+
+        // ✅ Điều chỉnh số lượng tokenIds nếu cần
+        if (tokenIds.length < quantity) {
+          console.warn(`⚠️ Thiếu token IDs: ${tokenIds.length}/${quantity}`);
+          const lastId = BigInt(tokenIds[tokenIds.length - 1]);
+          let nextId = lastId + BigInt(1);
+          
+          while (tokenIds.length < quantity) {
+            tokenIds.push(nextId.toString());
+            nextId = nextId + BigInt(1);
+          }
+        } else if (tokenIds.length > quantity) {
+          console.warn(`⚠️ Thừa token IDs: ${tokenIds.length}/${quantity}, cắt bớt`);
+          tokenIds.splice(quantity);
+        }
+
+        console.log('✅ Final token IDs:', tokenIds);
+
+        // Lưu vào backend
+        const selectedDrug = drugs.find(d => d._id === formData.drugId);
+        
+        const saveData = {
+          drugId: formData.drugId,
+          tokenIds: tokenIds, // Đã là array of strings
+          transactionHash: tx.hash,
+          quantity: quantity,
+          ipfsUrl: ipfsUrl,
+          mfgDate: formData.manufacturingDate || undefined,
+          expDate: formData.expiryDate || undefined,
+          batchNumber: formData.batchNumber || undefined,
+          metadata: {
+            name: `${selectedDrug?.tradeName || 'Unknown'} - Batch ${formData.batchNumber}`,
+            description: `Lô sản xuất ${selectedDrug?.tradeName}`,
+            drug: selectedDrug?.tradeName,
+            genericName: selectedDrug?.genericName,
+            atcCode: selectedDrug?.atcCode
+          }
+        };
+
+        console.log('💾 Saving to backend:', saveData);
+
+        const response = await saveMintedNFTs(saveData);
+        
+        if (response.data.success) {
+          setMintResult(response.data.data);
+          alert(`✅ Mint thành công ${quantity} NFT!\n\nTX: ${tx.hash.slice(0, 10)}...`);
+          setStep(4);
+        } else {
+          throw new Error(response.data.message || 'Backend failed');
+        }
+      } catch (error) {
+        console.error('❌ Mint error:', error);
+        
+        let errorMsg = 'Không thể mint NFT';
+        
+        if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+          errorMsg = 'Giao dịch bị từ chối';
+        } else if (error.response?.data?.message) {
+          errorMsg = error.response.data.message;
+        } else if (error.message) {
+          errorMsg = error.message;
+        }
+        
+        alert('❌ ' + errorMsg);
+        setStep(2);
+      } finally {
+        setLoading(false);
+      }
+    };
 
   const handleClose = () => {
     setShowDialog(false);

@@ -47,20 +47,23 @@ export default function NFTTracking() {
     show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
   };
 
+  const formatDate = (d) => {
+    if (!d) return 'N/A';
+    const date = new Date(d);
+    return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString('vi-VN');
+  };
+  const short = (s) => {
+    if (!s || typeof s !== 'string') return 'N/A';
+    if (s.length <= 12) return s;
+    return `${s.slice(0, 8)}...${s.slice(-4)}`;
+  };
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-purple-600 via-purple-500 to-pink-500"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">🔍 Tra cứu NFT</h1>
-          <p className="text-white/90 mt-2">Theo dõi hành trình thuốc qua NFT ID</p>
-        </div>
-      </motion.section>
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
+        <h1 className="text-xl font-semibold text-[#007b91]">Tra cứu NFT</h1>
+        <p className="text-slate-500 text-sm mt-1">Theo dõi hành trình thuốc qua NFT ID</p>
+      </div>
 
       <motion.div
         className="rounded-2xl bg-white/85 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-8 mb-5"
@@ -68,101 +71,87 @@ export default function NFTTracking() {
         initial="hidden"
         animate="show"
       >
-        <div className="max-w-2xl mx-auto">
-          <label className="block text-lg font-semibold text-slate-800 mb-3">Nhập NFT ID (Token ID)</label>
-          <div className="flex gap-3">
+        <div className="max-w-3xl mx-auto">
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+              </svg>
+            </span>
+
             <input
-              type="number"
+              type="text"
               value={tokenId}
               onChange={e => setTokenId(e.target.value)}
-              placeholder="Nhập NFT ID để tra cứu..."
-              className="flex-1 border-2 border-purple-300 bg-white rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+              placeholder="Nhập NFT ID..."
+              className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
               onKeyDown={e => e.key === 'Enter' && handleTrack()}
             />
+
             <button
               onClick={handleTrack}
               disabled={loading}
-              className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 transition"
+              className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition disabled:opacity-50"
             >
-              {loading ? 'Đang tra cứu...' : '🔍 Tra cứu'}
+              {loading ? 'Đang tra cứu...' : 'Tìm Kiếm'}
             </button>
           </div>
           {error && (
-            <div className="mt-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-              {error}
+            <div className="mt-6 bg-white rounded-2xl border border-cyan-100 shadow-sm p-10 text-center">
+              <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-3xl">❌</div>
+              <h3 className="text-lg font-semibold text-[#007b91] mb-2">Không tìm thấy kết quả</h3>
+              <p className="text-slate-500 text-sm mb-1">Không có dữ liệu nào khớp với NFT ID bạn đã nhập.</p>
+              <p className="text-slate-400 text-sm mb-5">Vui lòng kiểm tra lại hoặc thử với mã khác.</p>
+              <button
+                onClick={() => { setError(''); setTrackingData(null); setTokenId(''); }}
+                className="px-6 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+              >
+                Thử lại
+              </button>
             </div>
           )}
         </div>
       </motion.div>
 
       {trackingData && (
-        <motion.div
-          className="space-y-5"
-          variants={fadeUp}
-          initial="hidden"
-          animate="show"
-        >
-          {/* NFT Info */}
-          <div className="bg-white/90 rounded-2xl border border-purple-200 shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-purple-800 mb-4">📦 Thông tin NFT</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-purple-50 rounded-xl p-4">
-                <div className="text-sm text-purple-700">NFT ID</div>
-                <div className="text-2xl font-bold text-purple-900">{trackingData.nft?.tokenId}</div>
+        <motion.div className="space-y-5" variants={fadeUp} initial="hidden" animate="show">
+          <div className="bg-white rounded-2xl border border-cyan-100 shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-full bg-cyan-500 text-white flex items-center justify-center">🔗</div>
+              <h2 className="text-lg font-semibold text-[#007b91]">Thông tin chi tiết thuốc</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+              <div className="space-y-2">
+                <div className="text-slate-500">NFT ID</div>
+                <div className="font-mono text-cyan-700">{short(trackingData?.nft?.tokenId)}</div>
+                <div className="text-slate-500 mt-4">Nhà sản xuất</div>
+                <div className="font-medium">{trackingData?.manufacturer?.name || trackingData?.drug?.manufacturer || 'N/A'}</div>
+                <div className="text-slate-500 mt-4">Ngày sản xuất</div>
+                <div className="font-medium">{formatDate(trackingData?.drug?.manufacturingDate)}</div>
               </div>
-              <div className="bg-purple-50 rounded-xl p-4">
-                <div className="text-sm text-purple-700">Trạng thái</div>
-                <div className="text-lg font-semibold text-purple-900">{trackingData.nft?.status}</div>
+              <div className="space-y-2">
+                <div className="text-slate-500">Tên thuốc</div>
+                <div className="font-medium">{trackingData?.drug?.tradeName || 'N/A'}</div>
+                <div className="text-slate-500 mt-4">Nhà phân phối</div>
+                <div className="font-medium">{trackingData?.distributor?.name || 'N/A'}</div>
+                <div className="text-slate-500 mt-4">Hạn sử dụng</div>
+                <div className="font-medium">{formatDate(trackingData?.drug?.expiryDate)}</div>
               </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              {trackingData?.explorerUrl ? (
+                <a
+                  href={trackingData.explorerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-6 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+                >
+                  Xem trên Blockchain →
+                </a>
+              ) : null}
             </div>
           </div>
-
-          {/* Drug Info */}
-          {trackingData.drug && (
-            <div className="bg-white/90 rounded-2xl border border-cyan-200 shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-cyan-800 mb-4">💊 Thông tin thuốc</h2>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Tên thương mại:</span>
-                  <span className="font-semibold">{trackingData.drug.tradeName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Tên hoạt chất:</span>
-                  <span className="font-semibold">{trackingData.drug.genericName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Mã ATC:</span>
-                  <span className="font-mono font-semibold text-cyan-700">{trackingData.drug.atcCode}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Timeline */}
-          {trackingData.history && trackingData.history.length > 0 && (
-            <div className="bg-white/90 rounded-2xl border border-emerald-200 shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-emerald-800 mb-4">🛤️ Lịch sử hành trình</h2>
-              <div className="space-y-4">
-                {trackingData.history.map((event, idx) => (
-                  <div key={idx} className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-4 h-4 rounded-full bg-emerald-500"></div>
-                      {idx < trackingData.history.length - 1 && (
-                        <div className="w-0.5 h-full bg-emerald-300 my-1"></div>
-                      )}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <div className="font-semibold text-slate-800">{event.action}</div>
-                      <div className="text-sm text-slate-600">{event.timestamp}</div>
-                      {event.details && (
-                        <div className="text-sm text-slate-500 mt-1">{event.details}</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </motion.div>
       )}
     </DashboardLayout>

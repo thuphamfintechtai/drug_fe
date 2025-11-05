@@ -4,6 +4,9 @@ import api from '../../utils/api';
 export const getInvoicesFromManufacturer = (params = {}) => 
   api.get('/distributor/invoices', { params });
 
+export const getInvoiceDetail = (invoiceId) => 
+  api.get(`/distributor/invoices/${invoiceId}/detail`);
+
 export const confirmReceipt = (data) => 
   api.post('/distributor/invoices/confirm-receipt', data);
 
@@ -44,6 +47,7 @@ export const getPharmacies = () =>
 
 export default {
   getInvoicesFromManufacturer,
+  getInvoiceDetail,
   confirmReceipt,
   transferToPharmacy,
   saveTransferToPharmacyTransaction,

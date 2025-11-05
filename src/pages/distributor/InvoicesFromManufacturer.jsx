@@ -15,9 +15,21 @@ export default function InvoicesFromManufacturer() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [confirmForm, setConfirmForm] = useState({
-    receivedBy: '',
-    deliveryAddress: '',
-    shippingInfo: '',
+    receivedBy: {
+      fullName: '',
+      position: '',
+      signature: '',
+    },
+    deliveryAddress: {
+      street: '',
+      district: '',
+      city: '',
+    },
+    shippingInfo: {
+      carrier: '',
+      trackingNumber: '',
+      shippedDate: '',
+    },
     notes: '',
     distributionDate: new Date().toISOString().split('T')[0],
     distributedQuantity: '',
@@ -73,9 +85,21 @@ export default function InvoicesFromManufacturer() {
   const handleOpenConfirm = (invoice) => {
     setSelectedInvoice(invoice);
     setConfirmForm({
-      receivedBy: '',
-      deliveryAddress: '',
-      shippingInfo: '',
+      receivedBy: {
+        fullName: '',
+        position: '',
+        signature: '',
+      },
+      deliveryAddress: {
+        street: '',
+        district: '',
+        city: '',
+      },
+      shippingInfo: {
+        carrier: '',
+        trackingNumber: '',
+        shippedDate: '',
+      },
       notes: '',
       distributionDate: new Date().toISOString().split('T')[0],
       distributedQuantity: invoice.totalQuantity?.toString() || '',
@@ -86,27 +110,58 @@ export default function InvoicesFromManufacturer() {
   const handleConfirmReceipt = async () => {
     if (!selectedInvoice) return;
 
-    if (!confirmForm.receivedBy || !confirmForm.deliveryAddress) {
+    if (!confirmForm.receivedBy?.fullName || !confirmForm.deliveryAddress?.street || !confirmForm.deliveryAddress?.city) {
       alert('Vui lòng điền đầy đủ thông tin bắt buộc');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await confirmReceipt({
+      // Chỉ gửi các field có giá trị để tránh gửi empty objects
+      const payload = {
         invoiceId: selectedInvoice._id,
-        ...confirmForm,
-        distributedQuantity: parseInt(confirmForm.distributedQuantity),
-      });
+        distributionDate: confirmForm.distributionDate,
+        distributedQuantity: parseInt(confirmForm.distributedQuantity) || selectedInvoice.totalQuantity,
+        notes: confirmForm.notes || undefined,
+      };
+
+      // Chỉ thêm receivedBy nếu có fullName
+      if (confirmForm.receivedBy?.fullName) {
+        payload.receivedBy = {
+          fullName: confirmForm.receivedBy.fullName,
+          ...(confirmForm.receivedBy.position && { position: confirmForm.receivedBy.position }),
+          ...(confirmForm.receivedBy.signature && { signature: confirmForm.receivedBy.signature }),
+        };
+      }
+
+      // Chỉ thêm deliveryAddress nếu có ít nhất street và city
+      if (confirmForm.deliveryAddress?.street && confirmForm.deliveryAddress?.city) {
+        payload.deliveryAddress = {
+          street: confirmForm.deliveryAddress.street,
+          ...(confirmForm.deliveryAddress.district && { district: confirmForm.deliveryAddress.district }),
+          city: confirmForm.deliveryAddress.city,
+        };
+      }
+
+      // Chỉ thêm shippingInfo nếu có ít nhất carrier hoặc trackingNumber
+      if (confirmForm.shippingInfo?.carrier || confirmForm.shippingInfo?.trackingNumber) {
+        payload.shippingInfo = {
+          ...(confirmForm.shippingInfo.carrier && { carrier: confirmForm.shippingInfo.carrier }),
+          ...(confirmForm.shippingInfo.trackingNumber && { trackingNumber: confirmForm.shippingInfo.trackingNumber }),
+          ...(confirmForm.shippingInfo.shippedDate && { shippedDate: confirmForm.shippingInfo.shippedDate }),
+        };
+      }
+
+      const response = await confirmReceipt(payload);
 
       if (response.data.success) {
-        alert('✅ Xác nhận nhận hàng thành công!\n\nTrạng thái: Đang chờ Manufacturer xác nhận chuyển quyền sở hữu NFT.');
+        alert('Xác nhận nhận hàng thành công!\n\nTrạng thái: Đang chờ Manufacturer xác nhận chuyển quyền sở hữu NFT.');
         setShowConfirmDialog(false);
         loadData();
       }
     } catch (error) {
       console.error('Lỗi khi xác nhận:', error);
-      alert('❌ Không thể xác nhận nhận hàng: ' + (error.response?.data?.message || error.message));
+      alert('Không thể xác nhận nhận hàng: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -125,11 +180,11 @@ export default function InvoicesFromManufacturer() {
 
   const getStatusLabel = (status) => {
     const labels = {
-      pending: '⏳ Pending',
-      sent: '📦 Sent',
-      received: '✅ Received',
-      confirmed: '🔐 Confirmed (Chờ Manufacturer)',
-      paid: '💰 Paid',
+      pending: 'Pending',
+      sent: 'Sent',
+      received: 'Received',
+      confirmed: 'Confirmed (Chờ Manufacturer)',
+      paid: 'Paid',
     };
     return labels[status] || status;
   };
@@ -157,19 +212,33 @@ export default function InvoicesFromManufacturer() {
         <div className="flex flex-col md:flex-row gap-3 md:items-end">
           <div className="flex-1">
             <label className="block text-sm text-[#003544]/70 mb-1">Tìm kiếm</label>
-            <input
-              value={search}
-              onChange={e => updateFilter({ search: e.target.value, page: 1 })}
-              placeholder="Tìm theo số đơn, ghi chú..."
-              className="w-full border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
-            />
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                </svg>
+              </span>
+              <input
+                value={search}
+                onChange={e => updateFilter({ search: e.target.value, page: 1 })}
+                onKeyDown={e => e.key === 'Enter' && updateFilter({ search, page: 1 })}
+                placeholder="Tìm theo số đơn, ghi chú..."
+                className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+              />
+              <button
+                onClick={() => updateFilter({ search, page: 1 })}
+                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+              >
+                Tìm Kiếm
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-sm text-[#003544]/70 mb-1">Trạng thái</label>
             <select
               value={status}
               onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-              className="border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
+              className="h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
             >
               <option value="">Tất cả</option>
               <option value="pending">Pending</option>
@@ -181,6 +250,7 @@ export default function InvoicesFromManufacturer() {
           </div>
         </div>
       </motion.div>
+
 
       {/* List */}
       <motion.div className="space-y-4" variants={fadeUp} initial="hidden" animate="show">
@@ -291,9 +361,11 @@ export default function InvoicesFromManufacturer() {
               </div>
               <button
                 onClick={() => setShowConfirmDialog(false)}
-                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition"
+                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition"
               >
-                ✕
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
@@ -307,17 +379,114 @@ export default function InvoicesFromManufacturer() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Người nhận *</label>
-                  <input
-                    type="text"
-                    value={confirmForm.receivedBy}
-                    onChange={(e) => setConfirmForm({...confirmForm, receivedBy: e.target.value})}
-                    className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                    placeholder="Tên người nhận"
-                  />
+              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                <div className="font-bold text-blue-800 mb-3">Thông tin người nhận:</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Họ và tên *</label>
+                    <input
+                      type="text"
+                      value={confirmForm.receivedBy.fullName}
+                      onChange={(e) => setConfirmForm({...confirmForm, receivedBy: {...confirmForm.receivedBy, fullName: e.target.value}})}
+                      className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      placeholder="Nguyễn Văn A"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Chức vụ</label>
+                    <input
+                      type="text"
+                      value={confirmForm.receivedBy.position}
+                      onChange={(e) => setConfirmForm({...confirmForm, receivedBy: {...confirmForm.receivedBy, position: e.target.value}})}
+                      className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      placeholder="Quản lý kho"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Chữ ký (tên file)</label>
+                    <input
+                      type="text"
+                      value={confirmForm.receivedBy.signature}
+                      onChange={(e) => setConfirmForm({...confirmForm, receivedBy: {...confirmForm.receivedBy, signature: e.target.value}})}
+                      className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      placeholder="NguyenVanA.png"
+                    />
+                  </div>
                 </div>
+              </div>
+
+              <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                <div className="font-bold text-green-800 mb-3">Địa chỉ giao hàng:</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Đường/Phố *</label>
+                    <input
+                      type="text"
+                      value={confirmForm.deliveryAddress.street}
+                      onChange={(e) => setConfirmForm({...confirmForm, deliveryAddress: {...confirmForm.deliveryAddress, street: e.target.value}})}
+                      className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      placeholder="123 Đường ABC"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Quận/Huyện</label>
+                    <input
+                      type="text"
+                      value={confirmForm.deliveryAddress.district}
+                      onChange={(e) => setConfirmForm({...confirmForm, deliveryAddress: {...confirmForm.deliveryAddress, district: e.target.value}})}
+                      className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      placeholder="Quận XYZ"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Thành phố *</label>
+                    <input
+                      type="text"
+                      value={confirmForm.deliveryAddress.city}
+                      onChange={(e) => setConfirmForm({...confirmForm, deliveryAddress: {...confirmForm.deliveryAddress, city: e.target.value}})}
+                      className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      placeholder="TP. Hồ Chí Minh"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                <div className="font-bold text-purple-800 mb-3">Thông tin vận chuyển:</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Đơn vị vận chuyển</label>
+                    <input
+                      type="text"
+                      value={confirmForm.shippingInfo.carrier}
+                      onChange={(e) => setConfirmForm({...confirmForm, shippingInfo: {...confirmForm.shippingInfo, carrier: e.target.value}})}
+                      className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      placeholder="Viettel Post"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Mã vận đơn</label>
+                    <input
+                      type="text"
+                      value={confirmForm.shippingInfo.trackingNumber}
+                      onChange={(e) => setConfirmForm({...confirmForm, shippingInfo: {...confirmForm.shippingInfo, trackingNumber: e.target.value}})}
+                      className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      placeholder="VT123456789"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Ngày gửi hàng</label>
+                    <input
+                      type="date"
+                      value={confirmForm.shippingInfo.shippedDate}
+                      onChange={(e) => setConfirmForm({...confirmForm, shippingInfo: {...confirmForm.shippingInfo, shippedDate: e.target.value}})}
+                      className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Số lượng nhận</label>
                   <input
@@ -328,38 +497,15 @@ export default function InvoicesFromManufacturer() {
                     placeholder="Số lượng"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Địa chỉ giao hàng *</label>
-                <input
-                  type="text"
-                  value={confirmForm.deliveryAddress}
-                  onChange={(e) => setConfirmForm({...confirmForm, deliveryAddress: e.target.value})}
-                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                  placeholder="Địa chỉ nhận hàng"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Thông tin vận chuyển</label>
-                <input
-                  type="text"
-                  value={confirmForm.shippingInfo}
-                  onChange={(e) => setConfirmForm({...confirmForm, shippingInfo: e.target.value})}
-                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                  placeholder="Thông tin vận chuyển, mã đơn..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Ngày nhận</label>
-                <input
-                  type="date"
-                  value={confirmForm.distributionDate}
-                  onChange={(e) => setConfirmForm({...confirmForm, distributionDate: e.target.value})}
-                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                />
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Ngày phân phối</label>
+                  <input
+                    type="date"
+                    value={confirmForm.distributionDate}
+                    onChange={(e) => setConfirmForm({...confirmForm, distributionDate: e.target.value})}
+                    className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div>
@@ -384,7 +530,8 @@ export default function InvoicesFromManufacturer() {
             <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end space-x-3">
               <button
                 onClick={() => setShowConfirmDialog(false)}
-                className="px-6 py-2.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition"
+                disabled={loading}
+                className="px-6 py-2.5 rounded-full border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-100 disabled:opacity-50 transition"
               >
                 Hủy
               </button>

@@ -120,6 +120,7 @@ function AppContent() {
         <Route path="/manufacturer/transfer" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerTransferManagement /></ProtectedRoute>} />
         <Route path="/manufacturer/production-history" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerProductionHistory /></ProtectedRoute>} />
         <Route path="/manufacturer/transfer-history" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerTransferHistory /></ProtectedRoute>} />
+        {/* Trang distribution-confirmation đã được loại bỏ */}
         <Route path="/manufacturer/profile" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerProfile /></ProtectedRoute>} />
         {/* Distributor Routes */}
         <Route path="/distributor" element={<ProtectedRoute allowedRoles={['distributor']}><DistributorDashboard /></ProtectedRoute>} />

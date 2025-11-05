@@ -45,37 +45,29 @@ export default function Profile() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">👤 Thông tin cá nhân</h1>
-          <p className="text-white/90 mt-2">Xem thông tin tài khoản và công ty (chỉ đọc)</p>
-        </div>
-      </motion.section>
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
+        <h1 className="text-xl font-semibold text-[#007b91]">Thông tin cá nhân</h1>
+        <p className="text-slate-500 text-sm mt-1">Xem thông tin tài khoản và công ty (chỉ đọc)</p>
+      </div>
 
       {loading ? (
-        <div className="bg-white/90 rounded-2xl border border-[#90e0ef55] p-10 text-center text-slate-600">
+        <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center text-slate-600">
           Đang tải...
         </div>
       ) : !profile ? (
-        <div className="bg-white/90 rounded-2xl border border-[#90e0ef55] p-10 text-center text-red-600">
+        <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center text-red-600">
           Không thể tải thông tin
         </div>
       ) : (
         <div className="space-y-5">
           <motion.div
-            className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] overflow-hidden"
+            className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden"
             variants={fadeUp}
             initial="hidden"
             animate="show"
           >
             <div className="px-6 py-4 bg-gradient-to-r from-[#00b4d8] to-[#48cae4]">
-              <h2 className="text-xl font-bold text-white">📋 Thông tin tài khoản</h2>
+              <h2 className="text-xl font-bold text-white">Thông tin tài khoản</h2>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -120,19 +112,19 @@ export default function Profile() {
 
           {profile.company && (
             <motion.div
-              className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] overflow-hidden"
+              className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden"
               variants={fadeUp}
               initial="hidden"
               animate="show"
             >
-              <div className="px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600">
-                <h2 className="text-xl font-bold text-white">🏢 Thông tin công ty</h2>
+              <div className="px-6 py-4 bg-gradient-to-r from-[#00b4d8] to-[#48cae4]">
+                <h2 className="text-xl font-bold text-white">Thông tin công ty</h2>
               </div>
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                    <div className="text-xs text-blue-700 mb-1">Tên công ty</div>
-                    <div className="font-bold text-blue-900 text-lg">{profile.company.name || 'N/A'}</div>
+                  <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
+                    <div className="text-xs text-cyan-700 mb-1">Tên công ty</div>
+                    <div className="font-bold text-cyan-900 text-lg">{profile.company.name || 'N/A'}</div>
                   </div>
                   <div className="bg-slate-50 rounded-xl p-4">
                     <div className="text-xs text-slate-500 mb-1">Mã số thuế</div>
