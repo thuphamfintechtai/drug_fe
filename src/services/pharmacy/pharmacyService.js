@@ -2,14 +2,12 @@ import api from '../../utils/api';
 
 export const pharmacyService = {
   // Quản lý đơn hàng từ Distributor
-  getInvoicesFromDistributor: async (params) => {
-    const response = await api.get('/pharmacy/invoices', { params });
-    return response;
+  getInvoicesFromDistributor: (params = {}) => {
+    return api.get('/pharmacy/invoices', { params });
   },
 
-  confirmReceipt: async (data) => {
-    const response = await api.post('/pharmacy/invoices/confirm-receipt', data);
-    return response;
+  confirmReceipt: (data) => {
+    return api.post('/pharmacy/invoices/confirm-receipt', data);
   },
 
   // Lịch sử và Thống kê

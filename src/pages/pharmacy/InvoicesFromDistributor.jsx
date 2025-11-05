@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import pharmacyService from '../../services/pharmacy/pharmacyService';
 
@@ -12,6 +12,7 @@ export default function InvoicesFromDistributor() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [expandedInvoice, setExpandedInvoice] = useState(null);
   const [localSearch, setLocalSearch] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [confirmForm, setConfirmForm] = useState({
@@ -80,8 +81,8 @@ export default function InvoicesFromDistributor() {
       if (status) params.status = status;
 
       const response = await pharmacyService.getInvoicesFromDistributor(params);
-      if (response.data.success) {
-        const invoices = response.data.data.invoices || [];
+      if (response.data && response.data.success) {
+        const invoices = response.data.data?.invoices || response.data.data || [];
         // Nếu có search, filter lại theo mã đơn để đảm bảo chỉ hiển thị kết quả khớp
         let filteredInvoices = invoices;
         if (search) {
@@ -91,13 +92,28 @@ export default function InvoicesFromDistributor() {
           });
         }
         setItems(filteredInvoices);
-        setPagination(response.data.data.pagination || { page: 1, limit: 10, total: filteredInvoices.length, pages: 1 });
+        // Sử dụng pagination từ server, chỉ dùng filtered length nếu không có pagination
+        const serverPagination = response.data.data?.pagination;
+        if (serverPagination) {
+          setPagination(serverPagination);
+        } else {
+          setPagination({ 
+            page, 
+            limit: 10, 
+            total: filteredInvoices.length, 
+            pages: Math.ceil(filteredInvoices.length / 10) 
+          });
+        }
       } else {
         setItems([]);
+        setPagination({ page: 1, limit: 10, total: 0, pages: 0 });
       }
     } catch (error) {
       console.error('Lỗi khi tải đơn hàng:', error);
       setItems([]);
+      setPagination({ page: 1, limit: 10, total: 0, pages: 0 });
+      const errorMessage = error.response?.data?.message || error.message || 'Không thể tải danh sách đơn hàng';
+      console.error('Chi tiết lỗi:', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -115,6 +131,10 @@ export default function InvoicesFromDistributor() {
   const handleOpenDetail = (invoice) => {
     setSelectedInvoice(invoice);
     setShowDetailDialog(true);
+  };
+
+  const toggleExpand = (idx) => {
+    setExpandedInvoice(expandedInvoice === idx ? null : idx);
   };
 
   const handleOpenConfirm = (invoice) => {
@@ -139,20 +159,53 @@ export default function InvoicesFromDistributor() {
 
     setLoading(true);
     try {
-      const response = await pharmacyService.confirmReceipt({
+      const requestData = {
         invoiceId: selectedInvoice._id,
-        ...confirmForm,
-        receivedQuantity: parseInt(confirmForm.receivedQuantity),
+        receivedBy: confirmForm.receivedBy,
+        deliveryAddress: confirmForm.deliveryAddress,
+        shippingInfo: confirmForm.shippingInfo || '',
+        notes: confirmForm.notes || '',
+        receivedDate: confirmForm.receivedDate || new Date().toISOString().split('T')[0],
+        receivedQuantity: parseInt(confirmForm.receivedQuantity) || selectedInvoice.quantity || 0,
+      };
+
+      console.log('Gửi request xác nhận nhận hàng:', {
+        endpoint: '/pharmacy/invoices/confirm-receipt',
+        data: requestData
       });
 
-      if (response.data.success) {
+      const response = await pharmacyService.confirmReceipt(requestData);
+
+      console.log('Response từ server:', response);
+
+      if (response.data && response.data.success) {
         alert('✅ Xác nhận nhận hàng thành công!\n\nTrạng thái: Đang chờ Distributor xác nhận chuyển quyền sở hữu NFT.');
         setShowConfirmDialog(false);
         loadData();
+      } else {
+        const errorMessage = response.data?.message || 'Không thể xác nhận nhận hàng';
+        console.error('Response không thành công:', response.data);
+        alert('❌ ' + errorMessage);
       }
     } catch (error) {
-      console.error('Lỗi:', error);
-      alert('❌ Không thể xác nhận: ' + (error.response?.data?.message || error.message));
+      console.error('Lỗi khi xác nhận nhận hàng:', error);
+      console.error('Chi tiết lỗi:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+      });
+      
+      let errorMessage = 'Không thể xác nhận nhận hàng';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert('❌ Lỗi server khi xác nhận nhận hàng: ' + errorMessage);
     } finally {
       setLoading(false);
     }
@@ -333,80 +386,204 @@ export default function InvoicesFromDistributor() {
               </thead>
               <tbody>
                 {items.map((item, idx) => (
-                  <tr key={idx} className="border-b border-slate-200 hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-4 bg-white">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-[#4BADD1] rounded flex items-center justify-center">
-                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                          </svg>
-                        </div>
-                        <span className="font-mono font-semibold text-slate-800">{item.invoiceNumber || 'N/A'}</span>
-                  </div>
-                    </td>
-                    <td className="px-4 py-4 bg-white">
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                        </svg>
-                        <span className="text-slate-800">{item.drug?.tradeName || item.drug?.name || 'N/A'}</span>
-                  </div>
-                    </td>
-                    <td className="px-4 py-4 bg-white">
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        <span className="text-slate-800">{item.fromDistributor?.fullName || item.fromDistributor?.username || 'N/A'}</span>
-                </div>
-                    </td>
-                    <td className="px-4 py-4 bg-white">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#4BADD1] font-bold">#</span>
-                        <span className="font-bold text-[#4BADD1]">{item.quantity?.toLocaleString('vi-VN') || '0'}</span>
-                  </div>
-                    </td>
-                    <td className="px-4 py-4 bg-white">
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span className="text-slate-800">
-                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString('vi-VN') : item.invoiceDate ? new Date(item.invoiceDate).toLocaleDateString('vi-VN') : 'N/A'}
-                        </span>
-                  </div>
-                    </td>
-                    <td className="px-4 py-4 bg-white">
-                      <span className={`px-3 py-1.5 rounded-full text-xs font-medium border-2 ${getStatusColor(item.status)}`}>
-                        {getStatusLabel(item.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 bg-white">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleOpenDetail(item)}
-                          className="px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 text-sm font-medium transition flex items-center gap-1"
-                        >
-                          <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          <span>Chi tiết</span>
-                        </button>
-                        {item.status === 'sent' && (
-                          <button
-                            onClick={() => handleOpenConfirm(item)}
-                            className="px-3 py-1.5 rounded-lg bg-[#4BADD1] text-white hover:bg-[#7AC3DE] text-sm font-medium transition flex items-center gap-1"
-                          >
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <>
+                    <tr 
+                      key={idx} 
+                      onClick={() => toggleExpand(idx)}
+                      className="border-b border-slate-200 hover:bg-gradient-to-r hover:from-[#4BADD1]/15 hover:to-[#7AC3DE]/15 cursor-pointer transition-all duration-200"
+                    >
+                      <td className="px-4 py-4 bg-white">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-[#4BADD1] rounded flex items-center justify-center">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                             </svg>
-                            <span>Xác nhận</span>
-                          </button>
-                )}
-              </div>
-                    </td>
-                  </tr>
+                          </div>
+                          <span className="font-mono font-semibold text-slate-800">{item.invoiceNumber || 'N/A'}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 bg-white">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                          </svg>
+                          <span className="text-slate-800">{item.drug?.tradeName || item.drug?.name || 'N/A'}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 bg-white">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          <span className="text-slate-800">{item.fromDistributor?.fullName || item.fromDistributor?.username || 'N/A'}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 bg-white">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#4BADD1] font-bold">#</span>
+                          <span className="font-bold text-[#4BADD1]">{item.quantity?.toLocaleString('vi-VN') || '0'}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 bg-white">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-slate-800">
+                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString('vi-VN') : item.invoiceDate ? new Date(item.invoiceDate).toLocaleDateString('vi-VN') : 'N/A'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 bg-white">
+                        <span className={`px-3 py-1.5 rounded-full text-xs font-medium border-2 ${getStatusColor(item.status)}`}>
+                          {getStatusLabel(item.status)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 bg-white">
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          {item.status === 'sent' && (
+                            <button
+                              onClick={() => handleOpenConfirm(item)}
+                              className="px-3 py-1.5 rounded-lg bg-[#4BADD1] text-white hover:bg-[#7AC3DE] text-sm font-medium transition flex items-center gap-1"
+                            >
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              <span>Xác nhận</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    <AnimatePresence>
+                      {expandedInvoice === idx && (
+                        <tr>
+                          <td colSpan={7} className="p-0">
+                            <motion.div
+                              initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                              animate={{ 
+                                opacity: 1, 
+                                height: 'auto',
+                                transition: { 
+                                  duration: 0.3, 
+                                  ease: [0.4, 0, 0.2, 1],
+                                  height: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+                                  opacity: { duration: 0.2, ease: 'easeOut' }
+                                }
+                              }}
+                              exit={{ 
+                                opacity: 0, 
+                                height: 0,
+                                overflow: 'hidden',
+                                transition: { 
+                                  duration: 0.25, 
+                                  ease: [0.4, 0, 0.2, 1],
+                                  height: { duration: 0.25, ease: [0.4, 0, 0.2, 1] },
+                                  opacity: { duration: 0.15, ease: 'easeIn' }
+                                }
+                              }}
+                              className="bg-slate-50 border-t-2 border-slate-300"
+                            >
+                              <div className="p-6 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {/* Thông tin đơn hàng */}
+                                  <div className="bg-white rounded-xl p-4 border-2 border-[#4BADD1] shadow-sm">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <svg className="w-5 h-5 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                      </svg>
+                                      <h3 className="text-lg font-bold text-[#4BADD1]">Thông tin đơn hàng</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-2 text-sm">
+                                      <div><span className="text-slate-600">Mã đơn:</span> <span className="ml-2 font-mono font-semibold text-slate-800">{item.invoiceNumber || 'N/A'}</span></div>
+                                      <div><span className="text-slate-600">Trạng thái:</span> <span className={`ml-2 px-3 py-1 rounded-full text-xs font-medium border-2 ${getStatusColor(item.status)}`}>{getStatusLabel(item.status)}</span></div>
+                                      <div><span className="text-slate-600">Ngày tạo:</span> <span className="ml-2 font-medium text-slate-800">{item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A'}</span></div>
+                                      <div><span className="text-slate-600">Số lượng:</span> <span className="ml-2 font-bold text-[#4BADD1]">{item.quantity || '0'} NFT</span></div>
+                                    </div>
+                                  </div>
+
+                                  {/* Thông tin nhà phân phối */}
+                                  {item.fromDistributor && (
+                                    <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
+                                      <div className="flex items-center gap-2 mb-3">
+                                        <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                        </svg>
+                                        <h3 className="text-lg font-bold text-slate-800">Nhà phân phối</h3>
+                                      </div>
+                                      <div className="space-y-2 text-sm text-slate-700">
+                                        <div><span className="text-slate-600">Tên:</span> <span className="ml-2 font-medium">{item.fromDistributor.fullName || item.fromDistributor.username || 'N/A'}</span></div>
+                                        <div><span className="text-slate-600">Email:</span> <span className="ml-2 font-medium">{item.fromDistributor.email || 'N/A'}</span></div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Thông tin thuốc */}
+                                  {item.drug && (
+                                    <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
+                                      <div className="flex items-center gap-2 mb-3">
+                                        <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                        </svg>
+                                        <h3 className="text-lg font-bold text-slate-800">Thông tin thuốc</h3>
+                                      </div>
+                                      <div className="space-y-2 text-sm text-slate-700">
+                                        <div><span className="text-slate-600">Tên:</span> <span className="ml-2 font-medium">{item.drug.tradeName || item.drug.name || 'N/A'}</span></div>
+                                        <div><span className="text-slate-600">Mã ATC:</span> <span className="ml-2 font-mono font-medium">{item.drug.atcCode || 'N/A'}</span></div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Thông tin tài chính */}
+                                  <div className="bg-white rounded-xl p-4 border-2 border-[#4BADD1] shadow-sm">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <svg className="w-5 h-5 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                      <h3 className="text-lg font-bold text-[#4BADD1]">Thông tin tài chính</h3>
+                                    </div>
+                                    <div className="space-y-2 text-sm text-slate-700">
+                                      <div><span className="text-slate-600">Đơn giá:</span> <span className="ml-2 font-medium">{item.unitPrice?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
+                                      <div><span className="text-slate-600">Tổng tiền:</span> <span className="ml-2 font-bold text-[#4BADD1]">{item.totalAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
+                                      <div><span className="text-slate-600">Thành tiền:</span> <span className="ml-2 font-bold text-[#4BADD1]">{item.finalAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Chain Transaction Hash */}
+                                {item.chainTxHash && (
+                                  <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                      </svg>
+                                      <h3 className="text-lg font-bold text-slate-800">Chain Transaction Hash</h3>
+                                    </div>
+                                    <div className="text-slate-700 font-mono text-xs break-all bg-slate-50 p-3 rounded-lg">
+                                      {item.chainTxHash}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Ghi chú */}
+                                {item.notes && (
+                                  <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                      </svg>
+                                      <h3 className="text-lg font-bold text-slate-800">Ghi chú</h3>
+                                    </div>
+                                    <div className="text-slate-600">{item.notes}</div>
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          </td>
+                        </tr>
+                      )}
+                    </AnimatePresence>
+                  </>
                 ))}
               </tbody>
             </table>
