@@ -15,8 +15,12 @@ export default function InvoicesFromDistributor() {
   const [localSearch, setLocalSearch] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [confirmForm, setConfirmForm] = useState({
-    receivedBy: '',
-    deliveryAddress: '',
+    receivedByName: '',
+    receiptAddressStreet: '',
+    receiptAddressCity: '',
+    receiptAddressState: '',
+    receiptAddressPostalCode: '',
+    receiptAddressCountry: 'Vietnam',
     shippingInfo: '',
     notes: '',
     receivedDate: new Date().toISOString().split('T')[0],
@@ -120,8 +124,12 @@ export default function InvoicesFromDistributor() {
   const handleOpenConfirm = (invoice) => {
     setSelectedInvoice(invoice);
     setConfirmForm({
-      receivedBy: '',
-      deliveryAddress: '',
+      receivedByName: '',
+      receiptAddressStreet: '',
+      receiptAddressCity: '',
+      receiptAddressState: '',
+      receiptAddressPostalCode: '',
+      receiptAddressCountry: 'Vietnam',
       shippingInfo: '',
       notes: '',
       receivedDate: new Date().toISOString().split('T')[0],
@@ -132,17 +140,35 @@ export default function InvoicesFromDistributor() {
 
   const handleConfirmReceipt = async () => {
     if (!selectedInvoice) return;
-    if (!confirmForm.receivedBy || !confirmForm.deliveryAddress) {
-      alert('Vui lòng điền đầy đủ thông tin bắt buộc');
+    if (!confirmForm.receivedByName || !confirmForm.receiptAddressStreet) {
+      alert('Vui lòng điền đầy đủ thông tin bắt buộc (Tên người nhận và Địa chỉ)');
       return;
     }
 
     setLoading(true);
     try {
+      // Chuyển đổi receivedByName thành object receivedBy theo schema
+      const receivedBy = {
+        name: confirmForm.receivedByName,
+        // Có thể thêm signature, idNumber, position nếu cần
+      };
+
+      // Chuyển đổi receiptAddress thành object theo schema
+      const receiptAddress = {
+        street: confirmForm.receiptAddressStreet,
+        city: confirmForm.receiptAddressCity || '',
+        state: confirmForm.receiptAddressState || '',
+        postalCode: confirmForm.receiptAddressPostalCode || '',
+        country: confirmForm.receiptAddressCountry || 'Vietnam',
+      };
+
       const response = await pharmacyService.confirmReceipt({
         invoiceId: selectedInvoice._id,
-        ...confirmForm,
-        receivedQuantity: parseInt(confirmForm.receivedQuantity),
+        receivedBy,
+        receiptAddress,
+        receiptDate: confirmForm.receivedDate,
+        receivedQuantity: parseInt(confirmForm.receivedQuantity) || selectedInvoice.quantity,
+        notes: confirmForm.notes || undefined,
       });
 
       if (response.data.success) {
@@ -393,7 +419,7 @@ export default function InvoicesFromDistributor() {
                           </svg>
                           <span>Chi tiết</span>
                         </button>
-                        {item.status === 'sent' && (
+                        {item.status === 'sent' ? (
                           <button
                             onClick={() => handleOpenConfirm(item)}
                             className="px-3 py-1.5 rounded-lg bg-[#4BADD1] text-white hover:bg-[#7AC3DE] text-sm font-medium transition flex items-center gap-1"
@@ -403,7 +429,18 @@ export default function InvoicesFromDistributor() {
                             </svg>
                             <span>Xác nhận</span>
                           </button>
-                )}
+                        ) : item.status === 'draft' ? (
+                          <button
+                            disabled
+                            title="Đang chờ Distributor chuyển NFT. Invoice sẽ chuyển sang trạng thái 'sent' sau khi Distributor hoàn thành chuyển NFT."
+                            className="px-3 py-1.5 rounded-lg bg-slate-300 text-slate-500 cursor-not-allowed text-sm font-medium flex items-center gap-1"
+                          >
+                            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Chờ chuyển NFT</span>
+                          </button>
+                        ) : null}
               </div>
                     </td>
                   </tr>
@@ -493,7 +530,7 @@ export default function InvoicesFromDistributor() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Người nhận *</label>
-                  <input type="text" value={confirmForm.receivedBy} onChange={(e) => setConfirmForm({...confirmForm, receivedBy: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Tên người nhận" />
+                  <input type="text" value={confirmForm.receivedByName} onChange={(e) => setConfirmForm({...confirmForm, receivedByName: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Tên người nhận" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Số lượng</label>
@@ -502,8 +539,30 @@ export default function InvoicesFromDistributor() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Địa chỉ nhận *</label>
-                <input type="text" value={confirmForm.deliveryAddress} onChange={(e) => setConfirmForm({...confirmForm, deliveryAddress: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Địa chỉ" />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Địa chỉ nhận * (Số nhà, tên đường)</label>
+                <input type="text" value={confirmForm.receiptAddressStreet} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressStreet: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Số nhà, tên đường" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Thành phố</label>
+                  <input type="text" value={confirmForm.receiptAddressCity} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressCity: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Thành phố" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tỉnh/Thành</label>
+                  <input type="text" value={confirmForm.receiptAddressState} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressState: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Tỉnh/Thành" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Mã bưu điện</label>
+                  <input type="text" value={confirmForm.receiptAddressPostalCode} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressPostalCode: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Mã bưu điện" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Quốc gia</label>
+                  <input type="text" value={confirmForm.receiptAddressCountry} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressCountry: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Quốc gia" />
+                </div>
               </div>
 
               <div>

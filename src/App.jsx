@@ -26,6 +26,7 @@ import ManufacturerProductionManagement from './pages/manufacturer/ProductionMan
 import ManufacturerTransferManagement from './pages/manufacturer/TransferManagement';
 import ManufacturerProductionHistory from './pages/manufacturer/ProductionHistory';
 import ManufacturerTransferHistory from './pages/manufacturer/TransferHistory';
+import ManufacturerDistributionConfirmation from './pages/manufacturer/DistributionConfirmation';
 import ManufacturerProfile from './pages/manufacturer/Profile';
 import DistributorDashboard from './pages/distributor/Dashboard';
 import DistributorInvoices from './pages/distributor/InvoicesFromManufacturer';
@@ -120,6 +121,7 @@ function AppContent() {
         <Route path="/manufacturer/transfer" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerTransferManagement /></ProtectedRoute>} />
         <Route path="/manufacturer/production-history" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerProductionHistory /></ProtectedRoute>} />
         <Route path="/manufacturer/transfer-history" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerTransferHistory /></ProtectedRoute>} />
+        <Route path="/manufacturer/distribution-confirmation" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerDistributionConfirmation /></ProtectedRoute>} />
         <Route path="/manufacturer/profile" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerProfile /></ProtectedRoute>} />
         {/* Distributor Routes */}
         <Route path="/distributor" element={<ProtectedRoute allowedRoles={['distributor']}><DistributorDashboard /></ProtectedRoute>} />

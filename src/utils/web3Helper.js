@@ -74,12 +74,176 @@ export const getNFTContract = async () => {
 };
 
 /**
+ * Try to switch to PIONE network if contract not found
+ * Tự động tìm và request switch sang PIONE network
+ */
+const trySwitchToPioneNetwork = async () => {
+  if (!window.ethereum) return false;
+  
+  try {
+    const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+    console.log('[trySwitchToPioneNetwork] Current chainId:', currentChainId);
+    
+    // Thử lấy danh sách networks từ MetaMask (API mới)
+    try {
+      const networkList = await window.ethereum.request({ method: 'wallet_getEthereumChains' });
+      console.log('[trySwitchToPioneNetwork] Available networks:', networkList);
+      
+      // Tìm PIONE network trong danh sách
+      const pioneNetwork = networkList?.find(network => {
+        const name = (network.name || '').toLowerCase();
+        return name.includes('pione') || name.includes('zero');
+      });
+      
+      if (pioneNetwork && pioneNetwork.chainId !== currentChainId) {
+        console.log('[trySwitchToPioneNetwork] Found PIONE network:', pioneNetwork);
+        // Request switch sang PIONE network
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: pioneNetwork.chainId }],
+          });
+          console.log('[trySwitchToPioneNetwork] Successfully switched to PIONE network');
+          return true;
+        } catch (switchError) {
+          // Nếu network chưa được thêm vào MetaMask, thử add network
+          if (switchError.code === 4902 && pioneNetwork.rpcUrls && pioneNetwork.rpcUrls.length > 0) {
+            try {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: pioneNetwork.chainId,
+                  chainName: pioneNetwork.name,
+                  nativeCurrency: pioneNetwork.nativeCurrency || { name: 'PZO', symbol: 'PZO', decimals: 18 },
+                  rpcUrls: pioneNetwork.rpcUrls,
+                  blockExplorerUrls: pioneNetwork.blockExplorerUrls || [],
+                }],
+              });
+              console.log('[trySwitchToPioneNetwork] Successfully added and switched to PIONE network');
+              return true;
+            } catch (addError) {
+              console.warn('[trySwitchToPioneNetwork] Failed to add network:', addError);
+            }
+          }
+          console.warn('[trySwitchToPioneNetwork] Failed to switch network:', switchError);
+        }
+      }
+    } catch (apiError) {
+      console.warn('[trySwitchToPioneNetwork] wallet_getEthereumChains not supported:', apiError);
+    }
+    
+    // Fallback: Thử các chainId phổ biến của PIONE network
+    // (cần update với chainId thực tế từ Zero Scan)
+    const commonPioneChainIds = [
+      '0x1e240', // 123456 decimal - example, cần thay bằng chainId thực tế
+    ];
+    
+    for (const chainId of commonPioneChainIds) {
+      if (currentChainId === chainId) {
+        console.log('[trySwitchToPioneNetwork] Already on PIONE network');
+        return true;
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.warn('[trySwitchToPioneNetwork] Error:', error);
+    return false;
+  }
+};
+
+/**
  * Ensure a contract address is deployed on current network
  */
 const ensureDeployed = async (provider, address) => {
+  const network = await provider.getNetwork();
   const code = await provider.getCode(address);
+  
+  console.log('[ensureDeployed] Checking contract:', {
+    address,
+    networkName: network.name,
+    chainId: network.chainId.toString(),
+    hasCode: code !== '0x',
+    codeLength: code.length,
+  });
+  
   if (code === '0x') {
-    throw new Error(`Contract not deployed at ${address} on current network`);
+    // Contract không tồn tại trên network này
+    // Contract ĐÃ TỒN TẠI trên PIONE network (đã verify trên Zero Scan)
+    // Vậy vấn đề là MetaMask đang ở network khác
+    
+    console.log('[ensureDeployed] Contract not found, attempting to switch to PIONE network...');
+    
+    // Thử tự động switch sang PIONE network
+    const switchSuccess = await trySwitchToPioneNetwork();
+    
+    if (switchSuccess) {
+      // Đã switch thành công, thử lại check contract
+      console.log('[ensureDeployed] Network switched, re-checking contract...');
+      // Wait a bit for network switch to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Get new provider after switch
+      const newProvider = new ethers.BrowserProvider(window.ethereum);
+      const newNetwork = await newProvider.getNetwork();
+      const newCode = await newProvider.getCode(address);
+      
+      console.log('[ensureDeployed] After switch:', {
+        networkName: newNetwork.name,
+        chainId: newNetwork.chainId.toString(),
+        hasCode: newCode !== '0x',
+      });
+      
+      if (newCode !== '0x') {
+        console.log('[ensureDeployed] Contract found on new network!');
+        return; // Contract đã tồn tại trên network mới
+      }
+    }
+    
+    // Nếu không thể switch tự động hoặc vẫn không tìm thấy contract
+    const currentChainIdHex = '0x' + network.chainId.toString(16);
+    
+    const errorMessage = 
+      `Contract không tồn tại trên network hiện tại!\n\n` +
+      `📊 Thông tin hiện tại:\n` +
+      `- Network: ${network.name}\n` +
+      `- Chain ID: ${currentChainIdHex} (${network.chainId})\n` +
+      `- Contract Address: ${address}\n\n` +
+      `✅ Contract ĐÃ TỒN TẠI trên PIONE/Zero network (đã verify trên Zero Scan với 15+ transactions)\n` +
+      `❌ Nhưng MetaMask đang kết nối với network khác!\n\n` +
+      `🔧 Giải pháp:\n` +
+      `1. Mở MetaMask (click vào icon 🦊)\n` +
+      `2. Click vào network dropdown (top của MetaMask, hiện tại: "${network.name}")\n` +
+      `3. Chọn "Pione Network" từ danh sách enabled networks\n` +
+      `4. Sau khi chuyển, thử lại chuyển NFT\n\n` +
+      `🔗 Kiểm tra contract: zeroscan.org/address/${address}`;
+    
+    console.error('[ensureDeployed] Contract not found on current network:', {
+      currentNetwork: network.name,
+      currentChainId: network.chainId.toString(),
+      currentChainIdHex,
+      contractAddress: address,
+      switchAttempted: true,
+      switchSuccess,
+      error: 'Contract exists on PIONE network but MetaMask is on different network',
+      suggestion: 'Switch to "Pione Network" in MetaMask manually',
+    });
+    
+    throw new Error(errorMessage);
+  }
+  
+  // Kiểm tra contract có function distributorTransferToPharmacy không
+  try {
+    const contract = new ethers.Contract(address, nftABI.abi, provider);
+    // Thử lấy function interface để verify function tồn tại
+    const functionFragment = contract.interface.getFunction('distributorTransferToPharmacy');
+    if (!functionFragment) {
+      throw new Error('Function distributorTransferToPharmacy not found in contract ABI');
+    }
+    console.log('[ensureDeployed] Function distributorTransferToPharmacy exists:', functionFragment.format());
+  } catch (funcError) {
+    console.warn('[ensureDeployed] Warning checking function:', funcError.message);
+    // Không throw error ở đây vì có thể do ABI không khớp, nhưng contract vẫn tồn tại
   }
 };
 
@@ -539,13 +703,49 @@ export const transferNFTToPharmacy = async (tokenIds, amounts, pharmacyAddress) 
 
     // Check balances before transfer
     console.log('🔍 Checking balances before transfer...');
+    const balanceIssues = [];
     for (let i = 0; i < normalizedTokenIds.length; i++) {
       const tokenId = normalizedTokenIds[i];
       const amountNeeded = normalizedAmounts[i];
       const balance = await contract.balanceOf(signerAddress, tokenId);
+      console.log(`[Balance Check] Token ID ${tokenId}: balance=${balance}, needed=${amountNeeded}`);
+      
       if (balance < amountNeeded) {
-        throw new Error(`Insufficient balance for token ID ${tokenId}: have ${balance}, need ${amountNeeded}. Please ensure the token IDs are correct and belong to this distributor.`);
+        balanceIssues.push({
+          tokenId: tokenId.toString(),
+          balance: balance.toString(),
+          needed: amountNeeded.toString(),
+        });
       }
+    }
+    
+    if (balanceIssues.length > 0) {
+      const issuesList = balanceIssues.map(issue => 
+        `  - Token ID ${issue.tokenId}: có ${issue.balance}, cần ${issue.needed}`
+      ).join('\n');
+      
+      const errorMessage = 
+        `❌ Không đủ số lượng NFT để chuyển giao!\n\n` +
+        `📊 Chi tiết:\n${issuesList}\n\n` +
+        `🔍 Nguyên nhân có thể:\n` +
+        `1. NFT chưa được transfer từ Manufacturer → Distributor trên blockchain\n` +
+        `2. Manufacturer chưa hoàn thành bước transfer NFT (chưa gọi smart contract)\n` +
+        `3. Transaction transfer từ Manufacturer bị revert hoặc thất bại\n` +
+        `4. Token ID không đúng hoặc chưa được mint\n\n` +
+        `✅ Giải pháp:\n` +
+        `1. Kiểm tra trong "Lịch sử chuyển giao" (Manufacturer) xem NFT đã được transfer chưa\n` +
+        `2. Nếu chưa, yêu cầu Manufacturer thực hiện transfer NFT trước\n` +
+        `3. Nếu đã transfer, kiểm tra transaction hash trên blockchain explorer\n` +
+        `4. Liên hệ quản trị viên nếu vấn đề vẫn tiếp tục\n\n` +
+        `💡 Lưu ý: Token ID có trong database nhưng chưa có trên blockchain nghĩa là ` +
+        `Manufacturer đã tạo invoice nhưng chưa thực hiện transfer NFT trên smart contract.`;
+      
+      console.error('[transferNFTToPharmacy] Balance check failed:', {
+        distributorAddress: signerAddress,
+        issues: balanceIssues,
+      });
+      
+      throw new Error(errorMessage);
     }
 
     // Call distributorTransferToPharmacy(pharmaAddress, tokenIds, amount)
@@ -586,6 +786,84 @@ export const transferNFTToPharmacy = async (tokenIds, amounts, pharmacyAddress) 
       throw new Error(error.message);
     }
     throw new Error(error?.message || 'Failed to transfer NFTs to pharmacy');
+  }
+};
+
+/**
+ * Check NFT balances for distributor before transfer
+ * Returns { canTransfer: boolean, issues: Array, balances: Array }
+ */
+export const checkDistributorNFTBalances = async (tokenIds) => {
+  try {
+    if (!Array.isArray(tokenIds) || tokenIds.length === 0) {
+      return {
+        canTransfer: false,
+        issues: [{ error: 'Token IDs array is empty' }],
+        balances: [],
+      };
+    }
+
+    const provider = await getWeb3Provider();
+    const signer = await provider.getSigner();
+    const signerAddress = await signer.getAddress();
+
+    // Ensure contract is deployed
+    await ensureDeployed(provider, NFT_CONTRACT_ADDRESS);
+
+    const contract = await getNFTContract();
+
+    // Normalize tokenIds
+    const normalizedTokenIds = tokenIds.map((id) => {
+      if (typeof id === 'bigint') return id;
+      if (typeof id === 'string' && id.startsWith('0x')) return BigInt(id);
+      return BigInt(id);
+    });
+
+    // Check balances
+    const balanceChecks = [];
+    const issues = [];
+
+    for (let i = 0; i < normalizedTokenIds.length; i++) {
+      const tokenId = normalizedTokenIds[i];
+      try {
+        const balance = await contract.balanceOf(signerAddress, tokenId);
+        const balanceStr = balance.toString();
+        
+        balanceChecks.push({
+          tokenId: tokenId.toString(),
+          balance: balanceStr,
+          hasBalance: balance > 0n,
+        });
+
+        if (balance === 0n) {
+          issues.push({
+            tokenId: tokenId.toString(),
+            balance: '0',
+            needed: '1',
+          });
+        }
+      } catch (error) {
+        console.error(`Error checking balance for token ID ${tokenId}:`, error);
+        issues.push({
+          tokenId: tokenId.toString(),
+          error: error.message || 'Failed to check balance',
+        });
+      }
+    }
+
+    return {
+      canTransfer: issues.length === 0,
+      issues,
+      balances: balanceChecks,
+      distributorAddress: signerAddress,
+    };
+  } catch (error) {
+    console.error('[checkDistributorNFTBalances] Error:', error);
+    return {
+      canTransfer: false,
+      issues: [{ error: error.message || 'Failed to check balances' }],
+      balances: [],
+    };
   }
 };
 

@@ -39,6 +39,11 @@ export const getProfile = () => api.get('/pharma-company/profile');
 // ============ DANH SÁCH DISTRIBUTORS ============
 export const getDistributors = (params = {}) => api.get('/pharma-company/distributors', { params });
 
+// ============ QUẢN LÝ DISTRIBUTION (XÁC NHẬN QUYỀN NFT) ============
+export const getDistributions = (params = {}) => api.get('/pharma-company/distributions', { params });
+export const getDistributionDetail = (distributionId) => api.get(`/pharma-company/distributions/${distributionId}`);
+export const approveDistribution = (distributionId) => api.post(`/pharma-company/distributions/${distributionId}/approve`);
+
 export default {
   // Thuốc
   getDrugs,
@@ -63,5 +68,10 @@ export default {
   
   // Distributors
   getDistributors,
+  
+  // Distributions
+  getDistributions,
+  getDistributionDetail,
+  approveDistribution,
 };
 
