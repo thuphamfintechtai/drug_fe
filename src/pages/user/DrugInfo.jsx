@@ -31,13 +31,16 @@ export default function UserDrugInfo() {
       const params = { page, limit: 10 };
       if (search) params.search = search;
 
-      const response = search ? await userService.searchDrugs(params) : await userService.getDrugInfo(params);
+      // Luôn dùng searchDrugs vì getDrugInfo không hỗ trợ phân trang
+      const response = await userService.searchDrugs(params);
+      console.log('DrugInfo response:', response);
       if (response.success) {
-        setItems(response.data.drugs || []);
+        setItems(response.data.drugs || response.data || []);
         setPagination(response.data.pagination || { page: 1, limit: 10, total: 0, pages: 0 });
       }
     } catch (error) {
       console.error('Lỗi khi tải danh sách thuốc:', error);
+      console.error('Error response:', error.response);
     } finally {
       setLoading(false);
     }
@@ -104,9 +107,9 @@ export default function UserDrugInfo() {
               <div className="p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-[#003544] mb-1">{item.commercialName || 'N/A'}</h3>
+                    <h3 className="text-lg font-semibold text-[#003544] mb-1">{item.tradeName || item.commercialName || 'N/A'}</h3>
                     <div className="text-sm text-slate-600 space-y-1">
-                      <div>🏷️ Hoạt chất: <span className="font-medium">{item.activePharmaIngredient || 'N/A'}</span></div>
+                      <div>🏷️ Hoạt chất: <span className="font-medium">{item.genericName || item.activePharmaIngredient || 'N/A'}</span></div>
                       <div>📋 Mã ATC: <span className="font-mono font-medium text-blue-600">{item.atcCode || 'N/A'}</span></div>
                       <div>💊 Dạng bào chế: <span className="font-medium">{item.dosageForm || 'N/A'}</span></div>
                     </div>
@@ -125,28 +128,52 @@ export default function UserDrugInfo() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="bg-slate-50 rounded-lg p-3">
                         <div className="font-semibold text-slate-700">🔢 Hàm lượng:</div>
-                        <div className="text-slate-600">{item.concentration || 'N/A'}</div>
+                        <div className="text-slate-600">{item.strength || item.concentration || 'N/A'}</div>
                       </div>
                       <div className="bg-slate-50 rounded-lg p-3">
                         <div className="font-semibold text-slate-700">📦 Quy cách:</div>
-                        <div className="text-slate-600">{item.packagingSpecification || 'N/A'}</div>
+                        <div className="text-slate-600">{item.packaging || item.packagingSpecification || 'N/A'}</div>
                       </div>
                       <div className="bg-slate-50 rounded-lg p-3">
                         <div className="font-semibold text-slate-700">🏢 Nhà sản xuất:</div>
-                        <div className="text-slate-600">{item.manufacturer || 'N/A'}</div>
+                        <div className="text-slate-600">
+                          {typeof item.manufacturer === 'object' && item.manufacturer
+                            ? (item.manufacturer.name || 'N/A')
+                            : (item.manufacturer || 'N/A')}
+                        </div>
                       </div>
                       <div className="bg-slate-50 rounded-lg p-3">
                         <div className="font-semibold text-slate-700">🌍 Nước SX:</div>
-                        <div className="text-slate-600">{item.countryOfOrigin || 'N/A'}</div>
+                        <div className="text-slate-600">
+                          {typeof item.manufacturer === 'object' && item.manufacturer
+                            ? (item.manufacturer.country || 'N/A')
+                            : (item.countryOfOrigin || 'N/A')}
+                        </div>
                       </div>
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <div className="font-semibold text-slate-700">📜 Số đăng ký:</div>
-                        <div className="text-slate-600 font-mono text-xs">{item.registrationNumber || 'N/A'}</div>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <div className="font-semibold text-slate-700">⏰ Hạn sử dụng:</div>
-                        <div className="text-slate-600">{item.shelfLife || 'N/A'}</div>
-                      </div>
+                      {item.route && (
+                        <div className="bg-slate-50 rounded-lg p-3">
+                          <div className="font-semibold text-slate-700">📍 Đường dùng:</div>
+                          <div className="text-slate-600">{item.route}</div>
+                        </div>
+                      )}
+                      {item.storage && (
+                        <div className="bg-slate-50 rounded-lg p-3">
+                          <div className="font-semibold text-slate-700">❄️ Bảo quản:</div>
+                          <div className="text-slate-600">{item.storage}</div>
+                        </div>
+                      )}
+                      {item.activeIngredients && Array.isArray(item.activeIngredients) && item.activeIngredients.length > 0 && (
+                        <div className="bg-slate-50 rounded-lg p-3 md:col-span-2">
+                          <div className="font-semibold text-slate-700">🧪 Hoạt chất:</div>
+                          <div className="text-slate-600">{item.activeIngredients.join(', ')}</div>
+                        </div>
+                      )}
+                      {item.warnings && (
+                        <div className="bg-amber-50 rounded-lg p-3 border border-amber-200 md:col-span-2">
+                          <div className="font-semibold text-amber-800">⚠️ Cảnh báo:</div>
+                          <div className="text-amber-700 text-sm">{item.warnings}</div>
+                        </div>
+                      )}
                     </div>
 
                     {item.proprietaryDrugName && (

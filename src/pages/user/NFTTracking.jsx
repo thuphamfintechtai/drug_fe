@@ -26,14 +26,19 @@ export default function UserNFTTracking() {
     setSearched(true);
     try {
       const response = await userService.trackDrugByNFTId(tokenId.trim());
+      console.log('Track response:', response);
       if (response.success) {
         setJourney(response.data);
       } else {
         setJourney(null);
+        alert(response.message || 'Không tìm thấy NFT này');
       }
     } catch (error) {
       console.error('Lỗi:', error);
+      console.error('Error response:', error.response);
       setJourney(null);
+      const errorMessage = error.response?.data?.message || error.message || 'Không thể tra cứu NFT. Vui lòng kiểm tra lại Token ID hoặc đăng nhập lại.';
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -110,12 +115,26 @@ export default function UserNFTTracking() {
                 <div className="text-lg font-bold text-purple-900">{journey.nft?.tokenId || tokenId}</div>
               </div>
               <div className="bg-white rounded-xl p-4 border border-purple-200">
+                <div className="text-sm text-purple-700 mb-1">Số Serial</div>
+                <div className="text-lg font-bold text-purple-900">{journey.nft?.serialNumber || 'N/A'}</div>
+              </div>
+              <div className="bg-white rounded-xl p-4 border border-purple-200">
                 <div className="text-sm text-purple-700 mb-1">Tên thuốc</div>
-                <div className="text-lg font-bold text-purple-900">{journey.drug?.commercialName || journey.nft?.drugName || 'N/A'}</div>
+                <div className="text-lg font-bold text-purple-900">
+                  {journey.drug?.tradeName || journey.drug?.genericName || 'N/A'}
+                </div>
+              </div>
+              <div className="bg-white rounded-xl p-4 border border-purple-200">
+                <div className="text-sm text-purple-700 mb-1">Số lô</div>
+                <div className="text-lg font-bold text-purple-900">{journey.nft?.batchNumber || 'N/A'}</div>
               </div>
               <div className="bg-white rounded-xl p-4 border border-purple-200">
                 <div className="text-sm text-purple-700 mb-1">Chủ sở hữu hiện tại</div>
-                <div className="text-sm font-mono text-purple-900 truncate">{journey.nft?.currentOwner || 'N/A'}</div>
+                <div className="text-sm font-mono text-purple-900 truncate">
+                  {typeof journey.nft?.currentOwner === 'object' 
+                    ? (journey.nft.currentOwner.fullName || journey.nft.currentOwner.username || journey.nft.currentOwner.name || 'N/A')
+                    : (journey.nft?.currentOwner || 'N/A')}
+                </div>
               </div>
               <div className="bg-white rounded-xl p-4 border border-purple-200">
                 <div className="text-sm text-purple-700 mb-1">Trạng thái</div>
@@ -130,11 +149,11 @@ export default function UserNFTTracking() {
               <span>🛤️</span> Hành trình phân phối
             </h2>
             
-            {journey.history && journey.history.length > 0 ? (
+            {journey.journey && Array.isArray(journey.journey) && journey.journey.length > 0 ? (
               <div className="relative pl-8 space-y-6">
                 <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gradient-to-b from-emerald-500 via-cyan-500 to-purple-500"></div>
                 
-                {journey.history.map((step, idx) => (
+                {journey.journey.map((step, idx) => (
                   <div key={idx} className="relative">
                     <div className="absolute -left-6 w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 border-4 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold">
                       {idx + 1}
@@ -142,35 +161,71 @@ export default function UserNFTTracking() {
                     <div className="bg-gradient-to-br from-slate-50 to-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h3 className="text-lg font-bold text-slate-800">{step.action || step.stage || 'N/A'}</h3>
+                          <h3 className="text-lg font-bold text-slate-800">{step.description || step.stage || 'N/A'}</h3>
                           <div className="text-sm text-slate-600 mt-1">
-                            {step.timestamp ? new Date(step.timestamp).toLocaleString('vi-VN') : 'N/A'}
+                            {step.date ? new Date(step.date).toLocaleString('vi-VN') : 'N/A'}
                           </div>
                         </div>
-                        {step.status && (
+                        {step.stage && (
                           <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200 capitalize">
-                            {step.status}
+                            {step.stage}
                           </span>
                         )}
                       </div>
 
                       <div className="space-y-2 text-sm">
+                        {step.manufacturer && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-500">🏭 Nhà sản xuất:</span>
+                            <span className="font-medium text-slate-800">
+                              {typeof step.manufacturer === 'object' 
+                                ? (step.manufacturer.fullName || step.manufacturer.username || step.manufacturer.name || JSON.stringify(step.manufacturer))
+                                : step.manufacturer}
+                            </span>
+                          </div>
+                        )}
+                        {step.details && (
+                          <>
+                            {step.details.quantity && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-slate-500">📦 Số lượng:</span>
+                                <span className="font-bold text-emerald-600">{step.details.quantity}</span>
+                              </div>
+                            )}
+                            {step.details.mfgDate && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-slate-500">📅 Ngày sản xuất:</span>
+                                <span className="font-medium text-slate-800">
+                                  {new Date(step.details.mfgDate).toLocaleDateString('vi-VN')}
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {step.quantity && !step.details?.quantity && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-500">📦 Số lượng:</span>
+                            <span className="font-bold text-emerald-600">{step.quantity}</span>
+                          </div>
+                        )}
                         {step.from && (
                           <div className="flex items-center gap-2">
                             <span className="text-slate-500">📤 Từ:</span>
-                            <span className="font-medium text-slate-800">{step.from}</span>
+                            <span className="font-medium text-slate-800">
+                              {typeof step.from === 'object' 
+                                ? (step.from.fullName || step.from.username || step.from.name || JSON.stringify(step.from))
+                                : step.from}
+                            </span>
                           </div>
                         )}
                         {step.to && (
                           <div className="flex items-center gap-2">
                             <span className="text-slate-500">📥 Đến:</span>
-                            <span className="font-medium text-slate-800">{step.to}</span>
-                          </div>
-                        )}
-                        {step.quantity && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-500">📦 Số lượng:</span>
-                            <span className="font-bold text-emerald-600">{step.quantity}</span>
+                            <span className="font-medium text-slate-800">
+                              {typeof step.to === 'object' 
+                                ? (step.to.fullName || step.to.username || step.to.name || JSON.stringify(step.to))
+                                : step.to}
+                            </span>
                           </div>
                         )}
                         {step.transactionHash && (
@@ -204,10 +259,10 @@ export default function UserNFTTracking() {
                 <span>ℹ️</span> Thông tin chi tiết
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {journey.drug.activePharmaIngredient && (
+                {journey.drug.genericName && (
                   <div className="bg-white rounded-lg p-3 border border-blue-200">
-                    <div className="text-sm text-blue-700">Hoạt chất</div>
-                    <div className="font-semibold text-blue-900">{journey.drug.activePharmaIngredient}</div>
+                    <div className="text-sm text-blue-700">Tên hoạt chất</div>
+                    <div className="font-semibold text-blue-900">{journey.drug.genericName}</div>
                   </div>
                 )}
                 {journey.drug.atcCode && (
@@ -216,16 +271,48 @@ export default function UserNFTTracking() {
                     <div className="font-mono font-semibold text-blue-900">{journey.drug.atcCode}</div>
                   </div>
                 )}
+                {journey.drug.dosageForm && (
+                  <div className="bg-white rounded-lg p-3 border border-blue-200">
+                    <div className="text-sm text-blue-700">Dạng bào chế</div>
+                    <div className="font-semibold text-blue-900">{journey.drug.dosageForm}</div>
+                  </div>
+                )}
+                {journey.drug.strength && (
+                  <div className="bg-white rounded-lg p-3 border border-blue-200">
+                    <div className="text-sm text-blue-700">Hàm lượng</div>
+                    <div className="font-semibold text-blue-900">{journey.drug.strength}</div>
+                  </div>
+                )}
+                {journey.drug.packaging && (
+                  <div className="bg-white rounded-lg p-3 border border-blue-200">
+                    <div className="text-sm text-blue-700">Quy cách đóng gói</div>
+                    <div className="font-semibold text-blue-900">{journey.drug.packaging}</div>
+                  </div>
+                )}
+                {journey.drug.mfgDate && (
+                  <div className="bg-white rounded-lg p-3 border border-blue-200">
+                    <div className="text-sm text-blue-700">Ngày sản xuất</div>
+                    <div className="font-semibold text-blue-900">
+                      {new Date(journey.drug.mfgDate).toLocaleDateString('vi-VN')}
+                    </div>
+                  </div>
+                )}
+                {journey.drug.expDate && (
+                  <div className="bg-white rounded-lg p-3 border border-blue-200">
+                    <div className="text-sm text-blue-700">Hạn sử dụng</div>
+                    <div className="font-semibold text-blue-900">
+                      {new Date(journey.drug.expDate).toLocaleDateString('vi-VN')}
+                    </div>
+                  </div>
+                )}
                 {journey.drug.manufacturer && (
                   <div className="bg-white rounded-lg p-3 border border-blue-200">
                     <div className="text-sm text-blue-700">Nhà sản xuất</div>
-                    <div className="font-semibold text-blue-900">{journey.drug.manufacturer}</div>
-                  </div>
-                )}
-                {journey.drug.countryOfOrigin && (
-                  <div className="bg-white rounded-lg p-3 border border-blue-200">
-                    <div className="text-sm text-blue-700">Nước sản xuất</div>
-                    <div className="font-semibold text-blue-900">{journey.drug.countryOfOrigin}</div>
+                    <div className="font-semibold text-blue-900">
+                      {typeof journey.drug.manufacturer === 'object' 
+                        ? (journey.drug.manufacturer.name || journey.drug.manufacturer.fullName || JSON.stringify(journey.drug.manufacturer))
+                        : journey.drug.manufacturer}
+                    </div>
                   </div>
                 )}
               </div>
