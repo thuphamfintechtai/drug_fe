@@ -40,7 +40,9 @@ export default function Register() {
 
     try {
       const { confirmPassword, ...registerData } = formData;
+      console.log('Register data:', registerData);
       const result = await register(registerData, 'user');
+      console.log('Register result:', result);
       
       if (result.success) {
         alert('Đăng ký thành công! Vui lòng đăng nhập.');
@@ -49,7 +51,9 @@ export default function Register() {
         setError(result.message || 'Đăng ký thất bại');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
+      console.error('Register error:', err);
+      console.error('Error response:', err.response);
+      setError(err.response?.data?.message || err.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }

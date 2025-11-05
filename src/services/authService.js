@@ -3,7 +3,7 @@ import api from '../utils/api';
 export const authService = {
   // Đăng ký user thông thường
   register: async (data) => {
-    const response = await api.post('/auth/register', data);
+    const response = await api.post('/auth/register/user', data);
     return response.data;
   },
 
@@ -18,19 +18,19 @@ export const authService = {
 
   // Đăng ký nhà sản xuất
   registerPharmaCompany: async (data) => {
-    const response = await api.post('/auth/register-pharma-company', data);
+    const response = await api.post('/auth/register/pharma-company', data);
     return response.data;
   },
 
   // Đăng ký nhà phân phối
   registerDistributor: async (data) => {
-    const response = await api.post('/auth/register-distributor', data);
+    const response = await api.post('/auth/register/distributor', data);
     return response.data;
   },
 
   // Đăng ký nhà thuốc
   registerPharmacy: async (data) => {
-    const response = await api.post('/auth/register-pharmacy', data);
+    const response = await api.post('/auth/register/pharmacy', data);
     return response.data;
   },
 

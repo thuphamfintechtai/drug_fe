@@ -81,14 +81,28 @@ export default function RegisterBusiness() {
       delete payload.licenseNumber;
       delete payload.description;
 
-      const response = await api.post(`/auth/register/${businessType}`, payload);
+      // Map businessType to backend route format
+      const routeMap = {
+        'pharma_company': 'pharma-company',
+        'distributor': 'distributor',
+        'pharmacy': 'pharmacy'
+      };
+      const route = routeMap[businessType] || businessType;
+      console.log('Register business payload:', payload);
+      console.log('Register business route:', `/auth/register/${route}`);
+      const response = await api.post(`/auth/register/${route}`, payload);
+      console.log('Register business response:', response.data);
       
       if (response.data.success) {
         alert('✅ Đăng ký thành công! Vui lòng chờ admin phê duyệt.');
         navigate('/login');
+      } else {
+        setError(response.data.message || 'Đăng ký thất bại');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+      console.error('Register business error:', err);
+      console.error('Error response:', err.response);
+      setError(err.response?.data?.message || err.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
