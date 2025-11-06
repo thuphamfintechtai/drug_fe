@@ -166,7 +166,6 @@ export default function DrugManagement() {
     }
   };
 
-  // FIX: Use separate submitting state
   const handleSubmit = async () => {
     if (submitting) return; // Prevent double submission
     
@@ -254,6 +253,7 @@ export default function DrugManagement() {
               />
 
               <button
+              style={{ color: "white" }}
                 onClick={handleSearch}
                 className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
               >
@@ -270,10 +270,12 @@ export default function DrugManagement() {
 
             <button
               onClick={handleCreate}
-              className="px-4 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+              style={{ color: "white" }}
+              className="px-4 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] font-medium transition"
             >
               Tạo thuốc mới
             </button>
+
           </div>
 
           {/* Table */}
@@ -323,18 +325,19 @@ export default function DrugManagement() {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex items-center justify-center gap-2">
-                            <button
+                          <button
                               onClick={() => handleEdit(drug)}
-                              className="px-4 py-2 border-2 border-[#3db6d9] text-[#3db6d9] rounded-full font-semibold hover:bg-[#3db6d9] hover:text-white transition-all duration-200"
+                              className="px-4 py-2 border-2 border-[#3db6d9] rounded-full font-semibold !text-[#3db6d9] hover:!text-white hover:bg-[#3db6d9] transition-all duration-200"
                             >
                               Sửa
                             </button>
+
                             <button
-                              onClick={() => handleDelete(drug._id)}
-                              className="px-4 py-2 border-2 border-red-500 bg-red-50 rounded-full font-semibold text-red-500 hover:bg-red-500 hover:text-white transition-all duration-200"
-                            >
-                              Xóa
-                            </button>
+                            onClick={() => handleDelete(drug._id)}
+                            className="px-4 py-2 border-2 border-red-500 rounded-full font-semibold !text-red-500 bg-red-50 hover:bg-red-500 hover:!text-white transition-all duration-200"
+                          >
+                            Xóa
+                          </button>
                           </div>
                         </td>
                       </tr>
@@ -349,125 +352,127 @@ export default function DrugManagement() {
 
       {/* Create/Edit Dialog */}
       {showDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowDialog(false)}>
-          <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll" onClick={(e) => e.stopPropagation()}>
-            <style>{`
-              /* Ẩn scrollbar trong modal để giao diện sạch hơn */
-              .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
-              .custom-scroll::-webkit-scrollbar { width: 0; height: 0; }
-              .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-              .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
-            `}</style>
-            
-            {/* Header */}
-            <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-white">
-                  {isEditMode ? "Cập nhật thuốc" : "Tạo thuốc mới"}
-                </h2>
-                <p className="text-cyan-100 text-sm">
-                  Vui lòng nhập thông tin thuốc bên dưới
-                </p>
-              </div>
-              <button
-                onClick={() => setShowDialog(false)}
-                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition"
-              >
-                ✕
-              </button>
-            </div>
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    onClick={() => setShowDialog(false)}
+  >
+    <div
+      className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <style>{`
+        .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+        .custom-scroll::-webkit-scrollbar { width: 0; height: 0; }
+      `}</style>
 
-            {/* Body */}
-            <div className="p-8 space-y-4">
-              <div className="grid grid-cols-2 gap-6">
-                <InputField
-                  label="Tên thương mại"
-                  placeholder="VD: Vitamin A, ..."
-                  value={formData.tradeName}
-                  onChange={(v) => setFormData({ ...formData, tradeName: v })}
-                />
-                <InputField
-                  label="Tên hoạt chất"
-                  placeholder="VD: Khoáng chất a, ..."
-                  value={formData.genericName}
-                  onChange={(v) => setFormData({ ...formData, genericName: v })}
-                />
-                <InputField
-                  label="Mã ATC"
-                  placeholder="VD: N1A65E03, ..."
-                  value={formData.atcCode}
-                  onChange={(v) => setFormData({ ...formData, atcCode: v })}
-                />
-                <InputField
-                  label="Dạng bào chế"
-                  placeholder="VD: Viên nén, ..."
-                  value={formData.dosageForm}
-                  onChange={(v) => setFormData({ ...formData, dosageForm: v })}
-                />
-                <InputField
-                  label="Hàm lượng"
-                  placeholder="VD: 500mg, ..."
-                  value={formData.strength}
-                  onChange={(v) => setFormData({ ...formData, strength: v })}
-                />
-                <InputField
-                  label="Đường dùng"
-                  placeholder="VD: Uống, ..."
-                  value={formData.route}
-                  onChange={(v) => setFormData({ ...formData, route: v })}
-                />
-                <InputField
-                  label="Quy cách đóng gói"
-                  placeholder="VD: Hộp 10 vỉ x 10 viên, ..."
-                  value={formData.packaging}
-                  onChange={(v) => setFormData({ ...formData, packaging: v })}
-                />
-                <InputField
-                  label="Bảo quản"
-                  placeholder="VD: Để nơi khô ráo, ..."
-                  value={formData.storage}
-                  onChange={(v) => setFormData({ ...formData, storage: v })}
-                />
-              </div>
-
-              <div className="flex items-center justify-center gap-3 mt-4">
-                <hr className="flex-1 border-gray-300" />
-                <span className="text-gray-500 text-sm">Tùy chọn</span>
-                <hr className="flex-1 border-gray-300" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Cảnh báo
-                </label>
-                <textarea
-                  value={formData.warnings}
-                  onChange={(e) => setFormData({ ...formData, warnings: e.target.value })}
-                  rows="3"
-                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                  placeholder="VD: Không dùng cho trẻ em dưới 2 tuổi ..."
-                />
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end">
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 transition-all duration-200"
-              >
-                {submitting ? "Đang lưu..." : (isEditMode ? "Cập nhật" : "Tạo thuốc")}
-              </button>
-            </div>
-          </div>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-white">
+            {isEditMode ? "Cập nhật thuốc" : "Tạo thuốc mới"}
+          </h2>
+          <p className="text-gray-100 text-sm">Vui lòng nhập thông tin thuốc bên dưới</p>
         </div>
-      )}
+        <button
+          onClick={() => setShowDialog(false)}
+          className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="p-8 space-y-4">
+        <div className="grid grid-cols-2 gap-6">
+          <InputField
+            label="Tên thương mại"
+            placeholder="VD: Vitamin A, ..."
+            value={formData.tradeName}
+            onChange={(v) => setFormData({ ...formData, tradeName: v })}
+          />
+          <InputField
+            label="Tên hoạt chất"
+            placeholder="VD: Khoáng chất a, ..."
+            value={formData.genericName}
+            onChange={(v) => setFormData({ ...formData, genericName: v })}
+          />
+          <InputField
+            label="Mã ATC"
+            placeholder="VD: N1A65E03, ..."
+            value={formData.atcCode}
+            onChange={(v) => setFormData({ ...formData, atcCode: v })}
+          />
+          <InputField
+            label="Dạng bào chế"
+            placeholder="VD: Viên nén, ..."
+            value={formData.dosageForm}
+            onChange={(v) => setFormData({ ...formData, dosageForm: v })}
+          />
+          <InputField
+            label="Hàm lượng"
+            placeholder="VD: 500mg, ..."
+            value={formData.strength}
+            onChange={(v) => setFormData({ ...formData, strength: v })}
+          />
+          <InputField
+            label="Đường dùng"
+            placeholder="VD: Uống, ..."
+            value={formData.route}
+            onChange={(v) => setFormData({ ...formData, route: v })}
+          />
+          <InputField
+            label="Quy cách đóng gói"
+            placeholder="VD: Hộp 10 vỉ x 10 viên, ..."
+            value={formData.packaging}
+            onChange={(v) => setFormData({ ...formData, packaging: v })}
+          />
+          <InputField
+            label="Bảo quản"
+            placeholder="VD: Để nơi khô ráo, ..."
+            value={formData.storage}
+            onChange={(v) => setFormData({ ...formData, storage: v })}
+          />
+        </div>
+
+        {/* Divider */}
+        <div className="flex items-center justify-center gap-3 mt-4">
+          <hr className="flex-1 border-gray-300" />
+          <span className="text-gray-500 text-sm">Tùy chọn</span>
+          <hr className="flex-1 border-gray-300" />
+        </div>
+
+        {/* Textarea */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Cảnh báo</label>
+          <textarea
+            value={formData.warnings}
+            onChange={(e) => setFormData({ ...formData, warnings: e.target.value })}
+            rows="3"
+            className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
+            placeholder="VD: Không dùng cho trẻ em dưới 2 tuổi ..."
+          />
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="px-8 py-6 border-t border-gray-300 bg-gray-50 rounded-b-3xl flex justify-end">
+        <button
+        style={{ color: "white" }}
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 transition-all duration-200"
+        >
+          {submitting ? "Đang lưu..." : isEditMode ? "Cập nhật" : "Tạo thuốc"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </DashboardLayout>
   );
 }
 
-// FIX: Simplified input component
 function InputField({ label, placeholder, value, onChange }) {
   return (
     <div>
@@ -479,7 +484,7 @@ function InputField({ label, placeholder, value, onChange }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+        className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
       />
     </div>
   );

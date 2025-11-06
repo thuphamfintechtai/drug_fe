@@ -1,16 +1,67 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BsFillBoxSeamFill, BsTruck, BsShop, BsPersonFill } from 'react-icons/bs';
 import { BsCheckCircleFill } from 'react-icons/bs';
+import { Scanner } from '@yudiel/react-qr-scanner';
+import toast from 'react-hot-toast';
+
 export default function UserHome() {
   const navigate = useNavigate();
   const [tokenId, setTokenId] = useState('');
+  const [drugSearch, setDrugSearch] = useState('');
+  const [searchMode, setSearchMode] = useState('nft'); // 'nft' or 'drug'
+  const [showQRScanner, setShowQRScanner] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
 
   const handleTrackDrug = () => {
-    if (tokenId.trim()) {
-      navigate(`/user/nft-tracking?tokenId=${tokenId}`);
+    const trimmedTokenId = tokenId.trim();
+    if (!trimmedTokenId) {
+      toast.error('Vui lòng nhập mã lô, mã serial hoặc NFT ID');
+      return;
     }
+    navigate(`/track?tokenId=${trimmedTokenId}`);
+  };
+
+  const handleScanQR = () => {
+    setShowQRScanner(true);
+    setIsScanning(true);
+  };
+
+  const handleQRResult = (detectedCodes) => {
+    if (detectedCodes && detectedCodes.length > 0) {
+      const firstCode = detectedCodes[0];
+      const scannedText = firstCode.rawValue ? firstCode.rawValue.trim() : '';
+      if (scannedText) {
+        setTokenId(scannedText);
+        setShowQRScanner(false);
+        setIsScanning(false);
+        toast.success('Đã quét QR thành công!');
+        // Tự động tra cứu sau khi quét
+        setTimeout(() => {
+          navigate(`/track?tokenId=${scannedText}`);
+        }, 500);
+      }
+    }
+  };
+
+  const handleQRError = (error) => {
+    console.error('QR Scan Error:', error);
+    // Không hiển thị lỗi cho user trừ khi cần thiết
+  };
+
+  const handleCloseQRScanner = () => {
+    setShowQRScanner(false);
+    setIsScanning(false);
+  };
+
+  const handleSearchDrug = () => {
+    const trimmedSearch = drugSearch.trim();
+    if (!trimmedSearch) {
+      toast.error('Vui lòng nhập tên thuốc hoặc mã ATC');
+      return;
+    }
+    navigate(`/drug-info?search=${encodeURIComponent(trimmedSearch)}`);
   };
 
   const processSteps = [
@@ -157,49 +208,6 @@ export default function UserHome() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12"
           >
-            <motion.div 
-              className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-[#4BADD1]/20 to-cyan-100/50 mb-6 relative"
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ 
-                duration: 0.8, 
-                type: "spring",
-                stiffness: 200,
-                damping: 15
-              }}
-              whileHover={{ 
-                scale: 1.1,
-                rotate: 360,
-                boxShadow: "0 20px 40px rgba(75, 173, 209, 0.3)"
-              }}
-            >
-              <motion.span
-                animate={{ 
-                  y: [0, -8, 0],
-                  rotate: [0, 5, -5, 0]
-                }}
-                transition={{ 
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className="text-5xl"
-              >
-                💊
-              </motion.span>
-              <motion.div
-                className="absolute inset-0 rounded-full border-2 border-[#4BADD1]/30"
-                animate={{
-                  scale: [1, 1.3, 1],
-                  opacity: [0.5, 0, 0.5]
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeOut"
-                }}
-              />
-            </motion.div>
             
             <motion.h1 
               className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-[#2176FF] mb-6 leading-tight tracking-tight"
@@ -245,310 +253,118 @@ export default function UserHome() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="max-w-3xl mx-auto w-full"
+            className="max-w-4xl mx-auto w-full"
           >
-            <motion.div 
-              className="bg-white rounded-2xl shadow-2xl border border-slate-200/50 p-8 relative overflow-hidden backdrop-blur-sm"
-              whileHover={{ 
-                scale: 1.01,
-                boxShadow: "0 25px 50px rgba(75, 173, 209, 0.2)",
-                borderColor: "rgba(75, 173, 209, 0.3)"
-              }}
-              transition={{ duration: 0.3 }}
-            >
-              <motion.div
-                className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#4BADD1] via-cyan-400 to-[#4BADD1]"
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
-              />
-              
-              <motion.div
-                className="absolute top-0 right-0 w-32 h-32 bg-[#4BADD1]/5 rounded-full blur-3xl -mr-16 -mt-16"
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.3, 0.5, 0.3]
-                }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              />
-              
-              <motion.p 
-                className="text-slate-700 mb-5 text-left text-sm font-semibold flex items-center gap-2"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.8 }}
+            {/* Tabs */}
+            <div className="flex gap-2 mb-4 justify-center">
+              <button
+                onClick={() => setSearchMode('nft')}
+                className={`px-6 py-2 rounded-lg font-semibold transition ${
+                  searchMode === 'nft'
+                    ? 'bg-white text-[#4BADD1] shadow-md'
+                    : 'text-white/80 hover:text-white'
+                }`}
               >
-                <svg className="w-4 h-4 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Nhập mã lô, mã serial hoặc NFT ID
-              </motion.p>
-              
-              <div className="flex gap-3 items-stretch relative">
-                <div className="flex-1 relative">
-                  <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <motion.input
-                    type="text"
-                    value={tokenId}
-                    onChange={(e) => setTokenId(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleTrackDrug()}
-                    placeholder="Nhập mã để tra cứu..."
-                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4BADD1]/50 focus:border-[#4BADD1] transition-all text-base placeholder:text-slate-400"
-                    whileFocus={{ 
-                      scale: 1.01,
-                      borderColor: "#4BADD1",
-                      backgroundColor: "#fff"
-                    }}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.9 }}
-                  />
-                </div>
-                
-                <motion.button
-                  onClick={handleTrackDrug}
-                  className="relative px-6 py-3.5 bg-gradient-to-r from-[#4BADD1] to-cyan-500 text-white font-semibold rounded-xl transition flex items-center gap-2 text-sm overflow-hidden group shadow-lg shadow-[#4BADD1]/30"
-                  whileHover={{ 
-                    scale: 1.08,
-                    boxShadow: "0 15px 40px rgba(75, 173, 209, 0.6)",
-                    y: -3
-                  }}
-                  whileTap={{ scale: 0.92 }}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1 }}
-                >
-                  {/* Animated background gradient */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-white/30 to-cyan-400"
-                    initial={{ x: "-200%", opacity: 0 }}
-                    animate={{ 
-                      x: ["-200%", "200%"],
-                      opacity: [0, 0.5, 0]
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      repeatDelay: 1,
-                      ease: "easeInOut"
-                    }}
-                  />
-                  
-                  {/* Shimmer effect */}
-                  <motion.div
-                    className="absolute inset-0 bg-white/20"
-                    initial={{ x: "-100%" }}
-                    whileHover={{ x: "100%" }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
-                  />
-                  
-                  {/* Pulse glow effect */}
-                  <motion.div
-                    className="absolute inset-0 rounded-xl bg-[#4BADD1] opacity-0"
-                    animate={{
-                      opacity: [0, 0.4, 0],
-                      scale: [1, 1.1, 1]
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  />
-                  
-                  <motion.svg 
-                    className="w-5 h-5 relative z-10" 
-                    fill="currentColor" 
-                    viewBox="0 0 24 24"
-                    animate={{
-                      rotate: [0, 5, -5, 0],
-                      scale: [1, 1.1, 1]
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                    whileHover={{ 
-                      rotate: 360,
-                      scale: 1.2
-                    }}
-                  >
-                    <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zM14 13h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 2h3v2h-3v-2z"/>
-                  </motion.svg>
-                  <motion.span 
-                    className="relative z-10 font-semibold"
-                    whileHover={{ x: 2 }}
-                  >
-                    Quét QR
-                  </motion.span>
-                  
-                  {/* Scanning line effect */}
-                  <motion.div
-                    className="absolute inset-0 border-2 border-white/50 rounded-xl"
-                    animate={{
-                      opacity: [0.3, 0.8, 0.3],
-                      scale: [1, 1.02, 1]
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  />
-                  
-                  {/* Ripple effect on click */}
-                  <motion.div
-                    className="absolute inset-0 rounded-xl bg-white/30"
-                    initial={{ scale: 0, opacity: 0.8 }}
-                    whileTap={{
-                      scale: 2,
-                      opacity: 0
-                    }}
-                    transition={{ duration: 0.6 }}
-                  />
-                </motion.button>
-                
-                <motion.button
-                  onClick={handleTrackDrug}
-                  className="relative px-6 py-3.5 bg-gradient-to-r from-[#4A69F0] to-blue-600 text-white font-semibold rounded-xl transition text-sm overflow-hidden group shadow-lg shadow-[#4A69F0]/30"
-                  whileHover={{ 
-                    scale: 1.08,
-                    boxShadow: "0 15px 40px rgba(74, 105, 240, 0.6)",
-                    y: -3
-                  }}
-                  whileTap={{ scale: 0.92 }}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1.1 }}
-                >
-                  {/* Animated background gradient */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-blue-400 via-white/30 to-blue-400"
-                    initial={{ x: "-200%", opacity: 0 }}
-                    animate={{ 
-                      x: ["-200%", "200%"],
-                      opacity: [0, 0.5, 0]
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      repeatDelay: 1,
-                      ease: "easeInOut"
-                    }}
-                  />
-                  
-                  {/* Shimmer effect */}
-                  <motion.div
-                    className="absolute inset-0 bg-white/20"
-                    initial={{ x: "-100%" }}
-                    whileHover={{ x: "100%" }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
-                  />
-                  
-                  {/* Pulse glow effect */}
-                  <motion.div
-                    className="absolute inset-0 rounded-xl bg-[#4A69F0] opacity-0"
-                    animate={{
-                      opacity: [0, 0.4, 0],
-                      scale: [1, 1.1, 1]
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  />
-                  
-                  <motion.span className="relative z-10 flex items-center gap-2 font-semibold">
-                    <motion.svg 
-                      className="w-5 h-5" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ 
-                        opacity: 1,
-                        scale: [1, 1.15, 1]
-                      }}
-                      transition={{
-                        opacity: { duration: 0.3, delay: 1.1 },
-                        scale: {
-                          duration: 1.5,
-                          repeat: Infinity,
-                          repeatType: "reverse",
-                          ease: "easeInOut"
-                        }
-                      }}
-                      whileHover={{ 
-                        rotate: 360,
-                        scale: 1.3
-                      }}
-                    >
-                      <motion.path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        initial={{ pathLength: 0, opacity: 0 }}
-                        animate={{ 
-                          pathLength: 1,
-                          opacity: 1
-                        }}
-                        transition={{
-                          pathLength: {
-                            duration: 0.8,
-                            delay: 1.1,
-                            ease: "easeInOut"
-                          },
-                          opacity: {
-                            duration: 0.3,
-                            delay: 1.1
-                          }
-                        }}
-                      />
-                    </motion.svg>
-                    <motion.span
-                      whileHover={{ x: 2 }}
-                    >
-                      Xác thực
-                    </motion.span>
-                  </motion.span>
-                  
-                  {/* Ripple effect on click */}
-                  <motion.div
-                    className="absolute inset-0 rounded-xl bg-white/30"
-                    initial={{ scale: 0, opacity: 0.8 }}
-                    whileTap={{
-                      scale: 2,
-                      opacity: 0
-                    }}
-                    transition={{ duration: 0.6 }}
-                  />
-                  
-                  {/* Glow border effect */}
-                  <motion.div
-                    className="absolute inset-0 border-2 border-white/50 rounded-xl"
-                    animate={{
-                      opacity: [0.3, 0.8, 0.3],
-                      scale: [1, 1.02, 1]
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  />
-                </motion.button>
-              </div>
+                Tra cứu NFT
+              </button>
+              <button
+                onClick={() => setSearchMode('drug')}
+                className={`px-6 py-2 rounded-lg font-semibold transition ${
+                  searchMode === 'drug'
+                    ? 'bg-white text-[#4BADD1] shadow-md'
+                    : 'text-white/80 hover:text-white'
+                }`}
+              >
+                Thông tin thuốc
+              </button>
+            </div>
 
-            </motion.div>
+            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
+              {searchMode === 'nft' ? (
+                <>
+                  <p className="text-slate-700 mb-5 text-left text-sm font-semibold flex items-center gap-2">
+                    <svg className="w-4 h-4 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Nhập mã lô, mã serial hoặc NFT ID
+                  </p>
+                  
+                  <div className="flex gap-3 items-stretch">
+                    <div className="flex-1 relative">
+                      <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <input
+                        type="text"
+                        value={tokenId}
+                        onChange={(e) => setTokenId(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleTrackDrug()}
+                        placeholder="Nhập mã để tra cứu..."
+                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4BADD1]/50 focus:border-[#4BADD1] transition text-base placeholder:text-slate-400"
+                      />
+                    </div>
+                    
+                    <button
+                      onClick={handleScanQR}
+                      className="px-6 py-3.5 text-white font-semibold rounded-xl transition flex items-center gap-2 text-sm hover:opacity-90 active:scale-95"
+                      style={{ backgroundColor: '#4BADD1' }}
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zM14 13h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 2h3v2h-3v-2z"/>
+                      </svg>
+                      <span className="font-semibold">Quét QR</span>
+                    </button>
+                    
+                    <button
+                      onClick={handleTrackDrug}
+                      className="px-6 py-3.5 text-white font-semibold rounded-xl transition text-sm flex items-center gap-2 hover:opacity-90 active:scale-95"
+                      style={{ backgroundColor: '#2176FF' }}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-semibold">Xác thực</span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-slate-700 mb-5 text-left text-sm font-semibold flex items-center gap-2">
+                    <svg className="w-4 h-4 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Tìm kiếm thông tin thuốc theo tên hoặc mã ATC
+                  </p>
+                  
+                  <div className="flex gap-3 items-stretch">
+                    <div className="flex-1 relative">
+                      <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <input
+                        type="text"
+                        value={drugSearch}
+                        onChange={(e) => setDrugSearch(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSearchDrug()}
+                        placeholder="Nhập tên thuốc hoặc mã ATC..."
+                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4BADD1]/50 focus:border-[#4BADD1] transition text-base placeholder:text-slate-400"
+                      />
+                    </div>
+                    
+                    <button
+                      onClick={handleSearchDrug}
+                      className="px-6 py-3.5 text-white font-semibold rounded-xl transition text-sm flex items-center gap-2 hover:opacity-90 active:scale-95"
+                      style={{ backgroundColor: '#4BADD1' }}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <span className="font-semibold">Tìm kiếm</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </motion.div>
 
         </div>
@@ -708,38 +524,6 @@ export default function UserHome() {
           })}
         </div>
 
-        {/* Nút Quét QR */}
-        <motion.div 
-          className="flex justify-center max-w-4xl mx-auto mt-12"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-        >
-          <motion.button
-            onClick={handleTrackDrug}
-            className="relative px-8 py-4 bg-gradient-to-r from-[#4BADD1] to-[#2176FF] text-white font-semibold rounded-xl shadow-lg overflow-hidden group"
-            whileHover={{ 
-              scale: 1.05,
-              boxShadow: "0 15px 35px rgba(75, 173, 209, 0.4)"
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <motion.div
-              className="absolute inset-0 bg-white/20"
-              initial={{ x: "-100%" }}
-              whileHover={{ x: "100%" }}
-              transition={{ duration: 0.5 }}
-            />
-            <span className="relative z-10 flex items-center gap-2">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zM14 13h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 2h3v2h-3v-2z"/>
-              </svg>
-              Quét QR Ngay
-            </span>
-          </motion.button>
-        </motion.div>
-
       </div>
     </section>
 
@@ -849,58 +633,7 @@ export default function UserHome() {
         </div>
       </div>
     </section>
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-b from-white to-slate-50/30">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="bg-gradient-to-br from-[#2176FF] via-[#4BADD1] to-cyan-500 rounded-3xl shadow-2xl p-12 text-center text-white relative overflow-hidden"
-          >
-            <motion.div
-              className="absolute top-0 left-0 w-full h-full opacity-20"
-              style={{
-                backgroundImage: "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,255,255,0.2) 0%, transparent 50%)"
-              }}
-              animate={{
-                backgroundPosition: ["0% 0%", "100% 100%"],
-              }}
-              transition={{
-                duration: 10,
-                repeat: Infinity,
-                repeatType: "reverse"
-              }}
-            />
-            <div className="relative z-10">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">Bắt đầu ngay hôm nay</h2>
-              <p className="text-xl mb-10 text-white/90 max-w-2xl mx-auto">
-                Tham gia hệ thống để truy xuất nguồn gốc thuốc minh bạch và an toàn
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    to="/register"
-                    className="block px-8 py-4 bg-white text-[#4BADD1] font-bold rounded-xl hover:shadow-2xl transition shadow-lg"
-                  >
-                    Đăng ký người dùng
-                  </Link>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    to="/register-business"
-                    className="block px-8 py-4 bg-white/20 backdrop-blur-sm text-white font-bold rounded-xl border-2 border-white/30 hover:bg-white/30 transition shadow-lg"
-                  >
-                    Đăng ký doanh nghiệp
-                  </Link>
-                </motion.div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-  
+
       {/* Footer */}
       <footer className="py-16 px-4 bg-gradient-to-b from-slate-800 to-slate-900 text-white relative overflow-hidden">
         <motion.div
@@ -1000,6 +733,63 @@ export default function UserHome() {
           </div>
         </div>
       </footer>
+
+      {/* QR Scanner Modal */}
+      <AnimatePresence>
+        {showQRScanner && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+            onClick={handleCloseQRScanner}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-slate-800">Quét QR Code</h3>
+                <button
+                  onClick={handleCloseQRScanner}
+                  className="text-slate-500 hover:text-slate-700 transition"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="relative rounded-xl overflow-hidden bg-slate-100" style={{ minHeight: '300px' }}>
+                {isScanning && (
+                  <Scanner
+                    onScan={handleQRResult}
+                    onError={handleQRError}
+                    constraints={{
+                      facingMode: 'environment'
+                    }}
+                  />
+                )}
+                {!isScanning && (
+                  <div className="flex items-center justify-center h-[300px] text-slate-500">
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">📷</div>
+                      <p>Đang khởi động camera...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <p className="text-sm text-slate-600 mt-4 text-center">
+                Đưa camera vào mã QR để quét
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

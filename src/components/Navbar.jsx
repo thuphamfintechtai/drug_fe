@@ -57,29 +57,6 @@ export default function Navbar() {
               </motion.span>
             )}
             <Link to="/" className="flex items-center gap-3 group">
-              <motion.div
-                className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/20"
-                whileHover={{ 
-                  scale: 1.1,
-                  rotate: 360,
-                  boxShadow: "0 8px 20px rgba(255,255,255,0.3)"
-                }}
-                transition={{ duration: 0.6 }}
-              >
-                <motion.span
-                  className="text-2xl"
-                  animate={{ 
-                    y: [0, -3, 0],
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                >
-                  💊
-                </motion.span>
-              </motion.div>
               <motion.span 
                 className="font-bold text-xl text-white drop-shadow-md tracking-tight"
                 whileHover={{ 
@@ -117,7 +94,7 @@ export default function Navbar() {
                   transition={{ delay: 0.3 }}
                 >
                   <Link
-                    to="/register"
+                    to="/register-business"
                     className="px-5 py-2 bg-white text-[#4BADD1] font-semibold rounded-lg transition shadow-lg"
                   >
                     Đăng ký
