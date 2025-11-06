@@ -288,7 +288,7 @@ export default function UserHome() {
                     </svg>
                     Nhập mã lô, mã serial hoặc NFT ID
                   </p>
-                  
+
                   <div className="flex gap-3 items-stretch">
                     <div className="flex-1 relative">
                       <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -678,7 +678,7 @@ export default function UserHome() {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/register" className="hover:text-[#4BADD1] transition flex items-center gap-2 group">
+                  <Link to="/register-business" className="hover:text-[#4BADD1] transition flex items-center gap-2 group">
                     <span className="w-1.5 h-1.5 bg-slate-400 rounded-full group-hover:bg-[#4BADD1] transition"></span>
                     Đăng ký
                   </Link>
