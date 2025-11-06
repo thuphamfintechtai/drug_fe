@@ -817,7 +817,7 @@ export default function ProductionManagement() {
                     buttonState={mintButtonState}
                     defaultText="Bước 2: Mint NFT"
                     mintingText="Minting..."
-                    successText="✅ Mint thành công!"
+                    successText="Mint thành công!"
                   />
                 </>
               )}
