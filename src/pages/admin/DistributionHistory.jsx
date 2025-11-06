@@ -21,8 +21,8 @@ export default function DistributionHistory() {
   const status = searchParams.get('status') || '';
 
   const navigationItems = useMemo(() => ([
-    { path: '/admin', label: 'Tổng quan', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>), active: false },
-    { path: '/admin/distribution', label: 'Lịch sử phân phối', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>), active: true },
+    { path: '/admin', label: 'Tổng quan', icon: null, active: false },
+    { path: '/admin/distribution', label: 'Lịch sử phân phối', icon: null, active: true },
   ]), []);
 
   const load = async () => {
@@ -101,54 +101,46 @@ export default function DistributionHistory() {
       ) : (
         <>
       {/* Banner */}
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-5 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">Lịch sử phân phối thuốc</h2>
-          <p className="mt-1 text-white/90">Theo dõi việc chuyển giao thuốc từ nhà phân phối đến nhà thuốc</p>
-        </div>
-      </motion.section>
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-4">
+        <h2 className="text-xl font-semibold text-[#007b91]">Lịch sử phân phối thuốc</h2>
+        <p className="text-slate-500 text-sm mt-1">Theo dõi việc chuyển giao thuốc từ nhà phân phối đến nhà thuốc</p>
+      </div>
 
       {/* Filters */}
       <motion.div
-        className="rounded-2xl bg-white/85 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
+        className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-4"
         variants={fadeUp}
         initial="hidden"
         animate="show"
       >
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <label className="block text-sm text-[#003544]/70 mb-1">Distributor ID</label>
+            <label className="block text-sm text-[#003544]/70 mb-1">Mã NPP</label>
             <input
               value={distributorId}
               onChange={e => updateFilter({ distributorId: e.target.value, page: 1 })}
               placeholder="Lọc theo NPP"
-              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition w-full"
+              className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
             />
           </div>
           
           <div>
-            <label className="block text-sm text-[#003544]/70 mb-1">Pharmacy ID</label>
+            <label className="block text-sm text-[#003544]/70 mb-1">Mã nhà thuốc</label>
             <input
               value={pharmacyId}
               onChange={e => updateFilter({ pharmacyId: e.target.value, page: 1 })}
               placeholder="Lọc theo Nhà thuốc"
-              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition w-full"
+              className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
             />
           </div>
           
           <div>
-            <label className="block text-sm text-[#003544]/70 mb-1">Drug ID</label>
+            <label className="block text-sm text-[#003544]/70 mb-1">Mã thuốc</label>
             <input
               value={drugId}
               onChange={e => updateFilter({ drugId: e.target.value, page: 1 })}
-              placeholder="Lọc theo Drug"
-              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition w-full"
+              placeholder="Lọc theo thuốc"
+              className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
             />
           </div>
           
@@ -157,12 +149,12 @@ export default function DistributionHistory() {
             <select
               value={status}
               onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition w-full"
+              className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
             >
               <option value="">Tất cả</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-              <option value="confirmed">Confirmed</option>
+              <option value="pending">Đang chờ</option>
+              <option value="completed">Hoàn thành</option>
+              <option value="confirmed">Đã xác nhận</option>
             </select>
           </div>
         </div>
@@ -170,27 +162,23 @@ export default function DistributionHistory() {
 
       {/* List */}
       <motion.div 
-        className="space-y-4" 
+        className="bg-white rounded-2xl border border-cyan-100 shadow-sm p-6" 
         variants={fadeUp} 
         initial="hidden" 
         animate="show"
       >
         {error ? (
-          <div className="bg-white/90 rounded-2xl border border-red-200 p-10 text-center text-red-600">
-            {error}
-          </div>
+          <div className="p-6 text-red-600">{error}</div>
         ) : items.length === 0 ? (
-          <div className="bg-white/90 rounded-2xl border border-[#90e0ef55] p-10 text-center text-slate-600">
-            Không có dữ liệu
-          </div>
+          <div className="p-6 text-slate-600">Không có dữ liệu</div>
         ) : (
-          items.map((item, idx) => (
-            <div key={idx} className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] overflow-hidden hover:shadow-lg transition">
-              <div className="p-5">
+          <div className="space-y-4">
+            {items.map((item, idx) => (
+              <div key={idx} className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-semibold text-[#003544]">
-                      {item.type === 'full_record' ? '📦 Giao dịch phân phối' : '📝 Xác nhận nhận hàng'}
+                      {item.type === 'full_record' ? 'Giao dịch phân phối' : 'Xác nhận nhận hàng'}
                     </h3>
                     <p className="text-sm text-slate-600 mt-1">
                       {new Date(item.invoice?.createdAt || item.proof?.createdAt).toLocaleString('vi-VN')}
@@ -205,7 +193,10 @@ export default function DistributionHistory() {
                         ? 'bg-amber-100 text-amber-700 border border-amber-200'
                         : 'bg-slate-100 text-slate-600 border border-slate-200'
                     }`}>
-                      {item.invoice?.status || item.proof?.status}
+                      {item.invoice?.status === 'pending' ? 'Đang chờ' : 
+                       item.invoice?.status === 'completed' ? 'Hoàn thành' :
+                       item.proof?.status === 'confirmed' ? 'Đã xác nhận' :
+                       item.invoice?.status || item.proof?.status}
                     </span>
                   )}
                 </div>
@@ -213,18 +204,15 @@ export default function DistributionHistory() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Invoice info */}
                   {item.invoice && (
-                    <div className="bg-[#f5fcff] rounded-xl p-4 border border-[#90e0ef55]">
-                      <h4 className="font-semibold text-[#003544] mb-3 flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v12a2 2 0 01-2 2z" />
-                        </svg>
+                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                      <h4 className="font-semibold text-slate-800 mb-3">
                         Hóa đơn
                       </h4>
                       <div className="space-y-2 text-sm">
                         {item.invoice.invoiceNumber && (
                           <div>
                             <span className="text-slate-600">Số hóa đơn:</span>
-                            <span className="ml-2 font-mono text-xs bg-white px-2 py-1 rounded">
+                            <span className="ml-2 font-mono text-xs bg-white px-2 py-1 rounded text-slate-700">
                               {item.invoice.invoiceNumber}
                             </span>
                           </div>
@@ -233,7 +221,7 @@ export default function DistributionHistory() {
                         {item.invoice.fromDistributor && (
                           <div>
                             <span className="text-slate-600">Từ NPP:</span>
-                            <span className="ml-2 font-medium text-[#003544]">
+                            <span className="ml-2 font-medium text-slate-800">
                               {item.invoice.fromDistributor.fullName || item.invoice.fromDistributor.username}
                             </span>
                           </div>
@@ -242,7 +230,7 @@ export default function DistributionHistory() {
                         {item.invoice.toPharmacy && (
                           <div>
                             <span className="text-slate-600">Đến nhà thuốc:</span>
-                            <span className="ml-2 font-medium text-[#003544]">
+                            <span className="ml-2 font-medium text-slate-800">
                               {item.invoice.toPharmacy.fullName || item.invoice.toPharmacy.username}
                             </span>
                           </div>
@@ -251,7 +239,7 @@ export default function DistributionHistory() {
                         {item.invoice.drug && (
                           <div>
                             <span className="text-slate-600">Thuốc:</span>
-                            <span className="ml-2 font-medium text-[#003544]">
+                            <span className="ml-2 font-medium text-slate-800">
                               {item.invoice.drug.tradeName} ({item.invoice.drug.atcCode})
                             </span>
                           </div>
@@ -260,7 +248,7 @@ export default function DistributionHistory() {
                         {item.invoice.quantity && (
                           <div>
                             <span className="text-slate-600">Số lượng:</span>
-                            <span className="ml-2 font-semibold text-[#00b4d8]">
+                            <span className="ml-2 font-semibold text-slate-800">
                               {item.invoice.quantity}
                             </span>
                           </div>
@@ -285,18 +273,15 @@ export default function DistributionHistory() {
 
                   {/* Proof info */}
                   {item.proof && (
-                    <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-                      <h4 className="font-semibold text-emerald-700 mb-3 flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                      <h4 className="font-semibold text-slate-800 mb-3">
                         Xác nhận nhận hàng
                       </h4>
                       <div className="space-y-2 text-sm">
                         {item.proof.fromDistributor && (
                           <div>
                             <span className="text-slate-600">Từ NPP:</span>
-                            <span className="ml-2 font-medium text-emerald-700">
+                            <span className="ml-2 font-medium text-slate-800">
                               {item.proof.fromDistributor.fullName || item.proof.fromDistributor.username}
                             </span>
                           </div>
@@ -305,7 +290,7 @@ export default function DistributionHistory() {
                         {item.proof.toPharmacy && (
                           <div>
                             <span className="text-slate-600">Nhà thuốc:</span>
-                            <span className="ml-2 font-medium text-emerald-700">
+                            <span className="ml-2 font-medium text-slate-800">
                               {item.proof.toPharmacy.fullName || item.proof.toPharmacy.username}
                             </span>
                           </div>
@@ -314,7 +299,7 @@ export default function DistributionHistory() {
                         {item.proof.drug && (
                           <div>
                             <span className="text-slate-600">Thuốc:</span>
-                            <span className="ml-2 font-medium text-emerald-700">
+                            <span className="ml-2 font-medium text-slate-800">
                               {item.proof.drug.tradeName} ({item.proof.drug.atcCode})
                             </span>
                           </div>
@@ -323,7 +308,7 @@ export default function DistributionHistory() {
                         {item.proof.receivedQuantity && (
                           <div>
                             <span className="text-slate-600">Số lượng nhận:</span>
-                            <span className="ml-2 font-semibold text-emerald-700">
+                            <span className="ml-2 font-semibold text-slate-800">
                               {item.proof.receivedQuantity}
                             </span>
                           </div>
@@ -332,7 +317,7 @@ export default function DistributionHistory() {
                         {item.proof.receiptDate && (
                           <div>
                             <span className="text-slate-600">Ngày nhận:</span>
-                            <span className="ml-2 text-emerald-700">
+                            <span className="ml-2 text-slate-800">
                               {new Date(item.proof.receiptDate).toLocaleDateString('vi-VN')}
                             </span>
                           </div>
@@ -369,35 +354,23 @@ export default function DistributionHistory() {
                   )}
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </motion.div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between mt-5">
-        <div className="text-sm text-slate-600">
-          Hiển thị {items.length} / {pagination.total} giao dịch
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            disabled={page <= 1}
-            onClick={() => updateFilter({ page: page - 1 })}
-            className={`px-3 py-2 rounded-xl ${page <= 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white/90 border border-[#90e0ef55] hover:bg-[#f5fcff]'}`}
-          >
-            Trước
-          </button>
-          <span className="text-sm text-slate-700">
-            Trang {page} / {pagination.pages || 1}
-          </span>
-          <button
-            disabled={page >= pagination.pages}
-            onClick={() => updateFilter({ page: page + 1 })}
-            className={`px-3 py-2 rounded-xl ${page >= pagination.pages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]'}`}
-          >
-            Sau
-          </button>
-        </div>
+      <div className="flex items-center justify-end gap-2 mt-4">
+        <button
+          disabled={page <= 1}
+          onClick={() => updateFilter({ page: page - 1 })}
+          className={`px-3 py-2 rounded-xl ${page <= 1 ? 'bg-slate-200 text-slate-400' : 'bg-white border border-cyan-200 hover:bg-[#f5fcff]'}`}
+        >Trước</button>
+        <span className="text-sm text-slate-700">Trang {page}</span>
+        <button
+          onClick={() => updateFilter({ page: page + 1 })}
+          className="px-3 py-2 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
+        >Sau</button>
       </div>
         </>
       )}

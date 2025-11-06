@@ -21,8 +21,8 @@ export default function PasswordResetRequests() {
   const status = searchParams.get('status') || 'pending';
 
   const navigationItems = useMemo(() => ([
-    { path: '/admin', label: 'Tổng quan', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>), active: false },
-    { path: '/admin/password-reset-requests', label: 'Reset mật khẩu', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>), active: true },
+    { path: '/admin', label: 'Tổng quan', icon: null, active: false },
+    { path: '/admin/password-reset-requests', label: 'Reset mật khẩu', icon: null, active: true },
   ]), []);
 
   const load = async () => {
@@ -172,22 +172,14 @@ export default function PasswordResetRequests() {
       ) : (
         <>
       {/* Banner */}
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-5 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">Yêu cầu reset mật khẩu</h2>
-          <p className="mt-1 text-white/90">Duyệt yêu cầu reset mật khẩu của pharma_company, distributor, pharmacy</p>
-        </div>
-      </motion.section>
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-4">
+        <h2 className="text-xl font-semibold text-[#007b91]">Yêu cầu reset mật khẩu</h2>
+        <p className="text-slate-500 text-sm mt-1">Duyệt yêu cầu reset mật khẩu của nhà sản xuất, nhà phân phối, nhà thuốc</p>
+      </div>
 
       {/* Filters */}
       <motion.div
-        className="rounded-2xl bg-white/85 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
+        className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-4"
         variants={fadeUp}
         initial="hidden"
         animate="show"
@@ -198,11 +190,11 @@ export default function PasswordResetRequests() {
             <select
               value={status}
               onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
+              className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
             >
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
+              <option value="pending">Đang chờ</option>
+              <option value="approved">Đã duyệt</option>
+              <option value="rejected">Đã từ chối</option>
               <option value="">Tất cả</option>
             </select>
           </div>
@@ -211,23 +203,19 @@ export default function PasswordResetRequests() {
 
       {/* List */}
       <motion.div 
-        className="space-y-4" 
+        className="bg-white rounded-2xl border border-cyan-100 shadow-sm p-6" 
         variants={fadeUp} 
         initial="hidden" 
         animate="show"
       >
         {error ? (
-          <div className="bg-white/90 rounded-2xl border border-red-200 p-10 text-center text-red-600">
-            {error}
-          </div>
+          <div className="p-6 text-red-600">{error}</div>
         ) : items.length === 0 ? (
-          <div className="bg-white/90 rounded-2xl border border-[#90e0ef55] p-10 text-center text-slate-600">
-            Không có dữ liệu
-          </div>
+          <div className="p-6 text-slate-600">Không có dữ liệu</div>
         ) : (
-          items.map((item, idx) => (
-            <div key={idx} className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] overflow-hidden hover:shadow-lg transition">
-              <div className="p-5">
+          <div className="space-y-4">
+            {items.map((item, idx) => (
+              <div key={idx} className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -235,16 +223,19 @@ export default function PasswordResetRequests() {
                         {item.user?.fullName || item.user?.username || 'N/A'}
                       </h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
-                        {item.status}
+                        {item.status === 'pending' ? 'Đang chờ' : 
+                         item.status === 'approved' ? 'Đã duyệt' :
+                         item.status === 'rejected' ? 'Đã từ chối' :
+                         item.status}
                       </span>
                     </div>
                     <div className="space-y-1 text-sm text-slate-600">
-                      <div>📧 Email: {item.user?.email}</div>
-                      <div>👤 Vai trò: {getRoleName(item.user?.role)}</div>
-                      <div>🕒 Yêu cầu lúc: {new Date(item.createdAt).toLocaleString('vi-VN')}</div>
+                      <div>Email: {item.user?.email}</div>
+                      <div>Vai trò: {getRoleName(item.user?.role)}</div>
+                      <div>Yêu cầu lúc: {new Date(item.createdAt).toLocaleString('vi-VN')}</div>
                       {item.expiresAt && (
                         <div className={new Date() > new Date(item.expiresAt) ? 'text-red-600' : ''}>
-                          ⏰ Hết hạn: {new Date(item.expiresAt).toLocaleString('vi-VN')}
+                          Hết hạn: {new Date(item.expiresAt).toLocaleString('vi-VN')}
                           {new Date() > new Date(item.expiresAt) && ' (Đã hết hạn)'}
                         </div>
                       )}
@@ -253,57 +244,45 @@ export default function PasswordResetRequests() {
                   
                   <button
                     onClick={() => openDetailModal(item)}
-                    className="px-4 py-2 rounded-lg border border-[#90e0ef55] text-[#003544] hover:bg-[#90e0ef22] transition text-sm"
+                    className="px-4 py-2 rounded-full border border-cyan-200 text-[#003544] hover:bg-[#90e0ef22] transition text-sm"
                   >
                     Chi tiết
                   </button>
                 </div>
 
                 {item.verificationInfo && (
-                  <div className="bg-[#f5fcff] rounded-xl p-3 border border-[#90e0ef55] text-sm">
-                    <div className="font-semibold text-[#003544] mb-2">Thông tin xác thực:</div>
+                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm">
+                    <div className="font-semibold text-slate-800 mb-2">Thông tin xác thực:</div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <span className="text-slate-600">License No:</span>
-                        <span className="ml-2 font-mono text-[#003544]">{item.verificationInfo.licenseNo}</span>
+                        <span className="ml-2 font-mono text-slate-800">{item.verificationInfo.licenseNo}</span>
                       </div>
                       <div>
                         <span className="text-slate-600">Tax Code:</span>
-                        <span className="ml-2 font-mono text-[#003544]">{item.verificationInfo.taxCode}</span>
+                        <span className="ml-2 font-mono text-slate-800">{item.verificationInfo.taxCode}</span>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </motion.div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between mt-5">
-        <div className="text-sm text-slate-600">
-          Hiển thị {items.length} / {pagination.total} yêu cầu
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            disabled={page <= 1}
-            onClick={() => updateFilter({ page: page - 1 })}
-            className={`px-3 py-2 rounded-xl ${page <= 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white/90 border border-[#90e0ef55] hover:bg-[#f5fcff]'}`}
-          >
-            Trước
-          </button>
-          <span className="text-sm text-slate-700">
-            Trang {page} / {pagination.pages || 1}
-          </span>
-          <button
-            disabled={page >= pagination.pages}
-            onClick={() => updateFilter({ page: page + 1 })}
-            className={`px-3 py-2 rounded-xl ${page >= pagination.pages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]'}`}
-          >
-            Sau
-          </button>
-        </div>
+      <div className="flex items-center justify-end gap-2 mt-4">
+        <button
+          disabled={page <= 1}
+          onClick={() => updateFilter({ page: page - 1 })}
+          className={`px-3 py-2 rounded-xl ${page <= 1 ? 'bg-slate-200 text-slate-400' : 'bg-white border border-cyan-200 hover:bg-[#f5fcff]'}`}
+        >Trước</button>
+        <span className="text-sm text-slate-700">Trang {page}</span>
+        <button
+          onClick={() => updateFilter({ page: page + 1 })}
+          className="px-3 py-2 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
+        >Sau</button>
       </div>
 
       {/* Detail Modal */}
@@ -340,16 +319,16 @@ export default function PasswordResetRequests() {
 
               {/* Verification info */}
               {selectedItem.verificationInfo && (
-                <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
-                  <h4 className="font-semibold text-cyan-800 mb-3">Thông tin xác thực</h4>
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <h4 className="font-semibold text-slate-800 mb-3">Thông tin xác thực</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-cyan-700">License No:</span>
-                      <span className="font-mono text-cyan-900">{selectedItem.verificationInfo.licenseNo}</span>
+                      <span className="text-slate-600">License No:</span>
+                      <span className="font-mono text-slate-800">{selectedItem.verificationInfo.licenseNo}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-cyan-700">Tax Code:</span>
-                      <span className="font-mono text-cyan-900">{selectedItem.verificationInfo.taxCode}</span>
+                      <span className="text-slate-600">Tax Code:</span>
+                      <span className="font-mono text-slate-800">{selectedItem.verificationInfo.taxCode}</span>
                     </div>
                   </div>
                 </div>
@@ -362,7 +341,10 @@ export default function PasswordResetRequests() {
                   <div className="flex justify-between">
                     <span className="text-slate-600">Trạng thái:</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedItem.status)}`}>
-                      {selectedItem.status}
+                      {selectedItem.status === 'pending' ? 'Đang chờ' : 
+                       selectedItem.status === 'approved' ? 'Đã duyệt' :
+                       selectedItem.status === 'rejected' ? 'Đã từ chối' :
+                       selectedItem.status}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -396,7 +378,7 @@ export default function PasswordResetRequests() {
                       onClick={() => handleApprove(selectedItem._id)}
                       className="flex-1 px-4 py-3 rounded-xl text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow hover:shadow-emerald-200/60 disabled:opacity-60 disabled:cursor-not-allowed font-medium"
                     >
-                      {actionLoading ? 'Đang xử lý...' : '✅ Duyệt & Gửi mật khẩu mới'}
+                      {actionLoading ? 'Đang xử lý...' : 'Duyệt & Gửi mật khẩu mới'}
                     </button>
                   </div>
                   
@@ -412,7 +394,7 @@ export default function PasswordResetRequests() {
                       onClick={() => handleReject(selectedItem._id)}
                       className="w-full px-4 py-3 rounded-xl text-white bg-gradient-to-r from-rose-500 to-red-600 shadow hover:shadow-rose-200/60 disabled:opacity-60 font-medium"
                     >
-                      {actionLoading ? 'Đang xử lý...' : '❌ Từ chối yêu cầu'}
+                      {actionLoading ? 'Đang xử lý...' : 'Từ chối yêu cầu'}
                     </button>
                   </div>
                 </div>
@@ -421,7 +403,7 @@ export default function PasswordResetRequests() {
               {selectedItem.status === 'approved' && selectedItem.reviewedAt && (
                 <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
                   <div className="text-sm text-emerald-700">
-                    ✅ Đã duyệt lúc: {new Date(selectedItem.reviewedAt).toLocaleString('vi-VN')}
+                    Đã duyệt lúc: {new Date(selectedItem.reviewedAt).toLocaleString('vi-VN')}
                   </div>
                   <div className="text-sm text-emerald-600 mt-1">
                     Mật khẩu mới đã được gửi đến email người dùng.
@@ -432,7 +414,7 @@ export default function PasswordResetRequests() {
               {selectedItem.status === 'rejected' && (
                 <div className="bg-red-50 rounded-xl p-4 border border-red-200">
                   <div className="text-sm text-red-700">
-                    ❌ Đã từ chối lúc: {new Date(selectedItem.reviewedAt).toLocaleString('vi-VN')}
+                    Đã từ chối lúc: {new Date(selectedItem.reviewedAt).toLocaleString('vi-VN')}
                   </div>
                   {selectedItem.rejectionReason && (
                     <div className="text-sm text-red-600 mt-1">

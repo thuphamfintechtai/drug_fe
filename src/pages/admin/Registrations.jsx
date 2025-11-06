@@ -21,8 +21,8 @@ export default function AdminRegistrations() {
   const status = searchParams.get('status') || 'pending';
 
   const navigationItems = useMemo(() => ([
-    { path: '/admin', label: 'Trang chủ', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>), active: false },
-    { path: '/admin/registrations', label: 'Duyệt đăng ký', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>), active: true },
+    { path: '/admin', label: 'Trang chủ', icon: null, active: false },
+    { path: '/admin/registrations', label: 'Duyệt đăng ký', icon: null, active: true },
   ]), []);
 
   useEffect(() => {
@@ -115,6 +115,26 @@ export default function AdminRegistrations() {
     setSearchParams(nextParams);
   };
 
+  const translateRole = (role) => {
+    const roleMap = {
+      'pharma_company': 'Nhà sản xuất',
+      'distributor': 'Nhà phân phối',
+      'pharmacy': 'Nhà thuốc',
+    };
+    return roleMap[role] || role;
+  };
+
+  const translateStatus = (status) => {
+    const statusMap = {
+      'pending': 'Đang chờ',
+      'approved_pending_blockchain': 'Đã duyệt - Chờ blockchain',
+      'approved': 'Đã duyệt',
+      'blockchain_failed': 'Lỗi blockchain',
+      'rejected': 'Từ chối',
+    };
+    return statusMap[status] || status;
+  };
+
   const fadeUp = {
     hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
     show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
@@ -146,7 +166,7 @@ export default function AdminRegistrations() {
       >
         <div className="flex flex-col md:flex-row gap-3 md:items-end">
           <div className="flex-1 max-w-xs">
-            <label className="block text-sm text-[#003544]/70 mb-1">Role</label>
+            <label className="block text-sm text-[#003544]/70 mb-1">Vai trò</label>
             <select
               className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
               value={role}
@@ -165,11 +185,11 @@ export default function AdminRegistrations() {
               value={status}
               onChange={e => updateFilter({ status: e.target.value, page: 1 })}
             >
-              <option value="pending">pending</option>
-              <option value="approved_pending_blockchain">approved_pending_blockchain</option>
-              <option value="approved">approved</option>
-              <option value="blockchain_failed">blockchain_failed</option>
-              <option value="rejected">rejected</option>
+              <option value="pending">Đang chờ</option>
+              <option value="approved_pending_blockchain">Đã duyệt - Chờ blockchain</option>
+              <option value="approved">Đã duyệt</option>
+              <option value="blockchain_failed">Lỗi blockchain</option>
+              <option value="rejected">Từ chối</option>
             </select>
           </div>
         </div>
@@ -180,22 +200,22 @@ export default function AdminRegistrations() {
         <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4" variants={fadeUp} initial="hidden" animate="show">
           <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-amber-400 to-yellow-400 rounded-t-2xl" />
-            <div className="p-5 pt-7">
-              <div className="text-sm text-slate-600">Pending</div>
+            <div className="p-5 pt-7 text-center">
+              <div className="text-sm text-slate-600">Đang chờ</div>
               <div className="text-2xl font-bold text-amber-600">{stats.summary?.totalPending || 0}</div>
             </div>
           </div>
           <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
-            <div className="p-5 pt-7">
-              <div className="text-sm text-slate-600">Approved</div>
+            <div className="p-5 pt-7 text-center">
+              <div className="text-sm text-slate-600">Đã duyệt</div>
               <div className="text-2xl font-bold text-emerald-600">{stats.summary?.totalApproved || 0}</div>
             </div>
           </div>
           <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-rose-400 to-red-400 rounded-t-2xl" />
-            <div className="p-5 pt-7">
-              <div className="text-sm text-slate-600">Blockchain failed</div>
+            <div className="p-5 pt-7 text-center">
+              <div className="text-sm text-slate-600">Lỗi blockchain</div>
               <div className="text-2xl font-bold text-rose-600">{stats.summary?.totalBlockchainFailed || 0}</div>
             </div>
           </div>
@@ -224,12 +244,12 @@ export default function AdminRegistrations() {
                     <div className="font-medium text-[#003544]">{r?.user?.fullName || r?.user?.username}</div>
                     <div className="text-sm text-[#003544]/70">{r?.user?.email}</div>
                   </td>
-                  <td className="px-4 py-3 text-[#003544]/80">{r.role}</td>
-                  <td className="px-4 py-3 text-[#003544]/80">{r.status}</td>
-                  <td className="px-4 py-3 text-[#003544]/80">{new Date(r.createdAt).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-[#003544]/80">{translateRole(r.role)}</td>
+                  <td className="px-4 py-3 text-[#003544]/80">{translateStatus(r.status)}</td>
+                  <td className="px-4 py-3 text-[#003544]/80">{new Date(r.createdAt).toLocaleString('vi-VN')}</td>
                   <td className="px-4 py-3 text-right">
-                    <Link to={`/admin/registrations/${r._id}`} className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-cyan-200 text-[#003544] hover:bg-[#90e0ef22] transition">Chi tiết
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6"/><path d="M3 12h12"/></svg>
+                    <Link to={`/admin/registrations/${r._id}`} className="inline-flex items-center px-3 py-2 rounded-full border border-cyan-200 text-[#003544] hover:bg-[#90e0ef22] transition">
+                      Chi tiết
                     </Link>
                   </td>
                 </tr>

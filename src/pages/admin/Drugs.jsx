@@ -20,8 +20,8 @@ export default function AdminDrugs() {
   const status = searchParams.get('status') || '';
 
   const navigationItems = useMemo(() => ([
-    { path: '/admin', label: 'Tổng quan', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>), active: false },
-    { path: '/admin/drugs', label: 'Quản lý thuốc', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>), active: true },
+    { path: '/admin', label: 'Tổng quan', icon: null, active: false },
+    { path: '/admin/drugs', label: 'Quản lý thuốc', icon: null, active: true },
   ]), []);
 
   const load = async () => {
@@ -88,6 +88,15 @@ export default function AdminDrugs() {
     setSearchParams(nextParams);
   };
 
+  const translateStatus = (status) => {
+    const statusMap = {
+      'active': 'Hoạt động',
+      'inactive': 'Không hoạt động',
+      'recalled': 'Thu hồi',
+    };
+    return statusMap[status] || status;
+  };
+
   const fadeUp = {
     hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
     show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
@@ -105,77 +114,93 @@ export default function AdminDrugs() {
       ) : (
         <>
       {/* Banner */}
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-5 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">Quản lý thuốc</h2>
-          <p className="mt-1 text-white/90">Xem tất cả thông tin thuốc và thống kê trong hệ thống</p>
-        </div>
-      </motion.section>
+      <div className="bg-white rounded-2xl border border-cyan-200 shadow-sm p-6 mb-6">
+        <h1 className="text-xl md:text-2xl font-semibold text-[#007b91]">Quản lý thuốc</h1>
+        <p className="text-slate-500 text-sm mt-1">
+          Xem thông tin thuốc và tìm kiếm theo tên thương mại, tên hoạt chất, mã ATC
+        </p>
+      </div>
 
-      {/* Filters */}
-      <motion.div
-        className="rounded-2xl bg-white/85 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
-        <div className="flex flex-col gap-3 md:flex-row md:items-end">
-          <div className="flex-1">
-            <label className="block text-sm text-[#003544]/70 mb-1">Tìm kiếm</label>
-            <input
-              value={search}
-              onChange={e => updateFilter({ search: e.target.value, page: 1 })}
-              placeholder="Tìm theo tên thuốc, ATC code..."
-              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition w-full"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-[#003544]/70 mb-1">Trạng thái</label>
-            <select
-              value={status}
-              onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-              className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
-            >
-              <option value="">Tất cả</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="recalled">Recalled</option>
-            </select>
-          </div>
+      {/* Search */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="relative flex-1">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            value={search}
+            onChange={e => updateFilter({ search: e.target.value, page: 1 })}
+            onKeyDown={e => e.key === 'Enter' && load()}
+            placeholder="Tìm theo tên thương mại, tên hoạt chất, mã ATC..."
+            className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+          />
+          <button
+            onClick={load}
+            className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+          >
+            Tìm kiếm
+          </button>
         </div>
-      </motion.div>
+        <button
+          onClick={() => { updateFilter({ search: '', status: '', page: 1 }); load(); }}
+          className="px-4 py-2.5 rounded-full border border-gray-300 text-slate-700 hover:bg-gray-50 transition"
+        >
+          Reset
+        </button>
+        <div>
+          <select
+            value={status}
+            onChange={e => updateFilter({ status: e.target.value, page: 1 })}
+            className="h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="active">Hoạt động</option>
+            <option value="inactive">Không hoạt động</option>
+            <option value="recalled">Thu hồi</option>
+          </select>
+        </div>
+      </div>
 
       {/* Stats */}
       {stats && (
-        <motion.div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5" variants={fadeUp} initial="hidden" animate="show">
-          <div className="p-5 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border border-blue-200 shadow-sm">
-            <div className="text-sm text-blue-700 mb-1">Tổng thuốc</div>
-            <div className="text-3xl font-bold text-blue-600">{stats.drugs?.total || 0}</div>
-            <div className="text-xs text-blue-600/70 mt-2">Trong hệ thống</div>
+        <motion.div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6" variants={fadeUp} initial="hidden" animate="show">
+          <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-blue-400 to-cyan-400 rounded-t-2xl" />
+            <div className="p-5 pt-7 text-center">
+              <div className="text-sm text-slate-600 mb-1">Tổng thuốc</div>
+              <div className="text-3xl font-bold text-blue-600">{stats.drugs?.total || 0}</div>
+              <div className="text-xs text-slate-500 mt-2">Trong hệ thống</div>
+            </div>
           </div>
           
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-sm text-slate-600 mb-1">Active</div>
-            <div className="text-3xl font-bold text-emerald-600">{stats.drugs?.byStatus?.active || 0}</div>
-            <div className="text-xs text-slate-500 mt-2">Đang hoạt động</div>
+          <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
+            <div className="p-5 pt-7 text-center">
+              <div className="text-sm text-slate-600 mb-1">Hoạt động</div>
+              <div className="text-3xl font-bold text-emerald-600">{stats.drugs?.byStatus?.active || 0}</div>
+              <div className="text-xs text-slate-500 mt-2">Đang hoạt động</div>
+            </div>
           </div>
           
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-sm text-slate-600 mb-1">Inactive</div>
-            <div className="text-3xl font-bold text-slate-500">{stats.drugs?.byStatus?.inactive || 0}</div>
-            <div className="text-xs text-slate-500 mt-2">Ngừng hoạt động</div>
+          <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-slate-400 to-gray-400 rounded-t-2xl" />
+            <div className="p-5 pt-7 text-center">
+              <div className="text-sm text-slate-600 mb-1">Không hoạt động</div>
+              <div className="text-3xl font-bold text-slate-600">{stats.drugs?.byStatus?.inactive || 0}</div>
+              <div className="text-xs text-slate-500 mt-2">Ngừng hoạt động</div>
+            </div>
           </div>
           
-          <div className="p-5 bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl border border-red-200 shadow-sm">
-            <div className="text-sm text-red-700 mb-1">Recalled</div>
-            <div className="text-3xl font-bold text-red-600">{stats.drugs?.byStatus?.recalled || 0}</div>
-            <div className="text-xs text-red-600/70 mt-2">Thu hồi</div>
+          <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-rose-400 to-red-400 rounded-t-2xl" />
+            <div className="p-5 pt-7 text-center">
+              <div className="text-sm text-slate-600 mb-1">Thu hồi</div>
+              <div className="text-3xl font-bold text-red-600">{stats.drugs?.byStatus?.recalled || 0}</div>
+              <div className="text-xs text-slate-500 mt-2">Đã thu hồi</div>
+            </div>
           </div>
         </motion.div>
       )}
@@ -196,51 +221,63 @@ export default function AdminDrugs() {
       )}
 
       {/* Table */}
-      <motion.div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] overflow-x-auto" variants={fadeUp} initial="hidden" animate="show">
+      <div className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden mb-6">
         {error ? (
           <div className="p-6 text-red-600">{error}</div>
+        ) : items.length === 0 ? (
+          <div className="p-16 flex flex-col items-center justify-center text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 mb-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
+            </svg>
+            <p className="text-gray-500 text-sm">Không có dữ liệu</p>
+          </div>
         ) : (
-          <table className="min-w-full">
-            <thead>
-              <tr className="text-left text-[#003544]">
-                <th className="p-3 bg-[#f5fcff]">Tên thuốc</th>
-                <th className="p-3 bg-[#f5fcff]">Generic Name</th>
-                <th className="p-3 bg-[#f5fcff]">ATC Code</th>
-                <th className="p-3 bg-[#f5fcff]">Nhà sản xuất</th>
-                <th className="p-3 bg-[#f5fcff]">Trạng thái</th>
-                <th className="p-3 bg-[#f5fcff] text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((d) => (
-                <tr key={d._id} className="border-t border-[#90e0ef40] hover:bg-[#f5fcff] transition">
-                  <td className="p-3 font-medium text-[#003544]">{d.tradeName}</td>
-                  <td className="p-3 text-[#003544]/80 text-sm">{d.genericName || '-'}</td>
-                  <td className="p-3 text-[#003544]/80 font-mono text-sm">{d.atcCode}</td>
-                  <td className="p-3 text-[#003544]/80 text-sm">{d.manufacturer?.name || 'N/A'}</td>
-                  <td className="p-3">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      d.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
-                      d.status === 'inactive' ? 'bg-slate-100 text-slate-600' :
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {d.status}
-                    </span>
-                  </td>
-                  <td className="p-3 text-right">
-                    <Link to={`/admin/drugs/${d._id}`} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#90e0ef55] text-[#003544] hover:bg-[#90e0ef22] transition text-sm">
-                      Chi tiết
-                    </Link>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tên thương mại</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tên hoạt chất</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Mã ATC</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Nhà sản xuất</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Trạng thái</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Thao tác</th>
                 </tr>
-              ))}
-              {items.length === 0 && (
-                <tr><td className="p-6 text-center text-slate-600" colSpan={6}>Không có dữ liệu</td></tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {items.map((d) => (
+                  <tr key={d._id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-800">{d.tradeName}</td>
+                    <td className="px-6 py-4 text-gray-600">{d.genericName || '-'}</td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">
+                        {d.atcCode}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">{d.manufacturer?.name || 'N/A'}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        d.status === 'active'
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                          : d.status === 'inactive'
+                          ? 'bg-slate-50 text-slate-600 border border-slate-100'
+                          : 'bg-red-50 text-red-600 border border-red-100'
+                      }`}>
+                        {translateStatus(d.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Link to={`/admin/drugs/${d._id}`} className="inline-flex items-center px-3 py-1.5 rounded-lg border border-cyan-200 text-[#003544] hover:bg-[#90e0ef22] transition text-sm">
+                        Chi tiết
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-      </motion.div>
+      </div>
 
       {/* Pagination */}
       <div className="flex items-center justify-between mt-4">

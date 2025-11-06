@@ -14,8 +14,8 @@ export default function AdminNftTracking() {
   const pageIntervalRef = useRef(null);
 
   const navigationItems = useMemo(() => ([
-    { path: '/admin', label: 'Trang chủ', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>), active: false },
-    { path: '/admin/nft-tracking', label: 'NFT Tracking', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2-1.343-2-3-2z" /></svg>), active: true },
+    { path: '/admin', label: 'Trang chủ', icon: null, active: false },
+    { path: '/admin/nft-tracking', label: 'NFT Tracking', icon: null, active: true },
   ]), []);
 
   // Loading trang giống Dashboard: xe chạy khi vào trang
@@ -50,15 +50,34 @@ export default function AdminNftTracking() {
     return () => { if (pageIntervalRef.current) { clearInterval(pageIntervalRef.current); pageIntervalRef.current = null; } };
   }, []);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!nftId.trim()) return;
-    setLoading(true); setError('');
+  const handleSearch = async () => {
+    if (!nftId.trim()) {
+      setError('Vui lòng nhập NFT ID');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setData(null);
     try {
       const { data } = await getTrackingByNftId(nftId.trim());
       setData(data?.data || data || null);
-    } catch (e2) { setError(e2?.response?.data?.message || 'Không thể tải dữ liệu'); }
-    finally { setLoading(false); }
+    } catch (e2) {
+      setError(e2?.response?.data?.message || 'Không thể tra cứu NFT');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (d) => {
+    if (!d) return 'N/A';
+    const date = new Date(d);
+    return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString('vi-VN');
+  };
+
+  const short = (s) => {
+    if (!s || typeof s !== 'string') return 'N/A';
+    if (s.length <= 12) return s;
+    return `${s.slice(0, 8)}...${s.slice(-4)}`;
   };
 
   const fadeUp = {
@@ -69,68 +88,109 @@ export default function AdminNftTracking() {
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {pageLoading ? (
-        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+        <div className="flex flex-col items-center justify-center min-h-[50vh]">
           <div className="w-full max-w-2xl">
             <TruckLoader height={72} progress={pageProgress} showTrack />
           </div>
-          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
+          <div className="text-lg text-slate-600 mt-6">Đang tra cứu...</div>
         </div>
       ) : (
-        <>
-      {/* Banner */}
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-5 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
+        <h1 className="text-xl font-semibold text-[#007b91]">Tra cứu NFT</h1>
+        <p className="text-slate-500 text-sm mt-1">Theo dõi hành trình thuốc qua NFT ID</p>
+      </div>
+
+      <motion.div
+        className="rounded-2xl bg-white/85 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-8 mb-5"
+        variants={fadeUp}
+        initial="hidden"
+        animate="show"
       >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">NFT Tracking</h2>
-          <p className="text-white/90 mt-1">Tra cứu lịch sử truy xuất theo NFT ID – minh bạch, tin cậy.</p>
+        <div className="max-w-3xl mx-auto">
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+              </svg>
+            </span>
+
+            <input
+              type="text"
+              value={nftId}
+              onChange={e => setNftId(e.target.value)}
+              placeholder="Nhập NFT ID..."
+              className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+              onKeyDown={e => e.key === 'Enter' && handleSearch()}
+            />
+
+            <button
+              onClick={handleSearch}
+              disabled={loading}
+              className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition disabled:opacity-50"
+            >
+              {loading ? 'Đang tra cứu...' : 'Tìm Kiếm'}
+            </button>
+          </div>
+          {error && (
+            <div className="mt-6 bg-white rounded-2xl border border-cyan-100 shadow-sm p-10 text-center">
+              <h3 className="text-lg font-semibold text-[#007b91] mb-2">Không tìm thấy kết quả</h3>
+              <p className="text-slate-500 text-sm mb-1">Không có dữ liệu nào khớp với NFT ID bạn đã nhập.</p>
+              <p className="text-slate-400 text-sm mb-5">Vui lòng kiểm tra lại hoặc thử với mã khác.</p>
+              <button
+                onClick={() => { setError(''); setData(null); setNftId(''); }}
+                className="px-6 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+              >
+                Thử lại
+              </button>
+            </div>
+          )}
         </div>
-      </motion.section>
-
-      {/* Form tra cứu */}
-      <motion.div
-        className="rounded-2xl bg-white/90 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
-        <form onSubmit={handleSearch} className="flex gap-2 w-full md:w-auto">
-          <input
-            value={nftId}
-            onChange={e => setNftId(e.target.value)}
-            placeholder="Nhập NFT ID"
-            className="border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition w-full md:w-[360px]"
-          />
-          <button className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]">Xem</button>
-        </form>
       </motion.div>
 
-      {/* Kết quả */}
-      <motion.div
-        className="rounded-2xl bg-white/90 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] p-5"
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
-        {loading ? (
-          <div className="flex items-center justify-center py-10 text-slate-600">Đang tải...</div>
-        ) : error ? (
-          <div className="text-red-600">{error}</div>
-        ) : data ? (
-          <pre className="text-sm whitespace-pre-wrap break-all text-[#003544] bg-[#f5fcff] border border-[#90e0ef55] p-3 rounded-xl">{JSON.stringify(data, null, 2)}</pre>
-        ) : (
-          <div className="text-slate-600">Nhập NFT ID để tra cứu</div>
-        )}
-      </motion.div>
-        </>
+      {data && (
+        <motion.div className="space-y-5" variants={fadeUp} initial="hidden" animate="show">
+          <div className="bg-white rounded-2xl border border-cyan-100 shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-full bg-cyan-500 text-white flex items-center justify-center"></div>
+              <h2 className="text-lg font-semibold text-[#007b91]">Thông tin chi tiết thuốc</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+              <div className="space-y-2">
+                <div className="text-slate-500">NFT ID</div>
+                <div className="font-mono text-cyan-700">{short(data?.nft?.tokenId || data?.tokenId || nftId)}</div>
+                <div className="text-slate-500 mt-4">Nhà sản xuất</div>
+                <div className="font-medium">{data?.manufacturer?.name || data?.drug?.manufacturer || 'N/A'}</div>
+                <div className="text-slate-500 mt-4">Ngày sản xuất</div>
+                <div className="font-medium">{formatDate(data?.drug?.manufacturingDate)}</div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-slate-500">Tên thuốc</div>
+                <div className="font-medium">{data?.drug?.tradeName || 'N/A'}</div>
+                <div className="text-slate-500 mt-4">Nhà phân phối</div>
+                <div className="font-medium">{data?.distributor?.name || 'N/A'}</div>
+                <div className="text-slate-500 mt-4">Hạn sử dụng</div>
+                <div className="font-medium">{formatDate(data?.drug?.expiryDate)}</div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              {data?.explorerUrl ? (
+                <a
+                  href={data.explorerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-6 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+                >
+                  Xem trên Blockchain →
+                </a>
+              ) : null}
+            </div>
+          </div>
+        </motion.div>
       )}
-      <style>{`
-        @keyframes float-slow { 0%,100% { transform: translateY(0) } 50% { transform: translateY(10px) } }
-      `}</style>
+      </div>
+      )}
     </DashboardLayout>
   );
 }
