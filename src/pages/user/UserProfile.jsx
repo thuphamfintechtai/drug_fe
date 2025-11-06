@@ -29,19 +29,73 @@ export default function UserProfile() {
     loadProfile();
   }, []);
 
+  useEffect(() => {
+    console.log('=== Profile State Changed ===');
+    console.log('Current profile state:', profile);
+    if (profile) {
+      console.log('Profile email:', profile.email);
+      console.log('Profile username:', profile.username);
+      console.log('Profile role:', profile.role);
+      console.log('Profile fullName:', profile.fullName);
+    }
+  }, [profile]);
+
   const loadProfile = async () => {
     try {
       setLoading(true);
       const response = await userService.getProfile();
-      if (response.success) {
-        setProfile(response.data);
+      console.log('=== Profile API Response ===');
+      console.log('Full response:', JSON.stringify(response, null, 2));
+      
+      // userService.getProfile() returns response.data which is { success: true, data: user }
+      // So response = { success: true, data: user }
+      let profileData = null;
+      
+      if (response && typeof response === 'object') {
+        if (response.success && response.data) {
+          profileData = response.data;
+          console.log('Using response.data (success: true)');
+        } else if (response._id || response.username || response.email) {
+          // Direct user object
+          profileData = response;
+          console.log('Using direct response (user object)');
+        } else if (response.data) {
+          profileData = response.data;
+          console.log('Using response.data (fallback)');
+        }
+      }
+      
+      console.log('Profile data to set:', profileData);
+      console.log('Profile keys:', profileData ? Object.keys(profileData) : 'null');
+      console.log('Profile email:', profileData?.email);
+      console.log('Profile username:', profileData?.username);
+      console.log('Profile role:', profileData?.role);
+      console.log('Profile fullName:', profileData?.fullName);
+      
+      if (profileData) {
+        setProfile(profileData);
+        console.log('✅ Profile state set');
+        console.log('Profile state after set:', profileData);
         setFormData({
-          fullName: response.data.fullName || '',
-          phone: response.data.phone || '',
+          fullName: profileData.fullName || '',
+          phone: profileData.phone || '',
         });
+        console.log('✅ Profile set successfully');
+        console.log('Profile pharmacy:', profileData.pharmacy);
+        if (profileData.pharmacy) {
+          console.log('Pharmacy keys:', Object.keys(profileData.pharmacy));
+          console.log('Pharmacy data:', JSON.stringify(profileData.pharmacy, null, 2));
+        }
+      } else {
+        console.error('❌ No profile data found in response');
+        console.error('Response structure:', response);
       }
     } catch (error) {
-      console.error('Lỗi khi tải hồ sơ:', error);
+      console.error('❌ Lỗi khi tải hồ sơ:', error);
+      console.error('Error response:', error.response);
+      if (error.response?.data) {
+        console.error('Error data:', error.response.data);
+      }
     } finally {
       setLoading(false);
     }
@@ -124,11 +178,15 @@ export default function UserProfile() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                  {profile?.fullName?.charAt(0).toUpperCase() || 'U'}
+                  {(profile?.fullName || profile?.data?.fullName || 'U').charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-[#003544]">{profile?.fullName || 'N/A'}</h2>
-                  <p className="text-slate-600">{profile?.email || 'N/A'}</p>
+                  <h2 className="text-2xl font-bold text-[#003544]">
+                    {profile?.fullName || profile?.data?.fullName || 'N/A'}
+                  </h2>
+                  <p className="text-slate-600">
+                    {profile?.email || profile?.data?.email || 'N/A'}
+                  </p>
                 </div>
               </div>
               
@@ -175,7 +233,9 @@ export default function UserProfile() {
                     className="w-full border-2 border-blue-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 ) : (
-                  <div className="font-semibold text-blue-900">{profile?.fullName || 'N/A'}</div>
+                  <div className="font-semibold text-blue-900">
+                    {profile?.fullName || profile?.data?.fullName || 'N/A'}
+                  </div>
                 )}
               </div>
 
@@ -189,24 +249,154 @@ export default function UserProfile() {
                     className="w-full border-2 border-purple-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:outline-none"
                   />
                 ) : (
-                  <div className="font-semibold text-purple-900">{profile?.phone || 'Chưa cập nhật'}</div>
+                  <div className="font-semibold text-purple-900">
+                    {profile?.phone || profile?.data?.phone || 'Chưa cập nhật'}
+                  </div>
                 )}
               </div>
 
               <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl border border-slate-200 p-4">
                 <div className="text-sm text-slate-700 mb-2">📧 Email</div>
-                <div className="font-semibold text-slate-900 truncate">{profile?.email || 'N/A'}</div>
+                <div className="font-semibold text-slate-900 truncate">
+                  {profile?.email || profile?.data?.email || 'N/A'}
+                </div>
                 <div className="text-xs text-slate-500 mt-1">Không thể thay đổi</div>
+              </div>
+
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200 p-4">
+                <div className="text-sm text-emerald-700 mb-2">👤 Username</div>
+                <div className="font-semibold text-emerald-900 font-mono">
+                  {profile?.username || profile?.data?.username || 'N/A'}
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl border border-indigo-200 p-4">
+                <div className="text-sm text-indigo-700 mb-2">🎭 Vai trò</div>
+                <div className="font-semibold text-indigo-900 capitalize">
+                  {profile?.role || profile?.data?.role || 'N/A'}
+                </div>
               </div>
 
               <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border border-amber-200 p-4">
                 <div className="text-sm text-amber-700 mb-2">📅 Ngày tham gia</div>
                 <div className="font-semibold text-amber-900">
-                  {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
+                  {(profile?.createdAt || profile?.data?.createdAt) 
+                    ? new Date(profile?.createdAt || profile?.data?.createdAt).toLocaleDateString('vi-VN', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      }) 
+                    : 'N/A'}
                 </div>
               </div>
+
+              {(profile?.walletAddress || profile?.data?.walletAddress) && (
+                <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl border border-violet-200 p-4">
+                  <div className="text-sm text-violet-700 mb-2">💼 Wallet Address</div>
+                  <div className="font-semibold text-violet-900 font-mono text-xs break-all">
+                    {profile?.walletAddress || profile?.data?.walletAddress}
+                  </div>
+                </div>
+              )}
+
+              {(profile?.status || profile?.data?.status) && (
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-4">
+                  <div className="text-sm text-green-700 mb-2">✅ Trạng thái</div>
+                  <div className="font-semibold text-green-900 capitalize">
+                    {profile?.status || profile?.data?.status}
+                  </div>
+                </div>
+              )}
+
+              {(profile?.updatedAt || profile?.data?.updatedAt) && (
+                <div className="bg-gradient-to-br from-rose-50 to-pink-50 rounded-xl border border-rose-200 p-4 md:col-span-2">
+                  <div className="text-sm text-rose-700 mb-2">🕒 Cập nhật lần cuối</div>
+                  <div className="font-semibold text-rose-900">
+                    {new Date(profile?.updatedAt || profile?.data?.updatedAt).toLocaleDateString('vi-VN', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
+
+          {/* Thông tin Pharmacy (nếu có) */}
+          {profile?.pharmacy && typeof profile.pharmacy === 'object' && profile.pharmacy._id && (
+            <motion.div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] p-6" variants={fadeUp} initial="hidden" animate="show">
+              <h3 className="text-xl font-bold text-[#003544] mb-6 flex items-center gap-2">
+                <span>🏥</span> Thông tin nhà thuốc
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {profile.pharmacy.name && (
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200 p-4">
+                    <div className="text-sm text-blue-700 mb-2">🏢 Tên nhà thuốc</div>
+                    <div className="font-semibold text-blue-900">{profile.pharmacy.name}</div>
+                  </div>
+                )}
+
+                {profile.pharmacy.licenseNo && (
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200 p-4">
+                    <div className="text-sm text-purple-700 mb-2">📜 Số giấy phép</div>
+                    <div className="font-semibold text-purple-900 font-mono">{profile.pharmacy.licenseNo}</div>
+                  </div>
+                )}
+
+                {profile.pharmacy.taxCode && (
+                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200 p-4">
+                    <div className="text-sm text-emerald-700 mb-2">🏛️ Mã số thuế</div>
+                    <div className="font-semibold text-emerald-900 font-mono">{profile.pharmacy.taxCode}</div>
+                  </div>
+                )}
+
+                {profile.pharmacy.country && (
+                  <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border border-amber-200 p-4">
+                    <div className="text-sm text-amber-700 mb-2">🌍 Quốc gia</div>
+                    <div className="font-semibold text-amber-900">{profile.pharmacy.country}</div>
+                  </div>
+                )}
+
+                {profile.pharmacy.address && (
+                  <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl border border-indigo-200 p-4 md:col-span-2">
+                    <div className="text-sm text-indigo-700 mb-2">📍 Địa chỉ</div>
+                    <div className="font-semibold text-indigo-900">{profile.pharmacy.address}</div>
+                  </div>
+                )}
+
+                {profile.pharmacy.contactEmail && (
+                  <div className="bg-gradient-to-br from-rose-50 to-pink-50 rounded-xl border border-rose-200 p-4">
+                    <div className="text-sm text-rose-700 mb-2">📧 Email liên hệ</div>
+                    <div className="font-semibold text-rose-900">{profile.pharmacy.contactEmail}</div>
+                  </div>
+                )}
+
+                {profile.pharmacy.contactPhone && (
+                  <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl border border-violet-200 p-4">
+                    <div className="text-sm text-violet-700 mb-2">📞 Số điện thoại</div>
+                    <div className="font-semibold text-violet-900">{profile.pharmacy.contactPhone}</div>
+                  </div>
+                )}
+
+                {profile.pharmacy.walletAddress && (
+                  <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl border border-slate-200 p-4 md:col-span-2">
+                    <div className="text-sm text-slate-700 mb-2">💼 Wallet Address</div>
+                    <div className="font-semibold text-slate-900 font-mono text-xs break-all">{profile.pharmacy.walletAddress}</div>
+                  </div>
+                )}
+
+                {profile.pharmacy.status && (
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-4">
+                    <div className="text-sm text-green-700 mb-2">✅ Trạng thái</div>
+                    <div className="font-semibold text-green-900 capitalize">{profile.pharmacy.status}</div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
 
           {/* Đổi mật khẩu */}
           <motion.div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] p-6" variants={fadeUp} initial="hidden" animate="show">

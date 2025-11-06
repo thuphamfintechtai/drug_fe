@@ -35,7 +35,7 @@ export default function ForgotPasswordBusiness() {
         ...formData,
         role,
       });
-      
+
       if (response.data.success) {
         setSuccess(true);
       }
@@ -93,8 +93,8 @@ export default function ForgotPasswordBusiness() {
         animate="show"
         variants={fadeUp}
       >
-        {/* Header */}
-        <div className="text-center mb-8">
+          {/* Header */}
+          <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-lg mb-4">
             <span className="text-4xl">🔐</span>
           </div>
@@ -121,7 +121,7 @@ export default function ForgotPasswordBusiness() {
               </button>
             ))}
           </div>
-        </div>
+          </div>
 
         {/* Form Card */}
         <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200 p-8">
@@ -137,47 +137,47 @@ export default function ForgotPasswordBusiness() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+            <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Email *
-                </label>
-                <input
+              </label>
+              <input
                   type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
                   className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-                  placeholder="email@company.com"
+                placeholder="email@company.com"
                   required
                   disabled={loading}
-                />
-              </div>
+              />
+            </div>
 
-              <div>
+            <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Tên đăng nhập *
-                </label>
-                <input
-                  type="text"
+              </label>
+              <input
+                type="text"
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
                   className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                   placeholder="username"
-                  required
+                required
                   disabled={loading}
-                />
-              </div>
+              />
+            </div>
 
-              <div>
+            <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Mã số thuế *
-                </label>
-                <input
+              </label>
+              <input
                   type="text"
-                  name="taxCode"
-                  value={formData.taxCode}
-                  onChange={handleChange}
+                name="taxCode"
+                value={formData.taxCode}
+                onChange={handleChange}
                   className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                   placeholder="0123456789"
                   required

@@ -67,24 +67,80 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#4BADD1]/5 via-white to-slate-50/50 px-4 py-12 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute top-20 left-10 w-72 h-72 rounded-full"
+          style={{ backgroundColor: '#4BADD1', opacity: 0.1 }}
+          animate={{
+            scale: [1, 1.2, 1],
+            x: [0, 50, 0],
+            y: [0, 30, 0],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute bottom-20 right-10 w-96 h-96 rounded-full"
+          style={{ backgroundColor: '#4BADD1', opacity: 0.08 }}
+          animate={{
+            scale: [1, 1.3, 1],
+            x: [0, -50, 0],
+            y: [0, -30, 0],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </div>
+
       <motion.div
-        className="max-w-md w-full"
+        className="max-w-md w-full relative z-10"
         initial="hidden"
         animate="show"
         variants={fadeUp}
       >
-        {/* Logo & Title */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl shadow-lg mb-4" style={{ backgroundColor: '#4BADD1' }}>
-            <span className="text-4xl font-bold text-white">DT</span>
-          </div>
-          <h1 className="text-4xl font-bold text-slate-800 mb-2">Đăng nhập</h1>
-          <p className="text-slate-600">Hệ thống truy xuất nguồn gốc thuốc</p>
+        {/* Header */}
+        <div className="text-center mb-10">
+          <motion.h1 
+            className="text-5xl font-extrabold mb-3"
+            style={{ 
+              background: 'linear-gradient(135deg, #2176FF 0%, #4BADD1 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Đăng nhập
+          </motion.h1>
+          <motion.p 
+            className="text-slate-600 text-lg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            Hệ thống truy xuất nguồn gốc thuốc
+          </motion.p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200 p-8">
+        <motion.div 
+          className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#4BADD1]/20 p-8 relative overflow-hidden"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          {/* Decorative gradient line */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#4BADD1] via-cyan-400 to-[#4BADD1]"></div>
           {error && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -194,7 +250,7 @@ export default function Login() {
               Doanh nghiệp
             </Link>
           </div>
-        </div>
+        </motion.div>
 
         {/* Back to Home */}
         <div className="text-center mt-6">

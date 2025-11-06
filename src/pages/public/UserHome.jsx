@@ -157,49 +157,6 @@ export default function UserHome() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12"
           >
-            <motion.div 
-              className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-[#4BADD1]/20 to-cyan-100/50 mb-6 relative"
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ 
-                duration: 0.8, 
-                type: "spring",
-                stiffness: 200,
-                damping: 15
-              }}
-              whileHover={{ 
-                scale: 1.1,
-                rotate: 360,
-                boxShadow: "0 20px 40px rgba(75, 173, 209, 0.3)"
-              }}
-            >
-              <motion.span
-                animate={{ 
-                  y: [0, -8, 0],
-                  rotate: [0, 5, -5, 0]
-                }}
-                transition={{ 
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className="text-5xl"
-              >
-                💊
-              </motion.span>
-              <motion.div
-                className="absolute inset-0 rounded-full border-2 border-[#4BADD1]/30"
-                animate={{
-                  scale: [1, 1.3, 1],
-                  opacity: [0.5, 0, 0.5]
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeOut"
-                }}
-              />
-            </motion.div>
             
             <motion.h1 
               className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-[#2176FF] mb-6 leading-tight tracking-tight"
@@ -707,38 +664,6 @@ export default function UserHome() {
             );
           })}
         </div>
-
-        {/* Nút Quét QR */}
-        <motion.div 
-          className="flex justify-center max-w-4xl mx-auto mt-12"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-        >
-          <motion.button
-            onClick={handleTrackDrug}
-            className="relative px-8 py-4 bg-gradient-to-r from-[#4BADD1] to-[#2176FF] text-white font-semibold rounded-xl shadow-lg overflow-hidden group"
-            whileHover={{ 
-              scale: 1.05,
-              boxShadow: "0 15px 35px rgba(75, 173, 209, 0.4)"
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <motion.div
-              className="absolute inset-0 bg-white/20"
-              initial={{ x: "-100%" }}
-              whileHover={{ x: "100%" }}
-              transition={{ duration: 0.5 }}
-            />
-            <span className="relative z-10 flex items-center gap-2">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zM14 13h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 2h3v2h-3v-2z"/>
-              </svg>
-              Quét QR Ngay
-            </span>
-          </motion.button>
-        </motion.div>
 
       </div>
     </section>
