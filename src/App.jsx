@@ -1,16 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
 import RegisterBusiness from './pages/auth/RegisterBusiness';
-import ForgotPassword from './pages/auth/ForgotPassword';
 import ForgotPasswordBusiness from './pages/auth/ForgotPasswordBusiness';
-import ResetPassword from './pages/auth/ResetPassword';
-import Dashboard from './pages/user/Dashboard';
-import UserDashboard from './pages/user/UserDashboard';
-import UserNFTTracking from './pages/user/NFTTracking';
-import UserDrugInfo from './pages/user/DrugInfo';
-import UserProfile from './pages/user/UserProfile';
+import PublicNFTTracking from './pages/public/NFTTracking';
+import PublicDrugInfo from './pages/public/DrugInfo';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminRegistrations from './pages/admin/Registrations';
 import AdminRegistrationDetail from './pages/admin/RegistrationDetail';
@@ -42,7 +35,6 @@ import PharmacyDrugs from './pages/pharmacy/Drugs';
 import PharmacyNftTracking from './pages/pharmacy/NFTTracking';
 import PharmacyProfile from './pages/pharmacy/Profile';
 import UserHome from './pages/public/UserHome';
-import VerifyToken from './pages/user/VerifyToken';
 import MetaMaskConnect from './pages/MetaMaskConnect';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
@@ -60,27 +52,15 @@ function App() {
 // Component để ẩn Navbar khi ở dashboard pages
 function AppContent() {
   const location = useLocation();
-  const dashboardPrefixes = ['/admin', '/manufacturer', '/distributor', '/pharmacy', '/user', '/dashboard'];
+  const dashboardPrefixes = ['/admin', '/manufacturer', '/distributor', '/pharmacy', '/dashboard'];
   const showNavbar = !dashboardPrefixes.some(prefix => location.pathname.startsWith(prefix));
 
   return (
     <>
       {showNavbar && <Navbar />}
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
         <Route path="/register-business" element={<RegisterBusiness />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/forgot-password-business" element={<ForgotPasswordBusiness />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
         {/* Role-based routes */}
         <Route
           path="/admin"
@@ -140,15 +120,11 @@ function AppContent() {
         <Route path="/pharmacy/nft-tracking" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyNftTracking /></ProtectedRoute>} />
         <Route path="/pharmacy/profile" element={<ProtectedRoute allowedRoles={['pharmacy']}><PharmacyProfile /></ProtectedRoute>} />
         
-        {/* User Routes */}
-        <Route path="/user" element={<ProtectedRoute allowedRoles={['user']}><UserDashboard /></ProtectedRoute>} />
-        <Route path="/user/nft-tracking" element={<ProtectedRoute allowedRoles={['user']}><UserNFTTracking /></ProtectedRoute>} />
-        <Route path="/user/drugs" element={<ProtectedRoute allowedRoles={['user']}><UserDrugInfo /></ProtectedRoute>} />
-        <Route path="/user/profile" element={<ProtectedRoute allowedRoles={['user']}><UserProfile /></ProtectedRoute>} />
-        
         {/* Public Routes */}
+        <Route path="/track/:tokenId" element={<PublicNFTTracking />} />
+        <Route path="/track" element={<PublicNFTTracking />} />
+        <Route path="/drug-info" element={<PublicDrugInfo />} />
         <Route path="/metamask" element={<MetaMaskConnect />} />
-        <Route path="/verifyToken" element={<VerifyToken />} />
         <Route path="/" element={<UserHome />} />
       </Routes>
     </>
