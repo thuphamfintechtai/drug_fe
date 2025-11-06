@@ -15,4 +15,5 @@ export { default as DashboardLayout } from './DashboardLayout';
 export { default as ProtectedRoute } from './ProtectedRoute';
 export { default as TruckAnimationButton } from './TruckAnimationButton';
 export { default as NFTMintButton } from './NFTMintButton';
+export { default as BlockchainMintingView } from './BlockchainMintingView';
 

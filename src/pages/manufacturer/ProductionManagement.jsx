@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import TruckAnimationButton from '../../components/TruckAnimationButton';
 import NFTMintButton from '../../components/NFTMintButton';
+import BlockchainMintingView from '../../components/BlockchainMintingView';
 import { 
   getDrugs,
   uploadToIPFS,
@@ -395,14 +396,14 @@ export default function ProductionManagement() {
           }
         };
 
-        console.log('💾 Saving to backend:', saveData);
+        console.log('Saving to backend:', saveData);
 
         const response = await saveMintedNFTs(saveData);
         
         if (response.data.success) {
           setMintResult(response.data.data);
           // Đợi animation hoàn thành trước khi chuyển sang completed
-          // 5 tokens với delay 0.15s mỗi token, mỗi token mất 2.5s = tổng ~3.5s
+            // 5 tokens với delay 0.15s mỗi token, mỗi token mất 2.5s = tổng ~3.5s
           setTimeout(() => {
             setMintButtonState('completed');
             setStep(4);
@@ -768,10 +769,10 @@ export default function ProductionManagement() {
 
             {/* Step 3: Minting */}
             {step === 3 && (
-              <div className="p-12 text-center">
-                <div className="w-20 h-20 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-                <div className="text-xl font-bold text-slate-800 mb-2">Đang mint NFT...</div>
-                <div className="text-sm text-slate-600">Vui lòng chờ giao dịch blockchain hoàn tất</div>
+              <div className="p-6">
+                <BlockchainMintingView 
+                  status={mintButtonState === 'completed' ? 'completed' : 'minting'}
+                />
               </div>
             )}
 
