@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import TruckAnimationButton from '../../components/TruckAnimationButton';
+import NFTMintButton from '../../components/NFTMintButton';
 import { 
   getDrugs,
   uploadToIPFS,
@@ -23,6 +24,7 @@ export default function ProductionManagement() {
   const [showDialog, setShowDialog] = useState(false);
   const [step, setStep] = useState(1); // 1: Form input, 2: IPFS upload, 3: Minting NFT
   const [uploadButtonState, setUploadButtonState] = useState('idle'); // 'idle' | 'uploading' | 'completed'
+  const [mintButtonState, setMintButtonState] = useState('idle'); // 'idle' | 'minting' | 'completed'
   const [formData, setFormData] = useState({
     drugId: '',
     batchNumber: '',
@@ -86,6 +88,7 @@ export default function ProductionManagement() {
   const handleStartProduction = () => {
     setStep(1);
     setUploadButtonState('idle');
+    setMintButtonState('idle');
     setFormData({
       drugId: '',
       batchNumber: '',
@@ -243,6 +246,7 @@ export default function ProductionManagement() {
       }
 
       setLoading(true);
+      setMintButtonState('minting');
       setStep(3);
 
       try {
@@ -397,8 +401,12 @@ export default function ProductionManagement() {
         
         if (response.data.success) {
           setMintResult(response.data.data);
-          alert(`✅ Mint thành công ${quantity} NFT!\n\nTX: ${tx.hash.slice(0, 10)}...`);
-          setStep(4);
+          // Đợi animation hoàn thành trước khi chuyển sang completed
+          // 5 tokens với delay 0.15s mỗi token, mỗi token mất 2.5s = tổng ~3.5s
+          setTimeout(() => {
+            setMintButtonState('completed');
+            setStep(4);
+          }, 3500); // Đợi animation token bay lên hoàn thành
         } else {
           throw new Error(response.data.message || 'Backend failed');
         }
@@ -416,6 +424,7 @@ export default function ProductionManagement() {
         }
         
         alert('❌ ' + errorMsg);
+        setMintButtonState('idle');
         setStep(2);
       } finally {
         setLoading(false);
@@ -426,6 +435,7 @@ export default function ProductionManagement() {
     setShowDialog(false);
     setStep(1);
     setUploadButtonState('idle');
+    setMintButtonState('idle');
     setFormData({
       drugId: '',
       batchNumber: '',
@@ -814,13 +824,15 @@ export default function ProductionManagement() {
                   >
                     ← Quay lại
                   </button>
-                  <button
+                  <NFTMintButton
                     onClick={handleMintNFT}
                     disabled={loading}
-                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 transition"
-                  >
-                    <a className="text-white">{loading ? 'Đang mint...' : 'Bước 2: Mint NFT'}</a>
-                  </button>
+                    buttonState={mintButtonState}
+                    defaultText="Bước 2: Mint NFT"
+                    mintingText="Minting..."
+                    successText="✅ Mint thành công!"
+                    loading={loading}
+                  />
                 </>
               )}
               {step === 4 && (
