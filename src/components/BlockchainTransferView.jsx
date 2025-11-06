@@ -1,28 +1,216 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import truckSvg from '../assets/truck.svg';
 
 export default function BlockchainTransferView({ 
   status = 'minting', // 'minting' | 'completed' | 'error'
   progress = 0, // 0-1: progress từ parent
-  onProgressUpdate // callback để parent có thể update progress
+  onProgressUpdate, // callback để parent có thể update progress
+  onClose // callback để đóng cửa sổ
 }) {
   const mapBarRef = useRef(null);
   const truckRef = useRef(null);
   const currentProgressRef = useRef(0);
   const animationFrameRef = useRef(null);
   
-  // Tính toán số blocks đã sáng dựa trên progress
-  const getLitBlocks = () => {
-    if (progress <= 0.2) return [];
-    if (progress <= 0.4) return [0];
-    if (progress <= 0.6) return [0, 1];
-    if (progress <= 0.8) return [0, 1, 2];
-    return [0, 1, 2, 3];
+  // Blockchain blocks configuration - giống BlockchainMintingView
+  const totalBlocks = 4;
+  const blockSize = 60;
+  const spacing = 80;
+  const width = (totalBlocks - 1) * spacing + blockSize;
+  const height = 90;
+  
+  // Tính toán active block dựa trên progress
+  const getActiveBlock = () => {
+    if (progress <= 0.25) return 0;
+    if (progress <= 0.5) return 1;
+    if (progress <= 0.75) return 2;
+    return 3;
   };
-
-  const litBlocks = getLitBlocks();
+  
+  const activeBlock = getActiveBlock();
   const isCompleted = status === 'completed';
   const isError = status === 'error';
+  
+  // Colors
+  const cyan = "#00b4d8";
+  const lightBlue = "#48cae4";
+  const softCyan = "#7EE9F2";
+
+  // Block component - giống BlockchainMintingView
+  const Block = ({
+    index,
+    isActive,
+    isCompleted,
+  }) => {
+    const x = index * spacing;
+    return (
+      <g>
+        {/* Outer rect with gradient + animated gradient movement */}
+        <motion.rect
+          x={x}
+          y={0}
+          width={blockSize}
+          height={blockSize}
+          rx="10"
+          stroke={isCompleted || isActive ? cyan : "#c4e8f0"}
+          strokeWidth={isCompleted || isActive ? 3 : 2}
+          fill={`url(#blockGradient-${index})`}
+          style={{
+            filter:
+              isActive || isCompleted
+                ? "drop-shadow(0 0 10px rgba(126,233,242,0.8))"
+                : "none",
+          }}
+          initial={{ opacity: 0.85, scale: 1 }}
+          animate={{
+            opacity: isActive || isCompleted ? 1 : 0.85,
+            scale: isActive ? 1.05 : 1,
+          }}
+          transition={{ duration: 0.3 }}
+        />
+        {/* Inner decorative lines */}
+        <line
+          x1={x + 10}
+          y1={blockSize / 2}
+          x2={x + blockSize - 10}
+          y2={blockSize / 2}
+          stroke={isActive || isCompleted ? cyan : "#b8e1f0"}
+          strokeWidth="1.5"
+          opacity={0.5}
+        />
+        <line
+          x1={x + 14}
+          y1={blockSize / 2 - 8}
+          x2={x + blockSize - 14}
+          y2={blockSize / 2 - 8}
+          stroke={isActive || isCompleted ? cyan : "#b8e1f0"}
+          strokeWidth="1"
+          opacity={0.35}
+        />
+        <line
+          x1={x + 14}
+          y1={blockSize / 2 + 8}
+          x2={x + blockSize - 14}
+          y2={blockSize / 2 + 8}
+          stroke={isActive || isCompleted ? cyan : "#b8e1f0"}
+          strokeWidth="1"
+          opacity={0.35}
+        />
+        {/* Checkmark on completed */}
+        {isCompleted && (
+          <motion.path
+            d={`M ${x + 16} ${blockSize / 2} L ${
+              x + blockSize / 2 - 5
+            } ${blockSize / 2 + 10} L ${x + blockSize - 16} ${
+              blockSize / 2 - 10
+            }`}
+            stroke="#22c55e"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 0.55, delay: index * 0.05 }}
+          />
+        )}
+      </g>
+    );
+  };
+
+  // LinkLine component - giống BlockchainMintingView
+  const LinkLine = ({
+    i,
+    active,
+    completed,
+  }) => {
+    const startX = i * spacing + blockSize;
+    const endX = (i + 1) * spacing;
+    const y = blockSize / 2;
+
+    return (
+      <g>
+        {/* Base line */}
+        <line
+          x1={startX}
+          y1={y}
+          x2={endX}
+          y2={y}
+          stroke="#c4e8f0"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+        {/* Cyan lit line when completed */}
+        {completed && (
+          <motion.line
+            x1={startX}
+            y1={y}
+            x2={endX}
+            y2={y}
+            stroke={softCyan}
+            strokeWidth="4"
+            strokeLinecap="round"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25 }}
+          />
+        )}
+        {/* Glow dot traveling when minting */}
+        {!completed && (
+          <g>
+            <motion.line
+              x1={startX}
+              y1={y}
+              x2={endX}
+              y2={y}
+              stroke="url(#lineGradient)"
+              strokeWidth="4"
+              strokeLinecap="round"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: active ? 1 : 0.2 }}
+              transition={{ duration: 0.3 }}
+            />
+            {active && (
+              <circle cx={startX} cy={y} r="6" fill={softCyan} opacity="0.9">
+                <animateMotion
+                  dur="0.8s"
+                  repeatCount="indefinite"
+                  path={`M ${startX} ${y} L ${endX} ${y}`}
+                  calcMode="linear"
+                />
+                <animate
+                  attributeName="opacity"
+                  values="0;1;1;0"
+                  dur="0.8s"
+                  repeatCount="indefinite"
+                  keyTimes="0;0.25;0.75;1"
+                />
+                <animateTransform
+                  attributeName="transform"
+                  type="scale"
+                  values="1;1.25;1"
+                  dur="0.8s"
+                  repeatCount="indefinite"
+                  keyTimes="0;0.5;1"
+                />
+              </circle>
+            )}
+          </g>
+        )}
+      </g>
+    );
+  };
+
+  // Precompute block booleans
+  const booleans = useMemo(
+    () =>
+      Array.from({ length: totalBlocks }).map((_, i) => ({
+        isActive: status === "minting" && activeBlock === i,
+        isCompleted: isCompleted && i <= activeBlock,
+      })),
+    [activeBlock, status, isCompleted]
+  );
 
   // Smooth interpolation - xe tải sẽ "đuổi" theo target position mượt mà
   useEffect(() => {
@@ -98,6 +286,7 @@ export default function BlockchainTransferView({
           padding: 20px 24px;
           color: #fff;
           background: linear-gradient(90deg, #00b4d8, #48cae4);
+          position: relative;
         }
 
         .transfer-card__title {
@@ -109,6 +298,29 @@ export default function BlockchainTransferView({
           opacity: 0.9;
           margin-top: 4px;
           font-size: 14px;
+        }
+
+        .transfer-card__close {
+          position: absolute;
+          top: 20px;
+          right: 24px;
+          width: 32px;
+          height: 32px;
+          border: none;
+          background: rgba(255, 255, 255, 0.2);
+          color: #fff;
+          border-radius: 8px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          transition: all 0.2s ease;
+        }
+
+        .transfer-card__close:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: scale(1.1);
         }
 
         .transfer-card__body {
@@ -245,26 +457,9 @@ export default function BlockchainTransferView({
         /* Blockchain strip */
         .chain {
           margin: 18px auto 10px;
-          width: clamp(300px, 88%, 880px);
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 18px;
-        }
-
-        .block {
-          width: 38px;
-          height: 38px;
-          border-radius: 8px;
-          background: #eefbff;
-          border: 2px solid #cfefff;
-          transition: all 0.3s ease;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        .block--lit {
-          border-color: #7EE9F2;
-          box-shadow: 0 0 20px 6px rgba(72, 202, 228, 0.55);
         }
 
         .actions {
@@ -285,6 +480,15 @@ export default function BlockchainTransferView({
               ? 'NFT đã đến Distributor & được xác nhận trên blockchain'
               : 'Đang vận chuyển NFT và xác minh trên blockchain...'}
           </div>
+          {isError && onClose && (
+            <button
+              className="transfer-card__close"
+              onClick={onClose}
+              aria-label="Đóng"
+            >
+              ✕
+            </button>
+          )}
         </header>
 
         <section className="transfer-card__body">
@@ -327,12 +531,90 @@ export default function BlockchainTransferView({
             </div>
           </div>
 
-          {/* CHAIN */}
+          {/* CHAIN - giống BlockchainMintingView */}
           <div className="chain">
-            <div className={`block ${litBlocks.includes(0) ? 'block--lit' : ''}`}></div>
-            <div className={`block ${litBlocks.includes(1) ? 'block--lit' : ''}`}></div>
-            <div className={`block ${litBlocks.includes(2) ? 'block--lit' : ''}`}></div>
-            <div className={`block ${litBlocks.includes(3) ? 'block--lit' : ''}`}></div>
+            <svg
+              width={width}
+              height={height}
+              viewBox={`0 0 ${width} ${height}`}
+              className="overflow-visible"
+            >
+              {/* ====== SVG defs (gradients) ====== */}
+              <defs>
+                {/* Line gradient */}
+                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor={cyan} stopOpacity="0.2">
+                    <animate
+                      attributeName="offset"
+                      values="0;0.5;1"
+                      dur="1.2s"
+                      repeatCount="indefinite"
+                    />
+                  </stop>
+                  <stop offset="50%" stopColor={softCyan} stopOpacity="1">
+                    <animate
+                      attributeName="offset"
+                      values="0;0.5;1"
+                      dur="1.2s"
+                      repeatCount="indefinite"
+                    />
+                  </stop>
+                  <stop offset="100%" stopColor={cyan} stopOpacity="0.2">
+                    <animate
+                      attributeName="offset"
+                      values="0;0.5;1"
+                      dur="1.2s"
+                      repeatCount="indefinite"
+                    />
+                  </stop>
+                </linearGradient>
+
+                {/* Moving gradient for each block */}
+                {Array.from({ length: totalBlocks }).map((_, i) => (
+                  <linearGradient
+                    key={`bg-${i}`}
+                    id={`blockGradient-${i}`}
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="0%"
+                    gradientUnits="userSpaceOnUse"
+                  >
+                    <stop offset="0%" stopColor={cyan} stopOpacity="0.85" />
+                    <stop offset="50%" stopColor={softCyan} stopOpacity="1" />
+                    <stop offset="100%" stopColor={lightBlue} stopOpacity="0.9" />
+                    {/* Animate gradient sliding horizontally */}
+                    <animate
+                      attributeName="gradientTransform"
+                      type="translate"
+                      values="0 0; 20 0; 0 0"
+                      dur="2.2s"
+                      repeatCount="indefinite"
+                    />
+                  </linearGradient>
+                ))}
+              </defs>
+
+              {/* Connection lines (N-1) */}
+              {Array.from({ length: totalBlocks - 1 }).map((_, i) => (
+                <LinkLine
+                  key={`line-${i}`}
+                  i={i}
+                  active={status === "minting" && activeBlock === i}
+                  completed={isCompleted}
+                />
+              ))}
+
+              {/* Blocks */}
+              {booleans.map(({ isActive, isCompleted }, i) => (
+                <Block
+                  key={`b-${i}`}
+                  index={i}
+                  isActive={isActive}
+                  isCompleted={isCompleted}
+                />
+              ))}
+            </svg>
           </div>
         </section>
       </main>

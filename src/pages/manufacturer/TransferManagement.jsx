@@ -238,21 +238,13 @@ export default function TransferManagement() {
       }
       
       console.error('Lỗi khi ký giao dịch hoặc lưu transaction:', e);
-      const msg = e?.message || 'Giao dịch on-chain thất bại hoặc bị hủy.';
       
-      // Set error state
+      // Set error state - người dùng sẽ tự đóng bằng nút close
       setTransferStatus('error');
       setTransferProgress(0);
       setButtonAnimating(false);
       setButtonDone(false);
-      
-      // Hiển thị error trong 3s rồi đóng
-      setTimeout(() => {
-        alert(msg + ' Bạn có thể thử lại từ lịch sử chuyển giao.');
-        setShowBlockchainView(false);
-        setTransferProgress(0);
-        setTransferStatus('minting');
-      }, 3000);
+      // Không hiển thị alert nữa, để người dùng tự đóng bằng nút close
     }
   };
 
@@ -433,6 +425,13 @@ export default function TransferManagement() {
             <BlockchainTransferView 
               status={transferStatus}
               progress={transferProgress}
+              onClose={() => {
+                setShowBlockchainView(false);
+                setTransferProgress(0);
+                setTransferStatus('minting');
+                setButtonAnimating(false);
+                setButtonDone(false);
+              }}
             />
           </div>
         </div>
