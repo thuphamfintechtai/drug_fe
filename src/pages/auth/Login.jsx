@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { useMetaMask } from '../../hooks/useMetaMask';
+import { getAddress } from 'ethers';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -11,6 +13,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { account, isConnected, isInstalled, connect } = useMetaMask();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,9 +31,40 @@ export default function Login() {
         
         console.log('Login successful, user:', user);
         console.log('User role:', userRole);
+
+        // Kiểm tra walletAddress nếu user có walletAddress
+        if (user.walletAddress) {
+          // Nếu user có walletAddress nhưng chưa kết nối MetaMask
+          if (!isConnected || !account) {
+            setError('Tài khoản này yêu cầu kết nối MetaMask. Vui lòng kết nối MetaMask trước khi đăng nhập.');
+            setLoading(false);
+            return;
+          }
+
+          // Normalize địa chỉ để so sánh (chuyển về lowercase và checksum)
+          let userWalletAddress;
+          let metaMaskAddress;
+          
+          try {
+            userWalletAddress = getAddress(user.walletAddress.toLowerCase());
+            metaMaskAddress = getAddress(account.toLowerCase());
+          } catch (err) {
+            setError('Địa chỉ ví không hợp lệ.');
+            setLoading(false);
+            return;
+          }
+
+          // So sánh địa chỉ ví
+          if (userWalletAddress !== metaMaskAddress) {
+            setError(`Địa chỉ ví MetaMask không khớp với tài khoản. Tài khoản yêu cầu: ${userWalletAddress.slice(0, 6)}...${userWalletAddress.slice(-4)}. Vui lòng kết nối đúng ví MetaMask.`);
+            setLoading(false);
+            return;
+          }
+        }
         
         if (!userRole) {
           setError('Không thể xác định vai trò người dùng');
+          setLoading(false);
           return;
         }
         

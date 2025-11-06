@@ -3,11 +3,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import LogoutButton from './LogoutButton';
+import { useMetaMask } from '../hooks/useMetaMask';
+import toast from 'react-hot-toast';
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { account, isConnected, isInstalled, isConnecting, connect, disconnect } = useMetaMask();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,6 +23,31 @@ export default function Navbar() {
   const handleLogout = () => {
     logout();
     setMobileMenuOpen(false);
+  };
+
+  const handleConnectMetaMask = async () => {
+    if (!isInstalled) {
+      toast.error('MetaMask chưa được cài đặt. Vui lòng cài đặt MetaMask extension.');
+      window.open('https://metamask.io/download/', '_blank');
+      return;
+    }
+
+    const success = await connect();
+    if (success) {
+      toast.success('Đã kết nối với MetaMask!');
+    } else {
+      toast.error('Không thể kết nối với MetaMask.');
+    }
+  };
+
+  const handleDisconnectMetaMask = () => {
+    disconnect();
+    toast.success('Đã ngắt kết nối ví MetaMask');
+  };
+
+  const formatAddress = (addr) => {
+    if (!addr) return '';
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
   return (
@@ -70,6 +98,45 @@ export default function Navbar() {
           </motion.div>
 
           <div className="hidden md:flex items-center gap-3">
+            {/* MetaMask Connection */}
+            {isConnected ? (
+              <motion.div 
+                className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30"
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <span className="text-lg">🦊</span>
+                <div className="flex flex-col">
+                  <div className="text-xs text-white/80">MetaMask</div>
+                  <div className="text-sm font-semibold text-white font-mono">{formatAddress(account)}</div>
+                </div>
+                <motion.button
+                  onClick={handleDisconnectMetaMask}
+                  className="ml-2 px-3 py-1 text-xs bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title="Ngắt kết nối ví"
+                >
+                  Ngắt
+                </motion.button>
+              </motion.div>
+            ) : (
+              <motion.button
+                onClick={handleConnectMetaMask}
+                disabled={isConnecting || !isInstalled}
+                className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg transition shadow-lg border border-white/30 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                whileHover={{ scale: isConnecting || !isInstalled ? 1 : 1.05, y: isConnecting || !isInstalled ? 0 : -2 }}
+                whileTap={{ scale: isConnecting || !isInstalled ? 1 : 0.95 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <span>🦊</span>
+                {isConnecting ? 'Đang kết nối...' : 'Kết nối MetaMask'}
+              </motion.button>
+            )}
+
             {!isAuthenticated ? (
               <>
                 <motion.div 
@@ -164,6 +231,44 @@ export default function Navbar() {
             className="md:hidden bg-[#4BADD1]/98 backdrop-blur-xl border-t border-white/20"
           >
             <div className="px-4 py-4 space-y-3">
+              {/* MetaMask Connection - Mobile */}
+              {isConnected ? (
+                <motion.div
+                  className="flex items-center justify-between p-3 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30"
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.05 }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🦊</span>
+                    <div className="flex flex-col">
+                      <div className="text-xs text-white/80">MetaMask</div>
+                      <div className="text-sm font-semibold text-white font-mono">{formatAddress(account)}</div>
+                    </div>
+                  </div>
+                  <motion.button
+                    onClick={handleDisconnectMetaMask}
+                    className="px-3 py-1 text-xs bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Ngắt
+                  </motion.button>
+                </motion.div>
+              ) : (
+                <motion.button
+                  onClick={handleConnectMetaMask}
+                  disabled={isConnecting || !isInstalled}
+                  className="w-full px-4 py-3 text-white bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-xl font-medium transition border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.05 }}
+                >
+                  <span>🦊</span>
+                  {isConnecting ? 'Đang kết nối...' : 'Kết nối MetaMask'}
+                </motion.button>
+              )}
+
               {!isAuthenticated ? (
                 <>
                   <motion.div
