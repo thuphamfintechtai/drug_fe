@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import TruckAnimationButton from '../../components/TruckAnimationButton';
 import NFTMintButton from '../../components/NFTMintButton';
@@ -22,13 +21,16 @@ import { ethers } from 'ethers';
 
 export default function ProductionManagement() {
   const [drugs, setDrugs] = useState([]);
-  const [loading, setLoading] = useState(true); // Bắt đầu với true để hiển thị loading lần đầu
+  const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
-  const [step, setStep] = useState(1); // 1: Form input, 2: IPFS upload, 3: Minting NFT
-  const [uploadButtonState, setUploadButtonState] = useState('idle'); // 'idle' | 'uploading' | 'completed'
-  const [mintButtonState, setMintButtonState] = useState('idle'); // 'idle' | 'minting' | 'completed'
+  
+  const [step, setStep] = useState(1);
+  const [uploadButtonState, setUploadButtonState] = useState('idle');
+  const [mintButtonState, setMintButtonState] = useState('idle');
+  const [processingMint, setProcessingMint] = useState(false); // FIX: Separate state for minting
+  
   const [formData, setFormData] = useState({
     drugId: '',
     batchNumber: '',
@@ -37,6 +39,7 @@ export default function ProductionManagement() {
     expiryDate: '',
     notes: '',
   });
+  
   const [ipfsData, setIpfsData] = useState(null);
   const [mintResult, setMintResult] = useState(null);
   const [shelfLifeValue, setShelfLifeValue] = useState('');
@@ -56,19 +59,46 @@ export default function ProductionManagement() {
 
   useEffect(() => {
     loadDrugs();
-    // Kiểm tra kết nối ví khi component mount
     checkInitialWalletConnection();
     
+    // FIX: Listen for account changes
+    if (window.ethereum) {
+      const handleAccountsChanged = (accounts) => {
+        if (accounts.length === 0) {
+          setWalletConnected(false);
+          setWalletAddress('');
+        } else {
+          setWalletAddress(accounts[0]);
+          setWalletConnected(true);
+        }
+      };
+      
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      
+      return () => {
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+        }
+        // Cleanup event listener
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      };
+    }
+    
     return () => {
-      // Cleanup progress interval nếu có
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
       }
     };
   }, []);
 
-  // Kiểm tra kết nối ví ban đầu
+  // FIX: Proper dependency array
+  useEffect(() => {
+    if (formData.manufacturingDate && shelfLifeValue) {
+      const computed = addDuration(formData.manufacturingDate, shelfLifeValue, shelfLifeUnit);
+      setFormData(prev => ({ ...prev, expiryDate: computed }));
+    }
+  }, [formData.manufacturingDate, shelfLifeValue, shelfLifeUnit]);
+
   const checkInitialWalletConnection = async () => {
     if (isMetaMaskInstalled()) {
       try {
@@ -86,100 +116,43 @@ export default function ProductionManagement() {
     }
   };
 
+  // FIX: Simplified loading logic
   const loadDrugs = async () => {
     try {
       setLoading(true);
       setLoadingProgress(0);
       
-      // Clear interval cũ nếu có
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
       }
       
-      // Simulate progress từ 0 đến 90% trong khi đang load
       progressIntervalRef.current = setInterval(() => {
-        setLoadingProgress(prev => {
-          if (prev < 0.9) {
-            return Math.min(prev + 0.02, 0.9);
-          }
-          return prev;
-        });
+        setLoadingProgress(prev => Math.min(prev + 0.02, 0.9));
       }, 50);
       
       const response = await getDrugs();
       
-      // Clear interval khi có response
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
       
-      // Xử lý data trước
       if (response.data.success) {
         setDrugs(response.data.data.drugs || []);
       }
       
-      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
-      // Lấy current progress từ state bằng cách dùng callback để track
-      let currentProgress = 0;
-      setLoadingProgress(prev => {
-        currentProgress = prev;
-        return prev;
-      });
+      setLoadingProgress(1);
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
-      if (currentProgress < 0.9) {
-        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
-        await new Promise(resolve => {
-          const speedUpInterval = setInterval(() => {
-            setLoadingProgress(prev => {
-              if (prev < 1) {
-                // Tăng nhanh hơn (0.15 mỗi lần thay vì 0.02) - cùng một chiếc xe tăng tốc
-                const newProgress = Math.min(prev + 0.15, 1);
-                if (newProgress >= 1) {
-                  clearInterval(speedUpInterval);
-                  resolve();
-                }
-                return newProgress;
-              }
-              clearInterval(speedUpInterval);
-              resolve();
-              return 1;
-            });
-          }, 30); // Update nhanh hơn (30ms) để xe tăng tốc mượt
-          
-          // Safety timeout: đảm bảo không chờ quá lâu
-          setTimeout(() => {
-            clearInterval(speedUpInterval);
-            setLoadingProgress(1);
-            resolve();
-          }, 500);
-        });
-      } else {
-        // Nếu đã chạy gần hết, chỉ cần set 100% và đợi một chút để đảm bảo animation hoàn thành
-        setLoadingProgress(1);
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-      
-      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
-      // Chờ một chút nữa để đảm bảo animation hoàn toàn kết thúc
-      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
-      // Clear interval khi có lỗi
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
-      
       console.error('Lỗi khi tải danh sách thuốc:', error);
-      setLoadingProgress(0);
     } finally {
       setLoading(false);
-      // Reset progress sau 0.5s
-      setTimeout(() => {
-        setLoadingProgress(0);
-      }, 500);
+      setTimeout(() => setLoadingProgress(0), 500);
     }
   };
 
@@ -187,6 +160,7 @@ export default function ProductionManagement() {
     setStep(1);
     setUploadButtonState('idle');
     setMintButtonState('idle');
+    setProcessingMint(false);
     setFormData({
       drugId: '',
       batchNumber: '',
@@ -197,10 +171,12 @@ export default function ProductionManagement() {
     });
     setIpfsData(null);
     setMintResult(null);
+    setShelfLifeValue('');
+    setShelfLifeUnit('month');
     setShowDialog(true);
   };
 
-  // Bước 1: Upload lên IPFS
+  // FIX: Don't use main loading state in dialog
   const handleUploadToIPFS = async () => {
     if (!formData.drugId || !formData.batchNumber || !formData.quantity) {
       alert('Vui lòng điền đầy đủ thông tin bắt buộc');
@@ -213,58 +189,27 @@ export default function ProductionManagement() {
       return;
     }
 
-    // Trigger animation
     setUploadButtonState('uploading');
-    setLoading(true);
+    
     try {
-      // Tạo metadata object theo format NFT metadata standard
       const selectedDrug = drugs.find(d => d._id === formData.drugId);
       const metadata = {
         name: `${selectedDrug?.tradeName || 'Unknown'} - Batch ${formData.batchNumber}`,
         description: `Lô sản xuất ${selectedDrug?.tradeName || 'Unknown'} - Số lô: ${formData.batchNumber}`,
         image: selectedDrug?.image || 'https://via.placeholder.com/400x400?text=Drug+Image',
         attributes: [
-          {
-            trait_type: 'Drug',
-            value: selectedDrug?.tradeName || 'Unknown'
-          },
-          {
-            trait_type: 'Generic Name',
-            value: selectedDrug?.genericName || 'N/A'
-          },
-          {
-            trait_type: 'Batch',
-            value: formData.batchNumber
-          },
-          {
-            trait_type: 'Manufacturing Date',
-            value: formData.manufacturingDate || 'N/A'
-          },
-          {
-            trait_type: 'Expiry Date',
-            value: formData.expiryDate || 'N/A'
-          },
-          {
-            trait_type: 'ATC Code',
-            value: selectedDrug?.atcCode || 'N/A'
-          },
-          {
-            trait_type: 'Dosage Form',
-            value: selectedDrug?.dosageForm || 'N/A'
-          },
-          {
-            trait_type: 'Strength',
-            value: selectedDrug?.strength || 'N/A'
-          }
+          { trait_type: 'Drug', value: selectedDrug?.tradeName || 'Unknown' },
+          { trait_type: 'Generic Name', value: selectedDrug?.genericName || 'N/A' },
+          { trait_type: 'Batch', value: formData.batchNumber },
+          { trait_type: 'Manufacturing Date', value: formData.manufacturingDate || 'N/A' },
+          { trait_type: 'Expiry Date', value: formData.expiryDate || 'N/A' },
+          { trait_type: 'ATC Code', value: selectedDrug?.atcCode || 'N/A' },
+          { trait_type: 'Dosage Form', value: selectedDrug?.dosageForm || 'N/A' },
+          { trait_type: 'Strength', value: selectedDrug?.strength || 'N/A' }
         ]
       };
 
-      // Gọi API upload IPFS với format đúng
-      const uploadPayload = {
-        quantity: quantity,
-        metadata: metadata
-      };
-
+      const uploadPayload = { quantity, metadata };
       console.log('📤 Uploading to IPFS:', uploadPayload);
 
       const response = await uploadToIPFS(uploadPayload);
@@ -273,12 +218,10 @@ export default function ProductionManagement() {
         const ipfsData = response.data.data || response.data;
         setIpfsData(ipfsData);
         
-        // Show completed state after truck animation finishes
         setTimeout(() => {
           setUploadButtonState('completed');
         }, 2500);
         
-        // Wait for completed animation to show, then move to next step
         setTimeout(() => {
           setStep(2);
           setUploadButtonState('idle');
@@ -291,12 +234,9 @@ export default function ProductionManagement() {
       console.error('Lỗi khi upload IPFS:', error);
       alert('❌ Không thể upload lên IPFS: ' + (error.response?.data?.message || error.message));
       setUploadButtonState('idle');
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Kiểm tra và kết nối MetaMask
   const checkWalletConnection = async () => {
     if (!isMetaMaskInstalled()) {
       alert('⚠️ Vui lòng cài đặt MetaMask để mint NFT!');
@@ -318,222 +258,189 @@ export default function ProductionManagement() {
     }
   };
 
-  // Bước 2: Mint NFT trên blockchain
-    const handleMintNFT = async () => {
-      if (!ipfsData) {
-        alert('Chưa có dữ liệu IPFS');
-        return;
-      }
+  // FIX: Improved token ID parsing with better error handling
+  const parseTokenIdsFromReceipt = (receipt, contract, expectedQuantity) => {
+    const tokenIds = [];
+    let foundEvent = false;
 
-      // Validate đầy đủ
-      if (!formData.drugId || !formData.batchNumber || !formData.quantity) {
-        alert('❌ Thiếu thông tin bắt buộc');
-        return;
-      }
-
-      const quantity = parseInt(formData.quantity);
-      if (quantity <= 0 || quantity > 10000) {
-        alert('❌ Số lượng không hợp lệ (1-10000)');
-        return;
-      }
-
-      // Kiểm tra wallet
-      if (!walletConnected) {
-        const connected = await checkWalletConnection();
-        if (!connected) return;
-      }
-
-      setLoading(true);
-      setMintButtonState('minting');
-      setStep(3);
-
+    // Try mintNFTEvent first
+    for (const log of receipt.logs) {
       try {
-        const ipfsUrl = ipfsData.ipfsUrl || `ipfs://${ipfsData.ipfsHash}`;
-        
-        console.log('🎨 Mint NFT:', { quantity, ipfsUrl });
-
-        const contract = await getNFTContract();
-        
-        // ✅ Sửa: Mint quantity NFTs độc lập (mỗi NFT = 1 amount)
-        const amounts = Array(quantity).fill(1);
-        
-        console.log('📤 Call mintNFT with amounts:', amounts);
-        
-        const tx = await contract.mintNFT(amounts);
-        console.log('⏳ TX submitted:', tx.hash);
-        
-        const receipt = await tx.wait();
-        console.log('✅ TX confirmed:', receipt);
-
-        // Parse token IDs
-        const tokenIds = [];
-        let foundEvent = false;
-
-        // Tìm mintNFTEvent
-        for (const log of receipt.logs) {
-          try {
-            const parsed = contract.interface.parseLog(log);
-            if (parsed?.name === 'mintNFTEvent' && parsed.args.tokenIds) {
-              const ids = parsed.args.tokenIds;
-              if (Array.isArray(ids)) {
-                ids.forEach(id => tokenIds.push(id.toString()));
-              } else {
-                tokenIds.push(ids.toString());
-              }
-              foundEvent = true;
-              break;
-            }
-          } catch (e) {
-            // Skip unparseable logs
+        const parsed = contract.interface.parseLog(log);
+        if (parsed?.name === 'mintNFTEvent' && parsed.args.tokenIds) {
+          const ids = parsed.args.tokenIds;
+          if (Array.isArray(ids)) {
+            ids.forEach(id => tokenIds.push(id.toString()));
+          } else {
+            tokenIds.push(ids.toString());
           }
+          foundEvent = true;
+          break;
         }
-
-        // Fallback: Tìm TransferSingle/TransferBatch
-        if (!foundEvent) {
-          for (const log of receipt.logs) {
-            try {
-              const parsed = contract.interface.parseLog(log);
-              if (parsed?.name === 'TransferSingle') {
-                const from = parsed.args.from;
-                if (from === ethers.ZeroAddress) {
-                  const tokenId = parsed.args.id.toString();
-                  const amount = parseInt(parsed.args.value.toString());
-                  
-                  // ✅ Nếu amount = 1, thêm tokenId
-                  // Nếu amount > 1, tạo tokenIds tuần tự (vì backend cần unique IDs)
-                  if (amount === 1) {
-                    tokenIds.push(tokenId);
-                  } else {
-                    const base = BigInt(tokenId);
-                    for (let i = 0; i < amount; i++) {
-                      tokenIds.push((base + BigInt(i)).toString());
-                    }
-                  }
-                }
-              } else if (parsed?.name === 'TransferBatch') {
-                const from = parsed.args.from;
-                if (from === ethers.ZeroAddress) {
-                  const ids = parsed.args.ids || [];
-                  const values = parsed.args.values || [];
-                  
-                  for (let i = 0; i < ids.length; i++) {
-                    const tokenId = ids[i].toString();
-                    const amount = parseInt(values[i].toString());
-                    
-                    if (amount === 1) {
-                      tokenIds.push(tokenId);
-                    } else {
-                      const base = BigInt(tokenId);
-                      for (let j = 0; j < amount; j++) {
-                        tokenIds.push((base + BigInt(j)).toString());
-                      }
-                    }
-                  }
-                  foundEvent = true;
-                  break;
-                }
-              }
-            } catch (e) {
-              console.warn('Cannot parse log:', e.message);
-            }
-          }
-        }
-
-        // ✅ Sort tokenIds đúng cách
-        tokenIds.sort((a, b) => {
-          const bigA = BigInt(a);
-          const bigB = BigInt(b);
-          if (bigA < bigB) return -1;
-          if (bigA > bigB) return 1;
-          return 0;
-        });
-
-        console.log('📋 Token IDs:', tokenIds);
-
-        if (tokenIds.length === 0) {
-          console.error('❌ No events found in', receipt.logs.length, 'logs');
-          throw new Error('Không tìm thấy token IDs. Kiểm tra smart contract events.');
-        }
-
-        // ✅ Điều chỉnh số lượng tokenIds nếu cần
-        if (tokenIds.length < quantity) {
-          console.warn(`⚠️ Thiếu token IDs: ${tokenIds.length}/${quantity}`);
-          const lastId = BigInt(tokenIds[tokenIds.length - 1]);
-          let nextId = lastId + BigInt(1);
-          
-          while (tokenIds.length < quantity) {
-            tokenIds.push(nextId.toString());
-            nextId = nextId + BigInt(1);
-          }
-        } else if (tokenIds.length > quantity) {
-          console.warn(`⚠️ Thừa token IDs: ${tokenIds.length}/${quantity}, cắt bớt`);
-          tokenIds.splice(quantity);
-        }
-
-        console.log('✅ Final token IDs:', tokenIds);
-
-        // Lưu vào backend
-        const selectedDrug = drugs.find(d => d._id === formData.drugId);
-        
-        const saveData = {
-          drugId: formData.drugId,
-          tokenIds: tokenIds, // Đã là array of strings
-          transactionHash: tx.hash,
-          quantity: quantity,
-          ipfsUrl: ipfsUrl,
-          mfgDate: formData.manufacturingDate || undefined,
-          expDate: formData.expiryDate || undefined,
-          batchNumber: formData.batchNumber || undefined,
-          metadata: {
-            name: `${selectedDrug?.tradeName || 'Unknown'} - Batch ${formData.batchNumber}`,
-            description: `Lô sản xuất ${selectedDrug?.tradeName}`,
-            drug: selectedDrug?.tradeName,
-            genericName: selectedDrug?.genericName,
-            atcCode: selectedDrug?.atcCode
-          }
-        };
-
-        console.log('Saving to backend:', saveData);
-
-        const response = await saveMintedNFTs(saveData);
-        
-        if (response.data.success) {
-          setMintResult(response.data.data);
-          // Đợi animation hoàn thành trước khi chuyển sang completed
-            // 5 tokens với delay 0.15s mỗi token, mỗi token mất 2.5s = tổng ~3.5s
-          setTimeout(() => {
-            setMintButtonState('completed');
-            setStep(4);
-          }, 3500); // Đợi animation token bay lên hoàn thành
-        } else {
-          throw new Error(response.data.message || 'Backend failed');
-        }
-      } catch (error) {
-        console.error('❌ Mint error:', error);
-        
-        let errorMsg = 'Không thể mint NFT';
-        
-        if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
-          errorMsg = 'Giao dịch bị từ chối';
-        } else if (error.response?.data?.message) {
-          errorMsg = error.response.data.message;
-        } else if (error.message) {
-          errorMsg = error.message;
-        }
-        
-        alert('❌ ' + errorMsg);
-        setMintButtonState('idle');
-        setStep(2);
-      } finally {
-        setLoading(false);
+      } catch (e) {
+        // Skip unparseable logs
       }
-    };
+    }
+
+    // Fallback: TransferSingle/TransferBatch
+    if (!foundEvent) {
+      for (const log of receipt.logs) {
+        try {
+          const parsed = contract.interface.parseLog(log);
+          
+          if (parsed?.name === 'TransferSingle' && parsed.args.from === ethers.ZeroAddress) {
+            tokenIds.push(parsed.args.id.toString());
+          } else if (parsed?.name === 'TransferBatch' && parsed.args.from === ethers.ZeroAddress) {
+            const ids = parsed.args.ids || [];
+            ids.forEach(id => tokenIds.push(id.toString()));
+            foundEvent = true;
+            break;
+          }
+        } catch (e) {
+          // Skip
+        }
+      }
+    }
+
+    // Sort and validate
+    tokenIds.sort((a, b) => {
+      const bigA = BigInt(a);
+      const bigB = BigInt(b);
+      return bigA < bigB ? -1 : bigA > bigB ? 1 : 0;
+    });
+
+    // FIX: Generate missing token IDs if needed
+    if (tokenIds.length < expectedQuantity && tokenIds.length > 0) {
+      const lastId = BigInt(tokenIds[tokenIds.length - 1]);
+      let nextId = lastId + BigInt(1);
+      
+      while (tokenIds.length < expectedQuantity) {
+        tokenIds.push(nextId.toString());
+        nextId = nextId + BigInt(1);
+      }
+    }
+
+    // Trim excess
+    if (tokenIds.length > expectedQuantity) {
+      tokenIds.splice(expectedQuantity);
+    }
+
+    return tokenIds;
+  };
+
+  const handleMintNFT = async () => {
+    // FIX: Prevent double submission
+    if (processingMint) return;
+    
+    if (!ipfsData) {
+      alert('Chưa có dữ liệu IPFS');
+      return;
+    }
+
+    if (!formData.drugId || !formData.batchNumber || !formData.quantity) {
+      alert('❌ Thiếu thông tin bắt buộc');
+      return;
+    }
+
+    const quantity = parseInt(formData.quantity);
+    if (quantity <= 0 || quantity > 10000) {
+      alert('❌ Số lượng không hợp lệ (1-10000)');
+      return;
+    }
+
+    if (!walletConnected) {
+      const connected = await checkWalletConnection();
+      if (!connected) return;
+    }
+
+    setProcessingMint(true);
+    setMintButtonState('minting');
+    setStep(3);
+
+    try {
+      const ipfsUrl = ipfsData.ipfsUrl || `ipfs://${ipfsData.ipfsHash}`;
+      console.log('🎨 Mint NFT:', { quantity, ipfsUrl });
+
+      const contract = await getNFTContract();
+      const amounts = Array(quantity).fill(1);
+      
+      console.log('📤 Call mintNFT with amounts:', amounts);
+      
+      const tx = await contract.mintNFT(amounts);
+      console.log('⏳ TX submitted:', tx.hash);
+      
+      const receipt = await tx.wait();
+      console.log('✅ TX confirmed:', receipt);
+
+      // FIX: Use improved parsing function
+      const tokenIds = parseTokenIdsFromReceipt(receipt, contract, quantity);
+      console.log('📋 Final token IDs:', tokenIds);
+
+      if (tokenIds.length === 0) {
+        throw new Error('Không tìm thấy token IDs. Kiểm tra smart contract events.');
+      }
+
+      // Save to backend
+      const selectedDrug = drugs.find(d => d._id === formData.drugId);
+      
+      const saveData = {
+        drugId: formData.drugId,
+        tokenIds: tokenIds,
+        transactionHash: tx.hash,
+        quantity: quantity,
+        ipfsUrl: ipfsUrl,
+        mfgDate: formData.manufacturingDate || undefined,
+        expDate: formData.expiryDate || undefined,
+        batchNumber: formData.batchNumber || undefined,
+        metadata: {
+          name: `${selectedDrug?.tradeName || 'Unknown'} - Batch ${formData.batchNumber}`,
+          description: `Lô sản xuất ${selectedDrug?.tradeName}`,
+          drug: selectedDrug?.tradeName,
+          genericName: selectedDrug?.genericName,
+          atcCode: selectedDrug?.atcCode
+        }
+      };
+
+      console.log('Saving to backend:', saveData);
+
+      const response = await saveMintedNFTs(saveData);
+      
+      if (response.data.success) {
+        setMintResult(response.data.data);
+        setTimeout(() => {
+          setMintButtonState('completed');
+          setStep(4);
+        }, 3500);
+      } else {
+        throw new Error(response.data.message || 'Backend failed');
+      }
+    } catch (error) {
+      console.error('❌ Mint error:', error);
+      
+      let errorMsg = 'Không thể mint NFT';
+      
+      if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+        errorMsg = 'Giao dịch bị từ chối';
+      } else if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      
+      alert('❌ ' + errorMsg);
+      setMintButtonState('idle');
+      setStep(2);
+    } finally {
+      setProcessingMint(false);
+    }
+  };
 
   const handleClose = () => {
     setShowDialog(false);
     setStep(1);
     setUploadButtonState('idle');
     setMintButtonState('idle');
+    setProcessingMint(false);
     setFormData({
       drugId: '',
       batchNumber: '',
@@ -548,31 +455,26 @@ export default function ProductionManagement() {
     setShelfLifeUnit('month');
   };
 
-  const fadeUp = {
-    hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
-    show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
-  };
-
   const selectedDrug = drugs.find(d => d._id === formData.drugId);
 
-  // Tính toán HSD từ NSX + thời hạn
   const addDuration = (dateStr, amount, unit) => {
     if (!dateStr || !amount) return '';
     const d = new Date(dateStr);
     const n = parseInt(amount, 10);
     if (Number.isNaN(n)) return '';
+    
     if (unit === 'day') {
       d.setDate(d.getDate() + n);
     } else if (unit === 'month') {
       const currentDate = d.getDate();
       d.setMonth(d.getMonth() + n);
-      // Điều chỉnh nếu vượt sang tháng không có ngày này
       if (d.getDate() < currentDate) {
         d.setDate(0);
       }
     } else if (unit === 'year') {
       d.setFullYear(d.getFullYear() + n);
     }
+    
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
@@ -589,14 +491,8 @@ export default function ProductionManagement() {
     return `${mm}/${dd}/${yyyy}`;
   };
 
-  useEffect(() => {
-    const computed = addDuration(formData.manufacturingDate, shelfLifeValue, shelfLifeUnit);
-    setFormData(prev => ({ ...prev, expiryDate: computed }));
-  }, [formData.manufacturingDate, shelfLifeValue, shelfLifeUnit]);
-
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Loading State - chỉ hiển thị khi đang tải, không hiển thị content cho đến khi loading = false */}
       {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
           <div className="w-full max-w-2xl">
@@ -607,65 +503,53 @@ export default function ProductionManagement() {
       ) : (
         <div className="space-y-5">
           {/* Banner */}
-          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#007b91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
-                </svg>
-                Sản xuất thuốc & Mint NFT
-              </h1>
-              <p className="text-slate-500 text-sm mt-1">Tạo lô sản xuất và mint NFT trên blockchain (2 bước: IPFS + Smart Contract)</p>
-            </div>
+          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5">
+            <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
+              </svg>
+              Sản xuất thuốc & Mint NFT
+            </h1>
+            <p className="text-slate-500 text-sm mt-1">Tạo lô sản xuất và mint NFT trên blockchain (2 bước: IPFS + Smart Contract)</p>
           </div>
 
           {/* Instructions */}
-      <motion.div
-        className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-6 mb-5 mt-5"
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
-        <h2 className="text-xl font-bold text-[#007b91] mb-4">Quy trình sản xuất</h2>
-        <div className="space-y-3">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">1</div>
-            <div>
-              <div className="font-semibold text-slate-800">Nhập thông tin sản xuất</div>
-              <div className="text-sm text-slate-600">Chọn thuốc, số lô, số lượng, ngày sản xuất & hạn sử dụng</div>
+          <div className="rounded-2xl bg-white border border-cyan-200 shadow-sm p-6">
+            <h2 className="text-xl font-bold text-[#007b91] mb-4">Quy trình sản xuất</h2>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">1</div>
+                <div>
+                  <div className="font-semibold text-slate-800">Nhập thông tin sản xuất</div>
+                  <div className="text-sm text-slate-600">Chọn thuốc, số lô, số lượng, ngày sản xuất & hạn sử dụng</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">2</div>
+                <div>
+                  <div className="font-semibold text-slate-800">Upload lên IPFS</div>
+                  <div className="text-sm text-slate-600">Lưu metadata lên Pinata IPFS</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">3</div>
+                <div>
+                  <div className="font-semibold text-slate-800">Mint NFT trên Blockchain</div>
+                  <div className="text-sm text-slate-600">Gọi Smart Contract để mint NFT</div>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">2</div>
-            <div>
-              <div className="font-semibold text-slate-800">Upload lên IPFS</div>
-              <div className="text-sm text-slate-600">Frontend gọi API Backend → Backend lưu metadata lên Pinata IPFS</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">3</div>
-            <div>
-              <div className="font-semibold text-slate-800">Mint NFT trên Blockchain</div>
-              <div className="text-sm text-slate-600">Frontend gọi Smart Contract để mint NFT với số lượng = quantity. Smart Contract phát event, Backend bắt event và lưu vào DB</div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
 
-      {/* Action Button */}
-      <motion.div
-        className="flex justify-end"
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
-        <button
-          onClick={handleStartProduction}
-          className="px-4 py-2.5 rounded-full bg-gradient-to-r from-[#00a3c4] to-[#3db6d9] text-white font-medium shadow-md hover:shadow-lg transition-all flex items-center gap-2"
-        >
-          <span className="text-white">Bắt đầu sản xuất mới</span>
-        </button>
-      </motion.div>
+          {/* Action Button */}
+          <div className="flex justify-end">
+            <button
+              onClick={handleStartProduction}
+              className="px-4 py-2.5 rounded-full bg-gradient-to-r from-[#00a3c4] to-[#3db6d9] text-white font-medium shadow-md hover:shadow-lg transition flex items-center gap-2"
+            >
+              Bắt đầu sản xuất mới
+            </button>
+          </div>
         </div>
       )}
 
@@ -674,24 +558,24 @@ export default function ProductionManagement() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll">
             <style>{`
+              /* Ẩn scrollbar trong modal để giao diện sạch hơn */
               .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
               .custom-scroll::-webkit-scrollbar { width: 0; height: 0; }
               .custom-scroll::-webkit-scrollbar-track { background: transparent; }
               .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
             `}</style>
+            
             {/* Header */}
             <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl">
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">Sản xuất & Mint NFT</h2>
-                    <p className="text-cyan-100 text-sm">
-                      {step === 1 && 'Bước 1/2: Nhập thông tin sản xuất'}
-                      {step === 2 && 'Bước 2/2: Sẵn sàng mint NFT'}
-                      {step === 3 && 'Đang mint NFT...'}
-                      {step === 4 && 'Hoàn thành!'}
-                    </p>
-                  </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Sản xuất & Mint NFT</h2>
+                  <p className="text-cyan-100 text-sm">
+                    {step === 1 && 'Bước 1/2: Nhập thông tin sản xuất'}
+                    {step === 2 && 'Bước 2/2: Sẵn sàng mint NFT'}
+                    {step === 3 && 'Đang mint NFT...'}
+                    {step === 4 && 'Hoàn thành!'}
+                  </p>
                 </div>
                 <button
                   onClick={handleClose}
@@ -792,10 +676,8 @@ export default function ProductionManagement() {
                         <option value="year">năm</option>
                       </select>
                     </div>
-                    <div className="mt-2">
-                      <div className="text-cyan-600 text-sm font-medium">
-                        Ngày hết hạn :{formatDateMDY(formData.expiryDate) || 'mm/dd/yyyy'}
-                      </div>
+                    <div className="mt-2 text-cyan-600 text-sm font-medium">
+                      Ngày hết hạn: {formatDateMDY(formData.expiryDate) || 'mm/dd/yyyy'}
                     </div>
                   </div>
                 </div>
@@ -813,7 +695,7 @@ export default function ProductionManagement() {
               </div>
             )}
 
-            {/* Step 2: IPFS Success, Ready to Mint */}
+            {/* Step 2: IPFS Success */}
             {step === 2 && ipfsData && (
               <div className="p-8 space-y-4">
                 <div className="bg-green-50 rounded-xl p-6 border border-green-200">
@@ -828,10 +710,6 @@ export default function ProductionManagement() {
                     <div className="flex justify-between">
                       <span className="text-slate-600">IPFS Hash:</span>
                       <span className="font-mono text-green-700">{ipfsData.ipfsHash}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Folder ID:</span>
-                      <span className="font-mono text-green-700">{ipfsData.folderId}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Số lượng NFT:</span>
@@ -918,12 +796,11 @@ export default function ProductionManagement() {
               {step === 1 && (
                 <TruckAnimationButton
                   onClick={handleUploadToIPFS}
-                  disabled={loading}
+                  disabled={uploadButtonState === 'uploading'}
                   buttonState={uploadButtonState}
                   defaultText="Bước 1: Upload IPFS"
                   uploadingText="Đang vận chuyển dữ liệu... 🚛"
                   successText="Upload thành công"
-                  loading={loading}
                 />
               )}
               {step === 2 && (
@@ -936,12 +813,11 @@ export default function ProductionManagement() {
                   </button>
                   <NFTMintButton
                     onClick={handleMintNFT}
-                    disabled={loading}
+                    disabled={processingMint}
                     buttonState={mintButtonState}
                     defaultText="Bước 2: Mint NFT"
                     mintingText="Minting..."
                     successText="✅ Mint thành công!"
-                    loading={loading}
                   />
                 </>
               )}
@@ -950,7 +826,7 @@ export default function ProductionManagement() {
                   onClick={handleClose}
                   className="px-6 py-2.5 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-medium shadow-md hover:shadow-lg transition"
                 >
-                  <a className="text-white">Hoàn thành</a>
+                  Hoàn thành
                 </button>
               )}
             </div>
@@ -960,4 +836,3 @@ export default function ProductionManagement() {
     </DashboardLayout>
   );
 }
-

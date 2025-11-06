@@ -512,19 +512,23 @@ export default function DrugManagement() {
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                       <button
-                          onClick={() => handleEdit(drug)}
-                          className="px-4 py-2 border-2 border-[#3db6d9] bg-[#b3e9f4] text-black rounded-full font-semibold hover:bg-[#3db6d9] hover:text-white transition-all duration-200"
-                        >
-                          Sửa
-                        </button>
-                        
+                        onClick={() => handleEdit(drug)}
+                        className="px-4 py-2 border-2 border-[#3db6d9] 
+                                  !text-[#3db6d9] rounded-full font-semibold 
+                                  hover:bg-[#3db6d9] hover:!text-white 
+                                  transition-all duration-200"
+                      >
+                        Sửa
+                      </button>
                         <button
                           onClick={() => handleDelete(drug._id)}
-                          className="px-4 py-2 border-2 border-red-500 bg-red-50 rounded-full font-semibold text-red-500 hover:bg-red-500 hover:text-white transition-all duration-200"
+                          className="px-4 py-2 border-2 border-red-500 bg-red-50 rounded-full 
+                                    font-semibold !text-red-500 
+                                    hover:bg-red-500 hover:!text-white 
+                                    transition-all duration-200"
                         >
-                          <a className="text-red-500 hover:text-white">Xóa</a>
+                          Xóa
                         </button>
-
                       </div>
                     </td>
                   </tr>

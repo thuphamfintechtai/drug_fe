@@ -1,7 +1,10 @@
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import LogoutButton from '../../components/LogoutButton';
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const getRoleLabel = (role) => {
     const roleLabels = {
@@ -37,6 +40,9 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 to-teal-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-end mb-4">
+          <LogoutButton onLogout={async () => { try { await logout(); } finally { navigate('/login'); } }} />
+        </div>
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-2xl font-bold text-cyan-700 mb-6">Thông tin tài khoản</h2>
 
