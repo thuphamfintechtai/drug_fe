@@ -277,71 +277,85 @@ export default function BlockchainTransferView({
         .transfer-card {
           width: min(980px, 96vw);
           background: #fff;
-          border-radius: 22px;
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+          border-radius: 24px;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08);
           overflow: hidden;
+          border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .transfer-card__head {
-          padding: 20px 24px;
+          padding: 28px 32px;
           color: #fff;
-          background: linear-gradient(90deg, #00b4d8, #48cae4);
+          background: linear-gradient(135deg, #00b4d8 0%, #48cae4 100%);
           position: relative;
+          box-shadow: 0 4px 12px rgba(0, 180, 216, 0.2);
         }
 
         .transfer-card__title {
           font-weight: 700;
-          font-size: 22px;
+          font-size: 24px;
+          letter-spacing: -0.02em;
+          line-height: 1.3;
         }
 
         .transfer-card__sub {
-          opacity: 0.9;
-          margin-top: 4px;
-          font-size: 14px;
+          opacity: 0.95;
+          margin-top: 6px;
+          font-size: 15px;
+          font-weight: 400;
+          line-height: 1.5;
         }
 
         .transfer-card__close {
           position: absolute;
-          top: 20px;
-          right: 24px;
-          width: 32px;
-          height: 32px;
+          top: 24px;
+          right: 32px;
+          width: 36px;
+          height: 36px;
           border: none;
-          background: rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.25);
           color: #fff;
-          border-radius: 8px;
+          border-radius: 10px;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 18px;
-          transition: all 0.2s ease;
+          font-size: 20px;
+          font-weight: 600;
+          transition: all 0.25s ease;
+          backdrop-filter: blur(4px);
         }
 
         .transfer-card__close:hover {
-          background: rgba(255, 255, 255, 0.3);
-          transform: scale(1.1);
+          background: rgba(255, 255, 255, 0.35);
+          transform: scale(1.1) rotate(90deg);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .transfer-card__close:active {
+          transform: scale(0.95) rotate(90deg);
         }
 
         .transfer-card__body {
-          padding: 28px 24px 22px;
+          padding: 36px 32px 32px;
         }
 
         .status {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 8px;
-          margin-bottom: 22px;
+          gap: 12px;
+          margin-bottom: 32px;
         }
 
         .status__spinner {
-          width: 64px;
-          height: 64px;
-          border: 5px solid #e6f7ff;
+          width: 72px;
+          height: 72px;
+          border: 6px solid #e6f7ff;
           border-top-color: #00b4d8;
           border-radius: 50%;
           animation: spin 1.1s linear infinite;
+          box-shadow: 0 4px 12px rgba(0, 180, 216, 0.15);
         }
 
         @keyframes spin {
@@ -350,18 +364,23 @@ export default function BlockchainTransferView({
 
         .status__text {
           font-weight: 700;
-          font-size: 20px;
+          font-size: 22px;
           text-align: center;
-          background: linear-gradient(90deg, #00b4d8, #48cae4);
+          background: linear-gradient(135deg, #00b4d8 0%, #48cae4 100%);
           -webkit-background-clip: text;
           background-clip: text;
           color: transparent;
+          letter-spacing: -0.01em;
+          line-height: 1.4;
         }
 
         .status__hint {
-          opacity: 0.7;
-          font-size: 13px;
+          opacity: 0.75;
+          font-size: 14px;
           text-align: center;
+          color: #64748b;
+          line-height: 1.5;
+          max-width: 480px;
         }
 
         .transfer-card.success .status__spinner {
@@ -371,6 +390,7 @@ export default function BlockchainTransferView({
         .transfer-card.success .status__text {
           background: none;
           color: #22c55e;
+          font-size: 24px;
         }
 
         .transfer-card.error .status__spinner {
@@ -380,86 +400,96 @@ export default function BlockchainTransferView({
         .transfer-card.error .status__text {
           background: none;
           color: #ef4444;
+          font-size: 24px;
         }
 
         /* MAP */
         .map {
-          margin: 26px auto 14px;
+          margin: 75px auto 20px;
           width: clamp(280px, 86%, 860px);
         }
 
         .map__bar {
           position: relative;
-          height: 14px;
+          height: 16px;
           border-radius: 999px;
-          background: #eaf7ff;
-          box-shadow: inset 0 0 0 2px rgba(0, 180, 216, 0.08);
+          background: linear-gradient(90deg, #eaf7ff 0%, #f0f9ff 100%);
+          box-shadow: inset 0 2px 4px rgba(0, 180, 216, 0.1), inset 0 0 0 2px rgba(0, 180, 216, 0.12);
         }
 
         .node {
           position: absolute;
           top: 50%;
           transform: translateY(-50%);
-          width: 18px;
-          height: 18px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
           background: #fff;
           border: 3px solid #bfefff;
-          box-shadow: 0 0 0 2px #e9fbff;
+          box-shadow: 0 0 0 3px #e9fbff, 0 2px 8px rgba(0, 0, 0, 0.08);
+          transition: all 0.3s ease;
         }
 
         .node--left {
-          left: -6px;
+          left: -8px;
         }
 
         .node--right {
-          right: -6px;
+          right: -8px;
         }
 
         .node__label {
           position: absolute;
-          top: -34px;
+          top: -65px;
           left: 50%;
           transform: translateX(-50%);
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 600;
           white-space: nowrap;
-          color: #334155;
+          color: #1e293b;
+          letter-spacing: -0.01em;
         }
 
         .node--active {
-          box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.35), 0 0 16px rgba(72, 202, 228, 0.65);
+          border-color: #7EE9F2;
+          box-shadow: 0 0 0 4px rgba(0, 180, 216, 0.25), 0 0 20px rgba(72, 202, 228, 0.7), 0 4px 12px rgba(0, 0, 0, 0.1);
+          transform: translateY(-50%) scale(1.1);
         }
 
         .node--success {
           border-color: #22c55e;
-          box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25), 0 0 18px rgba(34, 197, 94, 0.6);
+          background: #f0fdf4;
+          box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2), 0 0 24px rgba(34, 197, 94, 0.6), 0 4px 12px rgba(0, 0, 0, 0.1);
+          transform: translateY(-50%) scale(1.1);
         }
 
         .node--error {
           border-color: #ef4444;
-          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25), 0 0 18px rgba(239, 68, 68, 0.6);
+          background: #fef2f2;
+          box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2), 0 0 24px rgba(239, 68, 68, 0.6), 0 4px 12px rgba(0, 0, 0, 0.1);
+          transform: translateY(-50%) scale(1.1);
         }
 
         /* TRUCK */
         .truck {
           position: absolute;
-          top: -50px;
+          top: -65px;
           left: 0;
-          width: 90px;
+          width: 95px;
           height: auto;
           transform: translateX(0);
-          filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.15));
+          filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.2)) drop-shadow(0 2px 4px rgba(0, 180, 216, 0.3));
           will-change: transform;
           transition: transform 0.1s linear;
         }
 
         /* Blockchain strip */
         .chain {
-          margin: 18px auto 10px;
+          margin: 28px auto 16px;
           display: flex;
           align-items: center;
           justify-content: center;
+          padding: 12px 0;
         }
 
         .actions {
@@ -496,9 +526,9 @@ export default function BlockchainTransferView({
             <div className="status__spinner"></div>
             <div className="status__text">
               {isError
-                ? '❌ Chuyển giao thất bại'
+                ? 'Chuyển giao thất bại'
                 : isCompleted
-                ? '✅ Chuyển giao thành công'
+                ? 'Chuyển giao thành công'
                 : 'Đang chuyển giao & xác minh...'}
             </div>
             <div className="status__hint">
