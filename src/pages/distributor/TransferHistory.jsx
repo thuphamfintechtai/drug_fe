@@ -1,14 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckLoader from '../../components/TruckLoader';
 import { getTransferToPharmacyHistory } from '../../services/distributor/distributorService';
 
 export default function TransferHistory() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
 
   const page = parseInt(searchParams.get('page') || '1', 10);
   const search = searchParams.get('search') || '';
@@ -18,7 +21,7 @@ export default function TransferHistory() {
     { path: '/distributor', label: 'Tổng quan', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>), active: false },
     { path: '/distributor/invoices', label: 'Đơn từ nhà SX', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>), active: false },
     { path: '/distributor/transfer-pharmacy', label: 'Chuyển cho NT', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>), active: false },
-    { path: '/distributor/distribution-history', label: 'Lịch sử phân phối', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>), active: false },
+    { path: '/distributor/distribution-history', label: 'Lịch sử phân phối', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>), active: false },
     { path: '/distributor/transfer-history', label: 'Lịch sử chuyển NT', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>), active: true },
     { path: '/distributor/drugs', label: 'Quản lý thuốc', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>), active: false },
     { path: '/distributor/nft-tracking', label: 'Tra cứu NFT', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>), active: false },
@@ -27,53 +30,90 @@ export default function TransferHistory() {
 
   useEffect(() => {
     loadData();
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, [page, search, status]);
 
   const loadData = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      setLoadingProgress(0);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => (prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev));
+      }, 50);
+
       const params = { page, limit: 10 };
       if (search) params.search = search;
       if (status) params.status = status;
 
       const response = await getTransferToPharmacyHistory(params);
+
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+
       if (response.data.success) {
         const data = response.data.data || {};
         const invoices = Array.isArray(data.invoices) ? data.invoices : [];
         const distributions = Array.isArray(data.distributions) ? data.distributions : [];
         const source = invoices.length ? invoices : distributions;
-
         const mapped = source.map((row) => {
-          // Hợp nhất 2 schema: invoice (distributor → pharmacy) và distribution (pharmacy history)
           const pharmacy = row.toPharmacy || row.pharmacy || row.commercialInvoice?.toPharmacy || null;
           const transactionHash = row.chainTxHash || row.receiptTxHash || row.commercialInvoice?.chainTxHash || null;
           const quantity = row.quantity ?? row.receivedQuantity ?? row.commercialInvoice?.quantity ?? 0;
           const createdAt = row.createdAt || row.commercialInvoice?.createdAt;
           const invoiceNumber = row.invoiceNumber || row.commercialInvoice?.invoiceNumber;
           const invoiceDate = row.invoiceDate || row.commercialInvoice?.invoiceDate;
-          const status = row.status || row.commercialInvoice?.status;
-
-        return {
-            _id: row._id,
-            pharmacy,
-            drug: row.drug,
-            invoiceNumber,
-            invoiceDate,
-            quantity,
-            status,
-            createdAt,
-            transactionHash,
-            chainTxHash: transactionHash,
-          };
+          const statusRow = row.status || row.commercialInvoice?.status;
+          return { _id: row._id, pharmacy, drug: row.drug, invoiceNumber, invoiceDate, quantity, status: statusRow, createdAt, transactionHash, chainTxHash: transactionHash };
         });
-
         setItems(mapped);
         setPagination(data.pagination || { page: 1, limit: 10, total: mapped.length, pages: 1 });
+      } else {
+        setItems([]);
       }
+
+      let currentProgress = 0;
+      setLoadingProgress(prev => { currentProgress = prev; return prev; });
+      if (currentProgress < 0.9) {
+        await new Promise(resolve => {
+          const speedUp = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                const np = Math.min(prev + 0.15, 1);
+                if (np >= 1) { clearInterval(speedUp); resolve(); }
+                return np;
+              }
+              clearInterval(speedUp); resolve(); return 1;
+            });
+          }, 30);
+          setTimeout(() => { clearInterval(speedUp); setLoadingProgress(1); resolve(); }, 500);
+        });
+      } else {
+        setLoadingProgress(1);
+        await new Promise(r => setTimeout(r, 200));
+      }
+      await new Promise(r => setTimeout(r, 100));
     } catch (error) {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
       console.error('Lỗi khi tải lịch sử:', error);
+      setItems([]);
+      setLoadingProgress(0);
     } finally {
       setLoading(false);
+      setTimeout(() => setLoadingProgress(0), 500);
     }
   };
 
@@ -113,6 +153,15 @@ export default function TransferHistory() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
+        </div>
+      ) : (
+        <div className="space-y-6">
       <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
         <h1 className="text-xl font-semibold text-[#007b91]">Lịch sử chuyển cho nhà thuốc</h1>
         <p className="text-slate-500 text-sm mt-1">Theo dõi tất cả đơn chuyển giao NFT cho pharmacy</p>
@@ -166,11 +215,7 @@ export default function TransferHistory() {
       </motion.div>
 
       <motion.div className="space-y-4" variants={fadeUp} initial="hidden" animate="show">
-        {loading ? (
-          <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center text-slate-600">
-            Đang tải...
-          </div>
-        ) : items.length === 0 ? (
+        {items.length === 0 ? (
           <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
             <div className="text-5xl mb-4">🏥</div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lịch sử chuyển giao</h3>
@@ -197,14 +242,16 @@ export default function TransferHistory() {
                   </div>
                 </div>
 
-                <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200 mb-3">
-                  <div className="text-xs text-cyan-700 mb-1">🏥 Nhà thuốc</div>
-                  <div className="font-semibold text-cyan-800">{item.pharmacy?.name}</div>
-                  <div className="text-xs text-cyan-600 mt-1">{item.pharmacy?.address}</div>
-                </div>
+                {item.pharmacy && (
+                  <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200 text-sm mb-3">
+                    <div className="text-xs text-cyan-700 mb-1">🏥 Nhà thuốc</div>
+                    <div className="font-semibold text-cyan-800">{item.pharmacy?.name || 'N/A'}</div>
+                    {item.pharmacy?.address && <div className="text-xs text-cyan-600 mt-1">{item.pharmacy.address}</div>}
+                  </div>
+                )}
 
                 {item.pharmacy?.walletAddress && (
-                  <div className="bg-purple-50 rounded-xl p-3 border border-purple-200 mb-3">
+                  <div className="bg-purple-50 rounded-xl p-3 border border-purple-200 text-sm">
                     <div className="text-xs text-purple-700 mb-1">👛 Wallet Address</div>
                     <div className="font-mono text-xs text-purple-800 break-all">{item.pharmacy.walletAddress}</div>
                   </div>
@@ -277,6 +324,8 @@ export default function TransferHistory() {
           </button>
         </div>
       </div>
+      </div>
+      )}
     </DashboardLayout>
   );
 }

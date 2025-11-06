@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckLoader from '../../components/TruckLoader';
 import pharmacyService from '../../services/pharmacy/pharmacyService';
 
 export default function PharmacyNFTTracking() {
@@ -8,6 +9,8 @@ export default function PharmacyNFTTracking() {
   const [journey, setJourney] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
 
   const navigationItems = [
     { path: '/pharmacy', label: 'Tổng quan', active: false },
@@ -24,9 +27,41 @@ export default function PharmacyNFTTracking() {
       return;
     }
 
+    const start = () => {
+      setLoadingProgress(0);
+      if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => (prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev));
+      }, 50);
+    };
+    const finish = async () => {
+      if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
+      let current = 0; setLoadingProgress(p => { current = p; return p; });
+      if (current < 0.9) {
+        await new Promise(resolve => {
+          const su = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                const np = Math.min(prev + 0.15, 1);
+                if (np >= 1) { clearInterval(su); resolve(); }
+                return np;
+              }
+              clearInterval(su); resolve(); return 1;
+            });
+          }, 30);
+          setTimeout(() => { clearInterval(su); setLoadingProgress(1); resolve(); }, 500);
+        });
+      } else {
+        setLoadingProgress(1);
+        await new Promise(r => setTimeout(r, 200));
+      }
+      await new Promise(r => setTimeout(r, 100));
+    };
+
     setLoading(true);
     setSearched(true);
     setJourney(null);
+    start();
     try {
       const response = await pharmacyService.trackDrugByNFTId(tokenId.trim());
       if (response.data && response.data.success) {
@@ -35,13 +70,16 @@ export default function PharmacyNFTTracking() {
         setJourney(null);
         alert(response.data?.message || 'Không tìm thấy NFT này');
       }
+      await finish();
     } catch (error) {
       console.error('Lỗi tra cứu NFT:', error);
       setJourney(null);
       const errorMessage = error.response?.data?.message || error.message || 'Không tìm thấy NFT này hoặc không có quyền truy cập';
       alert(errorMessage);
     } finally {
+      if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
       setLoading(false);
+      setTimeout(() => setLoadingProgress(0), 500);
     }
   };
 
@@ -140,10 +178,12 @@ export default function PharmacyNFTTracking() {
       </motion.div>
 
       {loading ? (
-        <motion.div className="bg-white/90 rounded-2xl border border-[#90e0ef55] p-10 text-center" variants={fadeUp} initial="hidden" animate="show">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#90e0ef55] border-t-[#4BADD1] mb-4"></div>
-          <div className="text-xl text-slate-600">Đang tra cứu hành trình...</div>
-        </motion.div>
+        <div className="flex flex-col items-center justify-center min-h-[40vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tra cứu hành trình...</div>
+        </div>
       ) : !searched ? (
         <motion.div className="rounded-2xl border p-10 text-center" 
           style={{ 

@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckLoader from '../../components/TruckLoader';
 import pharmacyService from '../../services/pharmacy/pharmacyService';
 
 export default function InvoicesFromDistributor() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -73,11 +76,25 @@ export default function InvoicesFromDistributor() {
 
   useEffect(() => {
     loadData();
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, [page, search, status]);
 
   const loadData = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      setLoadingProgress(0);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => (prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev));
+      }, 50);
       const params = { page, limit: 10 };
       // Tìm kiếm theo mã đơn - backend sẽ tìm trong trường invoiceNumber
       if (search) params.search = search;
@@ -111,6 +128,28 @@ export default function InvoicesFromDistributor() {
         setItems([]);
         setPagination({ page: 1, limit: 10, total: 0, pages: 0 });
       }
+      // tăng tốc tới 100%
+      if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
+      let current = 0; setLoadingProgress(p => { current = p; return p; });
+      if (current < 0.9) {
+        await new Promise(resolve => {
+          const speedUp = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                const np = Math.min(prev + 0.15, 1);
+                if (np >= 1) { clearInterval(speedUp); resolve(); }
+                return np;
+              }
+              clearInterval(speedUp); resolve(); return 1;
+            });
+          }, 30);
+          setTimeout(() => { clearInterval(speedUp); setLoadingProgress(1); resolve(); }, 500);
+        });
+      } else {
+        setLoadingProgress(1);
+        await new Promise(r => setTimeout(r, 200));
+      }
+      await new Promise(r => setTimeout(r, 100));
     } catch (error) {
       console.error('Lỗi khi tải đơn hàng:', error);
       setItems([]);
@@ -118,7 +157,12 @@ export default function InvoicesFromDistributor() {
       const errorMessage = error.response?.data?.message || error.message || 'Không thể tải danh sách đơn hàng';
       console.error('Chi tiết lỗi:', errorMessage);
     } finally {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
       setLoading(false);
+      setTimeout(() => setLoadingProgress(0), 500);
     }
   };
 
@@ -224,8 +268,22 @@ export default function InvoicesFromDistributor() {
     show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
   };
 
+  if (loading) {
+    return (
+      <DashboardLayout navigationItems={navigationItems}>
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
+      <div>
       <motion.section
         className="relative overflow-hidden rounded-2xl mb-6 border border-[#7AC3DE] shadow-[0_10px_30px_rgba(75,173,209,0.15)] bg-white"
         initial={{ opacity: 0, y: -8 }}
@@ -299,9 +357,7 @@ export default function InvoicesFromDistributor() {
       </motion.div>
 
       <motion.div className="bg-white rounded-2xl border-2 border-[#7AC3DE] shadow-[0_4px_12px_rgba(122,195,222,0.12)] overflow-hidden" variants={fadeUp} initial="hidden" animate="show">
-        {loading ? (
-          <div className="bg-white p-10 text-center text-slate-600">Đang tải...</div>
-        ) : items.length === 0 ? (
+        {items.length === 0 ? (
           <div className="bg-white p-10 text-center">
             <div className="text-5xl mb-4 text-slate-800">■</div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có đơn hàng nào</h3>
@@ -372,9 +428,8 @@ export default function InvoicesFromDistributor() {
               </thead>
               <tbody>
                 {items.map((item, idx) => (
-                  <>
+                  <React.Fragment key={idx}>
                     <tr 
-                      key={idx} 
                       onClick={() => toggleExpand(idx)}
                       className="border-b border-slate-200 hover:bg-gradient-to-r hover:from-[#4BADD1]/15 hover:to-[#7AC3DE]/15 cursor-pointer transition-all duration-200"
                     >
@@ -584,7 +639,7 @@ export default function InvoicesFromDistributor() {
                         </tr>
                       )}
                     </AnimatePresence>
-                  </>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
@@ -740,10 +795,10 @@ export default function InvoicesFromDistributor() {
                 <span>{loading ? 'Đang xử lý...' : 'Xác nhận'}</span>
               </button>
             </div>
-          </div>
         </div>
+      </div>
       )}
-
+      </div>
     </DashboardLayout>
   );
 }

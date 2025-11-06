@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import pharmacyService from '../../services/pharmacy/pharmacyService';
+import TruckLoader from '../../components/TruckLoader';
 
 export default function DistributionHistory() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
   const [expandedItem, setExpandedItem] = useState(null);
 
@@ -26,11 +29,27 @@ export default function DistributionHistory() {
 
   useEffect(() => {
     loadData();
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, [page, search, status]);
 
   const loadData = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      setLoadingProgress(0);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      // Tăng dần tiến trình đến 90% trong lúc chờ API
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => (prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev));
+      }, 50);
+
       const params = { page, limit: 10 };
       if (search) params.search = search;
       if (status) params.status = status;
@@ -43,7 +62,34 @@ export default function DistributionHistory() {
     } catch (error) {
       console.error('Lỗi khi tải lịch sử:', error);
     } finally {
+      // Đưa tiến trình tới 100% và dừng interval trước khi hiển thị
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      let current = 0;
+      setLoadingProgress(p => { current = p; return p; });
+      if (current < 0.9) {
+        await new Promise(resolve => {
+          const speedUp = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                const next = Math.min(prev + 0.15, 1);
+                if (next >= 1) { clearInterval(speedUp); resolve(); }
+                return next;
+              }
+              clearInterval(speedUp); resolve(); return 1;
+            });
+          }, 30);
+          setTimeout(() => { clearInterval(speedUp); setLoadingProgress(1); resolve(); }, 500);
+        });
+      } else {
+        setLoadingProgress(1);
+        await new Promise(r => setTimeout(r, 200));
+      }
+      await new Promise(r => setTimeout(r, 100));
       setLoading(false);
+      setTimeout(() => setLoadingProgress(0), 500);
     }
   };
 
@@ -77,28 +123,37 @@ export default function DistributionHistory() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#7AC3DE] shadow-[0_10px_30px_rgba(75,173,209,0.15)] bg-white"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="relative px-6 py-8 md:px-10 md:py-12">
-          <div className="flex items-center gap-3 mb-2">
-            <svg className="w-8 h-8 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#4BADD1]">Lịch sử phân phối</h1>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
           </div>
-          <p className="text-[#7AC3DE] mt-2 text-lg flex items-center gap-2">
-            <svg className="w-5 h-5 text-[#7AC3DE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            Theo dõi toàn bộ lịch sử nhận hàng và phân phối
-          </p>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
-      </motion.section>
+      ) : (
+        <>
+          <motion.section
+            className="relative overflow-hidden rounded-2xl mb-6 border border-[#7AC3DE] shadow-[0_10px_30px_rgba(75,173,209,0.15)] bg-white"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="relative px-6 py-8 md:px-10 md:py-12">
+              <div className="flex items-center gap-3 mb-2">
+                <svg className="w-8 h-8 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#4BADD1]">Lịch sử phân phối</h1>
+              </div>
+              <p className="text-[#7AC3DE] mt-2 text-lg flex items-center gap-2">
+                <svg className="w-5 h-5 text-[#7AC3DE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Theo dõi toàn bộ lịch sử nhận hàng và phân phối
+              </p>
+            </div>
+          </motion.section>
 
       <motion.div className="rounded-2xl bg-white border-2 border-[#4BADD1] shadow-[0_4px_12px_rgba(75,173,209,0.12)] p-4 mb-5" variants={fadeUp} initial="hidden" animate="show">
         <div className="flex flex-col md:flex-row gap-3 md:items-end">
@@ -146,9 +201,7 @@ export default function DistributionHistory() {
       </motion.div>
 
       <motion.div className="bg-white rounded-2xl border-2 border-[#7AC3DE] shadow-[0_4px_12px_rgba(122,195,222,0.12)] overflow-hidden" variants={fadeUp} initial="hidden" animate="show">
-        {loading ? (
-          <div className="bg-white p-10 text-center text-slate-600">Đang tải...</div>
-        ) : items.length === 0 ? (
+        {items.length === 0 ? (
           <div className="bg-white p-10 text-center">
             <div className="text-5xl mb-4 text-slate-800">■</div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lịch sử phân phối</h3>
@@ -309,6 +362,8 @@ export default function DistributionHistory() {
           </button>
         </div>
       </div>
+        </>
+      )}
     </DashboardLayout>
   );
 }

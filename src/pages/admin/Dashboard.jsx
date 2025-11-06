@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckLoader from '../../components/TruckLoader';
 import { getSystemStats, getRegistrationStats, getDrugStats } from '../../services/admin/statsService';
 
 export default function AdminDashboard() {
@@ -9,20 +10,55 @@ export default function AdminDashboard() {
   const [registrationStats, setRegistrationStats] = useState(null);
   const [drugStats, setDrugStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
 
   useEffect(() => {
     loadStats();
+    
+    return () => {
+      // Cleanup progress interval nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, []);
 
   const loadStats = async () => {
     try {
       setLoading(true);
+      setLoadingProgress(0);
+      
+      // Clear interval cũ nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Simulate progress từ 0 đến 90% trong khi đang load
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev < 0.9) {
+            return Math.min(prev + 0.02, 0.9);
+          }
+          return prev;
+        });
+      }, 50);
+      
       const [sysRes, regRes, drugRes] = await Promise.all([
         getSystemStats(),
         getRegistrationStats(),
         getDrugStats(),
       ]);
       
+      // Clear interval khi có response
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Xử lý data trước
       if (sysRes.success) {
         setSystemStats(sysRes.data);
       }
@@ -32,10 +68,63 @@ export default function AdminDashboard() {
       if (drugRes.success) {
         setDrugStats(drugRes.data);
       }
+      
+      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
+      let currentProgress = 0;
+      setLoadingProgress(prev => {
+        currentProgress = prev;
+        return prev;
+      });
+      
+      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
+      if (currentProgress < 0.9) {
+        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
+        await new Promise(resolve => {
+          const speedUpInterval = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                const newProgress = Math.min(prev + 0.15, 1);
+                if (newProgress >= 1) {
+                  clearInterval(speedUpInterval);
+                  resolve();
+                }
+                return newProgress;
+              }
+              clearInterval(speedUpInterval);
+              resolve();
+              return 1;
+            });
+          }, 30);
+          
+          // Safety timeout
+          setTimeout(() => {
+            clearInterval(speedUpInterval);
+            setLoadingProgress(1);
+            resolve();
+          }, 500);
+        });
+      } else {
+        setLoadingProgress(1);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
+      // Clear interval khi có lỗi
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
       console.error('Error loading admin stats:', error);
+      setLoadingProgress(0);
     } finally {
       setLoading(false);
+      // Reset progress sau 0.5s
+      setTimeout(() => {
+        setLoadingProgress(0);
+      }, 500);
     }
   };
 
@@ -119,18 +208,22 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Banner (đồng bộ kiểu card trắng viền cyan) */}
-      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
-        <h1 className="text-xl font-semibold text-[#007b91]">Tổng quan hệ thống</h1>
-        <p className="text-slate-500 text-sm mt-1">Giám sát và quản lý toàn bộ hệ thống truy xuất nguồn gốc thuốc</p>
-      </div>
-
+      {/* Loading State - chỉ hiển thị khi đang tải, không hiển thị content cho đến khi loading = false */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-lg text-slate-600">Đang tải dữ liệu...</div>
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Banner (đồng bộ kiểu card trắng viền cyan) */}
+          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
+            <h1 className="text-xl font-semibold text-[#007b91]">Tổng quan hệ thống</h1>
+            <p className="text-slate-500 text-sm mt-1">Giám sát và quản lý toàn bộ hệ thống truy xuất nguồn gốc thuốc</p>
+          </div>
+          <div className="space-y-6">
           {/* Thống kê người dùng và đơn đăng ký */}
           <motion.div variants={fadeUp} initial="hidden" animate="show">
             <h2 className="text-xl font-semibold text-slate-800 mb-4">👥 Người dùng & Đơn đăng ký</h2>
@@ -337,6 +430,7 @@ export default function AdminDashboard() {
           </div>
           </div>
           </motion.div>
+          </div>
         </div>
       )}
     </DashboardLayout>

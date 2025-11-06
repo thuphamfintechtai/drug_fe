@@ -1,18 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckLoader from '../../components/TruckLoader';
 import { getDrugs, searchDrugByATCCode } from '../../services/distributor/distributorService';
 
 export default function Drugs() {
   const [drugs, setDrugs] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchAtc, setSearchAtc] = useState('');
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
 
   const navigationItems = [
     { path: '/distributor', label: 'Tổng quan', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>), active: false },
     { path: '/distributor/invoices', label: 'Đơn từ nhà SX', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>), active: false },
     { path: '/distributor/transfer-pharmacy', label: 'Chuyển cho NT', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>), active: false },
-    { path: '/distributor/distribution-history', label: 'Lịch sử phân phối', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>), active: false },
+    { path: '/distributor/distribution-history', label: 'Lịch sử phân phối', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>), active: false },
     { path: '/distributor/transfer-history', label: 'Lịch sử chuyển NT', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>), active: false },
     { path: '/distributor/drugs', label: 'Quản lý thuốc', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>), active: true },
     { path: '/distributor/nft-tracking', label: 'Tra cứu NFT', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>), active: false },
@@ -21,24 +24,72 @@ export default function Drugs() {
 
   useEffect(() => {
     loadDrugs();
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, []);
 
+  const startProgress = () => {
+    setLoadingProgress(0);
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    progressIntervalRef.current = setInterval(() => {
+      setLoadingProgress(prev => (prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev));
+    }, 50);
+  };
+
+  const finishProgress = async () => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    let current = 0;
+    setLoadingProgress(prev => { current = prev; return prev; });
+    if (current < 0.9) {
+      await new Promise(resolve => {
+        const speedUp = setInterval(() => {
+          setLoadingProgress(prev => {
+            if (prev < 1) {
+              const np = Math.min(prev + 0.15, 1);
+              if (np >= 1) { clearInterval(speedUp); resolve(); }
+              return np;
+            }
+            clearInterval(speedUp); resolve(); return 1;
+          });
+        }, 30);
+        setTimeout(() => { clearInterval(speedUp); setLoadingProgress(1); resolve(); }, 500);
+      });
+    } else {
+      setLoadingProgress(1);
+      await new Promise(r => setTimeout(r, 200));
+    }
+    await new Promise(r => setTimeout(r, 100));
+  };
+
   const loadDrugs = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      startProgress();
       const response = await getDrugs();
       if (response.data.success && response.data.data) {
-        setDrugs(Array.isArray(response.data.data.drugs) 
-          ? response.data.data.drugs 
-          : []);
+        setDrugs(Array.isArray(response.data.data.drugs) ? response.data.data.drugs : []);
       } else {
         setDrugs([]);
       }
+      await finishProgress();
     } catch (error) {
+      if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
       console.error('Lỗi khi tải danh sách thuốc:', error);
       setDrugs([]);
+      setLoadingProgress(0);
     } finally {
       setLoading(false);
+      setTimeout(() => setLoadingProgress(0), 500);
     }
   };
 
@@ -47,27 +98,26 @@ export default function Drugs() {
       loadDrugs();
       return;
     }
-
-    setLoading(true);
     try {
+      setLoading(true);
+      startProgress();
       const response = await searchDrugByATCCode(searchAtc);
       if (response.data.success) {
-        // Search có thể trả về mảng trực tiếp hoặc object với drugs
         const drugsData = response.data.data;
-        setDrugs(Array.isArray(drugsData) 
-          ? drugsData 
-          : Array.isArray(drugsData?.drugs) 
-            ? drugsData.drugs 
-            : []);
+        setDrugs(Array.isArray(drugsData) ? drugsData : Array.isArray(drugsData?.drugs) ? drugsData.drugs : []);
       } else {
         setDrugs([]);
       }
+      await finishProgress();
     } catch (error) {
+      if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
       console.error('Lỗi khi tìm kiếm:', error);
       alert('Không thể tìm kiếm thuốc');
       setDrugs([]);
+      setLoadingProgress(0);
     } finally {
       setLoading(false);
+      setTimeout(() => setLoadingProgress(0), 500);
     }
   };
 
@@ -76,11 +126,19 @@ export default function Drugs() {
     show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
   };
 
-  // Đảm bảo drugs luôn là array
   const safeDrugs = Array.isArray(drugs) ? drugs : [];
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
+        </div>
+      ) : (
+        <div className="space-y-6">
       <motion.section
         className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
         initial={{ opacity: 0, y: -8 }}
@@ -129,9 +187,7 @@ export default function Drugs() {
         initial="hidden"
         animate="show"
       >
-        {loading ? (
-          <div className="p-12 text-center text-slate-600">Đang tải...</div>
-        ) : safeDrugs.length === 0 ? (
+        {safeDrugs.length === 0 ? (
           <div className="p-12 text-center">
             <div className="text-5xl mb-4">💊</div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có thuốc nào</h3>
@@ -143,7 +199,7 @@ export default function Drugs() {
               <thead className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4]">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Tên thương mại</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Tên hoạt chất</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text_white uppercase">Tên hoạt chất</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Mã ATC</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Dạng bào chế</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Hàm lượng</th>
@@ -176,6 +232,8 @@ export default function Drugs() {
           </div>
         )}
       </motion.div>
+      </div>
+      )}
     </DashboardLayout>
   );
 }

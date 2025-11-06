@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckLoader from '../../components/TruckLoader';
+import BlockchainTransferView from '../../components/BlockchainTransferView';
 import { 
   getDistributionHistory,
   getPharmacies,
@@ -8,15 +10,12 @@ import {
   saveTransferToPharmacyTransaction,
   getInvoiceDetail
 } from '../../services/distributor/distributorService';
-import { getDistributionDetail } from '../../services/distributor/proofService';
-import { transferNFTToPharmacy, getCurrentWalletAddress, checkDistributorNFTBalances } from '../../utils/web3Helper';
-import { useAuth } from '../../context/AuthContext';
+import { transferNFTToPharmacy, checkDistributorNFTBalances } from '../../utils/web3Helper';
 
 export default function TransferToPharmacy() {
-  const { user } = useAuth();
   const [distributions, setDistributions] = useState([]);
   const [pharmacies, setPharmacies] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [selectedDistribution, setSelectedDistribution] = useState(null);
   const [formData, setFormData] = useState({
@@ -25,6 +24,14 @@ export default function TransferToPharmacy() {
     quantity: '',
     notes: '',
   });
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
+  const [dialogLoading, setDialogLoading] = useState(false);
+  const [showChainView, setShowChainView] = useState(false);
+  const [chainStatus, setChainStatus] = useState('minting');
+  const [chainProgress, setChainProgress] = useState(0);
+  const chainIntervalRef = useRef(null);
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   const navigationItems = [
     { path: '/distributor', label: 'Tổng quan', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>), active: false },
@@ -39,60 +46,110 @@ export default function TransferToPharmacy() {
 
   useEffect(() => {
     loadData();
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      if (chainIntervalRef.current) {
+        clearInterval(chainIntervalRef.current);
+        chainIntervalRef.current = null;
+      }
+    };
   }, []);
 
   const loadData = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      setLoadingProgress(0);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => (prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev));
+      }, 50);
+
       const [distRes, pharmRes] = await Promise.all([
-        getDistributionHistory({ status: 'confirmed' }), // Chỉ lấy đã confirmed (đã nhận NFT từ manufacturer)
+        getDistributionHistory({ status: 'confirmed' }),
         getPharmacies()
       ]);
-      
+
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+
       if (distRes.data.success) {
         setDistributions(distRes.data.data.distributions || []);
       }
       if (pharmRes.data.success && pharmRes.data.data) {
-        setPharmacies(Array.isArray(pharmRes.data.data.pharmacies) 
-          ? pharmRes.data.data.pharmacies 
-          : []);
+        setPharmacies(Array.isArray(pharmRes.data.data.pharmacies) ? pharmRes.data.data.pharmacies : []);
       } else {
         setPharmacies([]);
       }
+
+      let currentProgress = 0;
+      setLoadingProgress(prev => { currentProgress = prev; return prev; });
+      if (currentProgress < 0.9) {
+        await new Promise(resolve => {
+          const speedUp = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                const np = Math.min(prev + 0.15, 1);
+                if (np >= 1) {
+                  clearInterval(speedUp);
+                  resolve();
+                }
+                return np;
+              }
+              clearInterval(speedUp);
+              resolve();
+              return 1;
+            });
+          }, 30);
+          setTimeout(() => { clearInterval(speedUp); setLoadingProgress(1); resolve(); }, 500);
+        });
+      } else {
+        setLoadingProgress(1);
+        await new Promise(r => setTimeout(r, 200));
+      }
+      await new Promise(r => setTimeout(r, 100));
     } catch (error) {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
       console.error('Lỗi khi tải dữ liệu:', error);
+      setDistributions([]);
+      setPharmacies([]);
+      setLoadingProgress(0);
     } finally {
       setLoading(false);
+      setTimeout(() => setLoadingProgress(0), 500);
     }
   };
 
   const handleSelectDistribution = async (dist) => {
-    console.log('Selected distribution:', dist);
-    console.log('Distribution keys:', Object.keys(dist || {}));
-    console.log('manufacturerInvoice:', dist?.manufacturerInvoice);
-    console.log('manufacturerInvoice keys:', dist?.manufacturerInvoice ? Object.keys(dist.manufacturerInvoice) : 'N/A');
-    console.log('manufacturerInvoice.tokenIds:', dist?.manufacturerInvoice?.tokenIds);
     
     // Hàm helper để tìm tokenIds từ distribution object
     const extractTokenIds = (distributionObj, source = 'unknown') => {
-      console.log(`[extractTokenIds] Source: ${source}, Object:`, distributionObj);
+      // Tìm tokenIds từ nhiều nguồn có thể có trong object
       let tokenIds = [];
       
       // Ưu tiên 1: Lấy từ manufacturerInvoice.tokenIds (từ ManufacturerInvoice model)
       if (distributionObj.manufacturerInvoice?.tokenIds && Array.isArray(distributionObj.manufacturerInvoice.tokenIds)) {
         tokenIds = distributionObj.manufacturerInvoice.tokenIds.map(id => String(id));
-        console.log('✅ Found tokenIds from manufacturerInvoice.tokenIds:', tokenIds);
         return tokenIds;
       }
       // Ưu tiên 1b: manufacturerInvoice có thể là string ID, không phải object
       if (distributionObj.manufacturerInvoice && typeof distributionObj.manufacturerInvoice === 'string') {
-        console.log('⚠️ manufacturerInvoice là string ID, không phải object được populate');
+        // manufacturerInvoice có thể chỉ là string id
       }
       
       // Ưu tiên 2: Lấy từ invoice.tokenIds (nếu API trả về với tên field khác)
       if (distributionObj.invoice?.tokenIds && Array.isArray(distributionObj.invoice.tokenIds)) {
         tokenIds = distributionObj.invoice.tokenIds.map(id => String(id));
-        console.log('✅ Found tokenIds from invoice.tokenIds:', tokenIds);
         return tokenIds;
       }
       
@@ -102,60 +159,42 @@ export default function TransferToPharmacy() {
           if (typeof nft === 'string') return nft;
           return String(nft.tokenId || nft._id || (nft.nftInfo && nft.nftInfo.tokenId) || '');
         }).filter(Boolean);
-        if (tokenIds.length > 0) {
-          console.log('✅ Found tokenIds from nftInfos:', tokenIds);
-          return tokenIds;
-        }
+        if (tokenIds.length > 0) return tokenIds;
       }
       
       // Ưu tiên 4: Thử lấy từ distribution.tokenIds (nếu có trực tiếp)
       if (distributionObj.tokenIds && Array.isArray(distributionObj.tokenIds)) {
         tokenIds = distributionObj.tokenIds.map(id => String(id));
-        console.log('✅ Found tokenIds from distribution.tokenIds:', tokenIds);
         return tokenIds;
       }
       
-      console.log(`❌ Không tìm thấy tokenIds trong ${source}`);
       return [];
     };
     
     // Thử lấy tokenIds từ distribution object ngay từ list trước
     let tokenIds = extractTokenIds(dist, 'distribution list');
     
-    setLoading(true);
+    // Chỉ set loading nếu cần gọi API (không có tokenIds)
+    if (tokenIds.length === 0) {
+      setDialogLoading(true);
+    }
+    
     try {
       // Nếu chưa có tokenIds, mới gọi API detail
       if (tokenIds.length === 0) {
-        console.log('Không tìm thấy tokenIds trong distribution list, đang thử lấy từ các nguồn khác...');
+        // Không có tokenIds trên list, thử các nguồn khác
         
         // Lấy manufacturerInvoiceId (có thể là object._id hoặc string)
         const manufacturerInvoiceId = dist?.manufacturerInvoice?._id || dist?.manufacturerInvoice;
         
-        // Thử 1: Gọi getDistributionDetail (có thể không tồn tại)
-        if (!tokenIds.length) {
-          try {
-                        const detailRes = await getDistributionDetail(dist._id);
-            const detail = detailRes?.data?.data || detailRes?.data || dist;
-            console.log('Distribution detail from API:', detail);
-            console.log('Detail keys:', Object.keys(detail || {}));
-            console.log('Detail manufacturerInvoice:', detail?.manufacturerInvoice);
-            tokenIds = extractTokenIds(detail, 'API detail');
-          } catch (apiError) {
-            console.warn('API getDistributionDetail không khả dụng:', apiError.response?.status || apiError.message);
-            // Tiếp tục với phương án khác
-          }
-        }
-        
-        // Thử 2: Nếu vẫn chưa có tokenIds và có manufacturerInvoiceId, gọi API lấy invoice detail
+        // Nếu vẫn chưa có tokenIds và có manufacturerInvoiceId, gọi API lấy invoice detail
         if (!tokenIds.length && manufacturerInvoiceId && typeof manufacturerInvoiceId === 'string') {
-          console.log('Đang gọi API getInvoiceDetail để lấy tokenIds từ invoice ID:', manufacturerInvoiceId);
           try {
             const invoiceDetailRes = await getInvoiceDetail(manufacturerInvoiceId);
             if (invoiceDetailRes?.data?.success && invoiceDetailRes.data.data) {
               const invoiceDetail = invoiceDetailRes.data.data;
               if (invoiceDetail.tokenIds && Array.isArray(invoiceDetail.tokenIds) && invoiceDetail.tokenIds.length > 0) {
                 tokenIds = invoiceDetail.tokenIds.map(id => String(id));
-                console.log('✅ Lấy được tokenIds từ API getInvoiceDetail:', tokenIds);
               } else {
                 console.warn('⚠️ API getInvoiceDetail không trả về tokenIds hoặc tokenIds rỗng:', invoiceDetail);
               }
@@ -222,7 +261,7 @@ export default function TransferToPharmacy() {
       });
       setShowDialog(true);
     } finally {
-      setLoading(false);
+      setDialogLoading(false);
     }
   };
 
@@ -265,7 +304,8 @@ export default function TransferToPharmacy() {
     const amounts = selectedTokenIds.map(() => 1);
 
     // ✅ Kiểm tra balance trên blockchain trước khi tiếp tục
-    setLoading(true);
+    if (submitLoading) return; // tránh double-click
+    setSubmitLoading(true);
     try {
       console.log('🔍 Đang kiểm tra balance trên blockchain...');
       const balanceCheck = await checkDistributorNFTBalances(selectedTokenIds);
@@ -293,7 +333,7 @@ export default function TransferToPharmacy() {
           `Manufacturer đã tạo invoice nhưng chưa thực hiện transfer NFT trên smart contract.`;
         
         alert(errorMessage);
-        setLoading(false);
+        setSubmitLoading(false);
         return;
       }
       
@@ -308,12 +348,12 @@ export default function TransferToPharmacy() {
           `Lỗi: ${balanceError.message}\n\n` +
           `Bạn có muốn tiếp tục không? (Sẽ kiểm tra lại ở bước transfer NFT)`
         )) {
-          setLoading(false);
+          setSubmitLoading(false);
           return;
         }
       } else {
         alert(`❌ Lỗi khi kiểm tra balance: ${balanceError.message}`);
-        setLoading(false);
+        setSubmitLoading(false);
         return;
       }
     }
@@ -349,6 +389,16 @@ export default function TransferToPharmacy() {
         // Bước 2: Gọi smart contract để chuyển NFT
         try {
           console.log('📤 Bước 2: Đang gọi smart contract để chuyển NFT...');
+          // Hiển thị BlockchainTransferView và mô phỏng tiến trình
+          // Đóng form chuyển giao phía sau để tránh chồng lớp
+          setShowDialog(false);
+          setShowChainView(true);
+          setChainStatus('minting');
+          setChainProgress(0.08);
+          if (chainIntervalRef.current) { clearInterval(chainIntervalRef.current); chainIntervalRef.current = null; }
+          chainIntervalRef.current = setInterval(() => {
+            setChainProgress(prev => (prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev));
+          }, 120);
           
           const transferResult = await transferNFTToPharmacy(
             responseTokenIds,
@@ -361,6 +411,10 @@ export default function TransferToPharmacy() {
               transactionHash: transferResult.transactionHash,
               blockNumber: transferResult.blockNumber,
             });
+            // Hoàn tất tiến trình trên UI
+            if (chainIntervalRef.current) { clearInterval(chainIntervalRef.current); chainIntervalRef.current = null; }
+            setChainProgress(1);
+            setChainStatus('completed');
 
             // Bước 3: Lưu transaction hash vào database
             try {
@@ -374,15 +428,9 @@ export default function TransferToPharmacy() {
 
               if (saveResponse.data.success) {
                 console.log('✅ Bước 3 hoàn thành - Transaction hash đã được lưu');
-                
-                alert(
-                  '✅ Chuyển giao NFT thành công!\n\n' +
-                  `Invoice: ${commercialInvoice.invoiceNumber}\n` +
-                  `Transaction Hash: ${transferResult.transactionHash}\n` +
-                  `Block Number: ${transferResult.blockNumber}\n\n` +
-                  'Pharmacy có thể xác nhận nhận hàng ngay bây giờ.'
-                );
-
+                // Đợi một nhịp ngắn để người dùng thấy trạng thái thành công
+                await new Promise(r => setTimeout(r, 600));
+                setShowChainView(false);
                 // Đóng dialog và reload data
                 setShowDialog(false);
                 setFormData({
@@ -397,44 +445,25 @@ export default function TransferToPharmacy() {
               }
             } catch (saveError) {
               console.error('❌ Lỗi khi lưu transaction hash:', saveError);
-              alert(
-                '⚠️ Smart contract đã thành công nhưng lưu transaction hash thất bại!\n\n' +
-                `Transaction Hash: ${transferResult.transactionHash}\n\n` +
-                'Vui lòng liên hệ quản trị viên để cập nhật thủ công.\n\n' +
-                'Lỗi: ' + (saveError.response?.data?.message || saveError.message)
-              );
+              // Hiển thị trạng thái lỗi trong BlockchainTransferView, không bật alert
+              setChainStatus('error');
             }
           } else {
             throw new Error('Smart contract transfer không thành công');
           }
         } catch (transferError) {
           console.error('❌ Lỗi khi gọi smart contract:', transferError);
-          
-          // Kiểm tra nếu là lỗi contract chưa deploy
-          const isContractNotDeployed = transferError.message?.includes('Contract not deployed');
-          
-          let errorMessage = '❌ Lỗi khi chuyển NFT trên smart contract!\n\n';
-          errorMessage += 'Invoice đã được tạo với status "draft".\n';
-          errorMessage += 'Bạn có thể thử lại chuyển NFT sau.\n\n';
-          
-          if (isContractNotDeployed) {
-            errorMessage += '⚠️ Smart Contract chưa được deploy trên network hiện tại!\n\n';
-            errorMessage += 'Vui lòng:\n';
-            errorMessage += '1. Kiểm tra network trong MetaMask (localhost:8545, Sepolia, etc.)\n';
-            errorMessage += '2. Đảm bảo contract đã được deploy trên network đó\n';
-            errorMessage += '3. Hoặc chuyển sang network có contract đã deploy\n\n';
-          }
-          
-          errorMessage += 'Chi tiết lỗi:\n' + (transferError.message || 'Unknown error');
-          
-          alert(errorMessage);
+          if (chainIntervalRef.current) { clearInterval(chainIntervalRef.current); chainIntervalRef.current = null; }
+          setChainStatus('error');
+          setChainProgress(prev => (prev < 0.3 ? 0.3 : prev));
         }
       }
     } catch (error) {
       console.error('❌ Lỗi:', error);
       alert('❌ ' + (error.response?.data?.message || error.message));
     } finally {
-      setLoading(false);
+      setSubmitLoading(false);
+      if (chainIntervalRef.current) { clearInterval(chainIntervalRef.current); chainIntervalRef.current = null; }
     }
   };
 
@@ -449,6 +478,24 @@ export default function TransferToPharmacy() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
+      {showChainView && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-md">
+          <BlockchainTransferView
+            status={chainStatus}
+            progress={chainProgress}
+            onClose={() => setShowChainView(false)}
+          />
+        </div>
+      )}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
+        </div>
+      ) : (
+        <div className="space-y-6">
       {/* Banner kiểu Manufacturer */}
       <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
         <h1 className="text-xl font-semibold text-[#007b91]">Chuyển giao cho nhà thuốc</h1>
@@ -479,7 +526,7 @@ export default function TransferToPharmacy() {
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">3</div>
+            <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify_center flex-shrink-0">3</div>
             <div>
               <div className="font-semibold text-slate-800">Chuyển quyền sở hữu NFT</div>
               <div className="text-sm text-slate-600">Frontend gọi Smart Contract để transfer NFT từ Distributor wallet → Pharmacy wallet</div>
@@ -506,9 +553,7 @@ export default function TransferToPharmacy() {
           <h2 className="text-xl font-bold text-slate-800">Lô hàng có sẵn (đã nhận từ Manufacturer)</h2>
         </div>
 
-        {loading ? (
-          <div className="p-12 text-center text-slate-600">Đang tải...</div>
-        ) : distributions.length === 0 ? (
+        {distributions.length === 0 ? (
           <div className="p-12 text-center">
             <div className="text-5xl mb-4">📦</div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lô hàng nào</h3>
@@ -545,7 +590,7 @@ export default function TransferToPharmacy() {
                       {dist.distributionDate ? new Date(dist.distributionDate).toLocaleDateString('vi-VN') : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center">
+                      <div className="flex items_center justify-center">
                         <button
                           onClick={() => handleSelectDistribution(dist)}
                           className="px-4 py-2 border-2 border-[#3db6d9] bg-[#b3e9f4] text-black rounded-full font-semibold hover:bg-[#3db6d9] hover:text-white transition-all duration-200"
@@ -563,8 +608,8 @@ export default function TransferToPharmacy() {
       </motion.div>
 
       {/* Transfer Dialog */}
-      {showDialog && selectedDistribution && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowDialog(false)}>
+      {showDialog && selectedDistribution && !showChainView && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setShowDialog(false); setDialogLoading(false); }}>
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll" onClick={(e) => e.stopPropagation()}>
             <style>{`
               .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
@@ -581,7 +626,7 @@ export default function TransferToPharmacy() {
                   </div>
                 </div>
                 <button
-                  onClick={() => setShowDialog(false)}
+                  onClick={() => { setShowDialog(false); setDialogLoading(false); }}
                   className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition"
                 >
                   ✕
@@ -589,7 +634,15 @@ export default function TransferToPharmacy() {
               </div>
             </div>
 
-            <div className="p-8 space-y-4">
+            <div className="p-8 space-y-4 relative">
+              {dialogLoading && (
+                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-3xl flex items-center justify-center z-10">
+                  <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-cyan-200 border-t-cyan-500 mb-4"></div>
+                    <div className="text-slate-600 font-medium">Đang tải thông tin...</div>
+                  </div>
+                </div>
+              )}
               {/* Distribution Info */}
               <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
                 <div className="font-bold text-cyan-800 mb-3">Thông tin lô hàng:</div>
@@ -710,21 +763,24 @@ export default function TransferToPharmacy() {
 
             <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end space-x-3">
               <button
-                onClick={() => setShowDialog(false)}
+                onClick={() => { setShowDialog(false); setDialogLoading(false); }}
                 className="px-6 py-2.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition"
               >
                 Hủy
               </button>
               <button
-                onClick={handleSubmit}
-                disabled={loading}
+                type="button"
+                onClick={(e) => { e.preventDefault(); handleSubmit(); }}
+                disabled={submitLoading}
                 className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 transition"
               >
-                {loading ? 'Đang xử lý...' : '✓ Xác nhận chuyển giao'}
+                {submitLoading ? 'Đang xử lý...' : '✓ Xác nhận chuyển giao'}
               </button>
             </div>
           </div>
         </div>
+      )}
+      </div>
       )}
     </DashboardLayout>
   );

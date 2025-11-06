@@ -1,28 +1,118 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckLoader from '../../components/TruckLoader';
 import { getStatistics } from '../../services/distributor/distributorService';
 
 export default function DistributorDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
 
   useEffect(() => {
     loadStats();
+    
+    return () => {
+      // Cleanup progress interval nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, []);
 
   const loadStats = async () => {
     try {
       setLoading(true);
+      setLoadingProgress(0);
+      
+      // Clear interval cũ nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Simulate progress từ 0 đến 90% trong khi đang load
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev < 0.9) {
+            return Math.min(prev + 0.02, 0.9);
+          }
+          return prev;
+        });
+      }, 50);
+      
       const response = await getStatistics();
+      
+      // Clear interval khi có response
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Xử lý data trước
       if (response.data.success) {
         setStats(response.data.data);
       }
+      
+      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
+      let currentProgress = 0;
+      setLoadingProgress(prev => {
+        currentProgress = prev;
+        return prev;
+      });
+      
+      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
+      if (currentProgress < 0.9) {
+        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
+        await new Promise(resolve => {
+          const speedUpInterval = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                const newProgress = Math.min(prev + 0.15, 1);
+                if (newProgress >= 1) {
+                  clearInterval(speedUpInterval);
+                  resolve();
+                }
+                return newProgress;
+              }
+              clearInterval(speedUpInterval);
+              resolve();
+              return 1;
+            });
+          }, 30);
+          
+          // Safety timeout
+          setTimeout(() => {
+            clearInterval(speedUpInterval);
+            setLoadingProgress(1);
+            resolve();
+          }, 500);
+        });
+      } else {
+        setLoadingProgress(1);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
+      // Clear interval khi có lỗi
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
       console.error('Lỗi khi tải thống kê:', error);
+      setLoadingProgress(0);
     } finally {
       setLoading(false);
+      // Reset progress sau 0.5s
+      setTimeout(() => {
+        setLoadingProgress(0);
+      }, 500);
     }
   };
 
@@ -84,25 +174,28 @@ export default function DistributorDashboard() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Banner (đồng bộ Manufacturer: card trắng viền cyan) */}
-      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#007b91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
-            </svg>
-            Quản lý nhà phân phối
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">Tổng quan hệ thống và các chức năng chính</p>
-        </div>
-      </div>
-
+      {/* Loading State - chỉ hiển thị khi đang tải, không hiển thị content cho đến khi loading = false */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-lg text-slate-600">Đang tải dữ liệu...</div>
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Banner (đồng bộ Manufacturer: card trắng viền cyan) */}
+          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#007b91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
+                </svg>
+                Quản lý nhà phân phối
+              </h1>
+              <p className="text-slate-500 text-sm mt-1">Tổng quan hệ thống và các chức năng chính</p>
+            </div>
+          </div>
           {/* Hàng thẻ thống kê (4 box, viền top màu) */}
           <motion.div variants={fadeUp} initial="hidden" animate="show">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
