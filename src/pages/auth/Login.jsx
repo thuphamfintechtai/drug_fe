@@ -198,7 +198,7 @@ export default function Login() {
             {/* Forgot Password Link */}
             <div className="text-right">
               <Link
-                to="/forgot-password"
+                to="/forgot-password-business"
                 className="text-sm font-medium hover:underline"
                 style={{ color: '#4BADD1' }}
               >
