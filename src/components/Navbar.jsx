@@ -94,7 +94,7 @@ export default function Navbar() {
                   transition={{ delay: 0.3 }}
                 >
                   <Link
-                    to="/register"
+                    to="/register-business"
                     className="px-5 py-2 bg-white text-[#4BADD1] font-semibold rounded-lg transition shadow-lg"
                   >
                     Đăng ký
