@@ -17,4 +17,5 @@ export { default as TruckAnimationButton } from './TruckAnimationButton';
 export { default as NFTMintButton } from './NFTMintButton';
 export { default as BlockchainMintingView } from './BlockchainMintingView';
 export { default as BlockchainTransferView } from './BlockchainTransferView';
+export { default as TruckLoader } from './TruckLoader';
 

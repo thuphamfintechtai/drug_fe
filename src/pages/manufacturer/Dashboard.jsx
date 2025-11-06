@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckLoader from '../../components/TruckLoader';
 import { getStatistics } from '../../services/manufacturer/manufacturerService';
 
 export default function ManufacturerDashboard() {
@@ -65,58 +66,61 @@ export default function ManufacturerDashboard() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <div className="space-y-8">
-        {/* Header banner */}
-        <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#007b91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
-              </svg>
-              Quản lý nhà sản xuất
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">Tổng quan hệ thống và các chức năng chính</p>
+      {/* Loading State - chỉ hiển thị khi đang tải và chưa có dữ liệu */}
+      {loading && !stats ? (
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} duration={3500} showTrack />
           </div>
-          
-          {/* Refresh Button */}
-          <button 
-            onClick={loadStats}
-            disabled={loading}
-            className="p-2.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 transition disabled:opacity-50"
-            title="Làm mới dữ liệu"
-          >
-            <svg 
-              className={`w-5 h-5 text-cyan-600 transition-transform ${loading ? 'animate-spin' : ''}`} 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
-
-        {/* Loading State */}
-        {loading && !stats ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <div className="text-lg text-slate-600">Đang tải dữ liệu...</div>
-          </div>
-        ) : error ? (
-          /* Error State */
-          <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-            <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-red-600 text-lg mb-4">{error}</p>
+      ) : (
+        <div className="space-y-8">
+          {/* Header banner */}
+          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#007b91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
+                </svg>
+                Quản lý nhà sản xuất
+              </h1>
+              <p className="text-slate-500 text-sm mt-1">Tổng quan hệ thống và các chức năng chính</p>
+            </div>
+            
+            {/* Refresh Button */}
             <button 
               onClick={loadStats}
-              className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              disabled={loading}
+              className="p-2.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 transition disabled:opacity-50"
+              title="Làm mới dữ liệu"
             >
-              Thử lại
+              <svg 
+                className={`w-5 h-5 text-cyan-600 transition-transform ${loading ? 'animate-spin' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
             </button>
           </div>
-        ) : stats ? (
+
+          {/* Error State */}
+          {error ? (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
+              <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-red-600 text-lg mb-4">{error}</p>
+              <button 
+                onClick={loadStats}
+                className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              >
+                Thử lại
+              </button>
+            </div>
+          ) : stats ? (
           <div className="space-y-8">
             {/* Thống kê thuốc */}
             <motion.div variants={fadeUp} initial="hidden" animate="show">
@@ -189,13 +193,14 @@ export default function ManufacturerDashboard() {
             {/* Thống kê chuyển giao - giữ nguyên */}
             {/* ... */}
           </div>
-        ) : (
-          /* No data state */
-          <div className="text-center py-20 text-slate-500">
-            Không có dữ liệu
-          </div>
-        )}
-      </div>
+          ) : (
+            /* No data state */
+            <div className="text-center py-20 text-slate-500">
+              Không có dữ liệu
+            </div>
+          )}
+        </div>
+      )}
     </DashboardLayout>
   );
 }
