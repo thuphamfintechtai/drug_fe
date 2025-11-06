@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
@@ -9,6 +9,8 @@ export default function ManufacturerDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
 
   useEffect(() => {
     loadStats();
@@ -16,22 +18,106 @@ export default function ManufacturerDashboard() {
     // Auto-refresh every 30 seconds
     const interval = setInterval(loadStats, 30000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      // Cleanup progress interval nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, []);
 
   const loadStats = async () => {
     try {
       setLoading(true);
       setError(null);
+      setLoadingProgress(0);
+      
+      // Clear interval cũ nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Simulate progress từ 0 đến 90% trong khi đang load
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev < 0.9) {
+            // Tăng progress từ 0 đến 90% trong khi chờ response
+            return Math.min(prev + 0.02, 0.9);
+          }
+          return prev;
+        });
+      }, 50); // Update mỗi 50ms để mượt
       
       const response = await getStatistics();
       
+      // Clear interval khi có response
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Xử lý data trước
       if (response.data.success) {
         setStats(response.data.data);
       } else {
         setError(response.data.message || 'Không thể tải thống kê');
       }
+      
+      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
+      // Lấy current progress từ state bằng cách dùng callback để đảm bảo lấy đúng giá trị
+      let currentProgress = 0;
+      setLoadingProgress(prev => {
+        currentProgress = prev;
+        return prev;
+      });
+      
+      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
+      if (currentProgress < 0.9) {
+        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
+        await new Promise(resolve => {
+          const speedUpInterval = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                // Tăng nhanh hơn (0.15 mỗi lần thay vì 0.02) - cùng một chiếc xe tăng tốc
+                const newProgress = Math.min(prev + 0.15, 1);
+                if (newProgress >= 1) {
+                  clearInterval(speedUpInterval);
+                  resolve();
+                }
+                return newProgress;
+              }
+              clearInterval(speedUpInterval);
+              resolve();
+              return 1;
+            });
+          }, 30); // Update nhanh hơn (30ms) để xe tăng tốc mượt
+          
+          // Safety timeout: đảm bảo không chờ quá lâu
+          setTimeout(() => {
+            clearInterval(speedUpInterval);
+            setLoadingProgress(1);
+            resolve();
+          }, 500);
+        });
+      } else {
+        // Nếu đã chạy gần hết, chỉ cần set 100% và đợi một chút để đảm bảo animation hoàn thành
+        setLoadingProgress(1);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
+      // Chờ một chút nữa để đảm bảo animation hoàn toàn kết thúc
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
+      // Clear interval khi có lỗi
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
       console.error('Lỗi khi tải thống kê:', error);
       
       if (error.response) {
@@ -44,8 +130,14 @@ export default function ManufacturerDashboard() {
         // Something else happened
         setError(error.message || 'Đã xảy ra lỗi không xác định');
       }
+      
+      setLoadingProgress(0);
     } finally {
       setLoading(false);
+      // Reset progress sau 0.5s
+      setTimeout(() => {
+        setLoadingProgress(0);
+      }, 500);
     }
   };
 
@@ -66,11 +158,11 @@ export default function ManufacturerDashboard() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Loading State - chỉ hiển thị khi đang tải và chưa có dữ liệu */}
-      {loading && !stats ? (
+      {/* Loading State - chỉ hiển thị khi đang tải, không hiển thị content cho đến khi loading = false */}
+      {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
           <div className="w-full max-w-2xl">
-            <TruckLoader height={72} duration={3500} showTrack />
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
           </div>
           <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>

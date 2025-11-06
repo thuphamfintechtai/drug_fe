@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckLoader from '../../components/TruckLoader';
 import { getTransferHistory, saveTransferTransaction } from '../../services/manufacturer/manufacturerService';
 import { transferNFTToDistributor, transferBatchNFTToDistributor, getCurrentWalletAddress } from '../../utils/web3Helper';
 import { useAuth } from '../../context/AuthContext';
@@ -10,7 +11,9 @@ export default function TransferHistory() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Bắt đầu với true để hiển thị loading lần đầu
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
   const [retryingId, setRetryingId] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
 
@@ -30,17 +33,50 @@ export default function TransferHistory() {
 
   useEffect(() => {
     loadData();
+    
+    return () => {
+      // Cleanup progress interval nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, [page, search, status]);
 
   const loadData = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      setLoadingProgress(0);
+      
+      // Clear interval cũ nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Simulate progress từ 0 đến 90% trong khi đang load
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev < 0.9) {
+            return Math.min(prev + 0.02, 0.9);
+          }
+          return prev;
+        });
+      }, 50);
+      
       const params = { page, limit: 10 };
       if (search) params.search = search;
       if (status) params.status = status;
 
       const response = await getTransferHistory(params);
       
+      // Clear interval khi có response
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Xử lý data trước
       if (response?.data?.success) {
         // Backend trả về invoices, không phải transfers
         const invoices = response.data.data?.invoices || response.data.data?.transfers || [];
@@ -74,10 +110,63 @@ export default function TransferHistory() {
         console.warn('API không trả về success:', response?.data);
         setItems([]);
       }
+      
+      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
+      // Lấy current progress từ state bằng cách dùng callback để track
+      let currentProgress = 0;
+      setLoadingProgress(prev => {
+        currentProgress = prev;
+        return prev;
+      });
+      
+      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
+      if (currentProgress < 0.9) {
+        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
+        await new Promise(resolve => {
+          const speedUpInterval = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                // Tăng nhanh hơn (0.15 mỗi lần thay vì 0.02) - cùng một chiếc xe tăng tốc
+                const newProgress = Math.min(prev + 0.15, 1);
+                if (newProgress >= 1) {
+                  clearInterval(speedUpInterval);
+                  resolve();
+                }
+                return newProgress;
+              }
+              clearInterval(speedUpInterval);
+              resolve();
+              return 1;
+            });
+          }, 30); // Update nhanh hơn (30ms) để xe tăng tốc mượt
+          
+          // Safety timeout: đảm bảo không chờ quá lâu
+          setTimeout(() => {
+            clearInterval(speedUpInterval);
+            setLoadingProgress(1);
+            resolve();
+          }, 500);
+        });
+      } else {
+        // Nếu đã chạy gần hết, chỉ cần set 100% và đợi một chút để đảm bảo animation hoàn thành
+        setLoadingProgress(1);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
+      // Chờ một chút nữa để đảm bảo animation hoàn toàn kết thúc
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
+      // Clear interval khi có lỗi
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
       console.error('Lỗi khi tải lịch sử chuyển giao:', error);
       console.error('Error response:', error?.response?.data);
       setItems([]);
+      setLoadingProgress(0);
       // Hiển thị lỗi cho user nếu cần
       if (error?.response?.status === 401) {
         alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
@@ -86,6 +175,10 @@ export default function TransferHistory() {
       }
     } finally {
       setLoading(false);
+      // Reset progress sau 0.5s
+      setTimeout(() => {
+        setLoadingProgress(0);
+      }, 500);
     }
   };
 
@@ -201,8 +294,18 @@ export default function TransferHistory() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Banner */}
-      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between mb-6">
+      {/* Loading State - chỉ hiển thị khi đang tải, không hiển thị content cho đến khi loading = false */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Banner */}
+          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#007b91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -249,18 +352,14 @@ export default function TransferHistory() {
         </div>
       </motion.div>
 
-      {/* List */}
-      <motion.div
-        className="space-y-4"
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
-        {loading ? (
-          <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center text-slate-600">
-            Đang tải...
-          </div>
-        ) : items.length === 0 ? (
+          {/* List */}
+          <motion.div
+            className="space-y-4"
+            variants={fadeUp}
+            initial="hidden"
+            animate="show"
+          >
+            {items.length === 0 ? (
           <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
             <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lịch sử chuyển giao</h3>
             <p className="text-slate-600">Các đơn chuyển giao của bạn sẽ hiển thị ở đây</p>
@@ -420,6 +519,8 @@ export default function TransferHistory() {
           </button>
         </div>
       </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

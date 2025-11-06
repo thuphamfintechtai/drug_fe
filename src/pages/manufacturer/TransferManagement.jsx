@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import TruckAnimationButton from '../../components/TruckAnimationButton';
 import BlockchainTransferView from '../../components/BlockchainTransferView';
+import TruckLoader from '../../components/TruckLoader';
 import { 
   getProductionHistory,
   getDistributors,
@@ -17,7 +18,9 @@ export default function TransferManagement() {
   const { user } = useAuth();
   const [productions, setProductions] = useState([]);
   const [distributors, setDistributors] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Bắt đầu với true để hiển thị loading lần đầu
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
   const [showDialog, setShowDialog] = useState(false);
   const [selectedProduction, setSelectedProduction] = useState(null);
   const [availableTokenIds, setAvailableTokenIds] = useState([]);
@@ -45,16 +48,49 @@ export default function TransferManagement() {
 
   useEffect(() => {
     loadData();
+    
+    return () => {
+      // Cleanup progress interval nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, []);
 
   const loadData = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      setLoadingProgress(0);
+      
+      // Clear interval cũ nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Simulate progress từ 0 đến 90% trong khi đang load
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev < 0.9) {
+            return Math.min(prev + 0.02, 0.9);
+          }
+          return prev;
+        });
+      }, 50);
+      
       const [prodRes, distRes] = await Promise.all([
         getProductionHistory({ status: 'minted' }), // Chỉ lấy NFT chưa chuyển
         getDistributors({ page: 1, limit: 100 })
       ]);
       
+      // Clear interval khi có response
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Xử lý data trước
       if (prodRes.data.success) {
         setProductions(prodRes.data.data.productions || []);
       }
@@ -64,10 +100,67 @@ export default function TransferManagement() {
       } else {
         setDistributors([]);
       }
+      
+      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
+      // Lấy current progress từ state bằng cách dùng callback để track
+      let currentProgress = 0;
+      setLoadingProgress(prev => {
+        currentProgress = prev;
+        return prev;
+      });
+      
+      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
+      if (currentProgress < 0.9) {
+        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
+        await new Promise(resolve => {
+          const speedUpInterval = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                // Tăng nhanh hơn (0.15 mỗi lần thay vì 0.02) - cùng một chiếc xe tăng tốc
+                const newProgress = Math.min(prev + 0.15, 1);
+                if (newProgress >= 1) {
+                  clearInterval(speedUpInterval);
+                  resolve();
+                }
+                return newProgress;
+              }
+              clearInterval(speedUpInterval);
+              resolve();
+              return 1;
+            });
+          }, 30); // Update nhanh hơn (30ms) để xe tăng tốc mượt
+          
+          // Safety timeout: đảm bảo không chờ quá lâu
+          setTimeout(() => {
+            clearInterval(speedUpInterval);
+            setLoadingProgress(1);
+            resolve();
+          }, 500);
+        });
+      } else {
+        // Nếu đã chạy gần hết, chỉ cần set 100% và đợi một chút để đảm bảo animation hoàn thành
+        setLoadingProgress(1);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
+      // Chờ một chút nữa để đảm bảo animation hoàn toàn kết thúc
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
+      // Clear interval khi có lỗi
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
       console.error('Lỗi khi tải dữ liệu:', error);
+      setLoadingProgress(0);
     } finally {
       setLoading(false);
+      // Reset progress sau 0.5s
+      setTimeout(() => {
+        setLoadingProgress(0);
+      }, 500);
     }
   };
 
@@ -267,20 +360,30 @@ export default function TransferManagement() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Banner */}
-      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#007b91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
-            </svg>
-            Chuyển giao cho nhà phân phối
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">Chọn lô sản xuất và distributor để chuyển quyền sở hữu NFT</p>
+      {/* Loading State - chỉ hiển thị khi đang tải, không hiển thị content cho đến khi loading = false */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Banner */}
+          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#007b91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
+                </svg>
+                Chuyển giao cho nhà phân phối
+              </h1>
+              <p className="text-slate-500 text-sm mt-1">Chọn lô sản xuất và distributor để chuyển quyền sở hữu NFT</p>
+            </div>
+          </div>
 
-      {/* Instructions */}
+          {/* Instructions */}
       <motion.div
         className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-6 mb-5"
         variants={fadeUp}
@@ -313,16 +416,14 @@ export default function TransferManagement() {
         </div>
       </motion.div>
 
-      {/* Productions List */}
-      <motion.div
-        className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden mt-6"
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
-        {loading ? (
-          <div className="p-12 text-center text-gray-500">Đang tải...</div>
-        ) : productions.length === 0 ? (
+          {/* Productions List */}
+          <motion.div
+            className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden mt-6"
+            variants={fadeUp}
+            initial="hidden"
+            animate="show"
+          >
+            {productions.length === 0 ? (
           <div className="p-16 flex flex-col items-center justify-center text-gray-400">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -415,8 +516,10 @@ export default function TransferManagement() {
               </tbody>
             </table>
           </div>
-        )}
-      </motion.div>
+            )}
+          </motion.div>
+        </div>
+      )}
 
       {/* Blockchain Animation Overlay - chỉ hiển thị sau khi xe tải chạy xong */}
       {showDialog && showBlockchainView && (

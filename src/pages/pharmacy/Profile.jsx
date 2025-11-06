@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckLoader from '../../components/TruckLoader';
 import pharmacyService from '../../services/pharmacy/pharmacyService';
 
 export default function PharmacyProfile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
   const [expandedSection, setExpandedSection] = useState({
     user: true,
     pharmacy: true,
@@ -22,19 +25,106 @@ export default function PharmacyProfile() {
 
   useEffect(() => {
     loadProfile();
+    
+    return () => {
+      // Cleanup progress interval nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, []);
 
   const loadProfile = async () => {
     try {
       setLoading(true);
+      setLoadingProgress(0);
+      
+      // Clear interval cũ nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Simulate progress từ 0 đến 90% trong khi đang load
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev < 0.9) {
+            return Math.min(prev + 0.02, 0.9);
+          }
+          return prev;
+        });
+      }, 50);
+      
       const response = await pharmacyService.getProfile();
+      
+      // Clear interval khi có response
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Xử lý data trước
       if (response.data.success) {
         setProfile(response.data.data);
       }
+      
+      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
+      let currentProgress = 0;
+      setLoadingProgress(prev => {
+        currentProgress = prev;
+        return prev;
+      });
+      
+      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
+      if (currentProgress < 0.9) {
+        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
+        await new Promise(resolve => {
+          const speedUpInterval = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                const newProgress = Math.min(prev + 0.15, 1);
+                if (newProgress >= 1) {
+                  clearInterval(speedUpInterval);
+                  resolve();
+                }
+                return newProgress;
+              }
+              clearInterval(speedUpInterval);
+              resolve();
+              return 1;
+            });
+          }, 30);
+          
+          // Safety timeout
+          setTimeout(() => {
+            clearInterval(speedUpInterval);
+            setLoadingProgress(1);
+            resolve();
+          }, 500);
+        });
+      } else {
+        setLoadingProgress(1);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
+      // Clear interval khi có lỗi
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
       console.error('Lỗi khi tải hồ sơ:', error);
+      setLoadingProgress(0);
     } finally {
       setLoading(false);
+      // Reset progress sau 0.5s
+      setTimeout(() => {
+        setLoadingProgress(0);
+      }, 500);
     }
   };
 
@@ -52,41 +142,69 @@ export default function PharmacyProfile() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#7AC3DE] shadow-[0_10px_30px_rgba(75,173,209,0.15)] bg-white"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="relative px-6 py-8 md:px-10 md:py-12">
-          <div className="flex items-center gap-3 mb-2">
-            <svg className="w-8 h-8 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#4BADD1]">Hồ sơ nhà thuốc</h1>
-          </div>
-          <p className="text-[#7AC3DE] mt-2 text-lg flex items-center gap-2">
-            <svg className="w-5 h-5 text-[#7AC3DE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            Thông tin tài khoản và doanh nghiệp
-          </p>
-        </div>
-      </motion.section>
-
+      {/* Loading State - chỉ hiển thị khi đang tải, không hiển thị content cho đến khi loading = false */}
       {loading ? (
-        <div className="bg-white rounded-2xl border-2 border-[#7AC3DE] p-10 text-center">
-          <div className="text-lg text-slate-600">Đang tải thông tin...</div>
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
       ) : !profile ? (
-        <div className="bg-white rounded-2xl border-2 border-[#7AC3DE] p-10 text-center">
-          <div className="text-5xl mb-4 text-slate-800">■</div>
-          <h3 className="text-xl font-bold text-slate-800 mb-2">Không tìm thấy thông tin</h3>
-          <p className="text-slate-600">Vui lòng thử lại sau</p>
+        <div className="space-y-6">
+          <motion.section
+            className="relative overflow-hidden rounded-2xl mb-6 border border-[#7AC3DE] shadow-[0_10px_30px_rgba(75,173,209,0.15)] bg-white"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="relative px-6 py-8 md:px-10 md:py-12">
+              <div className="flex items-center gap-3 mb-2">
+                <svg className="w-8 h-8 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#4BADD1]">Hồ sơ nhà thuốc</h1>
+              </div>
+              <p className="text-[#7AC3DE] mt-2 text-lg flex items-center gap-2">
+                <svg className="w-5 h-5 text-[#7AC3DE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Thông tin tài khoản và doanh nghiệp
+              </p>
+            </div>
+          </motion.section>
+          <div className="bg-white rounded-2xl border-2 border-[#7AC3DE] p-10 text-center">
+            <div className="text-5xl mb-4 text-slate-800">■</div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Không tìm thấy thông tin</h3>
+            <p className="text-slate-600">Vui lòng thử lại sau</p>
+          </div>
         </div>
       ) : (
-        <motion.div className="space-y-6" variants={fadeUp} initial="hidden" animate="show">
+        <div className="space-y-6">
+          <motion.section
+            className="relative overflow-hidden rounded-2xl mb-6 border border-[#7AC3DE] shadow-[0_10px_30px_rgba(75,173,209,0.15)] bg-white"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="relative px-6 py-8 md:px-10 md:py-12">
+              <div className="flex items-center gap-3 mb-2">
+                <svg className="w-8 h-8 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#4BADD1]">Hồ sơ nhà thuốc</h1>
+              </div>
+              <p className="text-[#7AC3DE] mt-2 text-lg flex items-center gap-2">
+                <svg className="w-5 h-5 text-[#7AC3DE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Thông tin tài khoản và doanh nghiệp
+              </p>
+            </div>
+          </motion.section>
+          <motion.div className="space-y-6" variants={fadeUp} initial="hidden" animate="show">
           {/* Bảng 1: Thông tin người dùng */}
           <div className="bg-white rounded-2xl border-2 border-[#7AC3DE] shadow-[0_4px_12px_rgba(122,195,222,0.12)] overflow-hidden">
             {/* Header */}
@@ -428,7 +546,8 @@ export default function PharmacyProfile() {
             </div>
             <p className="text-sm text-amber-700">Bạn không thể chỉnh sửa thông tin. Vui lòng liên hệ quản trị viên nếu cần cập nhật.</p>
           </motion.div>
-        </motion.div>
+          </motion.div>
+        </div>
       )}
     </DashboardLayout>
   );

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckLoader from '../../components/TruckLoader';
 import { useAuth } from '../../context/AuthContext';
 import { getProfile } from '../../services/distributor/distributorService';
 
@@ -8,6 +9,8 @@ export default function Profile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
 
   const navigationItems = [
     { path: '/distributor', label: 'Tổng quan', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>), active: false },
@@ -22,19 +25,106 @@ export default function Profile() {
 
   useEffect(() => {
     loadProfile();
+    
+    return () => {
+      // Cleanup progress interval nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, []);
 
   const loadProfile = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      setLoadingProgress(0);
+      
+      // Clear interval cũ nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Simulate progress từ 0 đến 90% trong khi đang load
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev < 0.9) {
+            return Math.min(prev + 0.02, 0.9);
+          }
+          return prev;
+        });
+      }, 50);
+      
       const response = await getProfile();
+      
+      // Clear interval khi có response
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Xử lý data trước
       if (response.data.success) {
         setProfile(response.data.data);
       }
+      
+      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
+      let currentProgress = 0;
+      setLoadingProgress(prev => {
+        currentProgress = prev;
+        return prev;
+      });
+      
+      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
+      if (currentProgress < 0.9) {
+        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
+        await new Promise(resolve => {
+          const speedUpInterval = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                const newProgress = Math.min(prev + 0.15, 1);
+                if (newProgress >= 1) {
+                  clearInterval(speedUpInterval);
+                  resolve();
+                }
+                return newProgress;
+              }
+              clearInterval(speedUpInterval);
+              resolve();
+              return 1;
+            });
+          }, 30);
+          
+          // Safety timeout
+          setTimeout(() => {
+            clearInterval(speedUpInterval);
+            setLoadingProgress(1);
+            resolve();
+          }, 500);
+        });
+      } else {
+        setLoadingProgress(1);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
+      // Clear interval khi có lỗi
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
       console.error('Lỗi khi tải thông tin:', error);
+      setLoadingProgress(0);
     } finally {
       setLoading(false);
+      // Reset progress sau 0.5s
+      setTimeout(() => {
+        setLoadingProgress(0);
+      }, 500);
     }
   };
 
@@ -45,21 +135,31 @@ export default function Profile() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
-        <h1 className="text-xl font-semibold text-[#007b91]">Thông tin cá nhân</h1>
-        <p className="text-slate-500 text-sm mt-1">Xem thông tin tài khoản và công ty (chỉ đọc)</p>
-      </div>
-
+      {/* Loading State - chỉ hiển thị khi đang tải, không hiển thị content cho đến khi loading = false */}
       {loading ? (
-        <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center text-slate-600">
-          Đang tải...
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
       ) : !profile ? (
-        <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center text-red-600">
-          Không thể tải thông tin
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
+            <h1 className="text-xl font-semibold text-[#007b91]">Thông tin cá nhân</h1>
+            <p className="text-slate-500 text-sm mt-1">Xem thông tin tài khoản và công ty (chỉ đọc)</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center text-red-600">
+            Không thể tải thông tin
+          </div>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
+            <h1 className="text-xl font-semibold text-[#007b91]">Thông tin cá nhân</h1>
+            <p className="text-slate-500 text-sm mt-1">Xem thông tin tài khoản và công ty (chỉ đọc)</p>
+          </div>
+          <div className="space-y-5">
           <motion.div
             className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden"
             variants={fadeUp}
@@ -193,6 +293,7 @@ export default function Profile() {
               </div>
             </div>
           </motion.div>
+          </div>
         </div>
       )}
     </DashboardLayout>

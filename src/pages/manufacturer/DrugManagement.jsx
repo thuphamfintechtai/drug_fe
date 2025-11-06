@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckLoader from '../../components/TruckLoader';
 import { 
   getDrugs,
   addDrug, 
@@ -11,11 +12,13 @@ import {
 
 export default function DrugManagement() {
   const [drugs, setDrugs] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Bắt đầu với true để hiển thị loading lần đầu
   const [showDialog, setShowDialog] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedDrug, setSelectedDrug] = useState(null);
   const [searchAtc, setSearchAtc] = useState('');
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
   const [formData, setFormData] = useState({
     tradeName: '',
     genericName: '',
@@ -41,20 +44,111 @@ export default function DrugManagement() {
 
   useEffect(() => {
     loadDrugs();
+    
+    return () => {
+      // Cleanup progress interval nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, []);
 
   const loadDrugs = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      setLoadingProgress(0);
+      
+      // Clear interval cũ nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Simulate progress từ 0 đến 90% trong khi đang load
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev < 0.9) {
+            return Math.min(prev + 0.02, 0.9);
+          }
+          return prev;
+        });
+      }, 50);
+      
       const response = await getDrugs();
+      
+      // Clear interval khi có response
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Xử lý data trước
       if (response.data.success) {
         setDrugs(response.data.data.drugs || []);
       }
+      
+      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
+      // Lấy current progress từ state bằng cách dùng ref để track
+      let currentProgress = 0;
+      setLoadingProgress(prev => {
+        currentProgress = prev;
+        return prev;
+      });
+      
+      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
+      if (currentProgress < 0.9) {
+        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
+        await new Promise(resolve => {
+          const speedUpInterval = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                // Tăng nhanh hơn (0.15 mỗi lần thay vì 0.02) - cùng một chiếc xe tăng tốc
+                const newProgress = Math.min(prev + 0.15, 1);
+                if (newProgress >= 1) {
+                  clearInterval(speedUpInterval);
+                  resolve();
+                }
+                return newProgress;
+              }
+              clearInterval(speedUpInterval);
+              resolve();
+              return 1;
+            });
+          }, 30); // Update nhanh hơn (30ms) để xe tăng tốc mượt
+          
+          // Safety timeout: đảm bảo không chờ quá lâu
+          setTimeout(() => {
+            clearInterval(speedUpInterval);
+            setLoadingProgress(1);
+            resolve();
+          }, 500);
+        });
+      } else {
+        // Nếu đã chạy gần hết, chỉ cần set 100% và đợi một chút để đảm bảo animation hoàn thành
+        setLoadingProgress(1);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
+      // Chờ một chút nữa để đảm bảo animation hoàn toàn kết thúc
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
+      // Clear interval khi có lỗi
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
       console.error('Lỗi khi tải danh sách thuốc:', error);
       alert('Không thể tải danh sách thuốc');
+      setLoadingProgress(0);
     } finally {
       setLoading(false);
+      // Reset progress sau 0.5s
+      setTimeout(() => {
+        setLoadingProgress(0);
+      }, 500);
     }
   };
 
@@ -64,17 +158,100 @@ export default function DrugManagement() {
       return;
     }
 
-    setLoading(true);
     try {
+      setLoading(true);
+      setLoadingProgress(0);
+      
+      // Clear interval cũ nếu có
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Simulate progress từ 0 đến 90% trong khi đang load
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev < 0.9) {
+            return Math.min(prev + 0.02, 0.9);
+          }
+          return prev;
+        });
+      }, 50);
+      
       const response = await searchDrugByATC(searchAtc);
+      
+      // Clear interval khi có response
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Xử lý data trước
       if (response.data.success) {
         setDrugs(response.data.data || []);
       }
+      
+      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
+      // Lấy current progress từ state bằng cách dùng ref để track
+      let currentProgress = 0;
+      setLoadingProgress(prev => {
+        currentProgress = prev;
+        return prev;
+      });
+      
+      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
+      if (currentProgress < 0.9) {
+        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
+        await new Promise(resolve => {
+          const speedUpInterval = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                // Tăng nhanh hơn (0.15 mỗi lần thay vì 0.02) - cùng một chiếc xe tăng tốc
+                const newProgress = Math.min(prev + 0.15, 1);
+                if (newProgress >= 1) {
+                  clearInterval(speedUpInterval);
+                  resolve();
+                }
+                return newProgress;
+              }
+              clearInterval(speedUpInterval);
+              resolve();
+              return 1;
+            });
+          }, 30); // Update nhanh hơn (30ms) để xe tăng tốc mượt
+          
+          // Safety timeout: đảm bảo không chờ quá lâu
+          setTimeout(() => {
+            clearInterval(speedUpInterval);
+            setLoadingProgress(1);
+            resolve();
+          }, 500);
+        });
+      } else {
+        // Nếu đã chạy gần hết, chỉ cần set 100% và đợi một chút để đảm bảo animation hoàn thành
+        setLoadingProgress(1);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
+      // Chờ một chút nữa để đảm bảo animation hoàn toàn kết thúc
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
+      // Clear interval khi có lỗi
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
       console.error('Lỗi khi tìm kiếm:', error);
       alert('Không thể tìm kiếm thuốc');
+      setLoadingProgress(0);
     } finally {
       setLoading(false);
+      // Reset progress sau 0.5s
+      setTimeout(() => {
+        setLoadingProgress(0);
+      }, 500);
     }
   };
 
@@ -169,96 +346,109 @@ export default function DrugManagement() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white rounded-2xl border border-cyan-200 shadow-sm p-6 flex items-center justify-between mb-6"
-      >
-        <div>
-          <h1 className="text-xl md:text-2xl font-semibold text-[#007b91] flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6 text-[#00a3c4]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+      {/* Loading State - chỉ hiển thị khi đang tải, không hiển thị content cho đến khi loading = false */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Banner */}
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-white rounded-2xl border border-cyan-200 shadow-sm p-6 flex items-center justify-between mb-6"
+          >
+            <div>
+              <h1 className="text-xl md:text-2xl font-semibold text-[#007b91] flex items-center gap-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-6 h-6 text-[#00a3c4]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                  />
+                </svg>
+                Quản lý thuốc
+              </h1>
+              <p className="text-slate-500 text-sm mt-1">
+                Thêm, sửa, xóa và tìm kiếm thuốc trong hệ thống
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Search & Create */}
+          <div className="flex-1 flex items-center">
+            <div className="relative flex-1">
+              {/* Icon kính lúp bên trái */}
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                </svg>
+              </span>
+
+              {/* Input tìm kiếm */}
+              <input
+                type="text"
+                value={searchAtc}
+                onChange={e => setSearchAtc(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                placeholder="Nhập mã ATC..."
+                className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
               />
-            </svg>
-            Quản lý thuốc
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Thêm, sửa, xóa và tìm kiếm thuốc trong hệ thống
-          </p>
-        </div>
-      </motion.div>
 
+              {/* Nút tìm kiếm nằm bên phải input */}
+              <button
+                onClick={handleSearch}
+                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+              >
+                <a className="text-white">Tìm kiếm</a>
+              </button>
+            </div>
 
-      {/* Search & Create */}
-      <div className="flex-1 flex items-center">
-        <div className="relative flex-1">
-          {/* Icon kính lúp bên trái */}
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
-            </svg>
-          </span>
+            {/* Nút Reset + Tạo thuốc */}
+            <div className="flex items-center gap-3 ml-4">
+              <button
+                onClick={() => { setSearchAtc(''); loadDrugs(); }}
+                className="px-4 py-2.5 rounded-full border border-[#90e0ef55] text-slate-700 hover:bg-[#90e0ef22] transition"
+              >
+                ↻ Reset
+              </button>
 
-          {/* Input tìm kiếm */}
-          <input
-            type="text"
-            value={searchAtc}
-            onChange={e => setSearchAtc(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            placeholder="Nhập mã ATC..."
-            className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
-          />
+              <button
+                onClick={handleCreate}
+                className="px-4 py-2.5 rounded-full border border-[#90e0ef55] text-slate-700 transition bg-[#3db6d9] hover:bg-[#2fa2c5]"
+              >
+                <a className="text-white">Tạo thuốc mới</a>
+              </button>
+            </div>
+          </div>
 
-          {/* Nút tìm kiếm nằm bên phải input */}
-          <button
-            onClick={handleSearch}
-            className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+          {/* Table */}
+          <motion.div
+            className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden mt-6"
+            variants={fadeUp}
+            initial="hidden"
+            animate="show"
           >
-            <a className="text-white">Tìm kiếm</a>
-          </button>
-        </div>
-
-        {/* Nút Reset + Tạo thuốc */}
-        <div className="flex items-center gap-3 ml-4">
-          <button
-            onClick={() => { setSearchAtc(''); loadDrugs(); }}
-            className="px-4 py-2.5 rounded-full border border-[#90e0ef55] text-slate-700 hover:bg-[#90e0ef22] transition"
-          >
-            ↻ Reset
-          </button>
-
-          <button
-           onClick={handleCreate}
-            className="px-4 py-2.5 rounded-full border border-[#90e0ef55] text-slate-700 transition bg-[#3db6d9] hover:bg-[#2fa2c5]"
-          >
-            <a className="text-white">Tạo thuốc mới</a>
-          </button>
-        </div>
-      </div>
-
-
-      {/* Table */}
-      <motion.div
-        className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden mt-6"
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
-        {loading ? (
-          <div className="p-12 text-center text-gray-500">Đang tải...</div>
-        ) : drugs.length === 0 ? (
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="w-full max-w-2xl px-8">
+                  <TruckLoader height={72} progress={loadingProgress} showTrack />
+                </div>
+                <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
+              </div>
+            ) : drugs.length === 0 ? (
           <div className="p-16 flex flex-col items-center justify-center text-gray-400">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -342,8 +532,10 @@ export default function DrugManagement() {
               </tbody>
             </table>
           </div>
-        )}
-      </motion.div>
+            )}
+          </motion.div>
+        </div>
+      )}
 
 
       {/* Create/Edit Dialog */}
