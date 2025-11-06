@@ -91,7 +91,6 @@ export default function ProductionManagement() {
     };
   }, []);
 
-  // FIX: Proper dependency array
   useEffect(() => {
     if (formData.manufacturingDate && shelfLifeValue) {
       const computed = addDuration(formData.manufacturingDate, shelfLifeValue, shelfLifeUnit);
@@ -116,7 +115,6 @@ export default function ProductionManagement() {
     }
   };
 
-  // FIX: Simplified loading logic
   const loadDrugs = async () => {
     try {
       setLoading(true);
@@ -176,7 +174,6 @@ export default function ProductionManagement() {
     setShowDialog(true);
   };
 
-  // FIX: Don't use main loading state in dialog
   const handleUploadToIPFS = async () => {
     if (!formData.drugId || !formData.batchNumber || !formData.quantity) {
       alert('Vui lòng điền đầy đủ thông tin bắt buộc');
@@ -210,7 +207,7 @@ export default function ProductionManagement() {
       };
 
       const uploadPayload = { quantity, metadata };
-      console.log('📤 Uploading to IPFS:', uploadPayload);
+      console.log('Uploading to IPFS:', uploadPayload);
 
       const response = await uploadToIPFS(uploadPayload);
       
@@ -225,10 +222,10 @@ export default function ProductionManagement() {
         setTimeout(() => {
           setStep(2);
           setUploadButtonState('idle');
-          alert('✅ Bước 1 thành công: Đã lưu thông tin lên IPFS!');
+          alert('Bước 1 thành công: Đã lưu thông tin lên IPFS!');
         }, 4500);
         
-        console.log('✅ IPFS data:', ipfsData);
+        console.log('IPFS data:', ipfsData);
       }
     } catch (error) {
       console.error('Lỗi khi upload IPFS:', error);
@@ -239,7 +236,7 @@ export default function ProductionManagement() {
 
   const checkWalletConnection = async () => {
     if (!isMetaMaskInstalled()) {
-      alert('⚠️ Vui lòng cài đặt MetaMask để mint NFT!');
+      alert('Vui lòng cài đặt MetaMask để mint NFT!');
       return false;
     }
 
@@ -258,7 +255,6 @@ export default function ProductionManagement() {
     }
   };
 
-  // FIX: Improved token ID parsing with better error handling
   const parseTokenIdsFromReceipt = (receipt, contract, expectedQuantity) => {
     const tokenIds = [];
     let foundEvent = false;
@@ -329,7 +325,6 @@ export default function ProductionManagement() {
   };
 
   const handleMintNFT = async () => {
-    // FIX: Prevent double submission
     if (processingMint) return;
     
     if (!ipfsData) {
@@ -359,18 +354,18 @@ export default function ProductionManagement() {
 
     try {
       const ipfsUrl = ipfsData.ipfsUrl || `ipfs://${ipfsData.ipfsHash}`;
-      console.log('🎨 Mint NFT:', { quantity, ipfsUrl });
+      console.log('Mint NFT:', { quantity, ipfsUrl });
 
       const contract = await getNFTContract();
       const amounts = Array(quantity).fill(1);
       
-      console.log('📤 Call mintNFT with amounts:', amounts);
+      console.log('Call mintNFT with amounts:', amounts);
       
       const tx = await contract.mintNFT(amounts);
-      console.log('⏳ TX submitted:', tx.hash);
+      console.log('TX submitted:', tx.hash);
       
       const receipt = await tx.wait();
-      console.log('✅ TX confirmed:', receipt);
+      console.log('TX confirmed:', receipt);
 
       // FIX: Use improved parsing function
       const tokenIds = parseTokenIdsFromReceipt(receipt, contract, quantity);
@@ -427,7 +422,7 @@ export default function ProductionManagement() {
         errorMsg = error.message;
       }
       
-      alert('❌ ' + errorMsg);
+      alert(errorMsg);
       setMintButtonState('idle');
       setStep(2);
     } finally {
@@ -544,6 +539,7 @@ export default function ProductionManagement() {
           {/* Action Button */}
           <div className="flex justify-end">
             <button
+            style={{ color: "white" }}
               onClick={handleStartProduction}
               className="px-4 py-2.5 rounded-full bg-gradient-to-r from-[#00a3c4] to-[#3db6d9] text-white font-medium shadow-md hover:shadow-lg transition flex items-center gap-2"
             >
@@ -595,7 +591,7 @@ export default function ProductionManagement() {
                   <select
                     value={formData.drugId}
                     onChange={(e) => setFormData({...formData, drugId: e.target.value})}
-                    className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                   >
                     <option value="">-- Chọn thuốc --</option>
                     {drugs.map(drug => (
@@ -625,7 +621,7 @@ export default function ProductionManagement() {
                       type="text"
                       value={formData.batchNumber}
                       onChange={(e) => setFormData({...formData, batchNumber: e.target.value})}
-                      className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                       placeholder="VD: LOT2024001"
                     />
                   </div>
@@ -635,7 +631,7 @@ export default function ProductionManagement() {
                       type="number"
                       value={formData.quantity}
                       onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                      className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                       placeholder="VD: 1000"
                       min="1"
                     />
@@ -652,7 +648,7 @@ export default function ProductionManagement() {
                       type="date"
                       value={formData.manufacturingDate}
                       onChange={(e) => setFormData({...formData, manufacturingDate: e.target.value})}
-                      className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                     />
                   </div>
                   <div>
@@ -663,13 +659,13 @@ export default function ProductionManagement() {
                         min="0"
                         value={shelfLifeValue}
                         onChange={(e) => setShelfLifeValue(e.target.value)}
-                        className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                        className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                         placeholder="VD: 12"
                       />
                       <select
                         value={shelfLifeUnit}
                         onChange={(e) => setShelfLifeUnit(e.target.value)}
-                        className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                        className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                       >
                         <option value="day">ngày</option>
                         <option value="month">tháng</option>
@@ -687,7 +683,7 @@ export default function ProductionManagement() {
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                    className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                     rows="3"
                     placeholder="Ghi chú thêm về lô sản xuất..."
                   />
@@ -698,57 +694,55 @@ export default function ProductionManagement() {
             {/* Step 2: IPFS Success */}
             {step === 2 && ipfsData && (
               <div className="p-8 space-y-4">
-                <div className="bg-green-50 rounded-xl p-6 border border-green-200">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-green-500 text-white flex items-center justify-center text-2xl">✓</div>
+                {/* Box: Bước 1 hoàn thành */}
+                <div className="rounded-xl p-5 border border-cyan-200 bg-cyan-50">
+                  <div className="flex items-start gap-3 mb-3">
+                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white text-cyan-600 border border-cyan-200 shadow-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293A1 1 0 006.293 10.707l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </span>
                     <div>
-                      <div className="font-bold text-green-800 text-lg">Bước 1 hoàn thành!</div>
-                      <div className="text-sm text-green-600">Dữ liệu đã được lưu lên IPFS</div>
+                      <div className="font-semibold text-cyan-800">Bước 1 hoàn thành!</div>
+                      <div className="text-sm text-cyan-700">Dữ liệu đã được lưu lên IPFS thành công.</div>
                     </div>
                   </div>
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-slate-600">IPFS Hash:</span>
-                      <span className="font-mono text-green-700">{ipfsData.ipfsHash}</span>
+                      <span className="font-mono text-cyan-700">{ipfsData.ipfsHash}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Số lượng NFT:</span>
-                      <span className="font-bold text-green-700">{ipfsData.amount || formData.quantity}</span>
+                      <span className="font-bold text-cyan-800">{ipfsData.amount || formData.quantity}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-cyan-50 rounded-xl p-6 border border-cyan-200">
-                  <div className="font-bold text-cyan-800 mb-3">Thông tin sản xuất:</div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Thuốc:</span>
-                      <span className="font-medium">{selectedDrug?.tradeName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Số lô:</span>
-                      <span className="font-mono font-medium">{formData.batchNumber}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Số lượng:</span>
-                      <span className="font-bold text-purple-700">{formData.quantity} hộp</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">NSX:</span>
-                      <span className="font-medium">{formData.manufacturingDate}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">HSD:</span>
-                      <span className="font-medium">{formData.expiryDate}</span>
-                    </div>
+                {/* Box: Thông tin sản xuất */}
+                <div className="rounded-xl p-5 border border-cyan-200 bg-cyan-50">
+                  <div className="font-semibold text-cyan-800 mb-3">Thông tin sản xuất:</div>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between"><span className="text-slate-600">Thuốc:</span><span className="font-medium">{selectedDrug?.tradeName}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-600">Số lô:</span><span className="font-mono font-medium">{formData.batchNumber}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-600">Số lượng:</span><span className="font-bold text-slate-800">{formData.quantity} hộp</span></div>
+                    <div className="flex justify-between"><span className="text-slate-600">NSX:</span><span className="font-medium">{formData.manufacturingDate}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-600">HSD:</span><span className="font-medium">{formData.expiryDate}</span></div>
                   </div>
                 </div>
 
-                <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
-                  <div className="font-semibold text-yellow-800 mb-2">⚠️ Sẵn sàng mint NFT</div>
-                  <div className="text-sm text-yellow-700">
-                    Bước tiếp theo sẽ gọi smart contract để mint {formData.quantity} NFT trên blockchain. 
-                    Quá trình này không thể hoàn tác.
+                {/* Box: Cảnh báo */}
+                <div className="rounded-xl p-4 border border-amber-200 bg-amber-50">
+                  <div className="flex items-start gap-3">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white text-amber-600 border border-amber-200 shadow-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l6.518 11.594A1.999 1.999 0 0116.518 18H3.482a2 2 0 01-1.743-3.307L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-2a1 1 0 01-1-1V8a1 1 0 112 0v3a1 1 0 01-1 1z" clipRule="evenodd" />
+                      </svg>
+                    </span>
+                    <div>
+                      <div className="font-semibold text-amber-800">Sẵn sàng mint NFT</div>
+                      <div className="text-sm text-amber-700">Bước tiếp theo sẽ gọi smart contract để mint {formData.quantity} NFT lên blockchain. Quá trình này không thể hoàn tác.</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -766,68 +760,65 @@ export default function ProductionManagement() {
             {/* Step 4: Success */}
             {step === 4 && mintResult && (
               <div className="p-8">
-                <div className="bg-green-50 rounded-xl p-8 border border-green-200 text-center">
-                  <div className="w-20 h-20 rounded-full bg-green-500 text-white flex items-center justify-center text-4xl mx-auto mb-4">✓</div>
-                  <div className="text-2xl font-bold text-green-800 mb-2">Sản xuất thành công!</div>
-                  <div className="text-sm text-green-600 mb-6">NFT đã được mint và lưu vào hệ thống</div>
-                  
-                  <div className="bg-white rounded-lg p-4 space-y-2 text-sm text-left">
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Số lô:</span>
-                      <span className="font-mono font-medium">{formData.batchNumber}</span>
+                <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-8 text-center">
+                  <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-white border border-cyan-200 text-cyan-600 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-8 h-8">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293A1 1 0 006.293 10.707l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="text-2xl font-bold text-cyan-900">Sản xuất thành công!</div>
+                  <div className="text-sm text-cyan-700 mt-1">NFT đã được mint và lưu vào hệ thống</div>
+
+                  <div className="mt-6 text-left bg-white rounded-xl border border-cyan-100 p-5">
+                    <div className="grid grid-cols-2 gap-y-2 text-sm">
+                      <div className="text-slate-600">Số lô:</div>
+                      <div className="text-right font-mono font-medium">{formData.batchNumber}</div>
+                      <div className="text-slate-600">Số lượng NFT:</div>
+                      <div className="text-right font-bold text-cyan-800">{formData.quantity}</div>
+                      {mintResult.transactionHash && (
+                        <>
+                          <div className="text-slate-600">Transaction Hash:</div>
+                          <div className="text-right font-mono text-xs text-cyan-700">{mintResult.transactionHash.slice(0, 10)}...</div>
+                        </>
+                      )}
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Số lượng NFT:</span>
-                      <span className="font-bold text-green-700">{formData.quantity}</span>
-                    </div>
-                    {mintResult.transactionHash && (
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Transaction Hash:</span>
-                        <span className="font-mono text-xs text-green-700">{mintResult.transactionHash.slice(0, 10)}...</span>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
             )}
 
             {/* Footer Actions */}
-            <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end space-x-3">
+            <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end space-x-8">
               {step === 1 && (
                 <TruckAnimationButton
                   onClick={handleUploadToIPFS}
                   disabled={uploadButtonState === 'uploading'}
                   buttonState={uploadButtonState}
                   defaultText="Bước 1: Upload IPFS"
-                  uploadingText="Đang vận chuyển dữ liệu... 🚛"
+                  uploadingText="Đang vận chuyển dữ liệu..."
                   successText="Upload thành công"
                 />
               )}
               {step === 2 && (
                 <>
                   <button
-                    onClick={() => setStep(1)}
-                    className="px-6 py-2.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition"
-                  >
-                    ← Quay lại
-                  </button>
-                  <NFTMintButton
                     onClick={handleMintNFT}
                     disabled={processingMint}
-                    buttonState={mintButtonState}
-                    defaultText="Bước 2: Mint NFT"
-                    mintingText="Minting..."
-                    successText="Mint thành công!"
-                  />
+                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {mintButtonState === 'minting' ? 'Đang mint...' : (mintButtonState === 'completed' ? 'Mint thành công!' : 'Mint NFT ngay')}
+                  </button>
                 </>
               )}
               {step === 4 && (
-                <button
-                  onClick={handleClose}
-                  className="px-6 py-2.5 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-medium shadow-md hover:shadow-lg transition"
-                >
-                  Hoàn thành
-                </button>
+                <>
+                  <button
+                    onClick={handleClose}
+                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg transition"
+                  >
+                    Hoàn thành
+                  </button>
+                </>
               )}
             </div>
           </div>

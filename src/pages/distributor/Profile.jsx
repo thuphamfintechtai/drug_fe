@@ -202,7 +202,7 @@ export default function Profile() {
               </div>
 
               <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
-                <div className="text-xs text-cyan-700 mb-1">👛 Wallet Address</div>
+                <div className="text-xs text-cyan-700 mb-1">Wallet Address</div>
                 <div className="font-mono text-sm text-cyan-800 break-all">
                   {profile.user?.walletAddress || 'Chưa có'}
                 </div>
@@ -249,24 +249,24 @@ export default function Profile() {
                 </div>
 
                 <div className="bg-slate-50 rounded-xl p-4">
-                  <div className="text-xs text-slate-500 mb-1">📍 Địa chỉ</div>
+                  <div className="text-xs text-slate-500 mb-1">Địa chỉ</div>
                   <div className="font-medium text-slate-800">{profile.company.address || 'N/A'}</div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">📞 Số điện thoại</div>
+                    <div className="text-xs text-slate-500 mb-1">Số điện thoại</div>
                     <div className="font-medium text-slate-800">{profile.company.phone || 'N/A'}</div>
                   </div>
                   <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">🌐 Website</div>
+                    <div className="text-xs text-slate-500 mb-1">Website</div>
                     <div className="font-medium text-slate-800">{profile.company.website || 'N/A'}</div>
                   </div>
                 </div>
 
                 {profile.company.contractAddress && (
                   <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-                    <div className="text-xs text-emerald-700 mb-1">⛓️ Contract Address</div>
+                    <div className="text-xs text-emerald-700 mb-1">Contract Address</div>
                     <div className="font-mono text-sm text-emerald-800 break-all">
                       {profile.company.contractAddress}
                     </div>
@@ -283,7 +283,6 @@ export default function Profile() {
             animate="show"
           >
             <div className="flex items-start gap-3">
-              <div className="text-2xl">ℹ️</div>
               <div>
                 <div className="font-semibold text-yellow-800 mb-1">Lưu ý quan trọng</div>
                 <div className="text-sm text-yellow-700">

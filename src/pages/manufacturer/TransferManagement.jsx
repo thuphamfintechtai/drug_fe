@@ -383,13 +383,13 @@ export default function TransferManagement() {
                           )}
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <button
+                        <button
                             onClick={() => handleSelectProduction(prod)}
                             disabled={prod.transferStatus === 'transferred'}
                             className={`px-4 py-2 border-2 rounded-full font-semibold transition-all duration-200 ${
                               prod.transferStatus === 'transferred'
-                                ? 'border-gray-300 bg-gray-200 text-gray-500 cursor-not-allowed'
-                                : 'border-[#3db6d9] bg-[#b3e9f4] text-black hover:bg-[#3db6d9] hover:text-white'
+                                ? 'border-gray-300 text-gray-400 cursor-not-allowed'
+                                : 'border-[#3db6d9] !text-[#3db6d9] hover:bg-[#3db6d9] hover:!text-white hover:shadow-md hover:shadow-[#3db6d9]/40'
                             }`}
                           >
                             {prod.transferStatus === 'transferred' ? 'Đã chuyển' : 'Chuyển giao'}
@@ -488,14 +488,11 @@ export default function TransferManagement() {
 
               {/* Select Distributor */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                  <span className="w-2 h-2 bg-cyan-500 rounded-full"></span>
-                  Chọn nhà phân phối *
-                </label>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">Chọn nhà phân phối *</label>
                 <select
                   value={formData.distributorId}
                   onChange={(e) => setFormData({...formData, distributorId: e.target.value})}
-                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                  className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                   disabled={loadingTokens}
                 >
                   <option value="">-- Chọn distributor --</option>
@@ -522,15 +519,12 @@ export default function TransferManagement() {
 
               {/* Quantity */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                  <span className="w-2 h-2 bg-cyan-500 rounded-full"></span>
-                  Số lượng NFT *
-                </label>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">Số lượng NFT *</label>
                 <input
                   type="number"
                   value={formData.quantity}
                   onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                  className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                   placeholder="Nhập số lượng"
                   min="1"
                   max={selectedProduction.quantity}
@@ -545,14 +539,11 @@ export default function TransferManagement() {
 
               {/* Notes */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                  <span className="w-2 h-2 bg-cyan-500 rounded-full"></span>
-                  Ghi chú
-                </label>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">Ghi chú</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                  className="w-full border-2 border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                  className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                   rows="3"
                   placeholder="Ghi chú về đơn chuyển giao..."
                   disabled={loadingTokens}

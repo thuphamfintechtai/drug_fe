@@ -161,27 +161,50 @@ export default function ProductionHistory() {
             <div className="flex flex-col md:flex-row gap-3 md:items-end">
               <div className="flex-1">
                 <label className="block text-sm text-slate-600 mb-1">Tìm kiếm</label>
-                <input
-                  value={search}
-                  onChange={e => updateFilter({ search: e.target.value, page: 1 })}
-                  placeholder="Tìm theo tên thuốc, số lô..."
-                  className="w-full border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
-                />
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                    </svg>
+                  </span>
+                  <input
+                    value={search}
+                    onChange={e => updateFilter({ search: e.target.value, page: 1 })}
+                    onKeyDown={e => e.key === 'Enter' && updateFilter({ search, page: 1 })}
+                    placeholder="Tìm theo tên thuốc, số lô..."
+                    className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                  />
+                  <button
+                    onClick={() => updateFilter({ search, page: 1 })}
+                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+                  >
+                    Tìm kiếm
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm text-slate-600 mb-1">Trạng thái</label>
-                <select
-                  value={status}
-                  onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-                  className="border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
-                >
-                  <option value="">Tất cả</option>
-                  <option value="minted">Minted (chưa chuyển)</option>
-                  <option value="transferred">Transferred</option>
-                  <option value="sold">Sold</option>
-                  <option value="expired">Expired</option>
-                  <option value="recalled">Recalled</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={status}
+                    onChange={e => updateFilter({ status: e.target.value, page: 1 })}
+                    className="h-12 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-12 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="minted">Minted (chưa chuyển)</option>
+                    <option value="transferred">Transferred</option>
+                    <option value="sold">Sold</option>
+                    <option value="expired">Expired</option>
+                    <option value="recalled">Recalled</option>
+                  </select>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-5 h-5 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
+                    viewBox="0 0 20 20" fill="currentColor"
+                  >
+                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.17l3.71-2.94a.75.75 0 111.04 1.08l-4.24 3.36a.75.75 0 01-.94 0L5.21 8.31a.75.75 0 01.02-1.1z" clipRule="evenodd" />
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
@@ -197,44 +220,43 @@ export default function ProductionHistory() {
               items.map((item, idx) => (
                 <div key={item._id || idx} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
                   <div className="p-5">
+                    {/* Header */}
                     <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <h3 className="text-lg font-semibold text-slate-800">
-                            {item.drug?.tradeName || 'N/A'}
-                          </h3>
-                          {item.transferStatus && (
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getTransferStatusColor(item.transferStatus)}`}>
-                              {getTransferStatusLabel(item.transferStatus)}
-                            </span>
-                          )}
-                          {item.status && (
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
-                              {getStatusLabel(item.status)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="space-y-1 text-sm text-slate-600">
-                          <div>Số lô: <span className="font-mono font-medium text-slate-800">{item.batchNumber || 'N/A'}</span></div>
-                          <div>Số lượng sản xuất: <span className="font-bold text-purple-700">{item.quantity || 0}</span></div>
-                          {item.nftCount !== undefined && (
-                            <div>Số lượng NFT đã mint: <span className="font-bold text-cyan-700">{item.nftCount}</span></div>
-                          )}
-                          <div>ATC Code: <span className="font-mono text-cyan-700">{item.drug?.atcCode || 'N/A'}</span></div>
-                        </div>
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        {item.drug?.tradeName || 'N/A'}
+                      </h3>
+                      {item.transferStatus && (
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getTransferStatusColor(item.transferStatus)}`}>
+                          {getTransferStatusLabel(item.transferStatus)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Top facts */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-sm">
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div className="text-slate-600">Số lô: <span className="font-mono font-medium text-slate-800">{item.batchNumber || 'N/A'}</span></div>
+                        {item.nftCount !== undefined && (
+                          <div className="mt-1">Số lượng NFT đã mint: <span className="font-bold text-cyan-700">{item.nftCount}</span></div>
+                        )}
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div className="text-slate-600">Số lượng sản xuất: <span className="font-bold text-purple-700">{item.quantity || 0}</span></div>
+                        <div className="mt-1">ATC Code: <span className="font-mono text-cyan-700">{item.drug?.atcCode || 'N/A'}</span></div>
                       </div>
                     </div>
 
+                    {/* Dates */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                      <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
-                        <div className="text-xs text-blue-600 mb-1">Ngày sản xuất</div>
-                        <div className="font-semibold text-blue-800">
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div className="text-xs text-slate-500 mb-1">Ngày sản xuất</div>
+                        <div className="font-semibold text-slate-800">
                           {item.mfgDate ? new Date(item.mfgDate).toLocaleDateString('vi-VN') : 'N/A'}
                         </div>
                       </div>
-                      <div className="bg-red-50 rounded-xl p-3 border border-red-200">
-                        <div className="text-xs text-red-600 mb-1">Hạn sử dụng</div>
-                        <div className="font-semibold text-red-800">
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div className="text-xs text-slate-500 mb-1">Hạn sử dụng</div>
+                        <div className="font-semibold text-slate-800">
                           {item.expDate ? new Date(item.expDate).toLocaleDateString('vi-VN') : 'N/A'}
                         </div>
                       </div>
@@ -255,22 +277,15 @@ export default function ProductionHistory() {
                       </div>
                     </div>
 
-                    {item.ipfsHash && (
-                      <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200 text-sm mb-3">
-                        <div className="font-semibold text-cyan-800 mb-1">IPFS Hash:</div>
-                        <div className="font-mono text-xs text-cyan-700 break-all">{item.ipfsHash}</div>
-                      </div>
-                    )}
-
                     {item.chainTxHash && (
-                      <div className="bg-purple-50 rounded-xl p-3 border border-purple-200 text-sm mb-3">
-                        <div className="font-semibold text-purple-800 mb-1">Transaction Hash (Blockchain):</div>
-                        <div className="font-mono text-xs text-purple-700 break-all">{item.chainTxHash}</div>
-                        <a 
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
+                        <div className="font-semibold text-slate-800 mb-1">Transaction Hash (Blockchain)</div>
+                        <div className="font-mono text-xs text-slate-700 break-all">{item.chainTxHash}</div>
+                        <a
                           href={`https://zeroscan.org/tx/${item.chainTxHash}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-purple-600 hover:text-purple-800 underline mt-1 inline-block"
+                          className="text-xs text-slate-600 hover:text-slate-800 underline mt-1 inline-block"
                         >
                           Xem trên ZeroScan →
                         </a>
@@ -278,9 +293,9 @@ export default function ProductionHistory() {
                     )}
 
                     {item.notes && (
-                      <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 text-sm mb-3">
-                        <div className="font-semibold text-amber-800 mb-1">Ghi chú:</div>
-                        <div className="text-amber-700">{item.notes}</div>
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
+                        <div className="font-semibold text-slate-800 mb-1">Ghi chú:</div>
+                        <div className="text-slate-700">{item.notes}</div>
                       </div>
                     )}
                   </div>
