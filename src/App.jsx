@@ -38,7 +38,7 @@ import UserHome from './pages/public/UserHome';
 import MetaMaskConnect from './pages/MetaMaskConnect';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
-
+import Login from './pages/auth/Login';
 function App() {
   return (
     <AuthProvider>
@@ -59,6 +59,7 @@ function AppContent() {
     <>
       {showNavbar && <Navbar />}
       <Routes>
+       <Route path="/login" element={<Login />} />
         <Route path="/register-business" element={<RegisterBusiness />} />
         <Route path="/forgot-password-business" element={<ForgotPasswordBusiness />} />
         {/* Role-based routes */}

@@ -634,7 +634,6 @@ export default function UserHome() {
       </div>
     </section>
 
-  
       {/* Footer */}
       <footer className="py-16 px-4 bg-gradient-to-b from-slate-800 to-slate-900 text-white relative overflow-hidden">
         <motion.div
