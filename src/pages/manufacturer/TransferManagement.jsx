@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import truckSVG from '../../assets/truck.svg';
 import { 
   getProductionHistory,
   getDistributors,
@@ -19,6 +20,8 @@ export default function TransferManagement() {
   const [showDialog, setShowDialog] = useState(false);
   const [selectedProduction, setSelectedProduction] = useState(null);
   const [availableTokenIds, setAvailableTokenIds] = useState([]);
+  const [buttonAnimating, setButtonAnimating] = useState(false);
+  const [buttonDone, setButtonDone] = useState(false);
   const [formData, setFormData] = useState({
     productionId: '',
     distributorId: '',
@@ -109,6 +112,11 @@ export default function TransferManagement() {
       return;
     }
 
+    // Trigger button animation
+    if (buttonAnimating) return;
+    setButtonAnimating(true);
+    setButtonDone(false);
+
     setLoading(true);
     try {
       const response = await createTransferToDistributor({
@@ -133,29 +141,48 @@ export default function TransferManagement() {
             }
 
             // Contract hiện tại (ERC721) chỉ nhận tokenIds + distributorAddress
+            // Animation tiếp tục chạy trong quá trình ký smart contract
             const onchain = await transferNFTToDistributor(tokenIds, distributorAddress);
             await saveTransferTransaction({
               invoiceId: invoice._id,
               transactionHash: onchain.transactionHash,
               tokenIds,
             });
+            
+            // Smart contract đã được ký thành công - hiển thị done
+            setButtonDone(true);
+            setButtonAnimating(false);
             alert('🎉 Đã chuyển NFT on-chain và lưu transaction thành công!');
+            
+            // Reset và đóng dialog sau 2.5s
+            setTimeout(() => {
+              setButtonDone(false);
+              setShowDialog(false);
+              setAvailableTokenIds([]);
+              loadData();
+            }, 2500);
           } catch (e) {
             console.error('Lỗi khi ký giao dịch hoặc lưu transaction:', e);
             const msg = e?.message || 'Giao dịch on-chain thất bại hoặc bị hủy.';
             alert(msg + ' Bạn có thể thử lại từ lịch sử chuyển giao.');
+            setButtonAnimating(false);
+            setButtonDone(false);
           }
         } else {
+          // User không chọn ký smart contract - stop animation
+          setButtonAnimating(false);
+          setButtonDone(false);
           alert('✅ Tạo yêu cầu chuyển giao thành công! Trạng thái: Pending\n\nBước tiếp theo: Gọi smart contract để chuyển quyền sở hữu NFT cho distributor.');
+          setShowDialog(false);
+          setAvailableTokenIds([]);
+          loadData();
         }
-
-        setShowDialog(false);
-        setAvailableTokenIds([]);
-        loadData();
       }
     } catch (error) {
       console.error('Lỗi khi tạo chuyển giao:', error);
       alert('❌ Không thể tạo chuyển giao: ' + (error.response?.data?.message || error.message));
+      setButtonAnimating(false);
+      setButtonDone(false);
     } finally {
       setLoading(false);
     }
@@ -480,12 +507,130 @@ export default function TransferManagement() {
 
             {/* Footer */}
             <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end space-x-3">
+              <style>{`
+                .truck-button {
+                  position: relative;
+                  background: #222b45;
+                  color: #fff;
+                  font-size: 15px;
+                  border: none;
+                  padding: 16px 36px;
+                  border-radius: 12px;
+                  cursor: pointer;
+                  overflow: hidden;
+                  transition: all 0.3s ease;
+                  min-width: 220px;
+                }
+                .truck-button:hover:not(:disabled) {
+                  background: #3b478a;
+                }
+                .truck-button:disabled {
+                  opacity: 0.6;
+                  cursor: not-allowed;
+                }
+                .truck-button span {
+                  position: relative;
+                  z-index: 2;
+                  display: block;
+                  font-weight: 500;
+                  transition: opacity 0.3s;
+                }
+                .truck-button .success {
+                  opacity: 0;
+                  position: absolute;
+                  top: 16px;
+                  left: 0;
+                  right: 0;
+                  text-align: center;
+                  z-index: 2;
+                }
+                .truck {
+                  position: absolute;
+                  left: 30%;
+                  bottom: 8px;
+                  width: 60px;
+                  height: 30px;
+                  transform: translateY(-50%) translateX(-120%);
+                  opacity: 0;
+                  transition: opacity 0.3s ease;
+                }
+                .truck-svg {
+                  width: 100%;
+                  height: auto;
+                  display: block;
+                  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.25));
+                }
+                .road {
+                  position: absolute;
+                  bottom: -10px;
+                  left: 10%;
+                  width: 80%;
+                  height: 3px;
+                  background: #ccc;
+                  opacity: 0;
+                  transition: opacity 0.4s ease;
+                  overflow: hidden;
+                }
+                .road::before {
+                  content: "";
+                  position: absolute;
+                  top: 0;
+                  left: -100%;
+                  width: 100%;
+                  height: 100%;
+                  background: linear-gradient(
+                    to right,
+                    #ffcc00 20%,
+                    transparent 20%,
+                    transparent 40%,
+                    #ffcc00 40%,
+                    #ffcc00 60%,
+                    transparent 60%,
+                    transparent 80%,
+                    #ffcc00 80%
+                  );
+                  background-size: 50px 3px;
+                  animation: moveRoad 1s linear infinite;
+                  opacity: 0.9;
+                }
+                @keyframes moveRoad {
+                  0% { left: -100%; }
+                  100% { left: 100%; }
+                }
+                .truck-button.active .default {
+                  opacity: 0;
+                }
+                .truck-button.active .truck {
+                  opacity: 1;
+                  animation: truckDrive 2.5s linear infinite;
+                }
+                .truck-button.active .road {
+                  opacity: 1;
+                }
+                @keyframes truckDrive {
+                  0% { transform: translateY(-50%) translateX(-120%); }
+                  100% { transform: translateY(-50%) translateX(250%); }
+                }
+                .truck-button.done .truck {
+                  opacity: 0;
+                  transform: translateY(-50%) translateX(600%);
+                  animation: none;
+                }
+                .truck-button.done .success {
+                  opacity: 1;
+                }
+              `}</style>
               <button
                 onClick={handleSubmit}
-                disabled={loading}
-                className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 transition"
+                disabled={loading || buttonAnimating}
+                className={`truck-button ${buttonAnimating ? 'active' : ''} ${buttonDone ? 'done' : ''}`}
               >
-                <a className="text-white">{loading ? 'Đang xử lý...' : 'Xác nhận chuyển giao'}</a>
+                <span className="default">{loading ? 'Đang xử lý...' : 'Xác nhận chuyển giao'}</span>
+                <span className="success">✅ Hoàn thành!</span>
+                <div className="truck">
+                  <img src={truckSVG} alt="Truck" className="truck-svg" />
+                </div>
+                <div className="road"></div>
               </button>
             </div>
           </div>
