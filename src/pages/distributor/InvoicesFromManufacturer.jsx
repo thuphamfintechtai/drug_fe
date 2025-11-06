@@ -564,6 +564,7 @@ export default function InvoicesFromManufacturer() {
                   Hủy
                 </button>
                 <button
+                style={{ color: 'white' }}
                   onClick={handleConfirmReceipt}
                   className="px-6 py-3 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold shadow-md hover:from-emerald-600 hover:to-green-700 transition"
                 >

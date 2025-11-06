@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import TruckLoader from '../../components/TruckLoader';
 import { getDrugs, searchDrugByATCCode } from '../../services/distributor/distributorService';
 
 export default function Drugs() {
   const [drugs, setDrugs] = useState([]);
+  const [allDrugs, setAllDrugs] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [searchAtc, setSearchAtc] = useState('');
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -77,15 +77,19 @@ export default function Drugs() {
       startProgress();
       const response = await getDrugs();
       if (response.data.success && response.data.data) {
-        setDrugs(Array.isArray(response.data.data.drugs) ? response.data.data.drugs : []);
+        const list = Array.isArray(response.data.data.drugs) ? response.data.data.drugs : [];
+        setDrugs(list);
+        setAllDrugs(list);
       } else {
         setDrugs([]);
+        setAllDrugs([]);
       }
       await finishProgress();
     } catch (error) {
       if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
       console.error('Lỗi khi tải danh sách thuốc:', error);
       setDrugs([]);
+      setAllDrugs([]);
       setLoadingProgress(0);
     } finally {
       setLoading(false);
@@ -93,37 +97,20 @@ export default function Drugs() {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchAtc.trim()) {
-      loadDrugs();
+  const handleSearch = () => {
+    const term = searchAtc.trim().toLowerCase();
+    if (!term) {
+      setDrugs(allDrugs);
       return;
     }
-    try {
-      setLoading(true);
-      startProgress();
-      const response = await searchDrugByATCCode(searchAtc);
-      if (response.data.success) {
-        const drugsData = response.data.data;
-        setDrugs(Array.isArray(drugsData) ? drugsData : Array.isArray(drugsData?.drugs) ? drugsData.drugs : []);
-      } else {
-        setDrugs([]);
-      }
-      await finishProgress();
-    } catch (error) {
-      if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
-      console.error('Lỗi khi tìm kiếm:', error);
-      alert('Không thể tìm kiếm thuốc');
-      setDrugs([]);
-      setLoadingProgress(0);
-    } finally {
-      setLoading(false);
-      setTimeout(() => setLoadingProgress(0), 500);
-    }
-  };
-
-  const fadeUp = {
-    hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
-    show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+    // Lọc client theo Tên thương mại | Tên hoạt chất | Mã ATC
+    const filtered = (allDrugs || []).filter(d => {
+      const trade = (d.tradeName || '').toLowerCase();
+      const generic = (d.genericName || '').toLowerCase();
+      const atc = (d.atcCode || '').toLowerCase();
+      return trade.includes(term) || generic.includes(term) || atc.includes(term);
+    });
+    setDrugs(filtered);
   };
 
   const safeDrugs = Array.isArray(drugs) ? drugs : [];
@@ -139,100 +126,105 @@ export default function Drugs() {
         </div>
       ) : (
         <div className="space-y-6">
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">💊 Danh sách thuốc</h1>
-          <p className="text-white/90 mt-2">Xem thông tin thuốc và tìm kiếm theo ATC code</p>
-        </div>
-      </motion.section>
-
-      <motion.div
-        className="rounded-2xl bg-white/85 backdrop-blur-xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-5 mb-5"
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
-        <div className="flex gap-3">
-          <input
-            value={searchAtc}
-            onChange={e => setSearchAtc(e.target.value)}
-            placeholder="Tìm kiếm theo mã ATC code..."
-            className="flex-1 border border-[#90e0ef55] bg-white/60 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
-          />
-          <button
-            onClick={handleSearch}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-lg hover:shadow-xl transition"
-          >
-            🔍 Tìm kiếm
-          </button>
-          <button
-            onClick={() => { setSearchAtc(''); loadDrugs(); }}
-            className="px-4 py-2.5 rounded-xl border border-[#90e0ef55] text-slate-700 hover:bg-[#90e0ef22] transition"
-          >
-            ↻ Reset
-          </button>
-        </div>
-      </motion.div>
-
-      <motion.div
-        className="bg-white/90 rounded-2xl border border-[#90e0ef55] shadow-[0_10px_30px_rgba(0,0,0,0.06)] overflow-hidden"
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
-        {safeDrugs.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="text-5xl mb-4">💊</div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có thuốc nào</h3>
-            <p className="text-slate-600">Danh sách thuốc sẽ hiển thị ở đây</p>
+          {/* Banner */}
+          <div className="bg-white rounded-2xl border border-cyan-200 shadow-sm p-6">
+            <h1 className="text-xl md:text-2xl font-semibold text-[#007b91] flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#00a3c4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+              </svg>
+              Quản lý thuốc
+            </h1>
+            <p className="text-slate-500 text-sm mt-1">
+              Xem thông tin thuốc và tìm kiếm theo tên thương mại, tên hoạt chất, mã ATC
+            </p>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4]">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Tên thương mại</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text_white uppercase">Tên hoạt chất</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Mã ATC</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Dạng bào chế</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Hàm lượng</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase">Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {safeDrugs.map((drug, index) => (
-                  <tr key={drug._id || index} className="hover:bg-[#f5fcff] transition group">
-                    <td className="px-6 py-4 font-semibold text-[#003544]">{drug.tradeName}</td>
-                    <td className="px-6 py-4 text-slate-700">{drug.genericName}</td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-mono font-semibold bg-cyan-100 text-cyan-800">
-                        {drug.atcCode}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-700">{drug.dosageForm}</td>
-                    <td className="px-6 py-4 text-slate-700">{drug.strength}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                        drug.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {drug.status === 'active' ? '✓ Active' : '✗ Inactive'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+          {/* Search */}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                </svg>
+              </span>
+
+              <input
+                type="text"
+                value={searchAtc}
+                onChange={e => setSearchAtc(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                placeholder="Tìm theo tên thương mại, tên hoạt chất, mã ATC..."
+                className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+              />
+
+              <button
+                onClick={handleSearch}
+                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+              >
+                Tìm kiếm
+              </button>
+            </div>
+
+            <button
+              onClick={() => { setSearchAtc(''); loadDrugs(); }}
+              className="px-4 py-2.5 rounded-full border border-gray-300 text-slate-700 hover:bg-gray-50 transition"
+            >
+              ↻ Reset
+            </button>
           </div>
-        )}
-      </motion.div>
-      </div>
+
+          {/* Table */}
+          <div className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden">
+            {safeDrugs.length === 0 ? (
+              <div className="p-16 flex flex-col items-center justify-center text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 mb-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
+                </svg>
+                <p className="text-gray-500 text-sm">Không có dữ liệu</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead className="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tên thương mại</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tên hoạt chất</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Mã ATC</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Dạng bào chế</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Hàm lượng</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Trạng thái</th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-gray-100">
+                    {safeDrugs.map((drug, index) => (
+                      <tr key={drug._id || index} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 font-medium text-gray-800">{drug.tradeName}</td>
+                        <td className="px-6 py-4 text-gray-600">{drug.genericName}</td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">
+                            {drug.atcCode}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-gray-600">{drug.dosageForm}</td>
+                        <td className="px-6 py-4 text-gray-600">{drug.strength}</td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            drug.status === "active"
+                              ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                              : "bg-rose-50 text-rose-600 border border-rose-100"
+                          }`}>
+                            {drug.status === "active" ? "Hoạt động" : "Không hoạt động"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </DashboardLayout>
   );
