@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import api from '../../utils/api';
+import api from 'axios';
 import Navbar from '../../components/Navbar';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
@@ -37,17 +37,9 @@ export default function PublicDrugInfo() {
     
     try {
       let response;
-      
-      if (searchType === 'atc') {
-        // Tìm kiếm theo ATC code - chỉ dùng endpoint public
-        response = await api.get(`/drugs/code/${encodeURIComponent(searchTerm.trim())}`);
-      } else {
-        // Tìm kiếm theo tên thuốc - chỉ dùng endpoint public (pharmacy/drugs/search)
-        response = await api.get('/pharmacy/drugs/search', {
-          params: { search: searchTerm.trim(), page: 1, limit: 20 }
-        });
-      }
-
+        response = await api.get('http://localhost:9000/api/publicRoute/drugs/search', {
+          params: { atcCode: searchTerm.trim() }
+        })
       console.log('Drug search response:', response);
       
       if (response.data.success) {
@@ -125,29 +117,7 @@ export default function PublicDrugInfo() {
           initial="hidden" 
           animate="show"
         >
-          <div className="flex gap-2 mb-4">
-            <button
-              onClick={() => setSearchType('name')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                searchType === 'name'
-                  ? 'bg-[#4BADD1] text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              Tên thuốc
-            </button>
-            <button
-              onClick={() => setSearchType('atc')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                searchType === 'atc'
-                  ? 'bg-[#4BADD1] text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              Mã ATC
-            </button>
-          </div>
-          
+    
           <div className="flex gap-3">
             <input
               value={searchTerm}

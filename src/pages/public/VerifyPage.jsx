@@ -1,9 +1,8 @@
 // src/pages/VerifyPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-// Xóa: import './VerifyPage.css';
 
-// --- HÀM HELPER (Không thay đổi) ---
+// --- HÀM HELPER ---
 
 // 1. Giải mã Base64URL (an toàn cho trình duyệt)
 function decodeBase64Url(base64Url) {
@@ -20,23 +19,75 @@ function decodeBase64Url(base64Url) {
     const decodedString = new TextDecoder().decode(bytes);
     return decodedString;
   } catch (error) {
-    console.error("Lỗi giải mã Base64URL:", error);
-    throw new Error("Dữ liệu Base64URL không hợp lệ");
+    console.error('Lỗi giải mã Base64URL:', error);
+    throw new Error('Dữ liệu Base64URL không hợp lệ');
   }
 }
 
 // 2. Format ngày giờ
 function formatDate(isoString) {
-  if (!isoString) return "N/A";
+  if (!isoString) return 'N/A';
   return new Date(isoString).toLocaleString('vi-VN');
 }
 
 // 3. Icon cho từng giai đoạn
-function getStageIcon(stage) {
-  if (stage.includes('manufacturing')) return '🏭';
-  if (stage.includes('distributor')) return '🚚';
-  if (stage.includes('pharmacy')) return '🏥';
+function getStageIcon(stage = '') {
+  const value = String(stage).toLowerCase();
+  if (value.includes('manufacturing')) return '🏭';
+  if (value.includes('distributor')) return '🚚';
+  if (value.includes('pharmacy')) return '🏥';
   return '📦';
+}
+
+function StatusBadge({ isVerified }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium shadow-sm ${
+        isVerified
+          ? 'bg-[#66b9d8] text-white'
+          : 'bg-[#ff7a59] text-white'
+      }`}
+    >
+      <span
+        className={`inline-block h-2.5 w-2.5 rounded-full ${
+          isVerified ? 'bg-white' : 'bg-white'
+        }`}
+      />
+      {isVerified ? 'Đã xác thực' : 'Chưa hoàn tất'}
+    </span>
+  );
+}
+
+function LabelValue({ label, children, withCopy = false, copyText = '' }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard?.writeText(String(copyText));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {}
+  };
+
+  return (
+    <div className="grid grid-cols-[160px_1fr] items-start gap-3 py-2">
+      <div className="text-sm font-medium text-slate-500">{label}</div>
+      <div className="flex items-center gap-2">
+        <div className="text-slate-800 font-medium break-all">{children}</div>
+        {withCopy && copyText ? (
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="inline-flex items-center rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-300 active:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-200"
+            aria-label="Sao chép"
+            title="Sao chép"
+          >
+            {copied ? 'Đã chép' : 'Sao chép'}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
 // --- COMPONENT CHÍNH ---
@@ -46,11 +97,12 @@ function VerifyPage() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     const dataParam = searchParams.get('data');
     if (!dataParam) {
-      setError("Không tìm thấy dữ liệu (data) trên URL.");
+      setError('Không tìm thấy dữ liệu (data) trên URL.');
       setLoading(false);
       return;
     }
@@ -60,8 +112,8 @@ function VerifyPage() {
       const parsedData = JSON.parse(decodedJson);
       setData(parsedData);
     } catch (err) {
-      console.error("Lỗi khi xử lý dữ liệu:", err);
-      setError("Dữ liệu xác thực không hợp lệ hoặc bị hỏng.");
+      console.error('Lỗi khi xử lý dữ liệu:', err);
+      setError('Dữ liệu xác thực không hợp lệ hoặc bị hỏng.');
     } finally {
       setLoading(false);
     }
@@ -71,8 +123,8 @@ function VerifyPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="p-10 text-lg text-center bg-white rounded-lg shadow-md">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="px-6 py-4 text-slate-700 text-sm bg-white rounded-md shadow-sm ring-1 ring-slate-200">
           Đang tải dữ liệu...
         </div>
       </div>
@@ -81,113 +133,162 @@ function VerifyPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="p-10 text-lg font-bold text-center text-red-600 bg-white rounded-lg shadow-md">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="px-6 py-4 text-sm font-semibold text-red-700 bg-white rounded-md shadow-sm ring-1 ring-red-200">
           ❌ {error}
         </div>
       </div>
     );
   }
 
-  if (!data) {
-    return null;
-  }
+  if (!data) return null;
 
-  const lastJourneyStep = data.journey[data.journey.length - 1];
+  const journey = Array.isArray(data.journey) ? data.journey : [];
+  const lastJourneyStep = journey[journey.length - 1] || {};
   const isVerified = lastJourneyStep?.supplyChainCompleted === true;
 
   return (
-    // Thêm bg-gray-100 để có nền xám cho toàn trang
-    <div className="max-w-4xl min-h-screen p-4 mx-auto sm:p-8 bg-gray-50">
-      <div className="flex flex-col gap-6">
-        {/* 1. Banner Trạng Thái */}
-        <div
-          className={`p-6 rounded-lg text-center text-white shadow-lg ${
-            isVerified ? 'bg-green-600' : 'bg-yellow-500'
-          }`}
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 mt-16 to-slate-100">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        {/* Header */}
+        <div className={`relative overflow-hidden rounded-2xl border ${
+          isVerified ? 'bg-[#66b9d8] border-[#66b9d8]' : 'bg-[#ff7a59] border-[#ff7a59]'
+        } shadow-lg`}
         >
-          <h1 className="mb-1 text-3xl font-bold">
-            {isVerified ? '✅ Xác thực Thành công' : '⏳ Đang trong chuỗi cung ứng'}
-          </h1>
-          <p className="text-lg opacity-90">
-            {isVerified
-              ? 'Sản phẩm này đã hoàn thành chuỗi cung ứng.'
-              : 'Sản phẩm này chưa được ghi nhận tại điểm cuối.'}
-          </p>
-        </div>
-
-        {/* 2. Thẻ Thông tin Thuốc/NFT */}
-        <div className="p-6 bg-white rounded-lg shadow-md">
-          <h2 className="pb-3 mb-5 text-2xl font-semibold text-blue-700 border-b border-gray-200">
-            Thông tin Sản phẩm (NFT)
-          </h2>
-          <div className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-3">
-            <strong className="font-semibold text-gray-600">Tên thuốc:</strong>
-            <span className="font-medium">{data.nft.drug.tradeName}</span>
-            <strong className="font-semibold text-gray-600">Số lô:</strong>
-            <span className="font-medium">{data.nft.batchNumber}</span>
-            <strong className="font-semibold text-gray-600">Số Sê-ri:</strong>
-            <span className="font-medium">{data.nft.serialNumber}</span>
-            <strong className="font-semibold text-gray-600">Token ID:</strong>
-            <span className="font-medium">{data.nft.tokenId}</span>
-            <strong className="font-semibold text-gray-600">Trạng thái:</strong>
-            <span className="font-medium capitalize">{data.nft.status}</span>
-            <strong className="font-semibold text-gray-600">Chủ sở hữu:</strong>
-            <span className="font-medium">
-              {data.nft.currentOwner?.fullName || 'N/A'}
-            </span>
-            <strong className="font-semibold text-gray-600">Ngày sản xuất:</strong>
-            <span className="font-medium">{formatDate(data.nft.mfgDate)}</span>
-            <strong className="font-semibold text-gray-600">Hạn sử dụng:</strong>
-            <span className="font-medium">{formatDate(data.nft.expDate)}</span>
+          <div className="p-6 sm:p-8 text-white">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                  {isVerified ? 'Xác thực thành công' : 'Đang trong chuỗi cung ứng'}
+                </h1>
+                <p className="opacity-90 mt-1">
+                  {isVerified
+                    ? 'Sản phẩm này đã hoàn thành chuỗi cung ứng.'
+                    : 'Sản phẩm này chưa được ghi nhận tại điểm cuối.'}
+                </p>
+              </div>
+              <StatusBadge isVerified={isVerified} />
+            </div>
           </div>
         </div>
 
-        {/* 3. Dòng thời gian (Timeline) */}
-        <div className="p-6 bg-white rounded-lg shadow-md">
-          <h2 className="pb-3 mb-5 text-2xl font-semibold text-blue-700 border-b border-gray-200">
-            Hành trình Chuỗi cung ứng
-          </h2>
-          <ul className="relative m-0 p-0 list-none">
-            {/* Đây là đường kẻ dọc của timeline */}
-            <div className="absolute top-0 bottom-0 w-1 bg-gray-200 rounded-full left-5"></div>
-
-            {data.journey.map((step, index) => (
-              <li key={index} className="relative pl-14 mb-7 last:mb-0">
-                <div className="absolute top-0 flex items-center justify-center w-10 h-10 text-2xl text-white bg-blue-600 rounded-full left-0 ring-4 ring-white shadow-lg">
-                  {getStageIcon(step.stage)}
-                </div>
-                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                  <span className="block mb-1 text-sm text-gray-500">
-                    {formatDate(step.date)}
-                  </span>
-                  <h3 className="mb-2 text-lg font-semibold">
-                    {step.description}
-                  </h3>
-                  {step.manufacturer && (
-                    <p className="m-0 text-sm text-gray-700">Bởi: {step.manufacturer}</p>
-                  )}
-                  {step.status && (
-                    <p className="m-0 text-sm font-medium text-gray-700">Trạng thái: <span className="capitalize">{step.status}</span></p>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* 4. Thông tin Lịch sử Blockchain (Nếu có) */}
-        {data.blockchainHistory && data.blockchainHistory.length > 0 && (
-          <div className="p-6 bg-white rounded-lg shadow-md">
-            <h2 className="pb-3 mb-5 text-2xl font-semibold text-blue-700 border-b border-gray-200">
-              Lịch sử Blockchain
-            </h2>
-            <pre className="p-4 text-sm text-white bg-gray-800 rounded-md overflow-x-auto">
-              {JSON.stringify(data.blockchainHistory, null, 2)}
-            </pre>
+        {/* Product card */}
+        <section className="mt-6">
+          <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
+              <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
+                Thông tin Sản phẩm (NFT)
+              </h2>
+              <span className="text-xs px-2 py-1 rounded-md bg-slate-100 text-slate-600">
+                {data.nft?.status ? String(data.nft.status).toUpperCase() : 'N/A'}
+              </span>
+            </div>
+            <div className="px-6 py-4 divide-y divide-slate-100">
+              <LabelValue label="Tên thuốc">
+                {data.nft?.drug?.tradeName || 'N/A'}
+              </LabelValue>
+              <LabelValue label="Số lô">
+                {data.nft?.batchNumber || 'N/A'}
+              </LabelValue>
+              <LabelValue label="Số sê-ri">
+                {data.nft?.serialNumber || 'N/A'}
+              </LabelValue>
+              <LabelValue label="Token ID" withCopy copyText={data.nft?.tokenId}>
+                {data.nft?.tokenId || 'N/A'}
+              </LabelValue>
+              <LabelValue label="Chủ sở hữu">
+                {data.nft?.currentOwner?.fullName || 'N/A'}
+              </LabelValue>
+              <LabelValue label="Ngày sản xuất">
+                {formatDate(data.nft?.mfgDate)}
+              </LabelValue>
+              <LabelValue label="Hạn sử dụng">
+                {formatDate(data.nft?.expDate)}
+              </LabelValue>
+            </div>
           </div>
-        )}
-      </div>
+        </section>
+
+        {/* Timeline */}
+        <section className="mt-6">
+          <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-200">
+              <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
+                Hành trình Chuỗi cung ứng
+              </h2>
+            </div>
+            <div className="px-6 py-6">
+              {journey.length === 0 ? (
+                <div className="text-sm text-slate-500">Chưa có dữ liệu hành trình.</div>
+              ) : (
+                <ol className="relative ml-5 border-s-l border-slate-200">
+                  {journey.map((step, index) => {
+                    const active = index === journey.length - 1;
+                    const icon = getStageIcon(step?.stage || '');
+                    return (
+                      <li key={index} className="relative pl-6 pb-8 last:pb-0">
+                        <span className={`absolute -left-3 top-0 inline-flex items-center justify-center h-6 w-6 rounded-full ring-2 ${
+                          active ? 'bg-blue-600 text-white ring-blue-100' : 'bg-slate-200 text-slate-700 ring-white'
+                        } shadow`}
+                        >
+                          <span className="text-[13px] leading-none">{icon}</span>
+                        </span>
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-base font-semibold text-slate-800 m-0">
+                              {step?.description || 'Sự kiện' }
+                            </h3>
+                            {step?.status ? (
+                              <span className="text-[11px] px-2 py-0.5 rounded-md bg-slate-200 text-slate-700 capitalize">
+                                {step.status}
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500">
+                            {formatDate(step?.date)}
+                          </div>
+                          {step?.manufacturer ? (
+                            <div className="mt-2 text-sm text-slate-700">
+                              Bởi: {step.manufacturer}
+                            </div>
+                          ) : null}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Blockchain history */}
+        {Array.isArray(data.blockchainHistory) && data.blockchainHistory.length > 0 ? (
+          <section className="mt-6">
+            <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
+                <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
+                  Lịch sử Blockchain
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowHistory((v) => !v)}
+                  className="text-sm px-3 py-1.5 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                >
+                  {showHistory ? 'Ẩn' : 'Hiện'}
+                </button>
+              </div>
+              {showHistory ? (
+                <div className="px-6 py-6">
+                  <pre className="p-4 text-[13px] text-white bg-slate-800 rounded-md overflow-x-auto">
+{JSON.stringify(data.blockchainHistory, null, 2)}
+                  </pre>
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+      </main>
     </div>
   );
 }

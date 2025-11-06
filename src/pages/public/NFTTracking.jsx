@@ -27,9 +27,9 @@ export default function PublicNFTTracking() {
     setLoading(true);
     setSearched(true);
     try {
-      // Gọi endpoint public không cần authentication
-      const response = await api.get(`/pharmacy/track/${tokenId.trim()}`);
-      console.log('Track response:', response);
+      // Gọi endpoint public mới
+      const response = await api.get(`/publicRoute/Tracking/${tokenId.trim()}`);
+      console.log('Public Tracking response:', response);
       if (response.data.success) {
         setJourney(response.data.data);
         setSearchParams({ tokenId: tokenId.trim() });
@@ -55,7 +55,7 @@ export default function PublicNFTTracking() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen bg-gradient-to-br mt-16 from-slate-50 via-white to-slate-50">
       <Navbar />
       
       <div className="max-w-6xl mx-auto px-4 py-12">
