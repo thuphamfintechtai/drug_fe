@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import TruckLoader from '../../components/TruckLoader';
@@ -11,6 +11,10 @@ export default function PharmacyNFTTracking() {
   const [searched, setSearched] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
+  // Loading cho PAGE (khởi động trang)
+  const [pageLoading, setPageLoading] = useState(true);
+  const [pageProgress, setPageProgress] = useState(0);
+  const pageIntervalRef = useRef(null);
 
   const navigationItems = [
     { path: '/pharmacy', label: 'Tổng quan', active: false },
@@ -20,6 +24,44 @@ export default function PharmacyNFTTracking() {
     { path: '/pharmacy/nft-tracking', label: 'Tra cứu NFT', active: true },
     { path: '/pharmacy/profile', label: 'Hồ sơ', active: false },
   ];
+
+  // Hiệu ứng load trang (khởi động) giống các trang khác
+  useEffect(() => {
+    setPageLoading(true);
+    setPageProgress(0);
+    if (pageIntervalRef.current) { clearInterval(pageIntervalRef.current); pageIntervalRef.current = null; }
+    pageIntervalRef.current = setInterval(() => {
+      setPageProgress(prev => (prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev));
+    }, 50);
+    const complete = async () => {
+      if (pageIntervalRef.current) { clearInterval(pageIntervalRef.current); pageIntervalRef.current = null; }
+      let current = 0; setPageProgress(p => { current = p; return p; });
+      if (current < 0.9) {
+        await new Promise(resolve => {
+          const su = setInterval(() => {
+            setPageProgress(prev => {
+              if (prev < 1) {
+                const np = Math.min(prev + 0.15, 1);
+                if (np >= 1) { clearInterval(su); resolve(); }
+                return np;
+              }
+              clearInterval(su); resolve(); return 1;
+            });
+          }, 30);
+          setTimeout(() => { clearInterval(su); setPageProgress(1); resolve(); }, 500);
+        });
+      } else {
+        setPageProgress(1); await new Promise(r => setTimeout(r, 200));
+      }
+      await new Promise(r => setTimeout(r, 100));
+      setPageLoading(false);
+      setTimeout(() => setPageProgress(0), 500);
+    };
+    complete();
+    return () => {
+      if (pageIntervalRef.current) { clearInterval(pageIntervalRef.current); pageIntervalRef.current = null; }
+    };
+  }, []);
 
   const handleSearch = async () => {
     if (!tokenId.trim()) {
@@ -124,6 +166,15 @@ export default function PharmacyNFTTracking() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
+      {pageLoading ? (
+        <div className="flex flex-col items-center justify-center min-h-[50vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={pageProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải trang...</div>
+        </div>
+      ) : (
+        <>
       <motion.section
         className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
         style={{ background: 'linear-gradient(to top right, #4BADD1, #7AC3DE, #4BADD1)' }}
@@ -178,11 +229,13 @@ export default function PharmacyNFTTracking() {
       </motion.div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center min-h-[40vh]">
-          <div className="w-full max-w-2xl">
-            <TruckLoader height={72} progress={loadingProgress} showTrack />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-600">
+          <div className="inline-flex items-center gap-2">
+            <svg className="w-6 h-6 animate-spin text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 018-8v0m0 0a8 8 0 018 8m0 0a8 8 0 01-8 8m0 0a8 8 0 01-8-8" />
+            </svg>
+            <span className="text-base">Đang tra cứu hành trình...</span>
           </div>
-          <div className="text-lg text-slate-600 mt-6">Đang tra cứu hành trình...</div>
         </div>
       ) : !searched ? (
         <motion.div className="rounded-2xl border p-10 text-center" 
@@ -420,6 +473,8 @@ export default function PharmacyNFTTracking() {
             </div>
           </div>
         </motion.div>
+      )}
+        </>
       )}
     </DashboardLayout>
   );

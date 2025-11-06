@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckLoader from '../../components/TruckLoader';
 import pharmacyService from '../../services/pharmacy/pharmacyService';
 
 export default function PharmacyDrugs() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
   const [atcSearch, setAtcSearch] = useState('');
   const [expandedItem, setExpandedItem] = useState(null);
@@ -137,11 +140,27 @@ export default function PharmacyDrugs() {
 
   useEffect(() => {
     loadData();
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, [page, search]);
 
   const loadData = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      setLoadingProgress(0);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      // Tăng dần tiến trình đến 90% như DistributionHistory
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress(prev => (prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev));
+      }, 50);
+
       const params = { page, limit: 10 };
       if (search) params.search = search;
 
@@ -157,7 +176,34 @@ export default function PharmacyDrugs() {
     } catch (error) {
       console.error('Lỗi khi tải danh sách thuốc:', error);
     } finally {
+      // Hoàn tất tiến trình đến 100%
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      let current = 0;
+      setLoadingProgress(p => { current = p; return p; });
+      if (current < 0.9) {
+        await new Promise(resolve => {
+          const speedUp = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) {
+                const next = Math.min(prev + 0.15, 1);
+                if (next >= 1) { clearInterval(speedUp); resolve(); }
+                return next;
+              }
+              clearInterval(speedUp); resolve(); return 1;
+            });
+          }, 30);
+          setTimeout(() => { clearInterval(speedUp); setLoadingProgress(1); resolve(); }, 500);
+        });
+      } else {
+        setLoadingProgress(1);
+        await new Promise(r => setTimeout(r, 200));
+      }
+      await new Promise(r => setTimeout(r, 100));
       setLoading(false);
+      setTimeout(() => setLoadingProgress(0), 500);
     }
   };
 
@@ -236,6 +282,15 @@ export default function PharmacyDrugs() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
+        </div>
+      ) : (
+        <>
       {/* Banner */}
       <motion.section
         className="relative overflow-hidden rounded-3xl mb-6 border-2 border-[#4BADD1] shadow-[0_8px_24px_rgba(75,173,209,0.2)] bg-[#4BADD1]"
@@ -311,12 +366,7 @@ export default function PharmacyDrugs() {
         initial="hidden" 
         animate="show"
       >
-        {loading ? (
-          <div className="p-10 text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4BADD1] border-t-transparent mx-auto mb-4"></div>
-            <p className="text-slate-700 font-medium">Đang tải dữ liệu...</p>
-          </div>
-        ) : safeItems.length === 0 ? (
+        {safeItems.length === 0 ? (
           <div className="p-12 text-center">
             <div className="flex justify-center mb-6">
               <div className="relative">
@@ -626,6 +676,8 @@ export default function PharmacyDrugs() {
           </select>
         </div>
       </div>
+        </>
+      )}
     </DashboardLayout>
   );
 }
