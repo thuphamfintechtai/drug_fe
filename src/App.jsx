@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import Register from './pages/auth/Register';
 import RegisterBusiness from './pages/auth/RegisterBusiness';
 import ForgotPasswordBusiness from './pages/auth/ForgotPasswordBusiness';
 import PublicNFTTracking from './pages/public/NFTTracking';
@@ -60,7 +61,8 @@ function AppContent() {
     <>
       {showNavbar && <Navbar />}
       <Routes>
-       <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/register-business" element={<RegisterBusiness />} />
         <Route path="/forgot-password-business" element={<ForgotPasswordBusiness />} />
         {/* Role-based routes */}

@@ -124,12 +124,7 @@ export default function Navbar() {
                     <div className="text-xs text-white/80">{user?.role}</div>
                   </div>
                 </motion.div>
-                <button
-                  onClick={handleLogout}
-                  className="px-5 py-2 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition"
-                >
-                  Đăng xuất
-                </button>
+                <LogoutButton onLogout={handleLogout} />
               </>
             )}
           </div>
@@ -222,12 +217,9 @@ export default function Navbar() {
                       <div className="text-xs text-white/80">{user?.role}</div>
                     </div>
                   </motion.div>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full px-4 py-3 bg-red-500 text-white font-semibold rounded-xl"
-                  >
-                    Đăng xuất
-                  </button>
+                  <div className="flex justify-center">
+                    <LogoutButton onLogout={handleLogout} />
+                  </div>
                 </>
               )}
             </div>

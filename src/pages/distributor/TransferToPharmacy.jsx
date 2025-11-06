@@ -248,10 +248,9 @@ export default function TransferToPharmacy() {
       setShowDialog(true);
     } catch (error) {
       console.error('Lỗi khi xử lý distribution:', error);
-      // Fallback: vẫn mở dialog với distribution từ list
       setSelectedDistribution({
         ...dist,
-        tokenIds: tokenIds, // Dùng tokenIds đã tìm được (nếu có)
+        tokenIds: tokenIds, 
       });
       setFormData({
         distributionId: dist._id,
@@ -279,15 +278,13 @@ export default function TransferToPharmacy() {
       return;
     }
   
-    // ✅ BẮT BUỘC phải có tokenIds
     let tokenIds = selectedDistribution.tokenIds || [];
     
     if (tokenIds.length === 0) {
-      alert('❌ Không tìm thấy tokenIds!\n\nDistribution này chưa có NFT được gán.\nVui lòng liên hệ quản trị viên.');
+      alert('Không tìm thấy tokenIds!\n\nDistribution này chưa có NFT được gán.\nVui lòng liên hệ quản trị viên.');
       return;
     }
   
-    // ✅ Slice tokenIds theo quantity
     const selectedTokenIds = tokenIds.slice(0, requestedQty);
     
     if (selectedTokenIds.length < requestedQty) {
@@ -526,7 +523,7 @@ export default function TransferToPharmacy() {
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify_center flex-shrink-0">3</div>
+            <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">3</div>
             <div>
               <div className="font-semibold text-slate-800">Chuyển quyền sở hữu NFT</div>
               <div className="text-sm text-slate-600">Frontend gọi Smart Contract để transfer NFT từ Distributor wallet → Pharmacy wallet</div>
@@ -590,14 +587,15 @@ export default function TransferToPharmacy() {
                       {dist.distributionDate ? new Date(dist.distributionDate).toLocaleDateString('vi-VN') : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className="flex items_center justify-center">
-                        <button
-                          onClick={() => handleSelectDistribution(dist)}
-                          className="px-4 py-2 border-2 border-[#3db6d9] bg-[#b3e9f4] text-black rounded-full font-semibold hover:bg-[#3db6d9] hover:text-white transition-all duration-200"
-                        >
-                          Chuyển cho NT
-                        </button>
-                      </div>
+<div className="flex items-center justify-center">
+  <button
+    onClick={() => handleSelectDistribution(dist)}
+    className="px-4 py-2 border-2 border-[#3db6d9] bg-white !text-[#3db6d9] rounded-full font-semibold hover:bg-[#3db6d9] hover:!text-white transition-all duration-200"
+  >
+    Chuyển cho NT
+  </button>
+</div>
+
                     </td>
                   </tr>
                 ))}
