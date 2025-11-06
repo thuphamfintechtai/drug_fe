@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import { getSupplyChainHistory } from '../../services/admin/adminService';
+import TruckLoader from '../../components/TruckLoader';
 
 export default function SupplyChainHistory() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -10,6 +11,8 @@ export default function SupplyChainHistory() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0 });
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
 
   const page = parseInt(searchParams.get('page') || '1', 10);
   const drugId = searchParams.get('drugId') || '';
@@ -24,6 +27,12 @@ export default function SupplyChainHistory() {
   const load = async () => {
     setLoading(true); 
     setError('');
+    setLoadingProgress(0);
+    if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
+    // 0 -> 0.9
+    progressIntervalRef.current = setInterval(() => {
+      setLoadingProgress(prev => (prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev));
+    }, 50);
     try {
       const params = { page, limit: 20 };
       if (drugId) params.drugId = drugId;
@@ -39,11 +48,31 @@ export default function SupplyChainHistory() {
     } catch (e) { 
       setError(e?.response?.data?.message || 'Không thể tải dữ liệu'); 
     } finally { 
+      if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
+      let current = 0; setLoadingProgress(p => { current = p; return p; });
+      if (current < 0.9) {
+        await new Promise(resolve => {
+          const su = setInterval(() => {
+            setLoadingProgress(prev => {
+              if (prev < 1) { const np = Math.min(prev + 0.15, 1); if (np >= 1) { clearInterval(su); resolve(); } return np; }
+              clearInterval(su); resolve(); return 1;
+            });
+          }, 30);
+          setTimeout(() => { clearInterval(su); setLoadingProgress(1); resolve(); }, 500);
+        });
+      } else {
+        setLoadingProgress(1); await new Promise(r => setTimeout(r, 200));
+      }
+      await new Promise(r => setTimeout(r, 100));
       setLoading(false); 
+      setTimeout(() => setLoadingProgress(0), 500);
     }
   };
 
-  useEffect(() => { load(); }, [page, drugId, tokenId, status]);
+  useEffect(() => { 
+    load(); 
+    return () => { if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; } };
+  }, [page, drugId, tokenId, status]);
 
   const updateFilter = (next) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -83,6 +112,15 @@ export default function SupplyChainHistory() {
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
+        </div>
+      ) : (
+        <>
       {/* Banner */}
       <motion.section
         className="relative overflow-hidden rounded-2xl mb-5 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-tr from-[#00b4d8] via-[#48cae4] to-[#90e0ef]"
@@ -148,9 +186,7 @@ export default function SupplyChainHistory() {
         initial="hidden" 
         animate="show"
       >
-        {loading ? (
-          <div className="py-10 text-center text-slate-600">Đang tải...</div>
-        ) : error ? (
+        {error ? (
           <div className="py-10 text-center text-red-600">{error}</div>
         ) : items.length === 0 ? (
           <div className="py-10 text-center text-slate-600">Không có dữ liệu</div>
@@ -309,6 +345,8 @@ export default function SupplyChainHistory() {
           </button>
         </div>
       </div>
+        </>
+      )}
     </DashboardLayout>
   );
 }
