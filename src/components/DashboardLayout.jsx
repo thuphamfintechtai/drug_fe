@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { connectWallet, isWalletConnected, getCurrentWalletAddress, isMetaMaskInstalled } from '../utils/web3Helper';
+import LogoutButton from './LogoutButton';
 
 const MetricCard = ({ title, value, subtitle, detail, color }) => {
   const colorClasses = {
@@ -30,6 +31,8 @@ const MetricCard = ({ title, value, subtitle, detail, color }) => {
     </div>
   );
 };
+
+ 
 
 export default function DashboardLayout({ 
   welcomeMessage, 
@@ -312,12 +315,7 @@ export default function DashboardLayout({
                 </button>
               )}
 
-              <button
-                onClick={handleLogout}
-                className="h-10 px-4 rounded-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-colors shadow-sm hover:shadow-md font-medium text-sm"
-              >
-                <span className="text-white">Đăng xuất</span>
-              </button>
+              <LogoutButton onLogout={handleLogout} />
             </div>
           </div>
         </header>

@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import TruckLoader from '../../components/TruckLoader';
 import { getProductionHistory } from '../../services/manufacturer/manufacturerService';
@@ -8,7 +7,7 @@ import { getProductionHistory } from '../../services/manufacturer/manufacturerSe
 export default function ProductionHistory() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true); // Bắt đầu với true để hiển thị loading lần đầu
+  const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
@@ -31,33 +30,24 @@ export default function ProductionHistory() {
     loadData();
     
     return () => {
-      // Cleanup progress interval nếu có
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
       }
     };
   }, [page, search, status]);
 
+  // FIX: Simplified loading logic
   const loadData = async () => {
     try {
       setLoading(true);
       setLoadingProgress(0);
       
-      // Clear interval cũ nếu có
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
       }
       
-      // Simulate progress từ 0 đến 90% trong khi đang load
       progressIntervalRef.current = setInterval(() => {
-        setLoadingProgress(prev => {
-          if (prev < 0.9) {
-            return Math.min(prev + 0.02, 0.9);
-          }
-          return prev;
-        });
+        setLoadingProgress(prev => Math.min(prev + 0.02, 0.9));
       }, 50);
       
       const params = { page, limit: 10 };
@@ -66,78 +56,28 @@ export default function ProductionHistory() {
 
       const response = await getProductionHistory(params);
       
-      // Clear interval khi có response
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
       
-      // Xử lý data trước
       if (response.data.success) {
         setItems(response.data.data.productions || []);
         setPagination(response.data.data.pagination || { page: 1, limit: 10, total: 0, pages: 0 });
       }
       
-      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
-      // Lấy current progress từ state bằng cách dùng callback để track
-      let currentProgress = 0;
-      setLoadingProgress(prev => {
-        currentProgress = prev;
-        return prev;
-      });
+      setLoadingProgress(1);
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
-      if (currentProgress < 0.9) {
-        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
-        await new Promise(resolve => {
-          const speedUpInterval = setInterval(() => {
-            setLoadingProgress(prev => {
-              if (prev < 1) {
-                // Tăng nhanh hơn (0.15 mỗi lần thay vì 0.02) - cùng một chiếc xe tăng tốc
-                const newProgress = Math.min(prev + 0.15, 1);
-                if (newProgress >= 1) {
-                  clearInterval(speedUpInterval);
-                  resolve();
-                }
-                return newProgress;
-              }
-              clearInterval(speedUpInterval);
-              resolve();
-              return 1;
-            });
-          }, 30); // Update nhanh hơn (30ms) để xe tăng tốc mượt
-          
-          // Safety timeout: đảm bảo không chờ quá lâu
-          setTimeout(() => {
-            clearInterval(speedUpInterval);
-            setLoadingProgress(1);
-            resolve();
-          }, 500);
-        });
-      } else {
-        // Nếu đã chạy gần hết, chỉ cần set 100% và đợi một chút để đảm bảo animation hoàn thành
-        setLoadingProgress(1);
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-      
-      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
-      // Chờ một chút nữa để đảm bảo animation hoàn toàn kết thúc
-      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
-      // Clear interval khi có lỗi
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
-      
       console.error('Lỗi khi tải lịch sử sản xuất:', error);
-      setLoadingProgress(0);
     } finally {
       setLoading(false);
-      // Reset progress sau 0.5s
-      setTimeout(() => {
-        setLoadingProgress(0);
-      }, 500);
+      setTimeout(() => setLoadingProgress(0), 500);
     }
   };
 
@@ -194,14 +134,8 @@ export default function ProductionHistory() {
     return labels[transferStatus] || transferStatus;
   };
 
-  const fadeUp = {
-    hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
-    show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
-  };
-
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Loading State - chỉ hiển thị khi đang tải, không hiển thị content cho đến khi loading = false */}
       {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
           <div className="w-full max-w-2xl">
@@ -212,189 +146,184 @@ export default function ProductionHistory() {
       ) : (
         <div className="space-y-6">
           {/* Banner */}
-          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#007b91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
-            </svg>
-            Lịch sử sản xuất
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">Xem tất cả các lô sản xuất và trạng thái chuyển giao NFT</p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <motion.div
-        className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
-        <div className="flex flex-col md:flex-row gap-3 md:items-end">
-          <div className="flex-1">
-            <label className="block text-sm text-[#003544]/70 mb-1">Tìm kiếm</label>
-            <input
-              value={search}
-              onChange={e => updateFilter({ search: e.target.value, page: 1 })}
-              placeholder="Tìm theo tên thuốc, số lô..."
-              className="w-full border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
-            />
+          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5">
+            <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 10h14M4 14h16M6 18h12" />
+              </svg>
+              Lịch sử sản xuất
+            </h1>
+            <p className="text-slate-500 text-sm mt-1">Xem tất cả các lô sản xuất và trạng thái chuyển giao NFT</p>
           </div>
-          <div>
-            <label className="block text-sm text-[#003544]/70 mb-1">Trạng thái</label>
-            <select
-              value={status}
-              onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-              className="border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#48cae4] focus:border-[#48cae4] transition"
-            >
-              <option value="">Tất cả</option>
-              <option value="minted">Minted (chưa chuyển)</option>
-              <option value="transferred">Transferred</option>
-              <option value="sold">Sold</option>
-              <option value="expired">Expired</option>
-              <option value="recalled">Recalled</option>
-            </select>
-          </div>
-        </div>
-      </motion.div>
 
-          {/* List */}
-          <motion.div
-            className="space-y-4"
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-          >
-            {items.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lịch sử sản xuất</h3>
-            <p className="text-slate-600">Các lô sản xuất của bạn sẽ hiển thị ở đây</p>
-          </div>
-        ) : (
-          items.map((item, idx) => (
-            <div key={item._id || idx} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2 flex-wrap">
-                      <h3 className="text-lg font-semibold text-[#003544]">
-                        {item.drug?.tradeName || 'N/A'}
-                      </h3>
-                      {item.transferStatus && (
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getTransferStatusColor(item.transferStatus)}`}>
-                          {getTransferStatusLabel(item.transferStatus)}
-                        </span>
-                      )}
-                      {item.status && (
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
-                          {getStatusLabel(item.status)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="space-y-1 text-sm text-slate-600">
-                      <div>Số lô: <span className="font-mono font-medium text-slate-800">{item.batchNumber || 'N/A'}</span></div>
-                      <div>Số lượng sản xuất: <span className="font-bold text-purple-700">{item.quantity || 0}</span></div>
-                      {item.nftCount !== undefined && (
-                        <div>Số lượng NFT đã mint: <span className="font-bold text-cyan-700">{item.nftCount}</span></div>
-                      )}
-                      <div>ATC Code: <span className="font-mono text-cyan-700">{item.drug?.atcCode || 'N/A'}</span></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                  <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
-                    <div className="text-xs text-blue-600 mb-1">Ngày sản xuất</div>
-                    <div className="font-semibold text-blue-800">
-                      {item.mfgDate ? new Date(item.mfgDate).toLocaleDateString('vi-VN') : 'N/A'}
-                    </div>
-                  </div>
-                  <div className="bg-red-50 rounded-xl p-3 border border-red-200">
-                    <div className="text-xs text-red-600 mb-1">Hạn sử dụng</div>
-                    <div className="font-semibold text-red-800">
-                      {item.expDate ? new Date(item.expDate).toLocaleDateString('vi-VN') : 'N/A'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                    <div className="text-xs text-slate-500 mb-1">Ngày tạo</div>
-                    <div className="font-medium text-slate-700 text-sm">
-                      {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A'}
-                    </div>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                    <div className="text-xs text-slate-500 mb-1">Cập nhật lần cuối</div>
-                    <div className="font-medium text-slate-700 text-sm">
-                      {item.updatedAt ? new Date(item.updatedAt).toLocaleString('vi-VN') : 'N/A'}
-                    </div>
-                  </div>
-                </div>
-
-                {item.ipfsHash && (
-                  <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200 text-sm mb-3">
-                    <div className="font-semibold text-cyan-800 mb-1">IPFS Hash:</div>
-                    <div className="font-mono text-xs text-cyan-700 break-all">{item.ipfsHash}</div>
-                  </div>
-                )}
-
-                {item.chainTxHash && (
-                  <div className="bg-purple-50 rounded-xl p-3 border border-purple-200 text-sm mb-3">
-                    <div className="font-semibold text-purple-800 mb-1">Transaction Hash (Blockchain):</div>
-                    <div className="font-mono text-xs text-purple-700 break-all">{item.chainTxHash}</div>
-                    <a 
-                      href={`https://zeroscan.org/tx/${item.chainTxHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-purple-600 hover:text-purple-800 underline mt-1 inline-block"
-                    >
-                      Xem trên ZeroScan →
-                    </a>
-                  </div>
-                )}
-
-                {item.notes && (
-                  <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 text-sm mb-3">
-                    <div className="font-semibold text-amber-800 mb-1">Ghi chú:</div>
-                    <div className="text-amber-700">{item.notes}</div>
-                  </div>
-                )}
+          {/* Filters */}
+          <div className="rounded-2xl bg-white border border-cyan-200 shadow-sm p-4">
+            <div className="flex flex-col md:flex-row gap-3 md:items-end">
+              <div className="flex-1">
+                <label className="block text-sm text-slate-600 mb-1">Tìm kiếm</label>
+                <input
+                  value={search}
+                  onChange={e => updateFilter({ search: e.target.value, page: 1 })}
+                  placeholder="Tìm theo tên thuốc, số lô..."
+                  className="w-full border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Trạng thái</label>
+                <select
+                  value={status}
+                  onChange={e => updateFilter({ status: e.target.value, page: 1 })}
+                  className="border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                >
+                  <option value="">Tất cả</option>
+                  <option value="minted">Minted (chưa chuyển)</option>
+                  <option value="transferred">Transferred</option>
+                  <option value="sold">Sold</option>
+                  <option value="expired">Expired</option>
+                  <option value="recalled">Recalled</option>
+                </select>
               </div>
             </div>
-          ))
-        )}
-      </motion.div>
+          </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between mt-5">
-        <div className="text-sm text-slate-600">
-          Hiển thị {items.length} / {pagination.total} lô sản xuất
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            disabled={page <= 1}
-            onClick={() => updateFilter({ page: page - 1 })}
-            className={`px-3 py-2 rounded-xl ${page <= 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white/90 border border-[#90e0ef55] hover:bg-[#f5fcff]'}`}
-          >
-            Trước
-          </button>
-          <span className="text-sm text-slate-700">
-            Trang {page} / {pagination.pages || 1}
-          </span>
-          <button
-            disabled={page >= pagination.pages}
-            onClick={() => updateFilter({ page: page + 1 })}
-            className={`px-3 py-2 rounded-xl ${page >= pagination.pages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]'}`}
-          >
-            Sau
-          </button>
-        </div>
-      </div>
+          {/* List */}
+          <div className="space-y-4">
+            {items.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
+                <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lịch sử sản xuất</h3>
+                <p className="text-slate-600">Các lô sản xuất của bạn sẽ hiển thị ở đây</p>
+              </div>
+            ) : (
+              items.map((item, idx) => (
+                <div key={item._id || idx} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
+                  <div className="p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <h3 className="text-lg font-semibold text-slate-800">
+                            {item.drug?.tradeName || 'N/A'}
+                          </h3>
+                          {item.transferStatus && (
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getTransferStatusColor(item.transferStatus)}`}>
+                              {getTransferStatusLabel(item.transferStatus)}
+                            </span>
+                          )}
+                          {item.status && (
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
+                              {getStatusLabel(item.status)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="space-y-1 text-sm text-slate-600">
+                          <div>Số lô: <span className="font-mono font-medium text-slate-800">{item.batchNumber || 'N/A'}</span></div>
+                          <div>Số lượng sản xuất: <span className="font-bold text-purple-700">{item.quantity || 0}</span></div>
+                          {item.nftCount !== undefined && (
+                            <div>Số lượng NFT đã mint: <span className="font-bold text-cyan-700">{item.nftCount}</span></div>
+                          )}
+                          <div>ATC Code: <span className="font-mono text-cyan-700">{item.drug?.atcCode || 'N/A'}</span></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                      <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+                        <div className="text-xs text-blue-600 mb-1">Ngày sản xuất</div>
+                        <div className="font-semibold text-blue-800">
+                          {item.mfgDate ? new Date(item.mfgDate).toLocaleDateString('vi-VN') : 'N/A'}
+                        </div>
+                      </div>
+                      <div className="bg-red-50 rounded-xl p-3 border border-red-200">
+                        <div className="text-xs text-red-600 mb-1">Hạn sử dụng</div>
+                        <div className="font-semibold text-red-800">
+                          {item.expDate ? new Date(item.expDate).toLocaleDateString('vi-VN') : 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div className="text-xs text-slate-500 mb-1">Ngày tạo</div>
+                        <div className="font-medium text-slate-700 text-sm">
+                          {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A'}
+                        </div>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div className="text-xs text-slate-500 mb-1">Cập nhật lần cuối</div>
+                        <div className="font-medium text-slate-700 text-sm">
+                          {item.updatedAt ? new Date(item.updatedAt).toLocaleString('vi-VN') : 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {item.ipfsHash && (
+                      <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200 text-sm mb-3">
+                        <div className="font-semibold text-cyan-800 mb-1">IPFS Hash:</div>
+                        <div className="font-mono text-xs text-cyan-700 break-all">{item.ipfsHash}</div>
+                      </div>
+                    )}
+
+                    {item.chainTxHash && (
+                      <div className="bg-purple-50 rounded-xl p-3 border border-purple-200 text-sm mb-3">
+                        <div className="font-semibold text-purple-800 mb-1">Transaction Hash (Blockchain):</div>
+                        <div className="font-mono text-xs text-purple-700 break-all">{item.chainTxHash}</div>
+                        <a 
+                          href={`https://zeroscan.org/tx/${item.chainTxHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-purple-600 hover:text-purple-800 underline mt-1 inline-block"
+                        >
+                          Xem trên ZeroScan →
+                        </a>
+                      </div>
+                    )}
+
+                    {item.notes && (
+                      <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 text-sm mb-3">
+                        <div className="font-semibold text-amber-800 mb-1">Ghi chú:</div>
+                        <div className="text-amber-700">{item.notes}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between mt-5">
+            <div className="text-sm text-slate-600">
+              Hiển thị {items.length} / {pagination.total} lô sản xuất
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => updateFilter({ page: page - 1 })}
+                className={`px-3 py-2 rounded-xl ${
+                  page <= 1 
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                    : 'bg-white border border-cyan-300 hover:bg-cyan-50'
+                }`}
+              >
+                Trước
+              </button>
+              <span className="text-sm text-slate-700">
+                Trang {page} / {pagination.pages || 1}
+              </span>
+              <button
+                disabled={page >= pagination.pages}
+                onClick={() => updateFilter({ page: page + 1 })}
+                className={`px-3 py-2 rounded-xl ${
+                  page >= pagination.pages 
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white hover:shadow-lg'
+                }`}
+              >
+                Sau
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </DashboardLayout>
   );
 }
-

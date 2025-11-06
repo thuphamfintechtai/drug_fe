@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import LogoutButton from './LogoutButton';
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -145,15 +146,13 @@ export default function Navbar() {
                     <div className="text-sm font-semibold text-white">{user?.fullName || user?.username}</div>
                     <div className="text-xs text-white/80">{user?.role}</div>
                   </div>
-                </motion.div>
-                <motion.button
+                </div>
+                <button
                   onClick={handleLogout}
-                  className="px-5 py-2 bg-red-500/80 backdrop-blur-sm text-white font-semibold rounded-xl transition border border-red-400/30"
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
+                  className="px-5 py-2 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition"
                 >
                   Đăng xuất
-                </motion.button>
+                </button>
               </>
             )}
           </div>
@@ -245,18 +244,13 @@ export default function Navbar() {
                       <div className="text-sm font-semibold text-white">{user?.fullName || user?.username}</div>
                       <div className="text-xs text-white/80">{user?.role}</div>
                     </div>
-                  </motion.div>
-                  <motion.button
+                  </div>
+                  <button
                     onClick={handleLogout}
-                    className="block w-full px-4 py-3 bg-red-500/80 backdrop-blur-sm text-white font-semibold rounded-xl border border-red-400/30 hover:bg-red-600/90 transition"
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.95 }}
+                    className="block w-full px-4 py-3 bg-red-500 text-white font-semibold rounded-xl"
                   >
                     Đăng xuất
-                  </motion.button>
+                  </button>
                 </>
               )}
             </div>

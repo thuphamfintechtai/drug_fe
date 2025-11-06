@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import TruckLoader from '../../components/TruckLoader';
 import { getTransferToPharmacyHistory } from '../../services/distributor/distributorService';
@@ -30,24 +29,26 @@ export default function TransferHistory() {
 
   useEffect(() => {
     loadData();
+    
     return () => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
       }
     };
   }, [page, search, status]);
 
+  // FIX: Simplified loading logic
   const loadData = async () => {
     try {
       setLoading(true);
       setLoadingProgress(0);
+      
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
       }
+      
       progressIntervalRef.current = setInterval(() => {
-        setLoadingProgress(prev => (prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev));
+        setLoadingProgress(prev => Math.min(prev + 0.02, 0.9));
       }, 50);
 
       const params = { page, limit: 10 };
@@ -66,6 +67,7 @@ export default function TransferHistory() {
         const invoices = Array.isArray(data.invoices) ? data.invoices : [];
         const distributions = Array.isArray(data.distributions) ? data.distributions : [];
         const source = invoices.length ? invoices : distributions;
+        
         const mapped = source.map((row) => {
           const pharmacy = row.toPharmacy || row.pharmacy || row.commercialInvoice?.toPharmacy || null;
           const transactionHash = row.chainTxHash || row.receiptTxHash || row.commercialInvoice?.chainTxHash || null;
@@ -74,35 +76,30 @@ export default function TransferHistory() {
           const invoiceNumber = row.invoiceNumber || row.commercialInvoice?.invoiceNumber;
           const invoiceDate = row.invoiceDate || row.commercialInvoice?.invoiceDate;
           const statusRow = row.status || row.commercialInvoice?.status;
-          return { _id: row._id, pharmacy, drug: row.drug, invoiceNumber, invoiceDate, quantity, status: statusRow, createdAt, transactionHash, chainTxHash: transactionHash };
+          
+          return { 
+            _id: row._id, 
+            pharmacy, 
+            drug: row.drug, 
+            invoiceNumber, 
+            invoiceDate, 
+            quantity, 
+            status: statusRow, 
+            createdAt, 
+            transactionHash, 
+            chainTxHash: transactionHash 
+          };
         });
+        
         setItems(mapped);
         setPagination(data.pagination || { page: 1, limit: 10, total: mapped.length, pages: 1 });
       } else {
         setItems([]);
       }
 
-      let currentProgress = 0;
-      setLoadingProgress(prev => { currentProgress = prev; return prev; });
-      if (currentProgress < 0.9) {
-        await new Promise(resolve => {
-          const speedUp = setInterval(() => {
-            setLoadingProgress(prev => {
-              if (prev < 1) {
-                const np = Math.min(prev + 0.15, 1);
-                if (np >= 1) { clearInterval(speedUp); resolve(); }
-                return np;
-              }
-              clearInterval(speedUp); resolve(); return 1;
-            });
-          }, 30);
-          setTimeout(() => { clearInterval(speedUp); setLoadingProgress(1); resolve(); }, 500);
-        });
-      } else {
-        setLoadingProgress(1);
-        await new Promise(r => setTimeout(r, 200));
-      }
-      await new Promise(r => setTimeout(r, 100));
+      setLoadingProgress(1);
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
     } catch (error) {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -110,7 +107,6 @@ export default function TransferHistory() {
       }
       console.error('Lỗi khi tải lịch sử:', error);
       setItems([]);
-      setLoadingProgress(0);
     } finally {
       setLoading(false);
       setTimeout(() => setLoadingProgress(0), 500);
@@ -146,11 +142,6 @@ export default function TransferHistory() {
     return labels[status] || status;
   };
 
-  const fadeUp = {
-    hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
-    show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
-  };
-
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {loading ? (
@@ -162,171 +153,178 @@ export default function TransferHistory() {
         </div>
       ) : (
         <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
-        <h1 className="text-xl font-semibold text-[#007b91]">Lịch sử chuyển cho nhà thuốc</h1>
-        <p className="text-slate-500 text-sm mt-1">Theo dõi tất cả đơn chuyển giao NFT cho pharmacy</p>
-      </div>
+          {/* Banner */}
+          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5">
+            <h1 className="text-xl font-semibold text-[#007b91]">Lịch sử chuyển cho nhà thuốc</h1>
+            <p className="text-slate-500 text-sm mt-1">Theo dõi tất cả đơn chuyển giao NFT cho pharmacy</p>
+          </div>
 
-      <motion.div
-        className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
-        <div className="flex flex-col md:flex-row gap-3 md:items-end">
-          <div className="flex-1">
-            <label className="block text-sm text-[#003544]/70 mb-1">Tìm kiếm</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
-                </svg>
-              </span>
-              <input
-                value={search}
-                onChange={e => updateFilter({ search: e.target.value, page: 1 })}
-                onKeyDown={e => e.key === 'Enter' && updateFilter({ search, page: 1 })}
-                placeholder="Tìm theo tên nhà thuốc..."
-                className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
-              />
+          {/* Filters */}
+          <div className="rounded-2xl bg-white border border-cyan-200 shadow-sm p-4">
+            <div className="flex flex-col md:flex-row gap-3 md:items-end">
+              <div className="flex-1">
+                <label className="block text-sm text-slate-600 mb-1">Tìm kiếm</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                    </svg>
+                  </span>
+                  <input
+                    value={search}
+                    onChange={e => updateFilter({ search: e.target.value, page: 1 })}
+                    onKeyDown={e => e.key === 'Enter' && updateFilter({ search, page: 1 })}
+                    placeholder="Tìm theo tên nhà thuốc..."
+                    className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                  />
+                  <button
+                    onClick={() => updateFilter({ search, page: 1 })}
+                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+                  >
+                    Tìm Kiếm
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Trạng thái</label>
+                <select
+                  value={status}
+                  onChange={e => updateFilter({ status: e.target.value, page: 1 })}
+                  className="h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                >
+                  <option value="">Tất cả</option>
+                  <option value="pending">Pending</option>
+                  <option value="sent">Sent</option>
+                  <option value="received">Received</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* List */}
+          <div className="space-y-4">
+            {items.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
+                <div className="text-5xl mb-4">🏥</div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lịch sử chuyển giao</h3>
+                <p className="text-slate-600">Các đơn chuyển cho nhà thuốc sẽ hiển thị ở đây</p>
+              </div>
+            ) : (
+              items.map((item) => (
+                <div key={item._id} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
+                  <div className="p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold text-slate-800">
+                            → {item.pharmacy?.name || 'N/A'}
+                          </h3>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
+                            {getStatusLabel(item.status)}
+                          </span>
+                        </div>
+                        <div className="space-y-1 text-sm text-slate-600">
+                          <div>📦 Số lượng: <span className="font-bold text-orange-700">{item.quantity} NFT</span></div>
+                          <div>🕒 Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {item.pharmacy && (
+                      <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200 text-sm mb-3">
+                        <div className="text-xs text-cyan-700 mb-1">🏥 Nhà thuốc</div>
+                        <div className="font-semibold text-cyan-800">{item.pharmacy?.name || 'N/A'}</div>
+                        {item.pharmacy?.address && <div className="text-xs text-cyan-600 mt-1">{item.pharmacy.address}</div>}
+                      </div>
+                    )}
+
+                    {item.pharmacy?.walletAddress && (
+                      <div className="bg-purple-50 rounded-xl p-3 border border-purple-200 text-sm mb-3">
+                        <div className="text-xs text-purple-700 mb-1">👛 Wallet Address</div>
+                        <div className="font-mono text-xs text-purple-800 break-all">{item.pharmacy.walletAddress}</div>
+                      </div>
+                    )}
+
+                    {item.notes && (
+                      <div className="bg-slate-50 rounded-xl p-3 text-sm mb-3">
+                        <div className="font-semibold text-slate-700 mb-1">📝 Ghi chú:</div>
+                        <div className="text-slate-600">{item.notes}</div>
+                      </div>
+                    )}
+
+                    {item.transactionHash && (
+                      <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200 text-sm mb-3">
+                        <div className="font-semibold text-emerald-800 mb-1">⛓️ Transaction Hash:</div>
+                        <div className="font-mono text-xs text-emerald-700 break-all">{item.transactionHash}</div>
+                      </div>
+                    )}
+
+                    {/* Progress Timeline */}
+                    <div className="mt-4 pt-4 border-t border-slate-200">
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className={`flex items-center gap-1 ${['pending', 'sent', 'received', 'paid'].includes(item.status) ? 'text-amber-600' : 'text-slate-400'}`}>
+                          <div className={`w-2 h-2 rounded-full ${['pending', 'sent', 'received', 'paid'].includes(item.status) ? 'bg-amber-500' : 'bg-slate-300'}`}></div>
+                          <span>Pending</span>
+                        </div>
+                        <div className="flex-1 h-px bg-slate-200"></div>
+                        <div className={`flex items-center gap-1 ${['sent', 'received', 'paid'].includes(item.status) ? 'text-cyan-600' : 'text-slate-400'}`}>
+                          <div className={`w-2 h-2 rounded-full ${['sent', 'received', 'paid'].includes(item.status) ? 'bg-cyan-500' : 'bg-slate-300'}`}></div>
+                          <span>Sent</span>
+                        </div>
+                        <div className="flex-1 h-px bg-slate-200"></div>
+                        <div className={`flex items-center gap-1 ${['received', 'paid'].includes(item.status) ? 'text-blue-600' : 'text-slate-400'}`}>
+                          <div className={`w-2 h-2 rounded-full ${['received', 'paid'].includes(item.status) ? 'bg-blue-500' : 'bg-slate-300'}`}></div>
+                          <span>Received</span>
+                        </div>
+                        <div className="flex-1 h-px bg-slate-200"></div>
+                        <div className={`flex items-center gap-1 ${item.status === 'paid' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          <div className={`w-2 h-2 rounded-full ${item.status === 'paid' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                          <span>Paid</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between mt-5">
+            <div className="text-sm text-slate-600">
+              Hiển thị {items.length} / {pagination.total} đơn chuyển giao
+            </div>
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => updateFilter({ search, page: 1 })}
-                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+                disabled={page <= 1}
+                onClick={() => updateFilter({ page: page - 1 })}
+                className={`px-3 py-2 rounded-xl ${
+                  page <= 1 
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                    : 'bg-white border border-cyan-300 hover:bg-cyan-50'
+                }`}
               >
-                Tìm Kiếm
+                Trước
+              </button>
+              <span className="text-sm text-slate-700">
+                Trang {page} / {pagination.pages || 1}
+              </span>
+              <button
+                disabled={page >= pagination.pages}
+                onClick={() => updateFilter({ page: page + 1 })}
+                className={`px-3 py-2 rounded-xl ${
+                  page >= pagination.pages 
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white hover:shadow-lg'
+                }`}
+              >
+                Sau
               </button>
             </div>
           </div>
-          <div>
-            <label className="block text-sm text-[#003544]/70 mb-1">Trạng thái</label>
-            <select
-              value={status}
-              onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-              className="h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
-            >
-              <option value="">Tất cả</option>
-              <option value="pending">Pending</option>
-              <option value="sent">Sent</option>
-              <option value="received">Received</option>
-              <option value="paid">Paid</option>
-            </select>
-          </div>
         </div>
-      </motion.div>
-
-      <motion.div className="space-y-4" variants={fadeUp} initial="hidden" animate="show">
-        {items.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
-            <div className="text-5xl mb-4">🏥</div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lịch sử chuyển giao</h3>
-            <p className="text-slate-600">Các đơn chuyển cho nhà thuốc sẽ hiển thị ở đây</p>
-          </div>
-        ) : (
-          items.map((item, idx) => (
-            <div key={idx} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-[#003544]">
-                        → {item.pharmacy?.name || 'N/A'}
-                      </h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
-                        {getStatusLabel(item.status)}
-                      </span>
-                    </div>
-                    <div className="space-y-1 text-sm text-slate-600">
-                      <div>📦 Số lượng: <span className="font-bold text-orange-700">{item.quantity} NFT</span></div>
-                      <div>🕒 Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
-                    </div>
-                  </div>
-                </div>
-
-                {item.pharmacy && (
-                  <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200 text-sm mb-3">
-                    <div className="text-xs text-cyan-700 mb-1">🏥 Nhà thuốc</div>
-                    <div className="font-semibold text-cyan-800">{item.pharmacy?.name || 'N/A'}</div>
-                    {item.pharmacy?.address && <div className="text-xs text-cyan-600 mt-1">{item.pharmacy.address}</div>}
-                  </div>
-                )}
-
-                {item.pharmacy?.walletAddress && (
-                  <div className="bg-purple-50 rounded-xl p-3 border border-purple-200 text-sm">
-                    <div className="text-xs text-purple-700 mb-1">👛 Wallet Address</div>
-                    <div className="font-mono text-xs text-purple-800 break-all">{item.pharmacy.walletAddress}</div>
-                  </div>
-                )}
-
-                {item.notes && (
-                  <div className="bg-slate-50 rounded-xl p-3 text-sm">
-                    <div className="font-semibold text-slate-700 mb-1">📝 Ghi chú:</div>
-                    <div className="text-slate-600">{item.notes}</div>
-                  </div>
-                )}
-
-                {item.transactionHash && (
-                  <div className="mt-3 bg-emerald-50 rounded-xl p-3 border border-emerald-200 text-sm">
-                    <div className="font-semibold text-emerald-800 mb-1">⛓️ Transaction Hash:</div>
-                    <div className="font-mono text-xs text-emerald-700 break-all">{item.transactionHash}</div>
-                  </div>
-                )}
-
-                <div className="mt-4 pt-4 border-t border-slate-200">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className={`flex items-center gap-1 ${['pending', 'sent', 'received', 'paid'].includes(item.status) ? 'text-amber-600' : 'text-slate-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${['pending', 'sent', 'received', 'paid'].includes(item.status) ? 'bg-amber-500' : 'bg-slate-300'}`}></div>
-                      <span>Pending</span>
-                    </div>
-                    <div className="flex-1 h-px bg-slate-200"></div>
-                    <div className={`flex items-center gap-1 ${['sent', 'received', 'paid'].includes(item.status) ? 'text-cyan-600' : 'text-slate-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${['sent', 'received', 'paid'].includes(item.status) ? 'bg-cyan-500' : 'bg-slate-300'}`}></div>
-                      <span>Sent</span>
-                    </div>
-                    <div className="flex-1 h-px bg-slate-200"></div>
-                    <div className={`flex items-center gap-1 ${['received', 'paid'].includes(item.status) ? 'text-blue-600' : 'text-slate-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${['received', 'paid'].includes(item.status) ? 'bg-blue-500' : 'bg-slate-300'}`}></div>
-                      <span>Received</span>
-                    </div>
-                    <div className="flex-1 h-px bg-slate-200"></div>
-                    <div className={`flex items-center gap-1 ${item.status === 'paid' ? 'text-emerald-600' : 'text-slate-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${item.status === 'paid' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
-                      <span>Paid</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </motion.div>
-
-      <div className="flex items-center justify-between mt-5">
-        <div className="text-sm text-slate-600">
-          Hiển thị {items.length} / {pagination.total} đơn chuyển giao
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            disabled={page <= 1}
-            onClick={() => updateFilter({ page: page - 1 })}
-            className={`px-3 py-2 rounded-xl ${page <= 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white/90 border border-[#90e0ef55] hover:bg-[#f5fcff]'}`}
-          >
-            Trước
-          </button>
-          <span className="text-sm text-slate-700">
-            Trang {page} / {pagination.pages || 1}
-          </span>
-          <button
-            disabled={page >= pagination.pages}
-            onClick={() => updateFilter({ page: page + 1 })}
-            className={`px-3 py-2 rounded-xl ${page >= pagination.pages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]'}`}
-          >
-            Sau
-          </button>
-        </div>
-      </div>
-      </div>
       )}
     </DashboardLayout>
   );
 }
-
