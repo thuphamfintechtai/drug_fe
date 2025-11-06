@@ -175,13 +175,13 @@ export default function TransferHistory() {
                     onChange={e => updateFilter({ search: e.target.value, page: 1 })}
                     onKeyDown={e => e.key === 'Enter' && updateFilter({ search, page: 1 })}
                     placeholder="Tìm theo tên nhà thuốc..."
-                    className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                    className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                   />
                   <button
                     onClick={() => updateFilter({ search, page: 1 })}
                     className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
                   >
-                    Tìm Kiếm
+                    Tìm kiếm
                   </button>
                 </div>
               </div>
@@ -190,7 +190,7 @@ export default function TransferHistory() {
                 <select
                   value={status}
                   onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-                  className="h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                  className="h-12 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-12 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
                 >
                   <option value="">Tất cả</option>
                   <option value="pending">Pending</option>
@@ -206,80 +206,64 @@ export default function TransferHistory() {
           <div className="space-y-4">
             {items.length === 0 ? (
               <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
-                <div className="text-5xl mb-4">🏥</div>
                 <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lịch sử chuyển giao</h3>
                 <p className="text-slate-600">Các đơn chuyển cho nhà thuốc sẽ hiển thị ở đây</p>
               </div>
             ) : (
               items.map((item) => (
-                <div key={item._id} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
+                <div key={item._id} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-md transition">
                   <div className="p-5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-slate-800">
-                            → {item.pharmacy?.name || 'N/A'}
-                          </h3>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
-                            {getStatusLabel(item.status)}
-                          </span>
-                        </div>
-                        <div className="space-y-1 text-sm text-slate-600">
-                          <div>📦 Số lượng: <span className="font-bold text-orange-700">{item.quantity} NFT</span></div>
-                          <div>🕒 Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
-                        </div>
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-slate-800">{item.pharmacy?.name || 'N/A'}</h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
+                        {getStatusLabel(item.status)}
+                      </span>
+                    </div>
+
+                    {/* Summary */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm">
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div className="text-slate-600">Số hóa đơn: <span className="font-mono font-medium text-slate-800">{item.invoiceNumber || 'N/A'}</span></div>
+                        <div className="mt-1 text-slate-600">Số lượng: <span className="font-semibold text-slate-800">{item.quantity} NFT</span></div>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div className="text-slate-600">Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
+                        {item.invoiceDate && (
+                          <div className="mt-1 text-slate-600">Ngày hóa đơn: <span className="font-medium">{new Date(item.invoiceDate).toLocaleString('vi-VN')}</span></div>
+                        )}
                       </div>
                     </div>
 
+                    {/* Pharmacy Panel */}
                     {item.pharmacy && (
-                      <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200 text-sm mb-3">
-                        <div className="text-xs text-cyan-700 mb-1">🏥 Nhà thuốc</div>
-                        <div className="font-semibold text-cyan-800">{item.pharmacy?.name || 'N/A'}</div>
-                        {item.pharmacy?.address && <div className="text-xs text-cyan-600 mt-1">{item.pharmacy.address}</div>}
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
+                        <div className="font-semibold text-slate-800 mb-1">Nhà thuốc</div>
+                        <div className="text-slate-700">{item.pharmacy?.name || 'N/A'}</div>
+                        {item.pharmacy?.address && <div className="text-xs text-slate-500 mt-1">{item.pharmacy.address}</div>}
                       </div>
                     )}
 
-                    {item.pharmacy?.walletAddress && (
-                      <div className="bg-purple-50 rounded-xl p-3 border border-purple-200 text-sm mb-3">
-                        <div className="text-xs text-purple-700 mb-1">👛 Wallet Address</div>
-                        <div className="font-mono text-xs text-purple-800 break-all">{item.pharmacy.walletAddress}</div>
-                      </div>
-                    )}
-
-                    {item.notes && (
-                      <div className="bg-slate-50 rounded-xl p-3 text-sm mb-3">
-                        <div className="font-semibold text-slate-700 mb-1">📝 Ghi chú:</div>
-                        <div className="text-slate-600">{item.notes}</div>
-                      </div>
-                    )}
-
-                    {item.transactionHash && (
-                      <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200 text-sm mb-3">
-                        <div className="font-semibold text-emerald-800 mb-1">⛓️ Transaction Hash:</div>
-                        <div className="font-mono text-xs text-emerald-700 break-all">{item.transactionHash}</div>
-                      </div>
-                    )}
-
-                    {/* Progress Timeline */}
+                    {/* Timeline */}
                     <div className="mt-4 pt-4 border-t border-slate-200">
-                      <div className="flex items-center gap-2 text-xs">
-                        <div className={`flex items-center gap-1 ${['pending', 'sent', 'received', 'paid'].includes(item.status) ? 'text-amber-600' : 'text-slate-400'}`}>
-                          <div className={`w-2 h-2 rounded-full ${['pending', 'sent', 'received', 'paid'].includes(item.status) ? 'bg-amber-500' : 'bg-slate-300'}`}></div>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <div className={`flex items-center gap-1 ${['pending', 'sent', 'received', 'paid'].includes(item.status) ? 'text-slate-700' : 'text-slate-400'}`}>
+                          <div className={`w-2 h-2 rounded-full ${['pending', 'sent', 'received', 'paid'].includes(item.status) ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
                           <span>Pending</span>
                         </div>
                         <div className="flex-1 h-px bg-slate-200"></div>
-                        <div className={`flex items-center gap-1 ${['sent', 'received', 'paid'].includes(item.status) ? 'text-cyan-600' : 'text-slate-400'}`}>
-                          <div className={`w-2 h-2 rounded-full ${['sent', 'received', 'paid'].includes(item.status) ? 'bg-cyan-500' : 'bg-slate-300'}`}></div>
+                        <div className={`flex items-center gap-1 ${['sent', 'received', 'paid'].includes(item.status) ? 'text-slate-700' : 'text-slate-400'}`}>
+                          <div className={`w-2 h-2 rounded-full ${['sent', 'received', 'paid'].includes(item.status) ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
                           <span>Sent</span>
                         </div>
                         <div className="flex-1 h-px bg-slate-200"></div>
-                        <div className={`flex items-center gap-1 ${['received', 'paid'].includes(item.status) ? 'text-blue-600' : 'text-slate-400'}`}>
-                          <div className={`w-2 h-2 rounded-full ${['received', 'paid'].includes(item.status) ? 'bg-blue-500' : 'bg-slate-300'}`}></div>
+                        <div className={`flex items-center gap-1 ${['received', 'paid'].includes(item.status) ? 'text-slate-700' : 'text-slate-400'}`}>
+                          <div className={`w-2 h-2 rounded-full ${['received', 'paid'].includes(item.status) ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
                           <span>Received</span>
                         </div>
                         <div className="flex-1 h-px bg-slate-200"></div>
-                        <div className={`flex items-center gap-1 ${item.status === 'paid' ? 'text-emerald-600' : 'text-slate-400'}`}>
-                          <div className={`w-2 h-2 rounded-full ${item.status === 'paid' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                        <div className={`flex items-center gap-1 ${item.status === 'paid' ? 'text-slate-700' : 'text-slate-400'}`}>
+                          <div className={`w-2 h-2 rounded-full ${item.status === 'paid' ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
                           <span>Paid</span>
                         </div>
                       </div>

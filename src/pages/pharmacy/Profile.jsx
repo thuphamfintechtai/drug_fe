@@ -159,19 +159,10 @@ export default function PharmacyProfile() {
             transition={{ duration: 0.5 }}
           >
             <div className="relative px-6 py-8 md:px-10 md:py-12">
-              <div className="flex items-center gap-3 mb-2">
-                <svg className="w-8 h-8 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+              <div className="mb-2">
                 <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#4BADD1]">Hồ sơ nhà thuốc</h1>
               </div>
-              <p className="text-[#7AC3DE] mt-2 text-lg flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#7AC3DE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                Thông tin tài khoản và doanh nghiệp
-              </p>
+              <p className="text-[#7AC3DE] mt-2 text-lg">Thông tin tài khoản và doanh nghiệp</p>
             </div>
           </motion.section>
           <div className="bg-white rounded-2xl border-2 border-[#7AC3DE] p-10 text-center">
@@ -189,19 +180,10 @@ export default function PharmacyProfile() {
             transition={{ duration: 0.5 }}
           >
             <div className="relative px-6 py-8 md:px-10 md:py-12">
-              <div className="flex items-center gap-3 mb-2">
-                <svg className="w-8 h-8 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+              <div className="mb-2">
                 <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#4BADD1]">Hồ sơ nhà thuốc</h1>
               </div>
-              <p className="text-[#7AC3DE] mt-2 text-lg flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#7AC3DE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                Thông tin tài khoản và doanh nghiệp
-              </p>
+              <p className="text-[#7AC3DE] mt-2 text-lg">Thông tin tài khoản và doanh nghiệp</p>
             </div>
           </motion.section>
           <motion.div className="space-y-6" variants={fadeUp} initial="hidden" animate="show">
@@ -213,19 +195,9 @@ export default function PharmacyProfile() {
               onClick={() => toggleSection('user')}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg bg-white/20 backdrop-blur-sm">
-                    {profile.user?.fullName?.charAt(0).toUpperCase() || 'P'}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      Thông tin người dùng
-                    </h2>
-                    <p className="text-white/90 mt-1">{profile.user?.email || 'N/A'}</p>
-                  </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Thông tin người dùng</h2>
+                  <p className="text-white/90 mt-1">{profile.user?.email || 'N/A'}</p>
                 </div>
                 <motion.div
                   animate={{ rotate: expandedSection.user ? 180 : 0 }}

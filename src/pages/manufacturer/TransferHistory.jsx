@@ -224,19 +224,33 @@ export default function TransferHistory() {
             <div className="flex flex-col md:flex-row gap-3 md:items-end">
               <div className="flex-1">
                 <label className="block text-sm text-slate-600 mb-1">Tìm kiếm</label>
-                <input
-                  value={search}
-                  onChange={e => updateFilter({ search: e.target.value, page: 1 })}
-                  placeholder="Tìm theo tên nhà phân phối, số lô..."
-                  className="w-full border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
-                />
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                    </svg>
+                  </span>
+                  <input
+                    value={search}
+                    onChange={e => updateFilter({ search: e.target.value, page: 1 })}
+                    onKeyDown={e => e.key === 'Enter' && updateFilter({ search, page: 1 })}
+                    placeholder="Tìm theo tên nhà phân phối, số lô..."
+                    className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                  />
+                  <button
+                    onClick={() => updateFilter({ search, page: 1 })}
+                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+                  >
+                    Tìm kiếm
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm text-slate-600 mb-1">Trạng thái</label>
                 <select
                   value={status}
                   onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-                  className="border-2 border-cyan-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                  className="h-12 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-12 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
                 >
                   <option value="">Tất cả</option>
                   <option value="pending">Pending</option>
@@ -258,73 +272,49 @@ export default function TransferHistory() {
               </div>
             ) : (
               items.map((item) => (
-                <div key={item._id} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
+                <div key={item._id} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-md transition">
                   <div className="p-5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-slate-800">
-                            {item.distributor?.fullName || item.distributor?.name || 'N/A'}
-                          </h3>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
-                            {getStatusLabel(item.status)}
-                          </span>
-                        </div>
-                        <div className="space-y-1 text-sm text-slate-600">
-                          <div>Số hóa đơn: <span className="font-mono font-medium text-slate-800">{item.invoiceNumber || 'N/A'}</span></div>
-                          {item.production?.drug?.tradeName && (
-                            <div>Thuốc: <span className="font-medium text-slate-800">{item.production.drug.tradeName}</span></div>
-                          )}
-                          {item.production?.batchNumber && (
-                            <div>Số lô: <span className="font-mono font-medium text-slate-800">{item.production.batchNumber}</span></div>
-                          )}
-                          <div>Số lượng: <span className="font-bold text-orange-700">{item.quantity} NFT</span></div>
-                          <div>Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
-                          {item.invoiceDate && (
-                            <div>Ngày hóa đơn: <span className="font-medium">{new Date(item.invoiceDate).toLocaleString('vi-VN')}</span></div>
-                          )}
-                        </div>
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-slate-800">{item.distributor?.fullName || item.distributor?.name || 'N/A'}</h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>{getStatusLabel(item.status)}</span>
+                    </div>
+
+                    {/* Summary */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm">
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div className="text-slate-600">Số hóa đơn: <span className="font-mono font-medium text-slate-800">{item.invoiceNumber || 'N/A'}</span></div>
+                        {item.production?.batchNumber && (
+                          <div className="mt-1 text-slate-600">Số lô: <span className="font-mono font-medium text-slate-800">{item.production.batchNumber}</span></div>
+                        )}
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div className="text-slate-600">Số lượng: <span className="font-semibold text-slate-800">{item.quantity} NFT</span></div>
+                        <div className="mt-1 text-slate-600">Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                      <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-200">
-                        <div className="text-xs text-cyan-700 mb-1">Nhà phân phối</div>
-                        <div className="font-semibold text-cyan-800">{item.distributor?.fullName || item.distributor?.name || 'N/A'}</div>
-                        {item.distributor?.email && (
-                          <div className="text-xs text-cyan-600 mt-1">{item.distributor.email}</div>
-                        )}
-                        {item.distributor?.address && (
-                          <div className="text-xs text-cyan-600 mt-1">{item.distributor.address}</div>
-                        )}
+                    {/* Distributor Panel */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div className="text-xs text-slate-500 mb-1">Nhà phân phối</div>
+                        <div className="font-semibold text-slate-800">{item.distributor?.fullName || item.distributor?.name || 'N/A'}</div>
+                        {item.distributor?.email && <div className="text-xs text-slate-500 mt-1">{item.distributor.email}</div>}
+                        {item.distributor?.address && <div className="text-xs text-slate-500 mt-1">{item.distributor.address}</div>}
                       </div>
                       {item.distributor?.walletAddress && (
-                        <div className="bg-purple-50 rounded-xl p-3 border border-purple-200">
-                          <div className="text-xs text-purple-700 mb-1">Wallet Address</div>
-                          <div className="font-mono text-xs text-purple-800 break-all">{item.distributor.walletAddress}</div>
+                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                          <div className="text-xs text-slate-500 mb-1">Wallet Address</div>
+                          <div className="font-mono text-xs text-slate-800 break-all">{item.distributor.walletAddress}</div>
                         </div>
                       )}
                     </div>
 
-                    {item.notes && (
-                      <div className="bg-slate-50 rounded-xl p-3 text-sm mb-3">
-                        <div className="font-semibold text-slate-700 mb-1">Ghi chú:</div>
-                        <div className="text-slate-600">{item.notes}</div>
-                      </div>
-                    )}
-
                     {item.transactionHash && (
-                      <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200 text-sm mb-3">
-                        <div className="font-semibold text-emerald-800 mb-1">Transaction Hash (Blockchain):</div>
-                        <div className="font-mono text-xs text-emerald-700 break-all">{item.transactionHash}</div>
-                        <a 
-                          href={`https://zeroscan.org/tx/${item.transactionHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-emerald-600 hover:text-emerald-800 underline mt-1 inline-block"
-                        >
-                          Xem trên ZeroScan →
-                        </a>
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
+                        <div className="font-semibold text-slate-800 mb-1">Transaction Hash (Blockchain)</div>
+                        <div className="font-mono text-xs text-slate-700 break-all">{item.transactionHash}</div>
+                        <a href={`https://zeroscan.org/tx/${item.transactionHash}`} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-600 hover:text-slate-800 underline mt-1 inline-block">Xem trên ZeroScan →</a>
                       </div>
                     )}
 

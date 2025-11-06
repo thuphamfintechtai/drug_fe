@@ -23,12 +23,12 @@ export default function TruckAnimationButton({
           font-family: 'Poppins', sans-serif;
           font-weight: 500;
           border: none;
-          padding: 16px 36px;
-          border-radius: 12px;
+          padding: 10px 24px;
+          border-radius: 9999px;
           cursor: pointer;
           overflow: hidden;
           transition: all 0.3s ease;
-          min-width: 220px;
+          min-width: 160px;
           box-shadow: 0 4px 14px rgba(0, 180, 216, 0.3);
         }
         .truck-animation-button:hover:not(:disabled) {
@@ -44,6 +44,7 @@ export default function TruckAnimationButton({
           z-index: 2;
           display: block;
           transition: opacity 0.3s;
+          white-space: nowrap;
         }
         .truck-animation-button .success-text {
           opacity: 0;
@@ -56,9 +57,9 @@ export default function TruckAnimationButton({
         .truck-container {
           position: absolute;
           left: 30%;
-          bottom: 8px;
-          width: 60px;
-          height: 30px;
+          bottom: 6px;
+          width: 52px;
+          height: 26px;
           transform: translateY(-50%) translateX(-120%);
           opacity: 0;
           transition: opacity 0.3s ease;
@@ -71,7 +72,7 @@ export default function TruckAnimationButton({
         }
         .road-line {
           position: absolute;
-          bottom: -8px;
+          bottom: -10px;
           left: 10%;
           width: 80%;
           height: 2px;

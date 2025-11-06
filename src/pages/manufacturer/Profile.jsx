@@ -206,7 +206,7 @@ export default function Profile() {
 
                   {profile.company.contractAddress && (
                     <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-                      <div className="text-xs text-emerald-700 mb-1">⛓️ Contract Address</div>
+                      <div className="text-xs text-emerald-700 mb-1">Contract Address</div>
                       <div className="font-mono text-sm text-emerald-800 break-all">
                         {profile.company.contractAddress}
                       </div>
@@ -218,17 +218,10 @@ export default function Profile() {
 
             {/* Notice */}
             <div className="bg-yellow-50 rounded-2xl border border-yellow-200 p-5">
-              <div className="flex items-start gap-3">
-                <svg className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <div>
-                  <div className="font-semibold text-yellow-800 mb-1">Lưu ý quan trọng</div>
-                  <div className="text-sm text-yellow-700">
-                    Thông tin này chỉ được xem và <strong>không thể chỉnh sửa</strong>. 
-                    Nếu cần thay đổi thông tin công ty, vui lòng liên hệ với quản trị viên hệ thống.
-                  </div>
-                </div>
+              <div className="font-semibold text-yellow-800 mb-1">Lưu ý quan trọng</div>
+              <div className="text-sm text-yellow-700">
+                Thông tin này chỉ được xem và <strong>không thể chỉnh sửa</strong>. 
+                Nếu cần thay đổi thông tin công ty, vui lòng liên hệ với quản trị viên hệ thống.
               </div>
             </div>
           </div>
