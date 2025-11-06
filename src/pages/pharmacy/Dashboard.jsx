@@ -142,133 +142,190 @@ export default function PharmacyDashboard() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Banner */}
-          <motion.section
-            className="relative overflow-hidden rounded-3xl mb-8 border-2 border-[#4BADD1] shadow-[0_8px_24px_rgba(75,173,209,0.2)] bg-[#4BADD1]"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="relative px-8 py-10 md:px-12 md:py-14">
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-3">Tổng quan nhà thuốc</h1>
-              <p className="text-white text-xl font-medium">Quản lý nhận hàng và phân phối thuốc</p>
+          {/* Header banner */}
+          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+                Quản lý nhà thuốc
+              </h1>
+              <p className="text-slate-500 text-sm mt-1">Tổng quan hệ thống và các chức năng chính</p>
             </div>
-          </motion.section>
-        <motion.div variants={fadeUp} initial="hidden" animate="show">
-          <div className="bg-white rounded-xl border border-slate-300 shadow-md overflow-hidden">
-            {/* Header màu xanh nhạt */}
-            <div className="bg-[#4BADD1] px-4 py-3">
-              <h2 className="text-lg font-bold text-white">Tổng quan thống kê</h2>
-            </div>
+            
+            {/* Refresh Button */}
+            <button 
+              onClick={loadStats}
+              disabled={loading}
+              className="p-2.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 transition disabled:opacity-50"
+              title="Làm mới dữ liệu"
+            >
+              <svg 
+                className={`w-5 h-5 text-cyan-600 transition-transform ${loading ? 'animate-spin' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </div>
 
-            {/* Nội dung thống kê */}
-            <div className="p-4 grid grid-cols-3 gap-4">
-              {/* Đơn hàng từ nhà phân phối */}
-              <div className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col h-full hover:scale-105 hover:shadow-lg transition-all duration-300 cursor-pointer">
-                <div className="bg-gradient-to-r from-[#4BADD1] to-[#7AC3DE] px-3 py-2 flex items-center justify-center gap-2">
-                  <svg className="w-4 h-4 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <h3 className="text-sm font-semibold text-white text-center leading-none">Đơn hàng từ nhà phân phối</h3>
-                </div>
-                <div className="p-3 space-y-2 flex-1">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-slate-800 font-medium">Tổng đơn nhận</div>
-                    <div className="text-xl font-bold text-blue-600">{stats?.invoices?.total || 0}</div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-slate-800 font-medium">Chờ nhận</div>
-                    <div className="text-xl font-bold text-orange-600">{stats?.invoices?.pending || 0}</div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-slate-800 font-medium">Đã nhận</div>
-                    <div className="text-xl font-bold text-green-600">{stats?.invoices?.received || 0}</div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-slate-800 font-medium">Đã thanh toán</div>
-                    <div className="text-xl font-bold text-green-600">{stats?.invoices?.paid || 0}</div>
-                  </div>
-                </div>
-                <div className="px-3 pb-3 mt-auto">
+          {stats ? (
+            <div className="space-y-8">
+              {/* Thống kê đơn hàng */}
+              <motion.div variants={fadeUp} initial="hidden" animate="show">
+                <h2 className="text-lg font-semibold text-slate-800 mb-4">Đơn hàng từ nhà phân phối</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <Link
                     to="/pharmacy/invoices"
-                    className="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-[#4BADD1] to-[#7AC3DE] text-white text-xs font-semibold text-center hover:from-[#7AC3DE] hover:to-[#4BADD1] shadow-sm hover:shadow-md transition-all block"
+                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
                   >
-                    Xem chi tiết
+                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-blue-400 to-cyan-400 rounded-t-2xl" />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Tổng đơn nhận</div>
+                      <div className="text-3xl font-bold text-blue-600">{stats?.invoices?.total || 0}</div>
+                      <div className="text-xs text-slate-500 mt-2">Đơn hàng</div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/pharmacy/invoices?status=pending"
+                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                  >
+                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-amber-400 to-yellow-400 rounded-t-2xl" />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Chờ nhận</div>
+                      <div className="text-3xl font-bold text-amber-600">{stats?.invoices?.pending || 0}</div>
+                      <div className="text-xs text-slate-500 mt-2">Đang chờ</div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/pharmacy/invoices?status=received"
+                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                  >
+                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Đã nhận</div>
+                      <div className="text-3xl font-bold text-emerald-600">{stats?.invoices?.received || 0}</div>
+                      <div className="text-xs text-slate-500 mt-2">Đã xác nhận</div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/pharmacy/invoices?status=paid"
+                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                  >
+                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-green-400 to-emerald-400 rounded-t-2xl" />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Đã thanh toán</div>
+                      <div className="text-3xl font-bold text-green-600">{stats?.invoices?.paid || 0}</div>
+                      <div className="text-xs text-slate-500 mt-2">Hoàn tất</div>
+                    </div>
                   </Link>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Thuốc & NFT */}
-              <div className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col h-full hover:scale-105 hover:shadow-lg transition-all duration-300 cursor-pointer">
-                <div className="bg-gradient-to-r from-[#4BADD1] to-[#7AC3DE] px-3 py-2 flex items-center justify-center gap-2">
-                  <svg className="w-4 h-4 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                  </svg>
-                  <h3 className="text-sm font-semibold text-white text-center leading-none">Thuốc & NFT</h3>
-                </div>
-                <div className="p-3 space-y-2 flex-1">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-slate-800 font-medium">Tổng số thuốc</div>
-                    <div className="text-xl font-bold text-blue-600">{stats?.drugs?.total || 0}</div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-slate-800 font-medium">Tổng NFT</div>
-                    <div className="text-xl font-bold text-blue-600">{stats?.nfts?.total || 0}</div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-slate-800 font-medium">NFT Available</div>
-                    <div className="text-xl font-bold text-green-600">{stats?.nfts?.available || 0}</div>
-                  </div>
-                </div>
-                <div className="px-3 pb-3 mt-auto">
+              {/* Thống kê thuốc & NFT */}
+              <motion.div variants={fadeUp} initial="hidden" animate="show">
+                <h2 className="text-lg font-semibold text-slate-800 mb-4">Thuốc & NFT</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <Link
                     to="/pharmacy/drugs"
-                    className="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-[#4BADD1] to-[#7AC3DE] text-white text-xs font-semibold text-center hover:from-[#7AC3DE] hover:to-[#4BADD1] shadow-sm hover:shadow-md transition-all block"
+                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
                   >
-                    Xem chi tiết
+                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-blue-400 to-cyan-400 rounded-t-2xl" />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Tổng số thuốc</div>
+                      <div className="text-3xl font-bold text-blue-600">{stats?.drugs?.total || 0}</div>
+                      <div className="text-xs text-slate-500 mt-2">Loại thuốc</div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/pharmacy/drugs"
+                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                  >
+                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-cyan-400 to-sky-400 rounded-t-2xl" />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Tổng NFT</div>
+                      <div className="text-3xl font-bold text-cyan-600">{stats?.nfts?.total || 0}</div>
+                      <div className="text-xs text-slate-500 mt-2">Token đã nhận</div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/pharmacy/drugs"
+                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                  >
+                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">NFT Available</div>
+                      <div className="text-3xl font-bold text-emerald-600">{stats?.nfts?.available || 0}</div>
+                      <div className="text-xs text-slate-500 mt-2">Có sẵn</div>
+                    </div>
                   </Link>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Phân phối */}
-              <div className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col h-full hover:scale-105 hover:shadow-lg transition-all duration-300 cursor-pointer">
-                <div className="bg-gradient-to-r from-[#4BADD1] to-[#7AC3DE] px-3 py-2 flex items-center justify-center gap-2">
-                  <svg className="w-4 h-4 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                  </svg>
-                  <h3 className="text-sm font-semibold text-white text-center leading-none">Phân phối</h3>
-                </div>
-                <div className="p-3 space-y-2 flex-1">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-slate-800 font-medium">Tổng phân phối</div>
-                    <div className="text-xl font-bold text-blue-600">{stats?.distributions?.total || 0}</div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-slate-800 font-medium">Đã bán</div>
-                    <div className="text-xl font-bold text-green-600">{stats?.distributions?.sold || 0}</div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-slate-800 font-medium">Tồn kho</div>
-                    <div className="text-xl font-bold text-blue-600">{stats?.distributions?.inStock || 0}</div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-slate-800 font-medium">Hết hạn</div>
-                    <div className="text-xl font-bold text-red-600">{stats?.distributions?.expired || 0}</div>
-                  </div>
-                </div>
-                <div className="px-3 pb-3 mt-auto">
+              {/* Thống kê phân phối */}
+              <motion.div variants={fadeUp} initial="hidden" animate="show">
+                <h2 className="text-lg font-semibold text-slate-800 mb-4">Phân phối</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <Link
                     to="/pharmacy/distribution-history"
-                    className="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-[#4BADD1] to-[#7AC3DE] text-white text-xs font-semibold text-center hover:from-[#7AC3DE] hover:to-[#4BADD1] shadow-sm hover:shadow-md transition-all block"
+                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
                   >
-                    Xem chi tiết
+                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-purple-400 to-pink-400 rounded-t-2xl" />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Tổng phân phối</div>
+                      <div className="text-3xl font-bold text-purple-600">{stats?.distributions?.total || 0}</div>
+                      <div className="text-xs text-slate-500 mt-2">Giao dịch</div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/pharmacy/distribution-history"
+                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                  >
+                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-green-400 to-emerald-400 rounded-t-2xl" />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Đã bán</div>
+                      <div className="text-3xl font-bold text-green-600">{stats?.distributions?.sold || 0}</div>
+                      <div className="text-xs text-slate-500 mt-2">Đã xuất</div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/pharmacy/distribution-history"
+                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                  >
+                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-blue-400 to-cyan-400 rounded-t-2xl" />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Tồn kho</div>
+                      <div className="text-3xl font-bold text-blue-600">{stats?.distributions?.inStock || 0}</div>
+                      <div className="text-xs text-slate-500 mt-2">Còn lại</div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/pharmacy/distribution-history"
+                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                  >
+                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-rose-400 to-red-400 rounded-t-2xl" />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Hết hạn</div>
+                      <div className="text-3xl font-bold text-rose-600">{stats?.distributions?.expired || 0}</div>
+                      <div className="text-xs text-slate-500 mt-2">Quá hạn</div>
+                    </div>
                   </Link>
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </div>
-        </motion.div>
+          ) : (
+            <div className="text-center py-20 text-slate-500">
+              Không có dữ liệu
+            </div>
+          )}
         </div>
       )}
     </DashboardLayout>

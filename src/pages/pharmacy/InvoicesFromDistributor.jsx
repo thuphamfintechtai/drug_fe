@@ -254,13 +254,13 @@ export default function InvoicesFromDistributor() {
 
   const getStatusColor = (status) => {
     const colors = {
-      pending: 'bg-white text-[#FF9800] border-[#FF9800]',
-      sent: 'bg-white text-[#4BADD1] border-[#4BADD1]',
-      received: 'bg-white text-[#7AC3DE] border-[#7AC3DE]',
-      confirmed: 'bg-white text-[#10B981] border-[#10B981]',
-      paid: 'bg-white text-[#10B981] border-[#10B981]',
+      pending: 'bg-amber-100 text-amber-700 border-amber-200',
+      sent: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+      received: 'bg-blue-100 text-blue-700 border-blue-200',
+      confirmed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+      paid: 'bg-green-100 text-green-700 border-green-200',
     };
-    return colors[status] || 'bg-white text-slate-600 border-slate-300';
+    return colors[status] || 'bg-slate-100 text-slate-600 border-slate-200';
   };
 
   const fadeUp = {
@@ -268,85 +268,63 @@ export default function InvoicesFromDistributor() {
     show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout navigationItems={navigationItems}>
+  return (
+    <DashboardLayout navigationItems={navigationItems}>
+      {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
           <div className="w-full max-w-2xl">
             <TruckLoader height={72} progress={loadingProgress} showTrack />
           </div>
           <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
-      </DashboardLayout>
-    );
-  }
+      ) : (
+        <div className="space-y-6">
+      {/* Banner */}
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
+        <h1 className="text-xl font-semibold text-[#007b91]">Đơn hàng từ nhà phân phối</h1>
+        <p className="text-slate-500 text-sm mt-1">Xem và xác nhận nhận hàng từ distributor</p>
+      </div>
 
-  return (
-    <DashboardLayout navigationItems={navigationItems}>
-      <div>
-      <motion.section
-        className="relative overflow-hidden rounded-2xl mb-6 border border-[#7AC3DE] shadow-[0_10px_30px_rgba(75,173,209,0.15)] bg-white"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+      {/* Filters */}
+      <motion.div
+        className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
+        variants={fadeUp}
+        initial="hidden"
+        animate="show"
       >
-        <div className="relative px-6 py-8 md:px-10 md:py-12">
-          <div className="flex items-center gap-3 mb-2">
-            <svg className="w-8 h-8 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#4BADD1]">Đơn hàng từ nhà phân phối</h1>
-          </div>
-          <p className="text-[#7AC3DE] mt-2 text-lg flex items-center gap-2">
-            <svg className="w-5 h-5 text-[#7AC3DE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            Xem và xác nhận nhận hàng từ distributor
-          </p>
-        </div>
-      </motion.section>
-
-      <motion.div className="rounded-2xl bg-white border-2 border-[#4BADD1] shadow-[0_4px_12px_rgba(75,173,209,0.12)] p-4 mb-5" variants={fadeUp} initial="hidden" animate="show">
         <div className="flex flex-col md:flex-row gap-3 md:items-end">
           <div className="flex-1">
-            <label className="block text-sm text-slate-700 mb-1 font-medium flex items-center gap-2">
-              <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              Tìm kiếm
-            </label>
+            <label className="block text-sm text-[#003544]/70 mb-1">Tìm kiếm</label>
             <div className="relative">
-              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            <input
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                </svg>
+              </span>
+              <input
                 value={localSearch}
                 onChange={e => setLocalSearch(e.target.value)}
-                placeholder="Nhập mã đơn (VD: INV-2024-001)..."
-                className="w-full border-2 border-slate-200 bg-white rounded-xl pl-10 pr-10 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] transition"
+                onKeyDown={e => e.key === 'Enter' && updateFilter({ search: localSearch, page: 1 })}
+                placeholder="Tìm theo số đơn, ghi chú..."
+                className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
               />
-              {isSearching && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#4BADD1] border-t-transparent"></div>
-                </div>
-              )}
+              <button
+                onClick={() => updateFilter({ search: localSearch, page: 1 })}
+                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+              >
+                Tìm Kiếm
+              </button>
             </div>
           </div>
           <div>
-            <label className="block text-sm text-slate-700 mb-1 font-medium flex items-center gap-2">
-              <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Trạng thái
-            </label>
+            <label className="block text-sm text-[#003544]/70 mb-1">Trạng thái</label>
             <select
               value={status}
               onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-              className="border-2 border-slate-200 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] transition"
+              className="h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
             >
               <option value="">Tất cả</option>
-              <option value="pending">Chờ xác nhận</option>
+              <option value="pending">Đang chờ</option>
               <option value="sent">Đã gửi</option>
               <option value="received">Đã nhận</option>
               <option value="confirmed">Đã xác nhận</option>
@@ -356,449 +334,231 @@ export default function InvoicesFromDistributor() {
         </div>
       </motion.div>
 
-      <motion.div className="bg-white rounded-2xl border-2 border-[#7AC3DE] shadow-[0_4px_12px_rgba(122,195,222,0.12)] overflow-hidden" variants={fadeUp} initial="hidden" animate="show">
+      {/* List */}
+      <motion.div className="space-y-4" variants={fadeUp} initial="hidden" animate="show">
         {items.length === 0 ? (
-          <div className="bg-white p-10 text-center">
-            <div className="text-5xl mb-4 text-slate-800">■</div>
+          <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
             <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có đơn hàng nào</h3>
             <p className="text-slate-600">Đơn hàng từ nhà phân phối sẽ hiển thị ở đây</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-[#4BADD1] text-white">
-                  <th className="px-4 py-3 text-left text-sm font-semibold border-r border-white/30">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                      </svg>
-                      <span>Mã đơn</span>
+          items.map((item, idx) => (
+            <div key={idx} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
+              <div className="p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-semibold text-[#003544]">
+                        Đơn: {item.invoiceNumber || 'N/A'}
+                      </h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
+                        {getStatusLabel(item.status)}
+                      </span>
                     </div>
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold border-r border-white/30">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                      </svg>
-                      <span>Tên thuốc</span>
+                    <div className="space-y-1 text-sm text-slate-600">
+                      <div>Từ: <span className="font-medium text-slate-800">{item.fromDistributor?.fullName || item.fromDistributor?.username || 'N/A'}</span></div>
+                      <div>Số lượng: <span className="font-bold text-blue-700">{item.quantity} NFT</span></div>
+                      <div>Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
                     </div>
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold border-r border-white/30">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                      <span>Nhà sản xuất</span>
                   </div>
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold border-r border-white/30">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                      </svg>
-                      <span>Số lượng</span>
-                </div>
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold border-r border-white/30">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span>Ngày nhận</span>
-                    </div>
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold border-r border-white/30">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>Trạng thái</span>
-                  </div>
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                      </svg>
-                      <span>Thao tác</span>
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, idx) => (
-                  <React.Fragment key={idx}>
-                    <tr 
-                      onClick={() => toggleExpand(idx)}
-                      className="border-b border-slate-200 hover:bg-gradient-to-r hover:from-[#4BADD1]/15 hover:to-[#7AC3DE]/15 cursor-pointer transition-all duration-200"
+
+                  {item.status === 'sent' && (
+                    <button
+                      style={{ color: 'white' }}
+                      onClick={() => {
+                        setSelectedInvoice(item);
+                        setConfirmForm({
+                          receivedByName: '',
+                          receiptAddressStreet: '',
+                          receiptAddressCity: '',
+                          receiptAddressState: '',
+                          receiptAddressPostalCode: '',
+                          receiptAddressCountry: 'Vietnam',
+                          shippingInfo: '',
+                          notes: '',
+                          receivedDate: new Date().toISOString().split('T')[0],
+                          receivedQuantity: item.quantity?.toString() || '',
+                        });
+                        setShowConfirmDialog(true);
+                      }}
+                      className="px-6 py-3 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:from-emerald-600 hover:to-green-700 text-base font-semibold transition shadow-md"
                     >
-                      <td className="px-4 py-4 bg-white">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-[#4BADD1] rounded flex items-center justify-center">
-                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                            </svg>
-                          </div>
-                          <span className="font-mono font-semibold text-slate-800">{item.invoiceNumber || 'N/A'}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 bg-white">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                          </svg>
-                          <span className="text-slate-800">{item.drug?.tradeName || item.drug?.name || 'N/A'}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 bg-white">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                          </svg>
-                          <span className="text-slate-800">{item.fromDistributor?.fullName || item.fromDistributor?.username || 'N/A'}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 bg-white">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[#4BADD1] font-bold">#</span>
-                          <span className="font-bold text-[#4BADD1]">{item.quantity?.toLocaleString('vi-VN') || '0'}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 bg-white">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          <span className="text-slate-800">
-                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString('vi-VN') : item.invoiceDate ? new Date(item.invoiceDate).toLocaleDateString('vi-VN') : 'N/A'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 bg-white">
-                        <span className={`px-3 py-1.5 rounded-full text-xs font-medium border-2 ${getStatusColor(item.status)}`}>
-                          {getStatusLabel(item.status)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 bg-white">
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          {item.status === 'sent' && (
-                            <button
-                              onClick={() => {
-                                setSelectedInvoice(item);
-                                setConfirmForm({
-                                  receivedByName: '',
-                                  receiptAddressStreet: '',
-                                  receiptAddressCity: '',
-                                  receiptAddressState: '',
-                                  receiptAddressPostalCode: '',
-                                  receiptAddressCountry: 'Vietnam',
-                                  shippingInfo: '',
-                                  notes: '',
-                                  receivedDate: new Date().toISOString().split('T')[0],
-                                  receivedQuantity: item.quantity?.toString() || '',
-                                });
-                                setShowConfirmDialog(true);
-                              }}
-                              className="px-3 py-1.5 rounded-lg bg-[#4BADD1] text-white hover:bg-[#7AC3DE] text-sm font-medium transition flex items-center gap-1"
-                            >
-                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                              <span>Xác nhận</span>
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                    <AnimatePresence>
-                      {expandedInvoice === idx && (
-                        <tr>
-                          <td colSpan={7} className="p-0">
-                            <motion.div
-                              initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
-                              animate={{ 
-                                opacity: 1, 
-                                height: 'auto',
-                                transition: { 
-                                  duration: 0.3, 
-                                  ease: [0.4, 0, 0.2, 1],
-                                  height: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
-                                  opacity: { duration: 0.2, ease: 'easeOut' }
-                                }
-                              }}
-                              exit={{ 
-                                opacity: 0, 
-                                height: 0,
-                                overflow: 'hidden',
-                                transition: { 
-                                  duration: 0.25, 
-                                  ease: [0.4, 0, 0.2, 1],
-                                  height: { duration: 0.25, ease: [0.4, 0, 0.2, 1] },
-                                  opacity: { duration: 0.15, ease: 'easeIn' }
-                                }
-                              }}
-                              className="bg-slate-50 border-t-2 border-slate-300"
-                            >
-                              <div className="p-6 space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  {/* Thông tin đơn hàng */}
-                                  <div className="bg-white rounded-xl p-4 border-2 border-[#4BADD1] shadow-sm">
-                                    <div className="flex items-center gap-2 mb-3">
-                                      <svg className="w-5 h-5 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                      </svg>
-                                      <h3 className="text-lg font-bold text-[#4BADD1]">Thông tin đơn hàng</h3>
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-2 text-sm">
-                                      <div><span className="text-slate-600">Mã đơn:</span> <span className="ml-2 font-mono font-semibold text-slate-800">{item.invoiceNumber || 'N/A'}</span></div>
-                                      <div><span className="text-slate-600">Trạng thái:</span> <span className={`ml-2 px-3 py-1 rounded-full text-xs font-medium border-2 ${getStatusColor(item.status)}`}>{getStatusLabel(item.status)}</span></div>
-                                      <div><span className="text-slate-600">Ngày tạo:</span> <span className="ml-2 font-medium text-slate-800">{item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A'}</span></div>
-                                      <div><span className="text-slate-600">Số lượng:</span> <span className="ml-2 font-bold text-[#4BADD1]">{item.quantity || '0'} NFT</span></div>
-                                    </div>
-                                  </div>
+                      Xác nhận nhận hàng
+                    </button>
+                  )}
+                </div>
 
-                                  {/* Thông tin nhà phân phối */}
-                                  {item.fromDistributor && (
-                                    <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
-                                      <div className="flex items-center gap-2 mb-3">
-                                        <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                        </svg>
-                                        <h3 className="text-lg font-bold text-slate-800">Nhà phân phối</h3>
-                                      </div>
-                                      <div className="space-y-2 text-sm text-slate-700">
-                                        <div><span className="text-slate-600">Tên:</span> <span className="ml-2 font-medium">{item.fromDistributor.fullName || item.fromDistributor.username || 'N/A'}</span></div>
-                                        <div><span className="text-slate-600">Email:</span> <span className="ml-2 font-medium">{item.fromDistributor.email || 'N/A'}</span></div>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Thông tin thuốc */}
-                                  {item.drug && (
-                                    <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
-                                      <div className="flex items-center gap-2 mb-3">
-                                        <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                                        </svg>
-                                        <h3 className="text-lg font-bold text-slate-800">Thông tin thuốc</h3>
-                                      </div>
-                                      <div className="space-y-2 text-sm text-slate-700">
-                                        <div><span className="text-slate-600">Tên:</span> <span className="ml-2 font-medium">{item.drug.tradeName || item.drug.name || 'N/A'}</span></div>
-                                        <div><span className="text-slate-600">Mã ATC:</span> <span className="ml-2 font-mono font-medium">{item.drug.atcCode || 'N/A'}</span></div>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Thông tin tài chính */}
-                                  <div className="bg-white rounded-xl p-4 border-2 border-[#4BADD1] shadow-sm">
-                                    <div className="flex items-center gap-2 mb-3">
-                                      <svg className="w-5 h-5 text-[#4BADD1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                      </svg>
-                                      <h3 className="text-lg font-bold text-[#4BADD1]">Thông tin tài chính</h3>
-                                    </div>
-                                    <div className="space-y-2 text-sm text-slate-700">
-                                      <div><span className="text-slate-600">Đơn giá:</span> <span className="ml-2 font-medium">{item.unitPrice?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
-                                      <div><span className="text-slate-600">Tổng tiền:</span> <span className="ml-2 font-bold text-[#4BADD1]">{item.totalAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
-                                      <div><span className="text-slate-600">Thành tiền:</span> <span className="ml-2 font-bold text-[#4BADD1]">{item.finalAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Chain Transaction Hash */}
-                                {item.chainTxHash && (
-                                  <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
-                                    <div className="flex items-center gap-2 mb-3">
-                                      <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                      </svg>
-                                      <h3 className="text-lg font-bold text-slate-800">Chain Transaction Hash</h3>
-                                    </div>
-                                    <div className="text-slate-700 font-mono text-xs break-all bg-slate-50 p-3 rounded-lg">
-                                      {item.chainTxHash}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Ghi chú */}
-                                {item.notes && (
-                                  <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
-                                    <div className="flex items-center gap-2 mb-3">
-                                      <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                      </svg>
-                                      <h3 className="text-lg font-bold text-slate-800">Ghi chú</h3>
-                                    </div>
-                                    <div className="text-slate-600">{item.notes}</div>
-                                  </div>
-                                )}
-                              </div>
-                            </motion.div>
-                          </td>
-                        </tr>
-                      )}
-                    </AnimatePresence>
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
+                {item.notes && (
+                  <div className="bg-slate-50 rounded-xl p-3 text-sm mb-3">
+                    <div className="font-semibold text-slate-700 mb-1">Ghi chú:</div>
+                    <div className="text-slate-600">{item.notes}</div>
+                  </div>
+                )}
+              </div>
             </div>
+          ))
         )}
       </motion.div>
 
-      <div className="flex items-center justify-between mt-5 bg-white p-4 rounded-2xl border-2 border-[#7AC3DE]">
-        <div className="text-sm text-slate-600">Tổng {pagination.total} đơn hàng</div>
+      {/* Pagination */}
+      <div className="flex items-center justify-between mt-5">
+        <div className="text-sm text-slate-600">
+          Hiển thị {items.length} / {pagination.total} đơn hàng
+        </div>
         <div className="flex items-center gap-2">
-          <button 
-            disabled={page <= 1} 
-            onClick={() => updateFilter({ page: page - 1 })} 
-            className={`px-3 py-2 rounded-lg ${page <= 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white border-2 border-slate-300 hover:border-[#4BADD1] hover:text-[#4BADD1] transition'}`}
+          <button
+            disabled={page <= 1}
+            onClick={() => updateFilter({ page: page - 1 })}
+            className={`px-3 py-2 rounded-xl ${page <= 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white/90 border border-[#90e0ef55] hover:bg-[#f5fcff]'}`}
           >
-            <svg className="w-5 h-5 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            Trước
           </button>
-          <span className="px-4 py-2 rounded-lg bg-[#4BADD1] text-white text-sm font-medium">
-            {page}
+          <span className="text-sm text-slate-700">
+            Trang {page} / {pagination.pages || 1}
           </span>
-          <button 
-            disabled={page >= pagination.pages} 
-            onClick={() => updateFilter({ page: page + 1 })} 
-            className={`px-3 py-2 rounded-lg ${page >= pagination.pages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white border-2 border-slate-300 hover:border-[#4BADD1] hover:text-[#4BADD1] transition'}`}
+          <button
+            disabled={page >= pagination.pages}
+            onClick={() => updateFilter({ page: page + 1 })}
+            className={`px-3 py-2 rounded-xl ${page >= pagination.pages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]'}`}
           >
-            <svg className="w-5 h-5 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            Sau
           </button>
-          <select 
-            value={pagination.limit || 10} 
-            onChange={(e) => updateFilter({ page: 1, limit: parseInt(e.target.value) })}
-            className="ml-4 px-3 py-2 rounded-lg border-2 border-slate-300 bg-white text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1]"
-          >
-            <option value="10">10 / page</option>
-            <option value="20">20 / page</option>
-            <option value="50">50 / page</option>
-          </select>
         </div>
       </div>
 
+      {/* Confirm Receipt Dialog */}
       {showConfirmDialog && selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="bg-[#4BADD1] px-8 py-6 rounded-t-3xl">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">Xác nhận nhận hàng</h2>
-                    <p className="text-white/90 text-sm">Nhập thông tin nhận hàng</p>
-                  </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowConfirmDialog(false)}>
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll" onClick={(e) => e.stopPropagation()}>
+            <style>{`
+              .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+              .custom-scroll::-webkit-scrollbar { width: 0; height: 0; }
+              .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+              .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
+            `}</style>
+            <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Xác nhận nhận hàng</h2>
+                  <p className="text-cyan-100 text-sm">Đơn: {selectedInvoice.invoiceNumber}</p>
                 </div>
-                <button onClick={() => setShowConfirmDialog(false)} className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+              </div>
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-8 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Người nhận hàng *</label>
+                  <input
+                    value={confirmForm.receivedByName}
+                    onChange={(e) => setConfirmForm({...confirmForm, receivedByName: e.target.value})}
+                    placeholder="Họ và tên"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Số lượng nhận</label>
+                  <input
+                    type="number"
+                    value={confirmForm.receivedQuantity}
+                    onChange={(e) => setConfirmForm({...confirmForm, receivedQuantity: e.target.value})}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Địa chỉ nhận (đường) *</label>
+                  <input
+                    value={confirmForm.receiptAddressStreet}
+                    onChange={(e) => setConfirmForm({...confirmForm, receiptAddressStreet: e.target.value})}
+                    placeholder="Số nhà, đường..."
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Thành phố *</label>
+                  <input
+                    value={confirmForm.receiptAddressCity}
+                    onChange={(e) => setConfirmForm({...confirmForm, receiptAddressCity: e.target.value})}
+                    placeholder="TP/Huyện"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Ngày nhận</label>
+                  <input
+                    type="date"
+                    value={confirmForm.receivedDate}
+                    onChange={(e) => setConfirmForm({...confirmForm, receivedDate: e.target.value})}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Tỉnh/Thành</label>
+                  <input
+                    value={confirmForm.receiptAddressState}
+                    onChange={(e) => setConfirmForm({...confirmForm, receiptAddressState: e.target.value})}
+                    placeholder="Tỉnh/Thành"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Mã bưu điện</label>
+                  <input
+                    value={confirmForm.receiptAddressPostalCode}
+                    onChange={(e) => setConfirmForm({...confirmForm, receiptAddressPostalCode: e.target.value})}
+                    placeholder="Mã bưu điện"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Ghi chú</label>
+                <textarea
+                  rows="3"
+                  value={confirmForm.notes}
+                  onChange={(e) => setConfirmForm({...confirmForm, notes: e.target.value})}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  placeholder="Ghi chú thêm..."
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowConfirmDialog(false)}
+                  className="px-5 py-2 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-100 transition"
+                >
+                  Hủy
+                </button>
+                <button
+                  style={{ color: 'white' }}
+                  onClick={handleConfirmReceipt}
+                  disabled={loading}
+                  className="px-6 py-3 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold shadow-md hover:from-emerald-600 hover:to-green-700 transition disabled:opacity-50"
+                >
+                  {loading ? 'Đang xử lý...' : 'Xác nhận nhận hàng'}
                 </button>
               </div>
             </div>
-
-            <div className="p-8 space-y-4">
-              <div className="bg-white rounded-xl p-4 border-2 border-[#4BADD1]">
-                <div className="font-bold text-[#4BADD1] mb-2">Thông tin đơn hàng:</div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-slate-700">
-                  <div>Số đơn: <span className="font-mono font-medium">{selectedInvoice.invoiceNumber || 'N/A'}</span></div>
-                  <div>Từ: <span className="font-medium">{selectedInvoice.fromDistributor?.fullName || selectedInvoice.fromDistributor?.username || 'N/A'}</span></div>
-                  <div>Số lượng: <span className="font-bold text-[#4BADD1]">{selectedInvoice.quantity} NFT</span></div>
-                  <div>Ngày đơn: <span className="font-medium">{selectedInvoice.invoiceDate ? new Date(selectedInvoice.invoiceDate).toLocaleDateString('vi-VN') : 'N/A'}</span></div>
-                  {selectedInvoice.drug && (
-                    <>
-                      <div>Thuốc: <span className="font-medium">{selectedInvoice.drug.tradeName || 'N/A'}</span></div>
-                      <div>Mã ATC: <span className="font-mono text-xs">{selectedInvoice.drug.atcCode || 'N/A'}</span></div>
-                    </>
-                  )}
-                  <div className="md:col-span-2">Thành tiền: <span className="font-bold text-[#4BADD1]">{selectedInvoice.finalAmount?.toLocaleString('vi-VN') || 'N/A'} VNĐ</span></div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Người nhận *</label>
-                  <input type="text" value={confirmForm.receivedByName} onChange={(e) => setConfirmForm({...confirmForm, receivedByName: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Tên người nhận" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Số lượng</label>
-                  <input type="number" value={confirmForm.receivedQuantity} onChange={(e) => setConfirmForm({...confirmForm, receivedQuantity: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Địa chỉ nhận * (Số nhà, tên đường)</label>
-                <input type="text" value={confirmForm.receiptAddressStreet} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressStreet: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Số nhà, tên đường" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Thành phố</label>
-                  <input type="text" value={confirmForm.receiptAddressCity} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressCity: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Thành phố" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tỉnh/Thành</label>
-                  <input type="text" value={confirmForm.receiptAddressState} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressState: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Tỉnh/Thành" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Mã bưu điện</label>
-                  <input type="text" value={confirmForm.receiptAddressPostalCode} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressPostalCode: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Mã bưu điện" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Quốc gia</label>
-                  <input type="text" value={confirmForm.receiptAddressCountry} onChange={(e) => setConfirmForm({...confirmForm, receiptAddressCountry: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" placeholder="Quốc gia" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Thông tin vận chuyển</label>
-                <input type="text" value={confirmForm.shippingInfo} onChange={(e) => setConfirmForm({...confirmForm, shippingInfo: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Ngày nhận</label>
-                <input type="date" value={confirmForm.receivedDate} onChange={(e) => setConfirmForm({...confirmForm, receivedDate: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Ghi chú</label>
-                <textarea value={confirmForm.notes} onChange={(e) => setConfirmForm({...confirmForm, notes: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] focus:outline-none" rows="3" />
-              </div>
-
-              <div className="bg-white rounded-xl p-4 border-2 border-slate-300">
-                <div className="text-sm text-slate-700">Sau khi xác nhận, trạng thái sẽ thành <strong>"Đang chờ Distributor xác nhận"</strong>. Distributor cần xác nhận để chuyển NFT.</div>
-              </div>
-            </div>
-
-            <div className="px-8 py-6 border-t border-gray-200 bg-white rounded-b-3xl flex justify-end space-x-3">
-              <button onClick={() => setShowConfirmDialog(false)} className="px-6 py-3 rounded-xl border-2 border-slate-300 text-slate-700 hover:bg-slate-100 font-medium transition flex items-center gap-2">
-                <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <span>Hủy</span>
-              </button>
-              <button onClick={handleConfirmReceipt} disabled={loading} className="px-6 py-3 rounded-xl bg-[#4BADD1] text-white font-medium shadow-[0_4px_12px_rgba(75,173,209,0.3)] hover:bg-[#7AC3DE] hover:shadow-[0_6px_16px_rgba(75,173,209,0.4)] disabled:opacity-50 transition flex items-center gap-2">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>{loading ? 'Đang xử lý...' : 'Xác nhận'}</span>
-              </button>
-            </div>
+          </div>
         </div>
-      </div>
       )}
       </div>
+      )}
     </DashboardLayout>
   );
 }

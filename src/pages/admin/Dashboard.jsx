@@ -233,7 +233,7 @@ export default function AdminDashboard() {
                 <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-blue-400 to-cyan-400 rounded-t-2xl" />
                 <div className="p-5 pt-7 text-center">
                   <div className="text-sm text-slate-600 mb-1">Tổng người dùng</div>
-                  <div className="text-3xl font-bold text-[#003544]">{systemStats?.users?.total || 0}</div>
+                <div className="text-3xl font-bold text-[#003544]">{systemStats?.users?.total || 0}</div>
                   <div className="text-xs text-slate-500 mt-2">
                     Hoạt động: {systemStats?.users?.byStatus?.active || 0} | Đang chờ: {systemStats?.users?.byStatus?.pending || 0}
                   </div>
@@ -308,7 +308,7 @@ export default function AdminDashboard() {
               <div className="relative rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-cyan-400 to-blue-400 rounded-t-xl" />
                 <div className="p-5 pt-7 text-center">
-                  <div className="text-sm text-slate-600 mb-2">7 ngày gần đây</div>
+                <div className="text-sm text-slate-600 mb-2">7 ngày gần đây</div>
                   <div className="text-3xl font-bold text-cyan-600">{registrationStats?.recentRequests || 0}</div>
                   <div className="text-xs text-slate-500 mt-2">Đơn đăng ký mới</div>
                 </div>
@@ -324,7 +324,7 @@ export default function AdminDashboard() {
                 <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-blue-400 to-cyan-400 rounded-t-2xl" />
                 <div className="p-5 pt-7 text-center">
                   <div className="text-sm text-slate-600 mb-1">Tổng số thuốc</div>
-                  <div className="text-3xl font-bold text-blue-600">{drugStats?.drugs?.total || 0}</div>
+                <div className="text-3xl font-bold text-blue-600">{drugStats?.drugs?.total || 0}</div>
                   <div className="text-xs text-slate-500 mt-2">
                     Hoạt động: {drugStats?.drugs?.byStatus?.active || 0} | Không hoạt động: {drugStats?.drugs?.byStatus?.inactive || 0}
                   </div>
@@ -334,9 +334,9 @@ export default function AdminDashboard() {
               <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-cyan-400 to-sky-400 rounded-t-2xl" />
                 <div className="p-5 pt-7 text-center">
-                  <div className="text-sm text-slate-600 mb-1">Tổng NFT</div>
+                <div className="text-sm text-slate-600 mb-1">Tổng NFT</div>
                   <div className="text-3xl font-bold text-cyan-600">{drugStats?.nfts?.total || 0}</div>
-                  <div className="text-xs text-slate-500 mt-2">Token đã mint</div>
+                <div className="text-xs text-slate-500 mt-2">Token đã mint</div>
                 </div>
               </div>
               
@@ -345,7 +345,7 @@ export default function AdminDashboard() {
                 <div className="p-5 pt-7 text-center">
                   <div className="text-sm text-slate-600 mb-1">NFT đã chuyển</div>
                   <div className="text-3xl font-bold text-sky-600">{drugStats?.nfts?.byStatus?.transferred || 0}</div>
-                  <div className="text-xs text-slate-500 mt-2">Đang lưu thông</div>
+                <div className="text-xs text-slate-500 mt-2">Đang lưu thông</div>
                 </div>
               </div>
               
@@ -353,7 +353,7 @@ export default function AdminDashboard() {
                 <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
                 <div className="p-5 pt-7 text-center">
                   <div className="text-sm text-slate-600 mb-1">NFT đã bán</div>
-                  <div className="text-3xl font-bold text-emerald-600">{drugStats?.nfts?.byStatus?.sold || 0}</div>
+                <div className="text-3xl font-bold text-emerald-600">{drugStats?.nfts?.byStatus?.sold || 0}</div>
                   <div className="text-xs text-slate-500 mt-2">Đã bán cho nhà thuốc</div>
                 </div>
               </div>
@@ -404,7 +404,7 @@ export default function AdminDashboard() {
                 <div className="p-5 pt-7 text-center">
                   <div className="text-sm text-slate-600 mb-1">Chứng nhận sản xuất</div>
                   <div className="text-3xl font-bold text-purple-600">{systemStats?.proofs?.production || 0}</div>
-                  <div className="text-xs text-slate-500 mt-2">Lô sản xuất</div>
+                <div className="text-xs text-slate-500 mt-2">Lô sản xuất</div>
                 </div>
               </div>
               
@@ -413,7 +413,7 @@ export default function AdminDashboard() {
                 <div className="p-5 pt-7 text-center">
                   <div className="text-sm text-slate-600 mb-1">Chứng nhận phân phối</div>
                   <div className="text-3xl font-bold text-indigo-600">{systemStats?.proofs?.distribution || 0}</div>
-                  <div className="text-xs text-slate-500 mt-2">Chuyển giao cho NPP</div>
+                <div className="text-xs text-slate-500 mt-2">Chuyển giao cho NPP</div>
                 </div>
               </div>
               
@@ -422,7 +422,7 @@ export default function AdminDashboard() {
                 <div className="p-5 pt-7 text-center">
                   <div className="text-sm text-slate-600 mb-1">Chứng nhận nhà thuốc</div>
                   <div className="text-3xl font-bold text-teal-600">{systemStats?.proofs?.pharmacy || 0}</div>
-                  <div className="text-xs text-slate-500 mt-2">Chuyển giao cho nhà thuốc</div>
+                <div className="text-xs text-slate-500 mt-2">Chuyển giao cho nhà thuốc</div>
                 </div>
               </div>
             </div>
@@ -455,8 +455,8 @@ export default function AdminDashboard() {
                     Tra cứu NFT
                   </Link>
                 </div>
-              </div>
-            </div>
+          </div>
+          </div>
           </motion.div>
           </div>
         </div>
