@@ -1,11 +1,20 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -13,119 +22,247 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200 shadow-sm">
+    <motion.nav 
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ 
+        y: 0, 
+        opacity: 1,
+        backgroundColor: scrolled ? 'rgba(75, 173, 209, 0.95)' : 'rgba(75, 173, 209, 0.85)',
+        backdropFilter: `blur(${scrolled ? 16 : 12}px)`,
+      }}
+      transition={{ 
+        default: { duration: 0.6, ease: "easeOut" },
+        backgroundColor: { duration: 0.3, ease: "easeOut" },
+        backdropFilter: { duration: 0.3, ease: "easeOut" }
+      }}
+      className="fixed top-0 left-0 right-0 z-50 shadow-lg border-b border-[#4BADD1]/30"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition">
-              <span className="text-2xl">💊</span>
-            </div>
-            <span className="font-bold text-xl text-slate-800 hidden sm:block">
-              Drug Traceability
-            </span>
-          </Link>
+          
+          <motion.div
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center"
+          >
+            {isAuthenticated && user?.role === 'Distributor' && (
+              <motion.span 
+                className="text-sm font-medium text-white/90 mr-4 px-3 py-1 bg-white/20 rounded-lg backdrop-blur-sm"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                Nhà phân phối (Dashboard)
+              </motion.span>
+            )}
+            <Link to="/" className="flex items-center gap-3 group">
+              <motion.div
+                className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/20"
+                whileHover={{ 
+                  scale: 1.1,
+                  rotate: 360,
+                  boxShadow: "0 8px 20px rgba(255,255,255,0.3)"
+                }}
+                transition={{ duration: 0.6 }}
+              >
+                <motion.span
+                  className="text-2xl"
+                  animate={{ 
+                    y: [0, -3, 0],
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  💊
+                </motion.span>
+              </motion.div>
+              <motion.span 
+                className="font-bold text-xl text-white drop-shadow-md tracking-tight"
+                whileHover={{ 
+                  scale: 1.05,
+                  textShadow: "0 2px 8px rgba(255,255,255,0.5)"
+                }}
+              >
+                DrugTrace
+              </motion.span>
+            </Link>
+          </motion.div>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-3">
             {!isAuthenticated ? (
               <>
-                <Link
-                  to="/login"
-                  className="px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition"
+                <motion.div 
+                  whileHover={{ scale: 1.05, y: -2 }} 
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
                 >
-                  Đăng nhập
-                </Link>
-                <Link
-                  to="/register"
-                  className="px-5 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl hover:shadow-lg transition transform hover:scale-105"
+                  <Link
+                    to="/login"
+                    className="px-5 py-2 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg transition shadow-lg border border-white/30"
+                  >
+                    Đăng nhập
+                  </Link>
+                </motion.div>
+                <motion.div 
+                  whileHover={{ scale: 1.05, y: -2 }} 
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
                 >
-                  Đăng ký
-                </Link>
+                  <Link
+                    to="/register"
+                    className="px-5 py-2 bg-white text-[#4BADD1] font-semibold rounded-lg transition shadow-lg"
+                  >
+                    Đăng ký
+                  </Link>
+                </motion.div>
               </>
             ) : (
               <>
-                <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-xl">
-                  <span className="text-2xl">👤</span>
+                <motion.div 
+                  className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <motion.svg 
+                    className="w-6 h-6 text-white" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                    whileHover={{ rotate: 360 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </motion.svg>
                   <div>
-                    <div className="text-sm font-semibold text-slate-800">{user?.fullName || user?.username}</div>
-                    <div className="text-xs text-slate-500">{user?.role}</div>
+                    <div className="text-sm font-semibold text-white">{user?.fullName || user?.username}</div>
+                    <div className="text-xs text-white/80">{user?.role}</div>
                   </div>
-                </div>
-                <button
+                </motion.div>
+                <motion.button
                   onClick={handleLogout}
-                  className="px-5 py-2 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition"
+                  className="px-5 py-2 bg-red-500/80 backdrop-blur-sm text-white font-semibold rounded-xl transition border border-red-400/30"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   Đăng xuất
-                </button>
+                </motion.button>
               </>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
+          <motion.button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl hover:bg-slate-100 transition"
+            className="md:hidden p-2 rounded-xl hover:bg-white/20 transition text-white"
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.1 }} // Thay vì rotate
+            transition={{ duration: 0.3 }}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <motion.svg 
+              className="w-6 h-6" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+              animate={{ rotate: mobileMenuOpen ? 90 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
               {mobileMenuOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               )}
-            </svg>
-          </button>
+            </motion.svg>
+          </motion.button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-t border-slate-200"
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="md:hidden bg-[#4BADD1]/98 backdrop-blur-xl border-t border-white/20"
           >
             <div className="px-4 py-4 space-y-3">
               {!isAuthenticated ? (
                 <>
-                  <Link
-                    to="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block w-full text-center px-4 py-3 text-slate-700 hover:bg-slate-100 rounded-xl font-medium transition"
+                  <motion.div
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
                   >
-                    Đăng nhập
-                  </Link>
-                  <Link
-                    to="/register"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block w-full text-center px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl"
+                    <Link
+                      to="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full text-center px-4 py-3 text-white bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-xl font-medium transition border border-white/30"
+                    >
+                      Đăng nhập
+                    </Link>
+                  </motion.div>
+                  <motion.div
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
                   >
-                    Đăng ký
-                  </Link>
+                    <Link
+                      to="/register"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full text-center px-4 py-3 bg-white text-[#4BADD1] backdrop-blur-sm font-semibold rounded-xl border border-white/20 hover:bg-white/90 transition"
+                    >
+                      Đăng ký
+                    </Link>
+                  </motion.div>
                 </>
               ) : (
                 <>
-                  <div className="flex items-center gap-3 p-3 bg-slate-100 rounded-xl">
-                    <span className="text-3xl">👤</span>
+                  <motion.div 
+                    className="flex items-center gap-3 p-3 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30"
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                    whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.3)" }}
+                  >
+                    <motion.svg 
+                      className="w-10 h-10 text-white" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                      whileHover={{ rotate: 360 }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </motion.svg>
                     <div>
-                      <div className="text-sm font-semibold text-slate-800">{user?.fullName || user?.username}</div>
-                      <div className="text-xs text-slate-500">{user?.role}</div>
+                      <div className="text-sm font-semibold text-white">{user?.fullName || user?.username}</div>
+                      <div className="text-xs text-white/80">{user?.role}</div>
                     </div>
-                  </div>
-                  <button
+                  </motion.div>
+                  <motion.button
                     onClick={handleLogout}
-                    className="block w-full px-4 py-3 bg-red-500 text-white font-semibold rounded-xl"
+                    className="block w-full px-4 py-3 bg-red-500/80 backdrop-blur-sm text-white font-semibold rounded-xl border border-red-400/30 hover:bg-red-600/90 transition"
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     Đăng xuất
-                  </button>
+                  </motion.button>
                 </>
               )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </motion.nav>
   );
 }
