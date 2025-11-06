@@ -109,13 +109,7 @@ export default function Login() {
         {/* Header */}
         <div className="text-center mb-10">
           <motion.h1 
-            className="text-5xl font-extrabold mb-3"
-            style={{ 
-              background: 'linear-gradient(135deg, #2176FF 0%, #4BADD1 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}
+            className="text-5xl font-extrabold mb-3 text-[#4BADD1]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}

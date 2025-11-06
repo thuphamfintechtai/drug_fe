@@ -183,13 +183,7 @@ export default function RegisterBusiness() {
         {/* Header */}
         <div className="text-center mb-10">
           <motion.h1 
-            className="text-5xl font-extrabold mb-3"
-            style={{ 
-              background: 'linear-gradient(135deg, #2176FF 0%, #4BADD1 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}
+            className="text-5xl font-extrabold mb-3 text-[#4BADD1]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -493,7 +487,7 @@ export default function RegisterBusiness() {
           <div className="mt-6 text-center">
             <p className="text-slate-600">
               Đã có tài khoản?{' '}
-              <Link to="/login" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline">
+              <Link to="/login" className="text-[#4BADD1] hover:text-[#3a9db8] font-semibold hover:underline">
                 Đăng nhập ngay
               </Link>
             </p>
