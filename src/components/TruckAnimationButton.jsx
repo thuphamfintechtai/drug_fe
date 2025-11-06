@@ -104,7 +104,7 @@ export default function TruckAnimationButton({
           animation: truckDriveAnimation 2.5s linear forwards;
         }
         .truck-animation-button.uploading.infinite .truck-container {
-          animation: truckDriveAnimation 5s linear infinite;
+          animation: truckDriveAnimation var(--truck-animation-duration, 3s) linear infinite;
         }
         .truck-animation-button.uploading .road-line {
           opacity: 1;
@@ -177,6 +177,9 @@ export default function TruckAnimationButton({
         onClick={onClick}
         disabled={disabled || loading || buttonState === 'uploading' || buttonState === 'completed'}
         className={`truck-animation-button ${buttonState === 'uploading' ? `uploading ${animationMode}` : ''} ${buttonState === 'completed' ? 'completed' : ''} ${className}`}
+        style={{
+          '--truck-animation-duration': `${animationDuration}s`
+        }}
       >
         <span className="default-text">
           {loading ? uploadingText : (buttonState === 'idle' ? defaultText : uploadingText)}

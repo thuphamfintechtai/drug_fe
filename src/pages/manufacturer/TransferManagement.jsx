@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
 import TruckAnimationButton from '../../components/TruckAnimationButton';
+import BlockchainTransferView from '../../components/BlockchainTransferView';
 import { 
   getProductionHistory,
   getDistributors,
@@ -22,6 +23,9 @@ export default function TransferManagement() {
   const [availableTokenIds, setAvailableTokenIds] = useState([]);
   const [buttonAnimating, setButtonAnimating] = useState(false);
   const [buttonDone, setButtonDone] = useState(false);
+  const [showBlockchainView, setShowBlockchainView] = useState(false);
+  const [transferProgress, setTransferProgress] = useState(0);
+  const [transferStatus, setTransferStatus] = useState('minting'); // 'minting' | 'completed' | 'error'
   const [formData, setFormData] = useState({
     productionId: '',
     distributorId: '',
@@ -116,6 +120,7 @@ export default function TransferManagement() {
     if (buttonAnimating) return;
     setButtonAnimating(true);
     setButtonDone(false);
+    setShowBlockchainView(false); // Chưa hiển thị blockchain view
 
     setLoading(true);
     try {
@@ -129,50 +134,16 @@ export default function TransferManagement() {
 
       if (response.data.success) {
         const { invoice, distributorAddress } = response.data.data || {};
-        const proceed = window.confirm('✅ Đã tạo yêu cầu chuyển giao (pending).\n\nBạn có muốn ký giao dịch trên blockchain ngay bây giờ không?');
-
-        if (proceed && invoice && distributorAddress) {
-          try {
-            // Kiểm tra ví hiện tại khớp ví manufacturer trong hệ thống
-            const currentWallet = await getCurrentWalletAddress();
-            if (user?.walletAddress && currentWallet.toLowerCase() !== user.walletAddress.toLowerCase()) {
-              alert('Ví đang kết nối không khớp với ví của manufacturer trong hệ thống.\nVui lòng chuyển tài khoản MetaMask sang: ' + user.walletAddress);
-              throw new Error('Wrong wallet connected');
-            }
-
-            // Contract hiện tại (ERC721) chỉ nhận tokenIds + distributorAddress
-            // Animation tiếp tục chạy trong quá trình ký smart contract
-            const onchain = await transferNFTToDistributor(tokenIds, distributorAddress);
-            await saveTransferTransaction({
-              invoiceId: invoice._id,
-              transactionHash: onchain.transactionHash,
-              tokenIds,
-            });
-            
-            // Smart contract đã được ký thành công - hiển thị done
-            setButtonDone(true);
-            setButtonAnimating(false);
-            alert('🎉 Đã chuyển NFT on-chain và lưu transaction thành công!');
-            
-            // Reset và đóng dialog sau 2.5s
-            setTimeout(() => {
-              setButtonDone(false);
-              setShowDialog(false);
-              setAvailableTokenIds([]);
-              loadData();
-            }, 2500);
-          } catch (e) {
-            console.error('Lỗi khi ký giao dịch hoặc lưu transaction:', e);
-            const msg = e?.message || 'Giao dịch on-chain thất bại hoặc bị hủy.';
-            alert(msg + ' Bạn có thể thử lại từ lịch sử chuyển giao.');
-            setButtonAnimating(false);
-            setButtonDone(false);
-          }
+        
+        if (invoice && distributorAddress) {
+          // Hiển thị blockchain view ngay
+          setShowBlockchainView(true);
+          handleBlockchainTransfer(invoice, distributorAddress, tokenIds);
         } else {
-          // User không chọn ký smart contract - stop animation
+          // Không có invoice hoặc distributorAddress - stop animation
           setButtonAnimating(false);
           setButtonDone(false);
-          alert('✅ Tạo yêu cầu chuyển giao thành công! Trạng thái: Pending\n\nBước tiếp theo: Gọi smart contract để chuyển quyền sở hữu NFT cho distributor.');
+          alert('✅ Tạo yêu cầu chuyển giao thành công! Trạng thái: Pending');
           setShowDialog(false);
           setAvailableTokenIds([]);
           loadData();
@@ -183,8 +154,105 @@ export default function TransferManagement() {
       alert('❌ Không thể tạo chuyển giao: ' + (error.response?.data?.message || error.message));
       setButtonAnimating(false);
       setButtonDone(false);
+      setShowBlockchainView(false);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBlockchainTransfer = async (invoice, distributorAddress, tokenIds) => {
+    let progressInterval = null;
+    
+    // Reset progress
+    setTransferProgress(0);
+    setTransferStatus('minting');
+    
+    try {
+      // 10% - Kiểm tra ví
+      setTransferProgress(0.1);
+      const currentWallet = await getCurrentWalletAddress();
+      if (user?.walletAddress && currentWallet.toLowerCase() !== user.walletAddress.toLowerCase()) {
+        alert('Ví đang kết nối không khớp với ví của manufacturer trong hệ thống.\nVui lòng chuyển tài khoản MetaMask sang: ' + user.walletAddress);
+        throw new Error('Wrong wallet connected');
+      }
+
+      // 20% - Chuẩn bị transfer
+      setTransferProgress(0.2);
+      
+      // Wrap transferNFTToDistributor để track progress
+      const transferPromise = transferNFTToDistributor(tokenIds, distributorAddress);
+      
+      // 30% - Transaction đã được gửi (giả định sau 500ms)
+      setTimeout(() => {
+        setTransferProgress(prev => prev < 0.3 ? 0.3 : prev);
+      }, 500);
+      
+      // Simulate progress while waiting for transaction - update mượt hơn
+      progressInterval = setInterval(() => {
+        setTransferProgress(prev => {
+          if (prev < 0.9) {
+            // Tăng progress từ 30% đến 90% trong khi chờ confirm
+            // Tăng nhỏ hơn nhưng update thường xuyên hơn để mượt hơn
+            return Math.min(prev + 0.005, 0.9);
+          }
+          return prev;
+        });
+      }, 50); // Update mỗi 50ms để cực kỳ mượt mà
+      
+      // 90% - Transaction đang được confirm
+      const onchain = await transferPromise;
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+      setTransferProgress(0.9);
+      
+      // 95% - Đang lưu transaction
+      await saveTransferTransaction({
+        invoiceId: invoice._id,
+        transactionHash: onchain.transactionHash,
+        tokenIds,
+      });
+      
+      // 100% - Hoàn thành
+      setTransferProgress(1);
+      setTransferStatus('completed');
+      setButtonDone(true);
+      setButtonAnimating(false);
+      
+      // Đợi hiển thị success animation trước khi đóng dialog
+      setTimeout(() => {
+        setButtonDone(false);
+        setShowBlockchainView(false);
+        setShowDialog(false);
+        setAvailableTokenIds([]);
+        setTransferProgress(0);
+        setTransferStatus('minting');
+        loadData();
+      }, 2000); // Hiển thị success 2s
+    } catch (e) {
+      // Clear interval nếu có
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+      
+      console.error('Lỗi khi ký giao dịch hoặc lưu transaction:', e);
+      const msg = e?.message || 'Giao dịch on-chain thất bại hoặc bị hủy.';
+      
+      // Set error state
+      setTransferStatus('error');
+      setTransferProgress(0);
+      setButtonAnimating(false);
+      setButtonDone(false);
+      
+      // Hiển thị error trong 3s rồi đóng
+      setTimeout(() => {
+        alert(msg + ' Bạn có thể thử lại từ lịch sử chuyển giao.');
+        setShowBlockchainView(false);
+        setTransferProgress(0);
+        setTransferStatus('minting');
+      }, 3000);
     }
   };
 
@@ -358,8 +426,20 @@ export default function TransferManagement() {
         )}
       </motion.div>
 
+      {/* Blockchain Animation Overlay - chỉ hiển thị sau khi xe tải chạy xong */}
+      {showDialog && showBlockchainView && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-3xl px-4">
+            <BlockchainTransferView 
+              status={transferStatus}
+              progress={transferProgress}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Transfer Dialog */}
-      {showDialog && selectedProduction && (
+      {showDialog && selectedProduction && !showBlockchainView && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll">
             <style>{`
@@ -516,7 +596,7 @@ export default function TransferManagement() {
                 successText="Hoàn thành"
                 loading={loading}
                 animationMode="infinite"
-                animationDuration={5}
+                animationDuration={3}
               />
             </div>
           </div>

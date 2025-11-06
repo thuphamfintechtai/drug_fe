@@ -228,14 +228,14 @@ export default function BlockchainMintingView({
       {/* Container */}
       <div className="relative mx-auto max-w-3xl rounded-3xl backdrop-blur-md shadow-xl bg-gradient-to-br from-[#00b4d8] to-[#48cae4] p-[1px]">
         <div className="rounded-3xl bg-white/90">
-          {/* Header */}
-          <div className="rounded-t-3xl px-8 pt-8">
-            <h2 className="text-center text-2xl font-extrabold text-white drop-shadow-sm">
-              <span className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-5 py-2">
-                Sản xuất & Mint NFT
-              </span>
-            </h2>
-          </div>
+           {/* Header */}
+           <div className="rounded-t-3xl px-8 pt-8">
+             <h2 className="text-center text-2xl font-extrabold text-white drop-shadow-sm">
+               <span className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-5 py-2">
+                 {status === 'minting' ? 'Chuyển giao NFT' : 'Sản xuất & Mint NFT'}
+               </span>
+             </h2>
+           </div>
 
           {/* Content */}
           <div className="p-8">
@@ -387,42 +387,42 @@ export default function BlockchainMintingView({
 
             {/* Text Status */}
             <div className="space-y-2 text-center">
-              {status === "minting" ? (
-                <>
-                  <h3 className="text-2xl font-extrabold">
-                    <span className="bg-gradient-to-r from-[#00b4d8] via-[#7EE9F2] to-[#00b4d8] bg-[length:200%_100%] bg-clip-text text-transparent [animation:shimmer_2.2s_linear_infinite]">
-                      Đang mint NFT...
-                    </span>
-                  </h3>
-                  <motion.p
-                    className="text-sm text-slate-600"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    Vui lòng chờ giao dịch blockchain hoàn tất.
-                  </motion.p>
-                </>
-              ) : (
-                <>
-                  <motion.h3
-                    className="text-2xl font-extrabold text-emerald-600"
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.35 }}
-                  >
-                    ✅ Mint thành công!
-                  </motion.h3>
-                  <motion.p
-                    className="text-sm text-slate-600"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.35, delay: 0.1 }}
-                  >
-                    NFT đã được mint thành công trên blockchain.
-                  </motion.p>
-                </>
-              )}
+               {status === "minting" ? (
+                 <>
+                   <h3 className="text-2xl font-extrabold">
+                     <span className="bg-gradient-to-r from-[#00b4d8] via-[#7EE9F2] to-[#00b4d8] bg-[length:200%_100%] bg-clip-text text-transparent [animation:shimmer_2.2s_linear_infinite]">
+                       Đang chuyển giao NFT...
+                     </span>
+                   </h3>
+                   <motion.p
+                     className="text-sm text-slate-600"
+                     initial={{ opacity: 0 }}
+                     animate={{ opacity: 1 }}
+                     transition={{ duration: 0.4 }}
+                   >
+                     Vui lòng chờ giao dịch blockchain hoàn tất.
+                   </motion.p>
+                 </>
+               ) : (
+                 <>
+                   <motion.h3
+                     className="text-2xl font-extrabold text-emerald-600"
+                     initial={{ scale: 0.9, opacity: 0 }}
+                     animate={{ scale: 1, opacity: 1 }}
+                     transition={{ duration: 0.35 }}
+                   >
+                     ✅ Chuyển giao thành công!
+                   </motion.h3>
+                   <motion.p
+                     className="text-sm text-slate-600"
+                     initial={{ opacity: 0 }}
+                     animate={{ opacity: 1 }}
+                     transition={{ duration: 0.35, delay: 0.1 }}
+                   >
+                     NFT đã được chuyển giao thành công trên blockchain.
+                   </motion.p>
+                 </>
+               )}
             </div>
           </div>
         </div>

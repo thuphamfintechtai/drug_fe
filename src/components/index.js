@@ -16,4 +16,5 @@ export { default as ProtectedRoute } from './ProtectedRoute';
 export { default as TruckAnimationButton } from './TruckAnimationButton';
 export { default as NFTMintButton } from './NFTMintButton';
 export { default as BlockchainMintingView } from './BlockchainMintingView';
+export { default as BlockchainTransferView } from './BlockchainTransferView';
 
