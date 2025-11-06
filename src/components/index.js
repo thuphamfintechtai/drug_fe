@@ -13,4 +13,5 @@ export { default as StatsCard } from './StatsCard';
 export { default as Navbar } from './Navbar';
 export { default as DashboardLayout } from './DashboardLayout';
 export { default as ProtectedRoute } from './ProtectedRoute';
+export { default as TruckAnimationButton } from './TruckAnimationButton';
 

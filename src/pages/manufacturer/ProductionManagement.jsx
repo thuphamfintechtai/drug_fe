@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import TruckAnimationButton from '../../components/TruckAnimationButton';
 import { 
   getDrugs,
   uploadToIPFS,
@@ -21,6 +22,7 @@ export default function ProductionManagement() {
   const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [step, setStep] = useState(1); // 1: Form input, 2: IPFS upload, 3: Minting NFT
+  const [uploadButtonState, setUploadButtonState] = useState('idle'); // 'idle' | 'uploading' | 'completed'
   const [formData, setFormData] = useState({
     drugId: '',
     batchNumber: '',
@@ -83,6 +85,7 @@ export default function ProductionManagement() {
 
   const handleStartProduction = () => {
     setStep(1);
+    setUploadButtonState('idle');
     setFormData({
       drugId: '',
       batchNumber: '',
@@ -109,6 +112,8 @@ export default function ProductionManagement() {
       return;
     }
 
+    // Trigger animation
+    setUploadButtonState('uploading');
     setLoading(true);
     try {
       // Tạo metadata object theo format NFT metadata standard
@@ -166,13 +171,25 @@ export default function ProductionManagement() {
       if (response.data.success) {
         const ipfsData = response.data.data || response.data;
         setIpfsData(ipfsData);
-        setStep(2);
-        alert('✅ Bước 1 thành công: Đã lưu thông tin lên IPFS!');
+        
+        // Show completed state after truck animation finishes
+        setTimeout(() => {
+          setUploadButtonState('completed');
+        }, 2500);
+        
+        // Wait for completed animation to show, then move to next step
+        setTimeout(() => {
+          setStep(2);
+          setUploadButtonState('idle');
+          alert('✅ Bước 1 thành công: Đã lưu thông tin lên IPFS!');
+        }, 4500);
+        
         console.log('✅ IPFS data:', ipfsData);
       }
     } catch (error) {
       console.error('Lỗi khi upload IPFS:', error);
       alert('❌ Không thể upload lên IPFS: ' + (error.response?.data?.message || error.message));
+      setUploadButtonState('idle');
     } finally {
       setLoading(false);
     }
@@ -408,6 +425,7 @@ export default function ProductionManagement() {
   const handleClose = () => {
     setShowDialog(false);
     setStep(1);
+    setUploadButtonState('idle');
     setFormData({
       drugId: '',
       batchNumber: '',
@@ -778,15 +796,15 @@ export default function ProductionManagement() {
             {/* Footer Actions */}
             <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end space-x-3">
               {step === 1 && (
-                <>
-                  <button
-                    onClick={handleUploadToIPFS}
-                    disabled={loading}
-                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 transition"
-                  >
-                    <a className="text-white">{loading ? 'Đang upload...' : 'Bước 1: Upload IPFS'}</a>
-                  </button>
-                </>
+                <TruckAnimationButton
+                  onClick={handleUploadToIPFS}
+                  disabled={loading}
+                  buttonState={uploadButtonState}
+                  defaultText="Bước 1: Upload IPFS"
+                  uploadingText="Đang vận chuyển dữ liệu... 🚛"
+                  successText="Upload thành công"
+                  loading={loading}
+                />
               )}
               {step === 2 && (
                 <>
