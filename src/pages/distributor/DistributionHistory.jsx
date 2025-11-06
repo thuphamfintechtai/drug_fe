@@ -148,7 +148,7 @@ export default function DistributionHistory() {
       </div>
 
       <motion.div
-        className="rounded-2xl bg_white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
+        className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
         variants={fadeUp}
         initial="hidden"
         animate="show"
@@ -196,75 +196,81 @@ export default function DistributionHistory() {
       <motion.div className="space-y-4" variants={fadeUp} initial="hidden" animate="show">
         {items.length === 0 ? (
           <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
-            <div className="text-5xl mb-4">📊</div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lịch sử phân phối</h3>
             <p className="text-slate-600">Lịch sử nhận hàng từ nhà sản xuất sẽ hiển thị ở đây</p>
           </div>
         ) : (
           items.map((item, idx) => (
             <div key={idx} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-[#003544]">
-                        Từ: {item.fromManufacturer?.fullName || item.fromManufacturer?.username || 'N/A'}
-                      </h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
-                        {item.status}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-600 mb-4">
-                      <div>📦 Đơn hàng: <span className="font-mono font-medium text-slate-800">{item.manufacturerInvoice?.invoiceNumber || 'N/A'}</span></div>
-                      <div>💊 Số lượng: <span className="font-bold text-purple-700">{item.distributedQuantity} NFT</span></div>
-                      <div>📍 Địa chỉ: <span className="font-medium">
-                        {typeof item.deliveryAddress === 'object' && item.deliveryAddress !== null
-                          ? `${item.deliveryAddress.street || ''}${item.deliveryAddress.street && item.deliveryAddress.city ? ', ' : ''}${item.deliveryAddress.city || ''}`.trim() || 'Chưa có'
-                          : item.deliveryAddress || 'Chưa có'}
-                      </span></div>
-                      <div>🕒 Ngày nhận: <span className="font-medium">
-                        {item.distributionDate ? new Date(item.distributionDate).toLocaleDateString('vi-VN') : 'Chưa có'}
-                      </span></div>
-                    </div>
-                  </div>
+              {/* Header */}
+              <div className="p-5 flex items-start justify-between">
+                <div>
+                  <div className="text-sm text-slate-600">Từ</div>
+                  <h3 className="text-lg font-semibold text-[#003544]">
+                    {item.fromManufacturer?.fullName || item.fromManufacturer?.username || 'N/A'}
+                  </h3>
                 </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
+                  {item.status === 'confirmed' ? 'Confirmed' : item.status === 'pending' ? 'Pending' : item.status === 'transferred' ? 'Transferred' : item.status}
+                </span>
+              </div>
 
+              {/* Summary Chips */}
+              <div className="px-5 pb-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-600">Đơn hàng:</span>
+                  <span className="font-mono text-slate-800">{item.manufacturerInvoice?.invoiceNumber || 'N/A'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-600">Số lượng:</span>
+                  <span className="font-semibold text-slate-800">{item.distributedQuantity} NFT</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-600">Địa chỉ:</span>
+                  <span className="text-slate-800">
+                    {typeof item.deliveryAddress === 'object' && item.deliveryAddress !== null
+                      ? `${item.deliveryAddress.street || ''}${item.deliveryAddress.street && item.deliveryAddress.city ? ', ' : ''}${item.deliveryAddress.city || ''}`.trim() || 'Chưa có'
+                      : item.deliveryAddress || 'Chưa có'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-600">Ngày nhận:</span>
+                  <span className="text-slate-800">
+                    {item.distributionDate ? new Date(item.distributionDate).toLocaleDateString('vi-VN') : 'Chưa có'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Information Panels */}
+              <div className="px-5 pb-5 space-y-3">
                 {item.fromManufacturer && (
-                  <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200 text-sm mb-3">
-                    <div className="font-semibold text-emerald-800 mb-2">🏭 Thông tin nhà sản xuất:</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-emerald-700">
-                      <div>Tên: <span className="font-medium">{item.fromManufacturer.fullName || item.fromManufacturer.username || 'N/A'}</span></div>
-                      <div>Email: <span className="font-medium">{item.fromManufacturer.email || 'N/A'}</span></div>
-                      <div>Username: <span className="font-mono text-xs">{item.fromManufacturer.username || 'N/A'}</span></div>
-                    </div>
+                  <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
+                    <div className="font-semibold text-slate-800 mb-1">Thông tin nhà sản xuất</div>
+                    <div className="text-sm text-slate-700">Tên: <span className="font-medium">{item.fromManufacturer.fullName || item.fromManufacturer.username || 'N/A'}</span></div>
+                    <div className="text-sm text-slate-700 mt-1">Username: <span className="font-mono">{item.fromManufacturer.username || 'N/A'}</span></div>
+                    <div className="text-sm text-slate-700 mt-1">Email: <span className="font-medium">{item.fromManufacturer.email || 'N/A'}</span></div>
                   </div>
                 )}
 
                 {item.manufacturerInvoice && (
-                  <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-200 text-sm mb-3">
-                    <div className="font-semibold text-indigo-800 mb-2">🧾 Thông tin hóa đơn:</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-indigo-700">
-                      <div>Số hóa đơn: <span className="font-mono font_medium">{item.manufacturerInvoice.invoiceNumber}</span></div>
-                      <div>Ngày hóa đơn: <span className="font-medium">
-                        {item.manufacturerInvoice.invoiceDate ? new Date(item.manufacturerInvoice.invoiceDate).toLocaleDateString('vi-VN') : 'N/A'}
-                      </span></div>
-                    </div>
+                  <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
+                    <div className="font-semibold text-slate-800 mb-1">Thông tin hóa đơn</div>
+                    <div className="text-sm text-slate-700">Số hóa đơn: <span className="font-mono font-medium">{item.manufacturerInvoice.invoiceNumber}</span></div>
+                    <div className="text-sm text-slate-700 mt-1">Ngày hóa đơn: <span className="font-medium">{item.manufacturerInvoice.invoiceDate ? new Date(item.manufacturerInvoice.invoiceDate).toLocaleDateString('vi-VN') : 'N/A'}</span></div>
                   </div>
                 )}
 
-                {item.notes && (
-                  <div className="bg-slate-50 rounded-xl p-3 text-sm">
-                    <div className="font-semibold text-slate-700 mb-1">📝 Ghi chú:</div>
-                    <div className="text-slate-600">{item.notes}</div>
-                  </div>
-                )}
+                <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
+                  <div className="font-semibold text-slate-800 mb-1">Ghi chú</div>
+                  <div className="text-sm text-slate-700">{item.notes || '—'}</div>
+                </div>
               </div>
             </div>
           ))
         )}
       </motion.div>
 
-      <div className="flex items-center justify_between mt-5">
+      <div className="flex items-center justify-between mt-5">
         <div className="text-sm text-slate-600">
           Hiển thị {items.length} / {pagination.total} lô phân phối
         </div>

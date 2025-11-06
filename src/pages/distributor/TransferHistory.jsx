@@ -69,13 +69,36 @@ export default function TransferHistory() {
         const source = invoices.length ? invoices : distributions;
         
         const mapped = source.map((row) => {
-          const pharmacy = row.toPharmacy || row.pharmacy || row.commercialInvoice?.toPharmacy || null;
-          const transactionHash = row.chainTxHash || row.receiptTxHash || row.commercialInvoice?.chainTxHash || null;
-          const quantity = row.quantity ?? row.receivedQuantity ?? row.commercialInvoice?.quantity ?? 0;
-          const createdAt = row.createdAt || row.commercialInvoice?.createdAt;
-          const invoiceNumber = row.invoiceNumber || row.commercialInvoice?.invoiceNumber;
-          const invoiceDate = row.invoiceDate || row.commercialInvoice?.invoiceDate;
-          const statusRow = row.status || row.commercialInvoice?.status;
+          // Xử lý pharmacy - có thể là object hoặc string ID
+          let pharmacy = null;
+          if (row.toPharmacy) {
+            if (typeof row.toPharmacy === 'object' && row.toPharmacy !== null) {
+              pharmacy = row.toPharmacy;
+            } else if (typeof row.toPharmacy === 'string') {
+              // Nếu là string ID, có thể lấy từ commercialInvoice hoặc để null
+              pharmacy = row.commercialInvoice?.toPharmacy || null;
+            }
+          }
+          pharmacy = pharmacy || row.pharmacy || row.commercialInvoice?.toPharmacy || null;
+          
+          // Lấy thông tin từ commercialInvoice nếu có
+          const commercialInvoice = row.commercialInvoice || {};
+          
+          // Lấy transaction hash
+          const transactionHash = row.chainTxHash || row.receiptTxHash || commercialInvoice.chainTxHash || null;
+          
+          // Lấy quantity - ưu tiên receivedQuantity từ distribution, sau đó từ commercialInvoice
+          const quantity = row.receivedQuantity ?? row.quantity ?? commercialInvoice.quantity ?? 0;
+          
+          // Lấy dates
+          const createdAt = row.createdAt || commercialInvoice.createdAt;
+          const invoiceDate = row.invoiceDate || commercialInvoice.invoiceDate;
+          
+          // Lấy invoice number
+          const invoiceNumber = row.invoiceNumber || commercialInvoice.invoiceNumber;
+          
+          // Lấy status - ưu tiên status từ distribution
+          const statusRow = row.status || commercialInvoice.status;
           
           return { 
             _id: row._id, 
@@ -87,7 +110,8 @@ export default function TransferHistory() {
             status: statusRow, 
             createdAt, 
             transactionHash, 
-            chainTxHash: transactionHash 
+            chainTxHash: transactionHash,
+            fromDistributor: row.fromDistributor || null
           };
         });
         
@@ -134,10 +158,10 @@ export default function TransferHistory() {
 
   const getStatusLabel = (status) => {
     const labels = {
-      pending: '⏳ Pending',
-      sent: '📦 Sent',
-      received: '✅ Received',
-      paid: '💰 Paid',
+      pending: 'Đang chờ',
+      sent: 'Đã gửi',
+      received: 'Đã nhận',
+      paid: 'Đã thanh toán',
     };
     return labels[status] || status;
   };
@@ -165,17 +189,12 @@ export default function TransferHistory() {
               <div className="flex-1">
                 <label className="block text-sm text-slate-600 mb-1">Tìm kiếm</label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
-                    </svg>
-                  </span>
                   <input
                     value={search}
                     onChange={e => updateFilter({ search: e.target.value, page: 1 })}
                     onKeyDown={e => e.key === 'Enter' && updateFilter({ search, page: 1 })}
                     placeholder="Tìm theo tên nhà thuốc..."
-                    className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                    className="w-full h-12 px-4 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                   />
                   <button
                     onClick={() => updateFilter({ search, page: 1 })}
@@ -211,61 +230,81 @@ export default function TransferHistory() {
               </div>
             ) : (
               items.map((item) => (
-                <div key={item._id} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-md transition">
-                  <div className="p-5">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-lg font-semibold text-slate-800">{item.pharmacy?.name || 'N/A'}</h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
-                        {getStatusLabel(item.status)}
-                      </span>
+                <div key={item._id} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
+                  {/* Header */}
+                  <div className="p-5 flex items-start justify-between">
+                    <h3 className="text-lg font-semibold text-[#003544]">
+                      {item.pharmacy?.name || item.pharmacy?.fullName || (typeof item.pharmacy === 'string' ? item.pharmacy : 'N/A')}
+                    </h3>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
+                      {getStatusLabel(item.status)}
+                    </span>
+                  </div>
+
+                  {/* Summary Boxes */}
+                  <div className="px-5 pb-3 space-y-3">
+                    {/* Box 1: Invoice & Quantity */}
+                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="font-semibold text-slate-800">Số hóa đơn:</span>
+                          <span className="ml-2 font-mono text-slate-800">{item.invoiceNumber || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-800">Số lượng:</span>
+                          <span className="ml-2 font-semibold text-slate-800">{item.quantity || 0} NFT</span>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Summary */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm">
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                        <div className="text-slate-600">Số hóa đơn: <span className="font-mono font-medium text-slate-800">{item.invoiceNumber || 'N/A'}</span></div>
-                        <div className="mt-1 text-slate-600">Số lượng: <span className="font-semibold text-slate-800">{item.quantity} NFT</span></div>
-                      </div>
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                        <div className="text-slate-600">Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString('vi-VN')}</span></div>
-                        {item.invoiceDate && (
-                          <div className="mt-1 text-slate-600">Ngày hóa đơn: <span className="font-medium">{new Date(item.invoiceDate).toLocaleString('vi-VN')}</span></div>
-                        )}
+                    {/* Box 2: Dates */}
+                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="font-semibold text-slate-800">Ngày tạo:</span>
+                          <span className="ml-2 text-slate-800">
+                            {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-800">Ngày hóa đơn:</span>
+                          <span className="ml-2 text-slate-800">
+                            {item.invoiceDate ? new Date(item.invoiceDate).toLocaleString('vi-VN') : 'N/A'}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Pharmacy Panel */}
-                    {item.pharmacy && (
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
-                        <div className="font-semibold text-slate-800 mb-1">Nhà thuốc</div>
-                        <div className="text-slate-700">{item.pharmacy?.name || 'N/A'}</div>
-                        {item.pharmacy?.address && <div className="text-xs text-slate-500 mt-1">{item.pharmacy.address}</div>}
+                    {/* Box 3: Pharmacy */}
+                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                      <div className="font-semibold text-slate-800 mb-1">Nhà thuốc:</div>
+                      <div className="text-slate-800">
+                        {item.pharmacy?.name || item.pharmacy?.fullName || (typeof item.pharmacy === 'string' ? item.pharmacy : 'N/A')}
                       </div>
-                    )}
+                    </div>
+                  </div>
 
-                    {/* Timeline */}
-                    <div className="mt-4 pt-4 border-t border-slate-200">
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <div className={`flex items-center gap-1 ${['pending', 'sent', 'received', 'paid'].includes(item.status) ? 'text-slate-700' : 'text-slate-400'}`}>
-                          <div className={`w-2 h-2 rounded-full ${['pending', 'sent', 'received', 'paid'].includes(item.status) ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
-                          <span>Pending</span>
-                        </div>
-                        <div className="flex-1 h-px bg-slate-200"></div>
-                        <div className={`flex items-center gap-1 ${['sent', 'received', 'paid'].includes(item.status) ? 'text-slate-700' : 'text-slate-400'}`}>
-                          <div className={`w-2 h-2 rounded-full ${['sent', 'received', 'paid'].includes(item.status) ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
-                          <span>Sent</span>
-                        </div>
-                        <div className="flex-1 h-px bg-slate-200"></div>
-                        <div className={`flex items-center gap-1 ${['received', 'paid'].includes(item.status) ? 'text-slate-700' : 'text-slate-400'}`}>
-                          <div className={`w-2 h-2 rounded-full ${['received', 'paid'].includes(item.status) ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
-                          <span>Received</span>
-                        </div>
-                        <div className="flex-1 h-px bg-slate-200"></div>
-                        <div className={`flex items-center gap-1 ${item.status === 'paid' ? 'text-slate-700' : 'text-slate-400'}`}>
-                          <div className={`w-2 h-2 rounded-full ${item.status === 'paid' ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
-                          <span>Paid</span>
-                        </div>
+                  {/* Progress Tracker */}
+                  <div className="px-5 pb-5 pt-3 border-t border-slate-200">
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className={`flex items-center gap-1 ${item.status === 'pending' ? 'text-cyan-600' : ['sent', 'received', 'paid'].includes(item.status) ? 'text-slate-700' : 'text-slate-400'}`}>
+                        <div className={`w-2 h-2 rounded-full ${item.status === 'pending' ? 'bg-cyan-500' : ['sent', 'received', 'paid'].includes(item.status) ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
+                        <span>Pending</span>
+                      </div>
+                      <div className={`flex-1 h-px ${['sent', 'received', 'paid'].includes(item.status) ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
+                      <div className={`flex items-center gap-1 ${item.status === 'sent' ? 'text-cyan-600' : ['received', 'paid'].includes(item.status) ? 'text-slate-700' : 'text-slate-400'}`}>
+                        <div className={`w-2 h-2 rounded-full ${item.status === 'sent' ? 'bg-cyan-500' : ['received', 'paid'].includes(item.status) ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
+                        <span>Sent</span>
+                      </div>
+                      <div className={`flex-1 h-px ${['received', 'paid'].includes(item.status) ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
+                      <div className={`flex items-center gap-1 ${item.status === 'received' ? 'text-cyan-600' : item.status === 'paid' ? 'text-slate-700' : 'text-slate-400'}`}>
+                        <div className={`w-2 h-2 rounded-full ${item.status === 'received' ? 'bg-cyan-500' : item.status === 'paid' ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
+                        <span>Received</span>
+                      </div>
+                      <div className={`flex-1 h-px ${item.status === 'paid' ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
+                      <div className={`flex items-center gap-1 ${item.status === 'paid' ? 'text-cyan-600' : 'text-slate-400'}`}>
+                        <div className={`w-2 h-2 rounded-full ${item.status === 'paid' ? 'bg-cyan-500' : 'bg-slate-300'}`}></div>
+                        <span>Paid</span>
                       </div>
                     </div>
                   </div>
