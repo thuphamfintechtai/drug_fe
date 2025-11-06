@@ -39,6 +39,7 @@ import MetaMaskConnect from './pages/MetaMaskConnect';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Login from './pages/auth/Login';
+import VerifyPage from './pages/public/VerifyPage';
 function App() {
   return (
     <AuthProvider>
@@ -126,6 +127,7 @@ function AppContent() {
         <Route path="/track" element={<PublicNFTTracking />} />
         <Route path="/drug-info" element={<PublicDrugInfo />} />
         <Route path="/metamask" element={<MetaMaskConnect />} />
+        <Route path="/verify" element={<VerifyPage/>} />
         <Route path="/" element={<UserHome />} />
       </Routes>
     </>
