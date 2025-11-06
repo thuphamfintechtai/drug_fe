@@ -273,8 +273,8 @@ export default function InvoicesFromManufacturer() {
 
   const getStatusLabel = (status) => {
     const labels = {
-      pending: 'Pending',
-      sent: 'Sent',
+      pending: 'Đang chờ',
+      sent: 'Đã gửi',
       received: 'Received',
       confirmed: 'Confirmed (Chờ Manufacturer)',
       paid: 'Paid',
@@ -384,8 +384,9 @@ export default function InvoicesFromManufacturer() {
 
                   {item.status === 'sent' && (
                     <button
+                      style={{ color: 'white' }}
                       onClick={() => handleOpenConfirm(item)}
-                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:from-emerald-600 hover:to-green-700 text-sm font-medium transition shadow"
+                      className="px-6 py-3 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:from-emerald-600 hover:to-green-700 text-base font-semibold transition shadow-md"
                     >
                       Xác nhận nhận hàng
                     </button>
@@ -564,9 +565,9 @@ export default function InvoicesFromManufacturer() {
                 </button>
                 <button
                   onClick={handleConfirmReceipt}
-                  className="px-6 py-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-medium shadow hover:from-emerald-600 hover:to-green-700 transition"
+                  className="px-6 py-3 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold shadow-md hover:from-emerald-600 hover:to-green-700 transition"
                 >
-                  ✓ Xác nhận
+                  Xác nhận nhận hàng
                 </button>
               </div>
             </div>
