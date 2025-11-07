@@ -8,11 +8,10 @@ import TruckLoader from '../../components/TruckLoader';
 export default function DistributionHistory() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
-  const [expandedItem, setExpandedItem] = useState(null);
 
   const page = parseInt(searchParams.get('page') || '1', 10);
   const search = searchParams.get('search') || '';
@@ -55,12 +54,34 @@ export default function DistributionHistory() {
       if (status) params.status = status;
 
       const response = await pharmacyService.getDistributionHistory(params);
-      if (response.data.success) {
-        setItems(response.data.data.history || []);
-        setPagination(response.data.data.pagination || { page: 1, limit: 10, total: 0, pages: 0 });
-      }
+      
+        console.log('Distribution History Response:', response);
+        console.log('Response data:', response.data);
+        
+        if (response.data && response.data.success) {
+          const responseData = response.data.data || {};
+          
+          // Thử nhiều cách truy cập dữ liệu
+          const history = responseData.history || 
+                         responseData.distributions || 
+                         responseData.items || 
+                         (Array.isArray(responseData) ? responseData : []);
+          
+          console.log('Extracted history:', history);
+          console.log('First item structure:', history[0]);
+          
+          setItems(Array.isArray(history) ? history : []);
+          setPagination(responseData.pagination || { page: 1, limit: 10, total: 0, pages: 0 });
+        } else {
+          console.warn('Response không thành công hoặc không có success field:', response.data);
+          setItems([]);
+          setPagination({ page: 1, limit: 10, total: 0, pages: 0 });
+        }
     } catch (error) {
       console.error('Lỗi khi tải lịch sử:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      setItems([]);
+      setPagination({ page: 1, limit: 10, total: 0, pages: 0 });
     } finally {
       // Đưa tiến trình tới 100% và dừng interval trước khi hiển thị
       if (progressIntervalRef.current) {
@@ -116,6 +137,20 @@ export default function DistributionHistory() {
     return colors[status] || 'bg-slate-100 text-slate-600 border-slate-200';
   };
 
+  const translateStatus = (status) => {
+    const statusMap = {
+      pending: 'Đang chờ',
+      received: 'Đã nhận',
+      confirmed: 'Đã xác nhận',
+      sold: 'Đã bán',
+      in_stock: 'Tồn kho',
+      expired: 'Hết hạn',
+      sent: 'Đã gửi',
+      paid: 'Đã thanh toán',
+    };
+    return statusMap[status] || status;
+  };
+
   const fadeUp = {
     hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
     show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
@@ -131,179 +166,181 @@ export default function DistributionHistory() {
           <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
       ) : (
-        <>
-          <motion.section
-            className="relative overflow-hidden rounded-2xl mb-6 border border-slate-200 shadow-sm bg-white"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="relative px-6 py-8 md:px-10 md:py-12">
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-800 mb-2">Lịch sử phân phối</h1>
-              <p className="text-slate-600 mt-2 text-lg">Theo dõi toàn bộ lịch sử nhận hàng và phân phối</p>
-            </div>
-          </motion.section>
+        <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
+        <h1 className="text-xl font-semibold text-[#007b91]">Lịch sử phân phối</h1>
+        <p className="text-slate-500 text-sm mt-1">Theo dõi toàn bộ lịch sử nhận hàng và phân phối</p>
+      </div>
 
-      <motion.div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-4 mb-5" variants={fadeUp} initial="hidden" animate="show">
+      <motion.div
+        className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
+        variants={fadeUp}
+        initial="hidden"
+        animate="show"
+      >
         <div className="flex flex-col md:flex-row gap-3 md:items-end">
           <div className="flex-1">
-            <label className="block text-sm text-slate-700 mb-1 font-medium">Tìm kiếm</label>
+            <label className="block text-sm text-[#003544]/70 mb-1">Tìm kiếm</label>
             <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                </svg>
+              </span>
               <input
                 value={search}
                 onChange={e => updateFilter({ search: e.target.value, page: 1 })}
+                onKeyDown={e => e.key === 'Enter' && updateFilter({ search, page: 1 })}
                 placeholder="Tìm theo tên thuốc, mã..."
-                className="w-full border border-slate-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition"
+                className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
               />
+              <button
+                onClick={() => updateFilter({ search, page: 1 })}
+                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+              >
+                Tìm Kiếm
+              </button>
             </div>
           </div>
           <div>
-            <label className="block text-sm text-slate-700 mb-1 font-medium">Trạng thái</label>
+            <label className="block text-sm text-[#003544]/70 mb-1">Trạng thái</label>
             <select
               value={status}
               onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-              className="border border-slate-300 bg-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition"
+              className="h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
             >
               <option value="">Tất cả</option>
-              <option value="pending">Pending</option>
-              <option value="received">Received</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="sold">Sold</option>
-              <option value="in_stock">In Stock</option>
-              <option value="expired">Expired</option>
+              <option value="pending">Đang chờ</option>
+              <option value="received">Đã nhận</option>
+              <option value="confirmed">Đã xác nhận</option>
+              <option value="sold">Đã bán</option>
+              <option value="in_stock">Tồn kho</option>
+              <option value="expired">Hết hạn</option>
             </select>
           </div>
         </div>
       </motion.div>
 
-      <motion.div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" variants={fadeUp} initial="hidden" animate="show">
+      <motion.div className="space-y-4" variants={fadeUp} initial="hidden" animate="show">
         {items.length === 0 ? (
-          <div className="bg-white p-10 text-center">
-            <div className="text-5xl mb-4 text-slate-800">■</div>
+          <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
             <h3 className="text-xl font-bold text-slate-800 mb-2">Chưa có lịch sử phân phối</h3>
             <p className="text-slate-600">Lịch sử nhận hàng sẽ hiển thị ở đây</p>
           </div>
         ) : (
-          <div className="space-y-4 p-4">
-            {items.map((item, idx) => (
-              <div key={idx} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition">
-                <div className="p-5">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-slate-800">
-                          {item.drugInfo?.commercialName || item.drugName || 'N/A'}
-                        </h3>
-                        <span className={`px-3 py-1.5 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
-                          {item.status}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-slate-600">
-                        <div>
-                          Số lượng: <span className="font-semibold text-slate-800">{item.quantity}</span>
-                        </div>
-                        <div>
-                          Từ: <span className="font-medium text-slate-800">{item.fromDistributor?.name || 'N/A'}</span>
-                        </div>
-                        <div>
-                          Ngày: <span className="font-medium text-slate-800">{new Date(item.receivedDate || item.createdAt).toLocaleDateString('vi-VN')}</span>
-                        </div>
-                      </div>
-                    </div>
+          items.map((item, idx) => (
+            <div key={idx} className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden hover:shadow-lg transition">
+              {/* Header */}
+              <div className="p-5 flex items-start justify-between">
+                <div>
+                  <div className="text-sm text-slate-600">Từ</div>
+                  <h3 className="text-lg font-semibold text-[#003544]">
+                    {item.fromDistributor?.fullName || item.fromDistributor?.name || item.fromDistributor?.username || 'Không có'}
+                  </h3>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
+                  {translateStatus(item.status)}
+                </span>
+              </div>
 
-                    <button
-                      onClick={() => setExpandedItem(expandedItem === idx ? null : idx)}
-                      className="ml-4 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition flex items-center gap-2 border border-slate-300"
-                    >
-                      {expandedItem === idx ? (
-                        <>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                          </svg>
-                          Thu gọn
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                          Chi tiết
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {expandedItem === idx && (
-                    <div className="mt-4 pt-4 border-t-2 border-slate-200 space-y-3">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        {item.receivedBy && (
-                          <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                            <div className="font-semibold text-slate-700 mb-1">Người nhận:</div>
-                            <div className="text-slate-800 font-medium">{item.receivedBy}</div>
-                          </div>
-                        )}
-                        {item.deliveryAddress && (
-                          <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                            <div className="font-semibold text-slate-700 mb-1">Địa chỉ:</div>
-                            <div className="text-slate-800 font-medium">{item.deliveryAddress}</div>
-                          </div>
-                        )}
-                        {item.shippingInfo && (
-                          <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                            <div className="font-semibold text-slate-700 mb-1">Vận chuyển:</div>
-                            <div className="text-slate-800 font-medium">{item.shippingInfo}</div>
-                          </div>
-                        )}
-                        {item.transactionHash && (
-                          <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                            <div className="font-semibold text-slate-700 mb-1">Transaction Hash:</div>
-                            <div className="text-slate-800 font-mono text-xs break-all">{item.transactionHash}</div>
-                          </div>
-                        )}
-                      </div>
-
-                      {item.notes && (
-                        <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                          <div className="font-semibold text-slate-800 mb-2">Ghi chú:</div>
-                          <div className="text-slate-700 text-sm">{item.notes}</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+              {/* Summary Chips */}
+              <div className="px-5 pb-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-600">Thuốc:</span>
+                  <span className="font-medium text-slate-800">
+                    {item.drug?.tradeName || 
+                     item.drug?.commercialName || 
+                     item.drugInfo?.commercialName || 
+                     item.drugInfo?.tradeName ||
+                     item.drugName || 
+                     item.drug?.name ||
+                     'Không có'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-600">Số lượng:</span>
+                  <span className="font-semibold text-slate-800">{item.quantity || item.receivedQuantity || 0} NFT</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-600">Địa chỉ:</span>
+                  <span className="text-slate-800">
+                    {typeof item.deliveryAddress === 'object' && item.deliveryAddress !== null
+                      ? `${item.deliveryAddress.street || ''}${item.deliveryAddress.street && item.deliveryAddress.city ? ', ' : ''}${item.deliveryAddress.city || ''}`.trim() || 'Chưa có'
+                      : item.deliveryAddress || 'Chưa có'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-600">Ngày nhận:</span>
+                  <span className="text-slate-800">
+                    {item.receivedDate ? new Date(item.receivedDate).toLocaleDateString('vi-VN') : item.createdAt ? new Date(item.createdAt).toLocaleDateString('vi-VN') : 'Chưa có'}
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
+
+              {/* Information Panels */}
+              <div className="px-5 pb-5 space-y-3">
+                {item.fromDistributor && (
+                  <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
+                    <div className="font-semibold text-slate-800 mb-1">Thông tin nhà phân phối</div>
+                    <div className="text-sm text-slate-700">Tên: <span className="font-medium">{item.fromDistributor.fullName || item.fromDistributor.name || item.fromDistributor.username || 'Không có'}</span></div>
+                    {item.fromDistributor.username && (
+                      <div className="text-sm text-slate-700 mt-1">Tên đăng nhập: <span className="font-mono">{item.fromDistributor.username}</span></div>
+                    )}
+                    {item.fromDistributor.email && (
+                      <div className="text-sm text-slate-700 mt-1">Email: <span className="font-medium">{item.fromDistributor.email}</span></div>
+                    )}
+                  </div>
+                )}
+
+                {item.receivedBy && (
+                  <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
+                    <div className="font-semibold text-slate-800 mb-1">Người nhận</div>
+                    <div className="text-sm text-slate-700">{item.receivedBy}</div>
+                  </div>
+                )}
+
+                {(item.transactionHash || item.chainTxHash || item.receiptTxHash) && (
+                  <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
+                    <div className="font-semibold text-slate-800 mb-1">Mã giao dịch</div>
+                    <div className="text-sm text-slate-700 font-mono break-all">{item.transactionHash || item.chainTxHash || item.receiptTxHash}</div>
+                  </div>
+                )}
+
+                <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
+                  <div className="font-semibold text-slate-800 mb-1">Ghi chú</div>
+                  <div className="text-sm text-slate-700">{item.notes || '—'}</div>
+                </div>
+              </div>
+            </div>
+          ))
         )}
       </motion.div>
 
-      <div className="flex items-center justify-between mt-5 bg-white p-4 rounded-2xl border border-slate-200">
-        <div className="text-sm text-slate-600">Tổng {pagination.total} bản ghi</div>
+      <div className="flex items-center justify-between mt-5">
+        <div className="text-sm text-slate-600">
+          Hiển thị {items.length} / {pagination.total} lô phân phối
+        </div>
         <div className="flex items-center gap-2">
-          <button 
-            disabled={page <= 1} 
-            onClick={() => updateFilter({ page: page - 1 })} 
-            className={`px-3 py-2 rounded-lg ${page <= 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white border border-slate-300 hover:border-slate-400 hover:text-slate-700 transition'}`}
+          <button
+            disabled={page <= 1}
+            onClick={() => updateFilter({ page: page - 1 })}
+            className={`px-3 py-2 rounded-xl ${page <= 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white/90 border border-[#90e0ef55] hover:bg-[#f5fcff]'}`}
           >
-            <svg className="w-5 h-5 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            Trước
           </button>
-          <span className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium border border-slate-300">
-            {page}
+          <span className="text-sm text-slate-700">
+            Trang {page} / {pagination.pages || 1}
           </span>
-          <button 
-            disabled={page >= pagination.pages} 
-            onClick={() => updateFilter({ page: page + 1 })} 
-            className={`px-3 py-2 rounded-lg ${page >= pagination.pages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white border border-slate-300 hover:border-slate-400 hover:text-slate-700 transition'}`}
+          <button
+            disabled={page >= pagination.pages}
+            onClick={() => updateFilter({ page: page + 1 })}
+            className={`px-3 py-2 rounded-xl ${page >= pagination.pages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]'}`}
           >
-            <svg className="w-5 h-5 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            Sau
           </button>
         </div>
       </div>
-        </>
+      </div>
       )}
     </DashboardLayout>
   );

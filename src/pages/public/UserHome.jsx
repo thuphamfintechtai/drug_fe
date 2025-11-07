@@ -294,11 +294,11 @@ export default function UserHome() {
                       <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
-                      <input
-                        type="text"
-                        value={tokenId}
-                        onChange={(e) => setTokenId(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleTrackDrug()}
+                <input
+                  type="text"
+                  value={tokenId}
+                  onChange={(e) => setTokenId(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleTrackDrug()}
                         placeholder="Nhập mã để tra cứu..."
                         className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4BADD1]/50 focus:border-[#4BADD1] transition text-base placeholder:text-slate-400"
                       />
@@ -314,16 +314,17 @@ export default function UserHome() {
                       <span className="font-semibold">Quét QR</span>
                     </button>
                     
-                    <button
-                      onClick={handleTrackDrug}
-                      className="px-6 py-3.5 bg-white border-2 border-slate-200 text-[#2176FF] font-semibold rounded-xl transition-all text-sm flex items-center gap-2 hover:border-[#54b1d3] active:scale-95"
-                    >
+                <button
+                  onClick={handleTrackDrug}
+                      className="px-6 py-3.5 text-white font-semibold rounded-xl transition text-sm flex items-center gap-2 hover:opacity-90 active:scale-95"
+                      style={{ backgroundColor: '#2176FF' }}
+                >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span className="font-semibold">Xác thực</span>
-                    </button>
-                  </div>
+                </button>
+              </div>
                 </>
               ) : (
                 <>
@@ -358,7 +359,7 @@ export default function UserHome() {
                       </svg>
                       <span className="font-semibold">Tìm kiếm</span>
                     </button>
-                  </div>
+              </div>
                 </>
               )}
             </div>
@@ -371,12 +372,12 @@ export default function UserHome() {
 
       {/* Features Section */}
       <section className="py-20 px-4 bg-gradient-to-b from-white to-slate-50/30">
-      <div className="max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
           <motion.span
@@ -393,16 +394,16 @@ export default function UserHome() {
           </h2>
           <p className="text-slate-600 text-lg max-w-2xl mx-auto">
             Giải pháp toàn diện cho việc quản lý và truy xuất nguồn gốc dược phẩm
-          </p>
-        </motion.div>
+            </p>
+          </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-8 items-stretch">
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
               initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.15 }}
               whileHover={{ y: -8, transition: { duration: 0.3 } }}
               className={`rounded-2xl p-8 text-center transition-all duration-300 bg-white shadow-lg border border-slate-200/50 hover:shadow-2xl relative overflow-hidden
@@ -447,16 +448,16 @@ export default function UserHome() {
               <p className="text-slate-600 text-base leading-relaxed">
                 {feature.description}
               </p>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
     {/* Quy trình hoạt động */}
     <section className="py-20 px-4 bg-white">
       <div className="max-w-6xl mx-auto">
-        <motion.div
+          <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -628,8 +629,8 @@ export default function UserHome() {
           </motion.div>
 
         </div>
-      </div>
-    </section>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="py-16 px-4 bg-gradient-to-b from-slate-800 to-slate-900 text-white relative overflow-hidden">
@@ -721,7 +722,7 @@ export default function UserHome() {
                 </li>
               </ul>
             </motion.div>
-          </div>
+            </div>
           
           <div className="border-t border-slate-700/50 pt-8 text-center">
             <p className="text-slate-400">

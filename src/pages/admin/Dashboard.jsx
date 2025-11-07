@@ -217,46 +217,50 @@ export default function AdminDashboard() {
           <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Banner (đồng bộ kiểu card trắng viền cyan) */}
-          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
-            <h1 className="text-xl font-semibold text-[#007b91]">Tổng quan hệ thống</h1>
-            <p className="text-slate-500 text-sm mt-1">Giám sát và quản lý toàn bộ hệ thống truy xuất nguồn gốc thuốc</p>
+          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-6">
+            <h1 className="text-2xl font-semibold text-[#007b91]">Tổng quan hệ thống</h1>
+            <p className="text-slate-500 text-sm mt-2">Giám sát và quản lý toàn bộ hệ thống truy xuất nguồn gốc thuốc</p>
           </div>
-          <div className="space-y-6">
+          
+          <div className="space-y-8">
           {/* Thống kê người dùng và đơn đăng ký */}
-          <motion.div variants={fadeUp} initial="hidden" animate="show">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">👥 Người dùng & Đơn đăng ký</h2>
+          <motion.div variants={fadeUp} initial="hidden" animate="show" className="space-y-6">
+            <h2 className="text-xl font-semibold text-slate-800">Người dùng & Đơn đăng ký</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <div className="text-sm text-[#003544]/70 mb-1">Tổng người dùng</div>
+              <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-blue-400 to-cyan-400 rounded-t-2xl" />
+                <div className="p-5 pt-7 text-center">
+                  <div className="text-sm text-slate-600 mb-1">Tổng người dùng</div>
                 <div className="text-3xl font-bold text-[#003544]">{systemStats?.users?.total || 0}</div>
-                <div className="text-xs text-[#003544]/60 mt-2">
-                  Active: {systemStats?.users?.byStatus?.active || 0} | Pending: {systemStats?.users?.byStatus?.pending || 0}
+                  <div className="text-xs text-slate-500 mt-2">
+                    Hoạt động: {systemStats?.users?.byStatus?.active || 0} | Đang chờ: {systemStats?.users?.byStatus?.pending || 0}
+                  </div>
                 </div>
               </div>
               
-              <Link to="/admin/registrations?status=pending" className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition">
+              <Link to="/admin/registrations?status=pending" className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]">
                 <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-amber-400 to-yellow-400 rounded-t-2xl" />
-                <div className="p-5 pt-7">
+                <div className="p-5 pt-7 text-center">
                   <div className="text-sm text-slate-600 mb-1">Chờ duyệt</div>
                   <div className="text-3xl font-bold text-amber-600">{registrationStats?.byStatus?.pending || 0}</div>
                   <div className="text-xs text-slate-500 mt-2">Đơn đăng ký cần xử lý</div>
                 </div>
               </Link>
               
-              <Link to="/admin/registrations?status=blockchain_failed" className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition">
+              <Link to="/admin/registrations?status=blockchain_failed" className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]">
                 <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-rose-400 to-red-400 rounded-t-2xl" />
-                <div className="p-5 pt-7">
-                  <div className="text-sm text-slate-600 mb-1">Blockchain Failed</div>
+                <div className="p-5 pt-7 text-center">
+                  <div className="text-sm text-slate-600 mb-1">Lỗi Blockchain</div>
                   <div className="text-3xl font-bold text-rose-600">{registrationStats?.byStatus?.blockchain_failed || 0}</div>
-                  <div className="text-xs text-slate-500 mt-2">Cần retry blockchain</div>
+                  <div className="text-xs text-slate-500 mt-2">Cần thử lại blockchain</div>
                 </div>
               </Link>
               
               <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
-                <div className="p-5 pt-7">
+                <div className="p-5 pt-7 text-center">
                   <div className="text-sm text-slate-600 mb-1">Đã duyệt</div>
                   <div className="text-3xl font-bold text-emerald-600">{registrationStats?.byStatus?.approved || 0}</div>
                   <div className="text-xs text-slate-500 mt-2">Thành công</div>
@@ -264,112 +268,127 @@ export default function AdminDashboard() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-                <div className="text-sm text-slate-600 mb-2">Doanh nghiệp</div>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Nhà sản xuất:</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                <div className="text-sm font-semibold text-slate-700 mb-3">Doanh nghiệp</div>
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-600">Nhà sản xuất</span>
                     <span className="font-semibold text-slate-800">{systemStats?.businesses?.pharmaCompanies || 0}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Nhà phân phối:</span>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-600">Nhà phân phối</span>
                     <span className="font-semibold text-slate-800">{systemStats?.businesses?.distributors || 0}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Nhà thuốc:</span>
+                  <div className="flex justify-between items-center py-1.5">
+                    <span className="text-slate-600">Nhà thuốc</span>
                     <span className="font-semibold text-slate-800">{systemStats?.businesses?.pharmacies || 0}</span>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-                <div className="text-sm text-slate-600 mb-2">Đơn đăng ký theo vai trò</div>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Pharma Company:</span>
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                <div className="text-sm font-semibold text-slate-700 mb-3">Đơn đăng ký theo vai trò</div>
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-600">Nhà sản xuất</span>
                     <span className="font-semibold text-slate-800">{registrationStats?.byRole?.pharma_company || 0}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Distributor:</span>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-600">Nhà phân phối</span>
                     <span className="font-semibold text-slate-800">{registrationStats?.byRole?.distributor || 0}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Pharmacy:</span>
+                  <div className="flex justify-between items-center py-1.5">
+                    <span className="text-slate-600">Nhà thuốc</span>
                     <span className="font-semibold text-slate-800">{registrationStats?.byRole?.pharmacy || 0}</span>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-white/90 rounded-xl border border-slate-200 p-4">
+              <div className="relative rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-cyan-400 to-blue-400 rounded-t-xl" />
+                <div className="p-5 pt-7 text-center">
                 <div className="text-sm text-slate-600 mb-2">7 ngày gần đây</div>
-                <div className="text-2xl font-bold text-[#00b4d8]">{registrationStats?.recentRequests || 0}</div>
-                <div className="text-xs text-slate-500 mt-1">Đơn đăng ký mới</div>
+                  <div className="text-3xl font-bold text-cyan-600">{registrationStats?.recentRequests || 0}</div>
+                  <div className="text-xs text-slate-500 mt-2">Đơn đăng ký mới</div>
+                </div>
               </div>
             </div>
           </motion.div>
 
           {/* Thống kê thuốc và NFT */}
-          <motion.div variants={fadeUp} initial="hidden" animate="show">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">💊 Thuốc & NFT</h2>
+          <motion.div variants={fadeUp} initial="hidden" animate="show" className="space-y-6">
+            <h2 className="text-xl font-semibold text-slate-800">Thuốc & NFT</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Link to="/admin/drugs" className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border border-blue-200 shadow-[0_10px_24px_rgba(59,130,246,0.15)] p-5 hover:shadow-[0_14px_36px_rgba(59,130,246,0.25)] transition">
-                <div className="text-sm text-blue-700 mb-1">Tổng số thuốc</div>
+              <Link to="/admin/drugs" className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]">
+                <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-blue-400 to-cyan-400 rounded-t-2xl" />
+                <div className="p-5 pt-7 text-center">
+                  <div className="text-sm text-slate-600 mb-1">Tổng số thuốc</div>
                 <div className="text-3xl font-bold text-blue-600">{drugStats?.drugs?.total || 0}</div>
-                <div className="text-xs text-blue-600/70 mt-2">
-                  Active: {drugStats?.drugs?.byStatus?.active || 0} | Inactive: {drugStats?.drugs?.byStatus?.inactive || 0}
+                  <div className="text-xs text-slate-500 mt-2">
+                    Hoạt động: {drugStats?.drugs?.byStatus?.active || 0} | Không hoạt động: {drugStats?.drugs?.byStatus?.inactive || 0}
+                  </div>
                 </div>
               </Link>
               
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-cyan-400 to-sky-400 rounded-t-2xl" />
+                <div className="p-5 pt-7 text-center">
                 <div className="text-sm text-slate-600 mb-1">Tổng NFT</div>
-                <div className="text-3xl font-bold text-[#003544]">{drugStats?.nfts?.total || 0}</div>
+                  <div className="text-3xl font-bold text-cyan-600">{drugStats?.nfts?.total || 0}</div>
                 <div className="text-xs text-slate-500 mt-2">Token đã mint</div>
+                </div>
               </div>
               
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <div className="text-sm text-slate-600 mb-1">NFT Transferred</div>
-                <div className="text-3xl font-bold text-[#003544]">{drugStats?.nfts?.byStatus?.transferred || 0}</div>
+              <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-sky-400 to-blue-400 rounded-t-2xl" />
+                <div className="p-5 pt-7 text-center">
+                  <div className="text-sm text-slate-600 mb-1">NFT đã chuyển</div>
+                  <div className="text-3xl font-bold text-sky-600">{drugStats?.nfts?.byStatus?.transferred || 0}</div>
                 <div className="text-xs text-slate-500 mt-2">Đang lưu thông</div>
+                </div>
               </div>
               
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <div className="text-sm text-slate-600 mb-1">NFT Sold</div>
+              <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
+                <div className="p-5 pt-7 text-center">
+                  <div className="text-sm text-slate-600 mb-1">NFT đã bán</div>
                 <div className="text-3xl font-bold text-emerald-600">{drugStats?.nfts?.byStatus?.sold || 0}</div>
-                <div className="text-xs text-emerald-600/70 mt-2">Đã bán cho nhà thuốc</div>
+                  <div className="text-xs text-slate-500 mt-2">Đã bán cho nhà thuốc</div>
+                </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-                <div className="text-sm text-slate-600 mb-3">Top nhà sản xuất</div>
-                <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                <div className="text-sm font-semibold text-slate-700 mb-4">Top nhà sản xuất</div>
+                <div className="space-y-2.5">
                   {drugStats?.drugs?.byManufacturer?.slice(0, 5).map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-sm">
-                      <span className="text-slate-700 truncate">{item.manufacturerName || 'N/A'}</span>
-                      <span className="font-semibold text-[#00b4d8] ml-2">{item.count}</span>
+                    <div key={idx} className="flex justify-between items-center py-2 border-b border-slate-100 last:border-0">
+                      <span className="text-slate-700 truncate text-sm">{item.manufacturerName || 'N/A'}</span>
+                      <span className="font-semibold text-cyan-600 ml-2">{item.count}</span>
                     </div>
                   ))}
                   {!drugStats?.drugs?.byManufacturer?.length && (
-                    <div className="text-sm text-slate-400">Chưa có dữ liệu</div>
+                    <div className="text-sm text-slate-400 py-4 text-center">Chưa có dữ liệu</div>
                   )}
                 </div>
               </div>
               
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-                <div className="text-sm text-slate-600 mb-3">Trạng thái NFT</div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="text-xs text-slate-500">Minted</div>
-                    <div className="text-lg font-semibold text-slate-700">{drugStats?.nfts?.byStatus?.minted || 0}</div>
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                <div className="text-sm font-semibold text-slate-700 mb-4">Trạng thái NFT</div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-3 bg-slate-50 rounded-lg">
+                    <div className="text-xs text-slate-500 mb-1">Đã mint</div>
+                    <div className="text-xl font-semibold text-slate-700">{drugStats?.nfts?.byStatus?.minted || 0}</div>
                   </div>
-                  <div>
-                    <div className="text-xs text-slate-500">Expired</div>
-                    <div className="text-lg font-semibold text-red-500">{drugStats?.nfts?.byStatus?.expired || 0}</div>
+                  <div className="text-center p-3 bg-red-50 rounded-lg">
+                    <div className="text-xs text-red-600 mb-1">Hết hạn</div>
+                    <div className="text-xl font-semibold text-red-600">{drugStats?.nfts?.byStatus?.expired || 0}</div>
                   </div>
-                  <div>
-                    <div className="text-xs text-slate-500">Recalled</div>
-                    <div className="text-lg font-semibold text-orange-500">{drugStats?.nfts?.byStatus?.recalled || 0}</div>
+                  <div className="text-center p-3 bg-orange-50 rounded-lg">
+                    <div className="text-xs text-orange-600 mb-1">Thu hồi</div>
+                    <div className="text-xl font-semibold text-orange-600">{drugStats?.nfts?.byStatus?.recalled || 0}</div>
                   </div>
                 </div>
               </div>
@@ -377,54 +396,63 @@ export default function AdminDashboard() {
           </motion.div>
 
           {/* Thống kê supply chain */}
-          <motion.div variants={fadeUp} initial="hidden" animate="show">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">🔗 Chuỗi cung ứng</h2>
+          <motion.div variants={fadeUp} initial="hidden" animate="show" className="space-y-6">
+            <h2 className="text-xl font-semibold text-slate-800">Chuỗi cung ứng</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
-                <div className="text-sm text-slate-600 mb-1">Proof of Production</div>
-                <div className="text-3xl font-bold text-[#003544]">{systemStats?.proofs?.production || 0}</div>
+              <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-purple-400 to-pink-400 rounded-t-2xl" />
+                <div className="p-5 pt-7 text-center">
+                  <div className="text-sm text-slate-600 mb-1">Chứng nhận sản xuất</div>
+                  <div className="text-3xl font-bold text-purple-600">{systemStats?.proofs?.production || 0}</div>
                 <div className="text-xs text-slate-500 mt-2">Lô sản xuất</div>
+                </div>
               </div>
               
-              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
-                <div className="text-sm text-slate-600 mb-1">Proof of Distribution</div>
-                <div className="text-3xl font-bold text-[#003544]">{systemStats?.proofs?.distribution || 0}</div>
+              <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-t-2xl" />
+                <div className="p-5 pt-7 text-center">
+                  <div className="text-sm text-slate-600 mb-1">Chứng nhận phân phối</div>
+                  <div className="text-3xl font-bold text-indigo-600">{systemStats?.proofs?.distribution || 0}</div>
                 <div className="text-xs text-slate-500 mt-2">Chuyển giao cho NPP</div>
+                </div>
               </div>
               
-              <div className="bg-white/90 rounded-2xl border border-slate-200 p-5">
-                <div className="text-sm text-slate-600 mb-1">Proof of Pharmacy</div>
-                <div className="text-3xl font-bold text-[#003544]">{systemStats?.proofs?.pharmacy || 0}</div>
+              <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-teal-400 to-cyan-400 rounded-t-2xl" />
+                <div className="p-5 pt-7 text-center">
+                  <div className="text-sm text-slate-600 mb-1">Chứng nhận nhà thuốc</div>
+                  <div className="text-3xl font-bold text-teal-600">{systemStats?.proofs?.pharmacy || 0}</div>
                 <div className="text-xs text-slate-500 mt-2">Chuyển giao cho nhà thuốc</div>
+                </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="bg-white/90 rounded-xl border border-slate-200 p-4">
-                <div className="text-sm text-slate-600 mb-2">Hóa đơn</div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Manufacturer Invoice:</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                <div className="text-sm font-semibold text-slate-700 mb-3">Hóa đơn</div>
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-600">Hóa đơn nhà sản xuất</span>
                     <span className="font-semibold text-slate-800">{systemStats?.invoices?.manufacturer || 0}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Commercial Invoice:</span>
+                  <div className="flex justify-between items-center py-1.5">
+                    <span className="text-slate-600">Hóa đơn thương mại</span>
                     <span className="font-semibold text-slate-800">{systemStats?.invoices?.commercial || 0}</span>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl border border-cyan-200 p-4">
-                <div className="text-sm text-cyan-700 mb-2">Hành động nhanh</div>
-                <div className="space-y-2">
-                  <Link to="/admin/supply-chain" className="block text-sm text-cyan-600 hover:text-cyan-700 hover:underline">
-                    → Xem lịch sử truy xuất toàn bộ
+              <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl border border-cyan-200 shadow-sm p-5">
+                <div className="text-sm font-semibold text-cyan-700 mb-3">Hành động nhanh</div>
+                <div className="space-y-2.5">
+                  <Link to="/admin/supply-chain" className="block text-sm text-cyan-600 hover:text-cyan-700 hover:underline py-1.5 transition">
+                    Xem lịch sử truy xuất toàn bộ
                   </Link>
-                  <Link to="/admin/distribution" className="block text-sm text-cyan-600 hover:text-cyan-700 hover:underline">
-                    → Xem lịch sử phân phối
+                  <Link to="/admin/distribution" className="block text-sm text-cyan-600 hover:text-cyan-700 hover:underline py-1.5 transition">
+                    Xem lịch sử phân phối
                   </Link>
-                  <Link to="/admin/nft-tracking" className="block text-sm text-cyan-600 hover:text-cyan-700 hover:underline">
-                    → Tra cứu NFT
+                  <Link to="/admin/nft-tracking" className="block text-sm text-cyan-600 hover:text-cyan-700 hover:underline py-1.5 transition">
+                    Tra cứu NFT
                   </Link>
                 </div>
           </div>
