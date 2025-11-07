@@ -139,7 +139,7 @@ export default function PublicNFTTracking() {
             {/* Thông tin NFT */}
             <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border border-purple-200 p-6">
               <h2 className="text-xl font-bold text-purple-900 mb-4 flex items-center gap-2">
-                <span>💊</span> Thông tin thuốc
+                Thông tin thuốc
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white rounded-xl p-4 border border-purple-200">
@@ -168,17 +168,13 @@ export default function PublicNFTTracking() {
                       : (journey.nft?.currentOwner || 'N/A')}
                   </div>
                 </div>
-                <div className="bg-white rounded-xl p-4 border border-purple-200">
-                  <div className="text-sm text-purple-700 mb-1">Trạng thái</div>
-                  <div className="text-lg font-bold text-emerald-600 capitalize">{journey.nft?.status || 'active'}</div>
-                </div>
               </div>
             </div>
 
             {/* Timeline */}
             <div className="bg-white rounded-2xl border border-slate-200 p-6">
               <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <span>🛤️</span> Hành trình phân phối
+                Hành trình phân phối
               </h2>
               
               {journey.journey && Array.isArray(journey.journey) && journey.journey.length > 0 ? (
@@ -208,7 +204,7 @@ export default function PublicNFTTracking() {
                         <div className="space-y-2 text-sm">
                           {step.manufacturer && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">🏭 Nhà sản xuất:</span>
+                              <span className="text-slate-500">Nhà sản xuất:</span>
                               <span className="font-medium text-slate-800">
                                 {typeof step.manufacturer === 'object' 
                                   ? (step.manufacturer.fullName || step.manufacturer.username || step.manufacturer.name || JSON.stringify(step.manufacturer))
@@ -220,13 +216,13 @@ export default function PublicNFTTracking() {
                             <>
                               {step.details.quantity && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-slate-500">📦 Số lượng:</span>
+                                  <span className="text-slate-500">Số lượng:</span>
                                   <span className="font-bold text-emerald-600">{step.details.quantity}</span>
                                 </div>
                               )}
                               {step.details.mfgDate && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-slate-500">📅 Ngày sản xuất:</span>
+                                  <span className="text-slate-500">Ngày sản xuất:</span>
                                   <span className="font-medium text-slate-800">
                                     {new Date(step.details.mfgDate).toLocaleDateString('vi-VN')}
                                   </span>
@@ -236,13 +232,13 @@ export default function PublicNFTTracking() {
                           )}
                           {step.quantity && !step.details?.quantity && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">📦 Số lượng:</span>
+                              <span className="text-slate-500">Số lượng:</span>
                               <span className="font-bold text-emerald-600">{step.quantity}</span>
                             </div>
                           )}
                           {step.from && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">📤 Từ:</span>
+                              <span className="text-slate-500">Từ:</span>
                               <span className="font-medium text-slate-800">
                                 {typeof step.from === 'object' 
                                   ? (step.from.fullName || step.from.username || step.from.name || JSON.stringify(step.from))
@@ -252,7 +248,7 @@ export default function PublicNFTTracking() {
                           )}
                           {step.to && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">📥 Đến:</span>
+                              <span className="text-slate-500">Đến:</span>
                               <span className="font-medium text-slate-800">
                                 {typeof step.to === 'object' 
                                   ? (step.to.fullName || step.to.username || step.to.name || JSON.stringify(step.to))
@@ -262,13 +258,13 @@ export default function PublicNFTTracking() {
                           )}
                           {step.transactionHash && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">🔗 TX Hash:</span>
+                              <span className="text-slate-500">Mã giao dịch</span>
                               <span className="font-mono text-xs text-blue-600 truncate">{step.transactionHash}</span>
                             </div>
                           )}
                           {step.notes && (
                             <div className="mt-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                              <span className="text-amber-800 text-xs">📝 {step.notes}</span>
+                              <span className="text-amber-800 text-xs">{step.notes}</span>
                             </div>
                           )}
                         </div>
@@ -278,7 +274,6 @@ export default function PublicNFTTracking() {
                 </div>
               ) : (
                 <div className="text-center py-10 text-slate-500">
-                  <div className="text-4xl mb-3">📭</div>
                   <div>Chưa có lịch sử phân phối</div>
                 </div>
               )}
@@ -288,7 +283,7 @@ export default function PublicNFTTracking() {
             {journey.nft?.drug && (
               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border border-blue-200 p-6">
                 <h2 className="text-xl font-bold text-blue-900 mb-4 flex items-center gap-2">
-                  <span>ℹ️</span> Thông tin chi tiết
+                  Thông tin chi tiết
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {journey.nft.drug.genericName && (
