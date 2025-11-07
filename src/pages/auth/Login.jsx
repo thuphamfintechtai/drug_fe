@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useMetaMask } from '../../hooks/useMetaMask';
-import { getAddress } from 'ethers';
+import { compareWalletAddresses, formatWalletAddress } from '../../utils/walletUtils';
+import toast from 'react-hot-toast';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -13,7 +14,23 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  const { account, isConnected, isInstalled, connect } = useMetaMask();
+  const { account, isConnected, isInstalled, connect, isConnecting } = useMetaMask();
+
+  // Kiểm tra kết nối MetaMask khi component mount
+  useEffect(() => {
+    if (!isInstalled) {
+      // Không hiển thị lỗi ngay, chỉ khi user cố đăng nhập
+    }
+  }, [isInstalled]);
+
+  const handleConnectMetaMask = async () => {
+    const connected = await connect();
+    if (connected) {
+      toast.success('Đã kết nối MetaMask thành công!');
+    } else {
+      toast.error('Không thể kết nối MetaMask. Vui lòng thử lại.');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,71 +38,68 @@ export default function Login() {
     setLoading(true);
 
     try {
+      // Bước 1: Đăng nhập để lấy thông tin user
       const result = await login(email, password);
       console.log('Login result:', result);
       
-      if (result.success) {
-        // Lấy user từ response.data hoặc result.data
-        const user = result.data?.user || result.data;
-        const userRole = user?.role;
-        
-        console.log('Login successful, user:', user);
-        console.log('User role:', userRole);
+      if (!result.success) {
+        setError(result.message || 'Đăng nhập thất bại');
+        setLoading(false);
+        return;
+      }
 
-        // Kiểm tra walletAddress nếu user có walletAddress
-        if (user.walletAddress) {
-          // Nếu user có walletAddress nhưng chưa kết nối MetaMask
-          if (!isConnected || !account) {
-            setError('Tài khoản này yêu cầu kết nối MetaMask. Vui lòng kết nối MetaMask trước khi đăng nhập.');
-            setLoading(false);
-            return;
-          }
+      // Lấy user từ response.data hoặc result.data
+      const user = result.data?.user || result.data;
+      const userRole = user?.role;
+      
+      console.log('Login successful, user:', user);
+      console.log('User role:', userRole);
 
-          // Normalize địa chỉ để so sánh (chuyển về lowercase và checksum)
-          let userWalletAddress;
-          let metaMaskAddress;
-          
-          try {
-            userWalletAddress = getAddress(user.walletAddress.toLowerCase());
-            metaMaskAddress = getAddress(account.toLowerCase());
-          } catch (err) {
-            setError('Địa chỉ ví không hợp lệ.');
-            setLoading(false);
-            return;
-          }
-
-          // So sánh địa chỉ ví
-          if (userWalletAddress !== metaMaskAddress) {
-            setError(`Địa chỉ ví MetaMask không khớp với tài khoản. Tài khoản yêu cầu: ${userWalletAddress.slice(0, 6)}...${userWalletAddress.slice(-4)}. Vui lòng kết nối đúng ví MetaMask.`);
-            setLoading(false);
-            return;
-          }
+      // Bước 2: Kiểm tra walletAddress nếu user có walletAddress
+      if (user.walletAddress) {
+        // Nếu user có walletAddress nhưng chưa kết nối MetaMask
+        if (!isConnected || !account) {
+          setError('Tài khoản này yêu cầu kết nối MetaMask. Vui lòng kết nối MetaMask trước khi đăng nhập.');
+          setLoading(false);
+          // Tự động mở dialog kết nối MetaMask
+          setTimeout(() => {
+            handleConnectMetaMask();
+          }, 100);
+          return;
         }
-        
-        if (!userRole) {
-          setError('Không thể xác định vai trò người dùng');
+
+        // So sánh địa chỉ ví
+        if (!compareWalletAddresses(user.walletAddress, account)) {
+          const requiredAddress = formatWalletAddress(user.walletAddress);
+          setError(`Địa chỉ ví MetaMask không khớp với tài khoản. Tài khoản yêu cầu: ${requiredAddress}. Vui lòng kết nối đúng ví MetaMask.`);
           setLoading(false);
           return;
         }
+      }
         
-        switch (userRole) {
-          case 'system_admin':
-            navigate('/admin');
-            break;
-          case 'pharma_company':
-            navigate('/manufacturer');
-            break;
-          case 'distributor':
-            navigate('/distributor');
-            break;
-          case 'pharmacy':
-            navigate('/pharmacy');
-            break;
-          default:
-            navigate('/user');
-        }
-      } else {
-        setError(result.message || 'Đăng nhập thất bại');
+      // Kiểm tra role
+      if (!userRole) {
+        setError('Không thể xác định vai trò người dùng');
+        setLoading(false);
+        return;
+      }
+        
+      // Điều hướng theo role
+      switch (userRole) {
+        case 'system_admin':
+          navigate('/admin');
+          break;
+        case 'pharma_company':
+          navigate('/manufacturer');
+          break;
+        case 'distributor':
+          navigate('/distributor');
+          break;
+        case 'pharmacy':
+          navigate('/pharmacy');
+          break;
+        default:
+          navigate('/user');
       }
     } catch (err) {
       console.error('Login error:', err);

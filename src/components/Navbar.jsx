@@ -20,9 +20,17 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    // Disconnect MetaMask trước khi logout
+    if (isConnected) {
+      await disconnect();
+      toast.success('Đã ngắt kết nối MetaMask');
+    }
+    // Sau đó logout khỏi hệ thống
+    await logout();
     setMobileMenuOpen(false);
+    // Redirect về trang chủ
+    window.location.href = '/';
   };
 
   const handleConnectMetaMask = async () => {
@@ -40,9 +48,9 @@ export default function Navbar() {
     }
   };
 
-  const handleDisconnectMetaMask = () => {
-    disconnect();
-    toast.success('Đã ngắt kết nối ví MetaMask');
+  const handleDisconnectMetaMask = async () => {
+    await disconnect();
+    toast.success('Đã ngắt kết nối ví MetaMask. Bạn sẽ cần chọn lại tài khoản khi kết nối lại.');
   };
 
   const formatAddress = (addr) => {

@@ -86,10 +86,38 @@ export function useMetaMask() {
     }
   };
 
-  const disconnect = () => {
-    setAccount(null);
-    setChainId(null);
-    setError(null);
+  const disconnect = async () => {
+    try {
+      // Revoke permissions để disconnect hoàn toàn MetaMask
+      // Điều này sẽ khiến user phải chọn lại tài khoản khi kết nối lại
+      if (typeof window.ethereum !== 'undefined' && window.ethereum.request) {
+        try {
+          // Lấy tất cả permissions hiện tại
+          const permissions = await window.ethereum.request({
+            method: 'wallet_getPermissions'
+          });
+          
+          // Revoke tất cả permissions
+          if (permissions && permissions.length > 0) {
+            await window.ethereum.request({
+              method: 'wallet_revokePermissions',
+              params: [{ eth_accounts: {} }]
+            });
+          }
+        } catch (err) {
+          // Nếu revoke không thành công (có thể do MetaMask version cũ), 
+          // chỉ cần clear state
+          console.warn('Could not revoke MetaMask permissions:', err);
+        }
+      }
+    } catch (error) {
+      console.error('Error disconnecting MetaMask:', error);
+    } finally {
+      // Luôn clear state
+      setAccount(null);
+      setChainId(null);
+      setError(null);
+    }
   };
 
   const isInstalled = typeof window.ethereum !== 'undefined';

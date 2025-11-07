@@ -306,8 +306,7 @@ export default function UserHome() {
                     
                     <button
                       onClick={handleScanQR}
-                      className="px-6 py-3.5 text-white font-semibold rounded-xl transition flex items-center gap-2 text-sm hover:opacity-90 active:scale-95"
-                      style={{ backgroundColor: '#4BADD1' }}
+                      className="px-6 py-3.5 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm hover:border-[#54b1d3] active:scale-95"
                     >
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zM14 13h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 2h3v2h-3v-2z"/>
@@ -317,8 +316,7 @@ export default function UserHome() {
                     
                     <button
                       onClick={handleTrackDrug}
-                      className="px-6 py-3.5 text-white font-semibold rounded-xl transition text-sm flex items-center gap-2 hover:opacity-90 active:scale-95"
-                      style={{ backgroundColor: '#2176FF' }}
+                      className="px-6 py-3.5 bg-white border-2 border-slate-200 text-[#2176FF] font-semibold rounded-xl transition-all text-sm flex items-center gap-2 hover:border-[#54b1d3] active:scale-95"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -353,8 +351,7 @@ export default function UserHome() {
                     
                     <button
                       onClick={handleSearchDrug}
-                      className="px-6 py-3.5 text-white font-semibold rounded-xl transition text-sm flex items-center gap-2 hover:opacity-90 active:scale-95"
-                      style={{ backgroundColor: '#4BADD1' }}
+                      className="px-6 py-3.5 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl transition-all text-sm flex items-center gap-2 hover:border-[#54b1d3] active:scale-95"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

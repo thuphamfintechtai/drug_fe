@@ -114,6 +114,26 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('user');
       setUser(null);
       setIsAuthenticated(false);
+      
+      // Disconnect MetaMask nếu đang kết nối
+      // Note: Cần import useMetaMask trong component sử dụng AuthContext
+      // hoặc tạo một utility function riêng để disconnect
+      if (typeof window.ethereum !== 'undefined' && window.ethereum.request) {
+        try {
+          const permissions = await window.ethereum.request({
+            method: 'wallet_getPermissions'
+          });
+          
+          if (permissions && permissions.length > 0) {
+            await window.ethereum.request({
+              method: 'wallet_revokePermissions',
+              params: [{ eth_accounts: {} }]
+            });
+          }
+        } catch (err) {
+          console.warn('Could not revoke MetaMask permissions on logout:', err);
+        }
+      }
     }
   };
 
