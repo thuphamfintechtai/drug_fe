@@ -1,25 +1,31 @@
-import React, { useEffect, useState } from 'react';
-import { getDistributions, confirmDistribution } from '../../services/distributor/proofService';
-import { Button, Table, Tag, notification, Spin, Input } from 'antd';
-import { useNavigate } from 'react-router-dom';
-import DashboardLayout from '../../components/DashboardLayout';
-import { getDistributorNavigationItems } from '../../utils/distributorNavigation';
+import React, { useEffect, useState } from "react";
+import {
+  getDistributions,
+  confirmDistribution,
+} from "../../services/distributor/proofService";
+import { Button, Table, Tag, notification, Spin, Input } from "antd";
+import { useNavigate } from "react-router-dom";
+import DashboardLayout from "../../components/DashboardLayout";
+import { getDistributorNavigationItems } from "../../utils/distributorNavigation";
 
 const { Search } = Input;
 
 const statusColor = (status) => {
   switch (status) {
-    case 'confirmed': return 'green';
-    case 'pending': return 'orange';
-    default: return 'blue';
+    case "confirmed":
+      return "green";
+    case "pending":
+      return "orange";
+    default:
+      return "blue";
   }
 };
 
 const statusLabel = (status) => {
   const labels = {
-    confirmed: 'Đã xác nhận',
-    pending: 'Chờ xác nhận',
-    cancelled: 'Đã hủy',
+    confirmed: "Đã xác nhận",
+    pending: "Chờ xác nhận",
+    cancelled: "Đã hủy",
   };
   return labels[status] || status;
 };
@@ -28,24 +34,23 @@ export default function Distributions() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
   const navigate = useNavigate();
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const res = await getDistributions();
-      const list =
-        Array.isArray(res?.data)
-          ? res.data
-          : Array.isArray(res?.data?.data)
-          ? res.data.data
-          : [];
+      const list = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res?.data?.data)
+        ? res.data.data
+        : [];
       setData(list);
       setFilteredData(list);
     } catch (error) {
-      console.error('Fetch error:', error);
-      notification.error({ message: 'Không tải được danh sách lô hàng!' });
+      console.error("Fetch error:", error);
+      notification.error({ message: "Không tải được danh sách lô hàng!" });
     } finally {
       setLoading(false);
     }
@@ -60,81 +65,83 @@ export default function Distributions() {
       setFilteredData(data);
       return;
     }
-    const filtered = data.filter(
-      (item) => {
-        const drug = item.drug || item.proofOfProduction?.drug || item.nftInfo?.drug;
-        const drugName = drug?.name || drug?.tradeName || item.drugName || '';
-        return (
-          item.code?.toLowerCase().includes(searchText.toLowerCase()) ||
-          drugName.toLowerCase().includes(searchText.toLowerCase()) ||
-          item.verificationCode?.toLowerCase().includes(searchText.toLowerCase())
-        );
-      }
-    );
+    const filtered = data.filter((item) => {
+      const drug =
+        item.drug || item.proofOfProduction?.drug || item.nftInfo?.drug;
+      const drugName = drug?.name || drug?.tradeName || item.drugName || "";
+      return (
+        item.code?.toLowerCase().includes(searchText.toLowerCase()) ||
+        drugName.toLowerCase().includes(searchText.toLowerCase()) ||
+        item.verificationCode?.toLowerCase().includes(searchText.toLowerCase())
+      );
+    });
     setFilteredData(filtered);
   }, [searchText, data]);
 
   const onConfirm = async (id) => {
     try {
       await confirmDistribution(id);
-      notification.success({ message: 'Xác nhận nhận lô hàng thành công!' });
+      notification.success({ message: "Xác nhận nhận lô hàng thành công!" });
       fetchData();
     } catch {
-      notification.error({ message: 'Xác nhận thất bại!' });
+      notification.error({ message: "Xác nhận thất bại!" });
     }
   };
 
   const columns = [
     {
-      title: 'Mã đơn',
-      dataIndex: 'code',
-      key: 'code',
+      title: "Mã đơn",
+      dataIndex: "code",
+      key: "code",
       render: (text) => (
-        <span className="font-mono font-semibold text-gray-800">{text || 'N/A'}</span>
+        <span className="font-mono font-semibold text-gray-800">
+          {text || "N/A"}
+        </span>
       ),
     },
     {
-      title: 'Mã xác minh',
-      dataIndex: 'verificationCode',
-      key: 'verificationCode',
+      title: "Mã xác minh",
+      dataIndex: "verificationCode",
+      key: "verificationCode",
       render: (text) => (
-        <span className="font-mono text-sm text-gray-600">{text || 'N/A'}</span>
+        <span className="font-mono text-sm text-gray-600">{text || "N/A"}</span>
       ),
     },
     {
-      title: 'Tên thuốc',
-      dataIndex: 'drugName',
-      key: 'drugName',
+      title: "Tên thuốc",
+      dataIndex: "drugName",
+      key: "drugName",
       ellipsis: true,
       render: (text, record) => {
-        const drug = record.drug || record.proofOfProduction?.drug || record.nftInfo?.drug;
-        return drug?.name || drug?.tradeName || text || 'N/A';
+        const drug =
+          record.drug || record.proofOfProduction?.drug || record.nftInfo?.drug;
+        return drug?.name || drug?.tradeName || text || "N/A";
       },
     },
     {
-      title: 'Số lượng',
-      dataIndex: 'quantity',
-      key: 'quantity',
+      title: "Số lượng",
+      dataIndex: "quantity",
+      key: "quantity",
       render: (val) => <span className="font-medium">{val || 0}</span>,
     },
     {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
       render: (status) => (
         <Tag color={statusColor(status)}>{statusLabel(status)}</Tag>
       ),
     },
     {
-      title: 'Ngày tạo',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      key: "createdAt",
       render: (date) =>
-        date ? new Date(date).toLocaleDateString('vi-VN') : 'N/A',
+        date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
     },
     {
-      title: 'Thao tác',
-      key: 'action',
+      title: "Thao tác",
+      key: "action",
       render: (_, row) => (
         <div className="flex gap-2">
           <Button
@@ -143,7 +150,7 @@ export default function Distributions() {
           >
             Chi tiết
           </Button>
-          {row.status === 'pending' && (
+          {row.status === "pending" && (
             <Button
               size="small"
               type="primary"
@@ -181,7 +188,9 @@ export default function Distributions() {
       {/* Content */}
       <div className="mt-6 bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <h2 className="text-xl font-bold text-gray-800">Danh sách đơn hàng</h2>
+          <h2 className="text-xl font-bold text-gray-800">
+            Danh sách đơn hàng
+          </h2>
           <Search
             placeholder="Tìm kiếm theo mã đơn, tên thuốc..."
             allowClear

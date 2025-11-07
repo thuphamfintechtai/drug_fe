@@ -1,23 +1,29 @@
-import React, { useEffect, useState } from 'react';
-import { getDeliveriesToPharmacy, updatePharmacyDeliveryStatus } from '../../services/distributor/proofOfPharmacyService';
-import { Button, Table, Tag, notification, Spin } from 'antd';
-import DashboardLayout from '../../components/DashboardLayout';
-import { useNavigate } from 'react-router-dom';
-import { getDistributorNavigationItems } from '../../utils/distributorNavigation';
+import React, { useEffect, useState } from "react";
+import {
+  getDeliveriesToPharmacy,
+  updatePharmacyDeliveryStatus,
+} from "../../services/distributor/proofOfPharmacyService";
+import { Button, Table, Tag, notification, Spin } from "antd";
+import DashboardLayout from "../../components/DashboardLayout";
+import { useNavigate } from "react-router-dom";
+import { getDistributorNavigationItems } from "../../utils/distributorNavigation";
 
 const statusColor = (status) => {
   switch (status) {
-    case 'confirmed': return 'green';
-    case 'pending': return 'orange';
-    default: return 'blue';
+    case "confirmed":
+      return "green";
+    case "pending":
+      return "orange";
+    default:
+      return "blue";
   }
 };
 
 const statusLabel = (status) => {
   const labels = {
-    confirmed: 'Đã xác nhận',
-    pending: 'Chờ xác nhận',
-    cancelled: 'Đã hủy',
+    confirmed: "Đã xác nhận",
+    pending: "Chờ xác nhận",
+    cancelled: "Đã hủy",
   };
   return labels[status] || status;
 };
@@ -31,16 +37,15 @@ export default function DeliveriesToPharmacy() {
     setLoading(true);
     try {
       const res = await getDeliveriesToPharmacy();
-      const list =
-        Array.isArray(res?.data)
-          ? res.data
-          : Array.isArray(res?.data?.data)
-          ? res.data.data
-          : [];
+      const list = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res?.data?.data)
+        ? res.data.data
+        : [];
       setData(list);
     } catch (error) {
-      console.error('Fetch deliveries error:', error);
-      notification.error({ message: 'Không tải được danh sách!' });
+      console.error("Fetch deliveries error:", error);
+      notification.error({ message: "Không tải được danh sách!" });
     } finally {
       setLoading(false);
     }
@@ -52,72 +57,74 @@ export default function DeliveriesToPharmacy() {
 
   const updateStatus = async (id) => {
     try {
-      await updatePharmacyDeliveryStatus(id, { status: 'confirmed' });
-      notification.success({ message: 'Cập nhật thành công!' });
+      await updatePharmacyDeliveryStatus(id, { status: "confirmed" });
+      notification.success({ message: "Cập nhật thành công!" });
       fetchData();
     } catch (error) {
-      console.error('Update delivery status error:', error);
-      notification.error({ message: 'Cập nhật lỗi!' });
+      console.error("Update delivery status error:", error);
+      notification.error({ message: "Cập nhật lỗi!" });
     }
   };
 
   const columns = [
     {
-      title: 'Mã đơn',
-      dataIndex: 'code',
-      key: 'code',
+      title: "Mã đơn",
+      dataIndex: "code",
+      key: "code",
       render: (text) => (
-        <span className="font-mono font-semibold text-gray-800">{text || 'N/A'}</span>
+        <span className="font-mono font-semibold text-gray-800">
+          {text || "N/A"}
+        </span>
       ),
     },
     {
-      title: 'Mã xác minh',
-      dataIndex: 'verificationCode',
-      key: 'verificationCode',
+      title: "Mã xác minh",
+      dataIndex: "verificationCode",
+      key: "verificationCode",
       render: (text) => (
-        <span className="font-mono text-sm text-gray-600">{text || 'N/A'}</span>
+        <span className="font-mono text-sm text-gray-600">{text || "N/A"}</span>
       ),
     },
     {
-      title: 'Nhà thuốc',
-      dataIndex: 'pharmacyName',
-      key: 'pharmacyName',
+      title: "Nhà thuốc",
+      dataIndex: "pharmacyName",
+      key: "pharmacyName",
       ellipsis: true,
     },
     {
-      title: 'Tên thuốc',
-      dataIndex: 'drugName',
-      key: 'drugName',
+      title: "Tên thuốc",
+      dataIndex: "drugName",
+      key: "drugName",
       ellipsis: true,
       render: (text, record) => {
         const drug = record.drug || record.proofOfDistribution?.drug;
-        return drug?.name || drug?.tradeName || text || 'N/A';
+        return drug?.name || drug?.tradeName || text || "N/A";
       },
     },
     {
-      title: 'Số lượng',
-      dataIndex: 'quantity',
-      key: 'quantity',
+      title: "Số lượng",
+      dataIndex: "quantity",
+      key: "quantity",
       render: (val) => <span className="font-medium">{val || 0}</span>,
     },
     {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
       render: (status) => (
         <Tag color={statusColor(status)}>{statusLabel(status)}</Tag>
       ),
     },
     {
-      title: 'Ngày tạo',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      key: "createdAt",
       render: (date) =>
-        date ? new Date(date).toLocaleDateString('vi-VN') : 'N/A',
+        date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
     },
     {
-      title: 'Thao tác',
-      key: 'action',
+      title: "Thao tác",
+      key: "action",
       render: (_, record) => (
         <div className="flex gap-2">
           <Button
@@ -126,7 +133,7 @@ export default function DeliveriesToPharmacy() {
           >
             Chi tiết
           </Button>
-          {record.status === 'pending' && (
+          {record.status === "pending" && (
             <Button
               size="small"
               type="primary"
@@ -164,7 +171,7 @@ export default function DeliveriesToPharmacy() {
             <Button
               type="primary"
               size="large"
-              onClick={() => navigate('/distributor/create-proof')}
+              onClick={() => navigate("/distributor/create-proof")}
               className="bg-white/20 hover:bg-white/30 border-white/30"
             >
               + Tạo đơn mới
@@ -175,7 +182,9 @@ export default function DeliveriesToPharmacy() {
 
       {/* Content */}
       <div className="mt-6 bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Danh sách đơn hàng</h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-4">
+          Danh sách đơn hàng
+        </h2>
         <Spin spinning={loading}>
           <Table
             columns={columns}

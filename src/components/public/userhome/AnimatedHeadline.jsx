@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useMemo } from "react";
+import { motion } from "framer-motion";
 
 export default function AnimatedHeadline({
-  text = 'Hệ Thống Truy Xuất Nguồn Gốc Thuốc',
+  text = "Hệ Thống Truy Xuất Nguồn Gốc Thuốc",
   perCharMs = 0.05, // 50ms per character
 }) {
   const chars = useMemo(() => Array.from(text), [text]);
@@ -17,11 +17,11 @@ export default function AnimatedHeadline({
   };
 
   const charVariant = {
-    hidden: { opacity: 0, y: 8, filter: 'blur(6px)' },
+    hidden: { opacity: 0, y: 8, filter: "blur(6px)" },
     show: {
       opacity: 1,
       y: 0,
-      filter: 'blur(0px)',
+      filter: "blur(0px)",
       transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
     },
   };
@@ -43,7 +43,7 @@ export default function AnimatedHeadline({
             variants={charVariant}
             className="inline-block align-baseline bg-clip-text text-transparent bg-gradient-to-br from-cyan-500 to-sky-700"
           >
-            {c === ' ' ? '\u00A0' : c}
+            {c === " " ? "\u00A0" : c}
           </motion.span>
         ))}
       </motion.span>
@@ -51,18 +51,16 @@ export default function AnimatedHeadline({
       {/* One-time gentle shimmer after reveal */}
       <motion.div
         className="pointer-events-none absolute inset-0 -skew-x-12"
-        initial={{ x: '-120%', opacity: 0 }}
-        animate={{ x: '120%', opacity: [0, 0.35, 0] }}
-        transition={{ delay: shimmerDelay, duration: 1.2, ease: 'easeOut' }}
+        initial={{ x: "-120%", opacity: 0 }}
+        animate={{ x: "120%", opacity: [0, 0.35, 0] }}
+        transition={{ delay: shimmerDelay, duration: 1.2, ease: "easeOut" }}
         style={{
           background:
-            'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(186,230,253,0.7) 50%, rgba(255,255,255,0) 100%)',
-          mixBlendMode: 'screen',
-          filter: 'blur(4px)',
+            "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(186,230,253,0.7) 50%, rgba(255,255,255,0) 100%)",
+          mixBlendMode: "screen",
+          filter: "blur(4px)",
         }}
       />
     </div>
   );
 }
-
-

@@ -1,2 +1,20 @@
 @import "tailwindcss";
 
+@theme {
+  --color-primary: #054f67;
+  --color-secondary: #077ca3;
+  --color-third: #00c0e8;
+}
+
+.font-text-primary {
+  font-family: "Roboto", sans-serif;
+  font-weight: 700;
+  color: var(--color-primary);
+  font-style: normal;
+}
+
+.border-card-primary {
+  border-color: var(--color-secondary);
+  border-bottom-color: var(--color-secondary);
+  border-bottom-width: 4px;
+}

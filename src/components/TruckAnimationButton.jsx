@@ -1,23 +1,23 @@
-import truckSVG from '../assets/truck.svg';
+import truckSVG from "../assets/truck.svg";
 
 export default function TruckAnimationButton({
   onClick,
   disabled = false,
-  buttonState = 'idle', // 'idle' | 'uploading' | 'completed'
-  defaultText = 'Xác nhận',
-  uploadingText = 'Đang xử lý...',
-  successText = 'Hoàn thành',
+  buttonState = "idle", // 'idle' | 'uploading' | 'completed'
+  defaultText = "Xác nhận",
+  uploadingText = "Đang xử lý...",
+  successText = "Hoàn thành",
   loading = false,
-  className = '',
+  className = "",
   animationDuration = 2.5, // seconds
-  animationMode = 'once', // 'once' | 'infinite'
+  animationMode = "once", // 'once' | 'infinite'
 }) {
   return (
     <>
       <style>{`
         .truck-animation-button {
           position: relative;
-          background: linear-gradient(135deg, #00b4d8 0%, #48cae4 100%);
+          background: #077ca3;
           color: #fff;
           font-size: 15px;
           font-family: 'Poppins', sans-serif;
@@ -176,32 +176,45 @@ export default function TruckAnimationButton({
       `}</style>
       <button
         onClick={onClick}
-        disabled={disabled || loading || buttonState === 'uploading' || buttonState === 'completed'}
-        className={`truck-animation-button ${buttonState === 'uploading' ? `uploading ${animationMode}` : ''} ${buttonState === 'completed' ? 'completed' : ''} ${className}`}
+        disabled={
+          disabled ||
+          loading ||
+          buttonState === "uploading" ||
+          buttonState === "completed"
+        }
+        className={`truck-animation-button ${
+          buttonState === "uploading" ? `uploading ${animationMode}` : ""
+        } ${buttonState === "completed" ? "completed" : ""} ${className}`}
         style={{
-          '--truck-animation-duration': `${animationDuration}s`
+          "--truck-animation-duration": `${animationDuration}s`,
         }}
       >
         <span className="default-text">
-          {loading ? uploadingText : (buttonState === 'idle' ? defaultText : uploadingText)}
+          {loading
+            ? uploadingText
+            : buttonState === "idle"
+            ? defaultText
+            : uploadingText}
         </span>
         <span className="success-text">{successText}</span>
-        
+
         {/* Truck SVG */}
         <div className="truck-container">
-          <img 
-            src={truckSVG} 
-            alt="Truck" 
+          <img
+            src={truckSVG}
+            alt="Truck"
             className="truck-svg-button"
-            style={{ filter: 'hue-rotate(240deg) saturate(1.2) brightness(1.1)' }}
+            style={{
+              filter: "hue-rotate(240deg) saturate(1.2) brightness(1.1)",
+            }}
           />
         </div>
-        
+
         {/* Road line */}
         <div className="road-line"></div>
-        
+
         {/* Sparkle effects */}
-        {buttonState === 'completed' && (
+        {buttonState === "completed" && (
           <>
             <div className="sparkle sparkle-1"></div>
             <div className="sparkle sparkle-2"></div>
@@ -214,4 +227,3 @@ export default function TruckAnimationButton({
     </>
   );
 }
-

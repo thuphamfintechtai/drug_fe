@@ -1,20 +1,24 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useAuth } from '../../context/AuthContext';
-import { useMetaMask } from '../../hooks/useMetaMask';
-import { compareWalletAddresses, formatWalletAddress } from '../../utils/walletUtils';
-import toast from 'react-hot-toast';
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useAuth } from "../../context/AuthContext";
+import { useMetaMask } from "../../hooks/useMetaMask";
+import {
+  compareWalletAddresses,
+  formatWalletAddress,
+} from "../../utils/walletUtils";
+import toast from "react-hot-toast";
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  const { account, isConnected, isInstalled, connect, isConnecting } = useMetaMask();
+  const { account, isConnected, isInstalled, connect, isConnecting } =
+    useMetaMask();
 
   // Kiểm tra kết nối MetaMask khi component mount
   useEffect(() => {
@@ -26,24 +30,24 @@ export default function Login() {
   const handleConnectMetaMask = async () => {
     const connected = await connect();
     if (connected) {
-      toast.success('Đã kết nối MetaMask thành công!');
+      toast.success("Đã kết nối MetaMask thành công!");
     } else {
-      toast.error('Không thể kết nối MetaMask. Vui lòng thử lại.');
+      toast.error("Không thể kết nối MetaMask. Vui lòng thử lại.");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       // Bước 1: Đăng nhập để lấy thông tin user
       const result = await login(email, password);
-      console.log('Login result:', result);
-      
+      console.log("Login result:", result);
+
       if (!result.success) {
-        setError(result.message || 'Đăng nhập thất bại');
+        setError(result.message || "Đăng nhập thất bại");
         setLoading(false);
         return;
       }
@@ -51,15 +55,17 @@ export default function Login() {
       // Lấy user từ response.data hoặc result.data
       const user = result.data?.user || result.data;
       const userRole = user?.role;
-      
-      console.log('Login successful, user:', user);
-      console.log('User role:', userRole);
+
+      console.log("Login successful, user:", user);
+      console.log("User role:", userRole);
 
       // Bước 2: Kiểm tra walletAddress nếu user có walletAddress
       if (user.walletAddress) {
         // Nếu user có walletAddress nhưng chưa kết nối MetaMask
         if (!isConnected || !account) {
-          setError('Tài khoản này yêu cầu kết nối MetaMask. Vui lòng kết nối MetaMask trước khi đăng nhập.');
+          setError(
+            "Tài khoản này yêu cầu kết nối MetaMask. Vui lòng kết nối MetaMask trước khi đăng nhập."
+          );
           setLoading(false);
           // Tự động mở dialog kết nối MetaMask
           setTimeout(() => {
@@ -71,39 +77,45 @@ export default function Login() {
         // So sánh địa chỉ ví
         if (!compareWalletAddresses(user.walletAddress, account)) {
           const requiredAddress = formatWalletAddress(user.walletAddress);
-          setError(`Địa chỉ ví MetaMask không khớp với tài khoản. Tài khoản yêu cầu: ${requiredAddress}. Vui lòng kết nối đúng ví MetaMask.`);
+          setError(
+            `Địa chỉ ví MetaMask không khớp với tài khoản. Tài khoản yêu cầu: ${requiredAddress}. Vui lòng kết nối đúng ví MetaMask.`
+          );
           setLoading(false);
           return;
         }
       }
-        
+
       // Kiểm tra role
       if (!userRole) {
-        setError('Không thể xác định vai trò người dùng');
+        setError("Không thể xác định vai trò người dùng");
         setLoading(false);
         return;
       }
-        
+
       // Điều hướng theo role
       switch (userRole) {
-        case 'system_admin':
-          navigate('/admin');
+        case "system_admin":
+          navigate("/admin");
           break;
-        case 'pharma_company':
-          navigate('/manufacturer');
+        case "pharma_company":
+          navigate("/manufacturer");
           break;
-        case 'distributor':
-          navigate('/distributor');
+        case "distributor":
+          navigate("/distributor");
           break;
-        case 'pharmacy':
-          navigate('/pharmacy');
+        case "pharmacy":
+          navigate("/pharmacy");
           break;
         default:
-          navigate('/user');
+          navigate("/user");
       }
     } catch (err) {
-      console.error('Login error:', err);
-      setError(err.response?.data?.message || err.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
+      console.error("Login error:", err);
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Đã xảy ra lỗi. Vui lòng thử lại."
+      );
     } finally {
       setLoading(false);
     }
@@ -111,16 +123,20 @@ export default function Login() {
 
   const fadeUp = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+    },
   };
 
   return (
-    <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-[#4BADD1]/5 via-white to-slate-50/50 px-4 pt-24 pb-12 relative overflow-hidden">
+    <div className="min-h-screen flex items-start justify-center bg-linear-to-br from-[#4BADD1]/5 via-white to-slate-50/50 px-4 pt-24 pb-12 relative overflow-hidden">
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute top-20 left-10 w-72 h-72 rounded-full"
-          style={{ backgroundColor: '#4BADD1', opacity: 0.1 }}
+          style={{ backgroundColor: "#4BADD1", opacity: 0.1 }}
           animate={{
             scale: [1, 1.2, 1],
             x: [0, 50, 0],
@@ -129,12 +145,12 @@ export default function Login() {
           transition={{
             duration: 8,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut",
           }}
         />
         <motion.div
           className="absolute bottom-20 right-10 w-96 h-96 rounded-full"
-          style={{ backgroundColor: '#4BADD1', opacity: 0.08 }}
+          style={{ backgroundColor: "#4BADD1", opacity: 0.08 }}
           animate={{
             scale: [1, 1.3, 1],
             x: [0, -50, 0],
@@ -143,7 +159,7 @@ export default function Login() {
           transition={{
             duration: 10,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut",
           }}
         />
       </div>
@@ -156,15 +172,15 @@ export default function Login() {
       >
         {/* Header */}
         <div className="text-center mb-10">
-          <motion.h1 
-            className="text-5xl font-extrabold mb-3 text-[#4BADD1]"
+          <motion.h1
+            className="text-5xl font-extrabold mb-3 font-text-primary "
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
             Đăng nhập
           </motion.h1>
-          <motion.p 
+          <motion.p
             className="text-slate-600 text-lg"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -175,14 +191,14 @@ export default function Login() {
         </div>
 
         {/* Form Card */}
-        <motion.div 
+        <motion.div
           className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#4BADD1]/20 p-8 relative overflow-hidden"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          {/* Decorative gradient line */}
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#4BADD1] via-cyan-400 to-[#4BADD1]"></div>
+          {/* Decorative linear line */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-linear-to-r from-secondary via-cyan-500 to-[#2F9AC4]"></div>
           {error && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -204,7 +220,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:border-[#4BADD1] transition"
-                style={{ '--tw-ring-color': '#4BADD1' }}
+                style={{ "--tw-ring-color": "#4BADD1" }}
                 placeholder="your@email.com"
                 required
                 disabled={loading}
@@ -218,11 +234,11 @@ export default function Login() {
               </label>
               <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:border-[#4BADD1] transition pr-12"
-                  style={{ '--tw-ring-color': '#4BADD1' }}
+                  style={{ "--tw-ring-color": "#4BADD1" }}
                   placeholder="••••••••"
                   required
                   disabled={loading}
@@ -232,7 +248,7 @@ export default function Login() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition text-sm"
                 >
-                  {showPassword ? 'Ẩn' : 'Hiện'}
+                  {showPassword ? "Ẩn" : "Hiện"}
                 </button>
               </div>
             </div>
@@ -242,7 +258,7 @@ export default function Login() {
               <Link
                 to="/forgot-password-business"
                 className="text-sm font-medium hover:underline"
-                style={{ color: '#4BADD1' }}
+                style={{ color: "#4BADD1" }}
               >
                 Quên mật khẩu?
               </Link>
@@ -252,8 +268,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition transform hover:scale-[1.02] active:scale-[0.98]"
-              style={{ backgroundColor: '#4BADD1' }}
+              className="w-full py-3.5 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition transform hover:scale-[1.02] active:scale-[0.98] bg-secondary"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -261,7 +276,7 @@ export default function Login() {
                   Đang đăng nhập...
                 </span>
               ) : (
-                'Đăng nhập'
+                <span className="text-white ">Đăng nhập</span>
               )}
             </button>
           </form>
@@ -272,7 +287,9 @@ export default function Login() {
               <div className="w-full border-t border-slate-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-slate-500">Chưa có tài khoản?</span>
+              <span className="px-4 bg-white text-slate-500">
+                Chưa có tài khoản?
+              </span>
             </div>
           </div>
 
@@ -287,7 +304,7 @@ export default function Login() {
             <Link
               to="/register-business"
               className="py-2.5 px-4 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-center transition text-sm"
-              style={{ backgroundColor: '#E8F6FB' }}
+              style={{ backgroundColor: "#E8F6FB" }}
             >
               Doanh nghiệp
             </Link>
