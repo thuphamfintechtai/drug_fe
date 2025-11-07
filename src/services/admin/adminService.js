@@ -10,6 +10,7 @@ export const getRegistrationStatistics = () => api.get('/admin/registration/stat
 
 // ============ QUẢN LÝ THUỐC ============
 export const getAllDrugs = (params = {}) => api.get('/admin/drugs', { params });
+export const getDrugById = (drugId) => api.get(`/admin/drugs/${drugId}`);
 export const getDrugStatistics = () => api.get('/admin/drugs/statistics');
 
 // ============ GIÁM SÁT HỆ THỐNG ============
@@ -28,6 +29,7 @@ export default {
   
   // Thuốc
   getAllDrugs,
+  getDrugById,
   getDrugStatistics,
   
   // Hệ thống
