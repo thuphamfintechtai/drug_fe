@@ -45,11 +45,7 @@ export default function BlockchainMintingView({
   const softCyan = "#7EE9F2";
 
   /* ====== Subcomponents ====== */
-  const Block = ({
-    index,
-    isActive,
-    isCompleted,
-  }) => {
+  const Block = ({ index, isActive, isCompleted }) => {
     const x = index * spacing;
     return (
       <g>
@@ -107,11 +103,9 @@ export default function BlockchainMintingView({
         {/* Checkmark on completed (draw path animation) */}
         {isCompleted && (
           <motion.path
-            d={`M ${x + 16} ${blockSize / 2} L ${
-              x + blockSize / 2 - 5
-            } ${blockSize / 2 + 10} L ${x + blockSize - 16} ${
-              blockSize / 2 - 10
-            }`}
+            d={`M ${x + 16} ${blockSize / 2} L ${x + blockSize / 2 - 5} ${
+              blockSize / 2 + 10
+            } L ${x + blockSize - 16} ${blockSize / 2 - 10}`}
             stroke="#22c55e"
             strokeWidth="3"
             strokeLinecap="round"
@@ -126,11 +120,7 @@ export default function BlockchainMintingView({
     );
   };
 
-  const LinkLine = ({
-    i,
-    active,
-    completed,
-  }) => {
+  const LinkLine = ({ i, active, completed }) => {
     const startX = i * spacing + blockSize;
     const endX = (i + 1) * spacing;
     const y = blockSize / 2;
@@ -226,16 +216,18 @@ export default function BlockchainMintingView({
       </div>
 
       {/* Container */}
-      <div className="relative mx-auto max-w-3xl rounded-3xl backdrop-blur-md shadow-xl bg-gradient-to-br from-[#00b4d8] to-[#48cae4] p-[1px]">
+      <div className="relative mx-auto max-w-3xl rounded-3xl backdrop-blur-md shadow-xl bg-linear-to-br from-secondary to-primary p-[1px]">
         <div className="rounded-3xl bg-white/90">
-           {/* Header */}
-           <div className="rounded-t-3xl px-8 pt-8">
-             <h2 className="text-center text-2xl font-extrabold text-white drop-shadow-sm">
-               <span className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-5 py-2">
-                 {status === 'minting' ? 'Chuyển giao NFT' : 'Sản xuất & Mint NFT'}
-               </span>
-             </h2>
-           </div>
+          {/* Header */}
+          <div className="rounded-t-3xl px-8 pt-8">
+            <h2 className="text-center text-2xl font-extrabold text-white drop-shadow-sm">
+              <span className="inline-flex items-center justify-center rounded-xl bg-linear-to-r from-secondary to-primary px-5 py-2">
+                {status === "minting"
+                  ? "Chuyển giao NFT"
+                  : "Sản xuất & Mint NFT"}
+              </span>
+            </h2>
+          </div>
 
           {/* Content */}
           <div className="p-8">
@@ -249,7 +241,7 @@ export default function BlockchainMintingView({
                 />
               ) : (
                 <motion.div
-                  className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600"
+                  className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-secondary to-primary"
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: "spring", stiffness: 220, damping: 18 }}
@@ -286,7 +278,13 @@ export default function BlockchainMintingView({
                 {/* ====== SVG defs (gradients + burst) ====== */}
                 <defs>
                   {/* Line gradient */}
-                  <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <linearGradient
+                    id="lineGradient"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="0%"
+                  >
                     <stop offset="0%" stopColor={cyan} stopOpacity="0.2">
                       <animate
                         attributeName="offset"
@@ -326,7 +324,11 @@ export default function BlockchainMintingView({
                     >
                       <stop offset="0%" stopColor={cyan} stopOpacity="0.85" />
                       <stop offset="50%" stopColor={softCyan} stopOpacity="1" />
-                      <stop offset="100%" stopColor={lightBlue} stopOpacity="0.9" />
+                      <stop
+                        offset="100%"
+                        stopColor={lightBlue}
+                        stopOpacity="0.9"
+                      />
                       {/* Animate gradient sliding horizontally */}
                       <animate
                         attributeName="gradientTransform"
@@ -387,42 +389,42 @@ export default function BlockchainMintingView({
 
             {/* Text Status */}
             <div className="space-y-2 text-center">
-               {status === "minting" ? (
-                 <>
-                   <h3 className="text-2xl font-extrabold">
-                     <span className="bg-gradient-to-r from-[#00b4d8] via-[#7EE9F2] to-[#00b4d8] bg-[length:200%_100%] bg-clip-text text-transparent [animation:shimmer_2.2s_linear_infinite]">
-                       Đang chuyển giao NFT...
-                     </span>
-                   </h3>
-                   <motion.p
-                     className="text-sm text-slate-600"
-                     initial={{ opacity: 0 }}
-                     animate={{ opacity: 1 }}
-                     transition={{ duration: 0.4 }}
-                   >
-                     Vui lòng chờ giao dịch blockchain hoàn tất.
-                   </motion.p>
-                 </>
-               ) : (
-                 <>
-                   <motion.h3
-                     className="text-2xl font-extrabold text-emerald-600"
-                     initial={{ scale: 0.9, opacity: 0 }}
-                     animate={{ scale: 1, opacity: 1 }}
-                     transition={{ duration: 0.35 }}
-                   >
-                     ✅ Chuyển giao thành công!
-                   </motion.h3>
-                   <motion.p
-                     className="text-sm text-slate-600"
-                     initial={{ opacity: 0 }}
-                     animate={{ opacity: 1 }}
-                     transition={{ duration: 0.35, delay: 0.1 }}
-                   >
-                     NFT đã được chuyển giao thành công trên blockchain.
-                   </motion.p>
-                 </>
-               )}
+              {status === "minting" ? (
+                <>
+                  <h3 className="text-2xl font-extrabold">
+                    <span className="bg-linear-to-r from-secondary to-primary bg-[length:200%_100%] bg-clip-text text-transparent [animation:shimmer_2.2s_linear_infinite]">
+                      Đang chuyển giao NFT...
+                    </span>
+                  </h3>
+                  <motion.p
+                    className="text-sm text-slate-600"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    Vui lòng chờ giao dịch blockchain hoàn tất.
+                  </motion.p>
+                </>
+              ) : (
+                <>
+                  <motion.h3
+                    className="text-2xl font-extrabold text-emerald-600"
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.35 }}
+                  >
+                    ✅ Chuyển giao thành công!
+                  </motion.h3>
+                  <motion.p
+                    className="text-sm text-slate-600"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.35, delay: 0.1 }}
+                  >
+                    NFT đã được chuyển giao thành công trên blockchain.
+                  </motion.p>
+                </>
+              )}
             </div>
           </div>
         </div>

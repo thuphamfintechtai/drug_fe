@@ -423,7 +423,7 @@ export default function DashboardLayout({
                 <button
                   onClick={handleConnectWallet}
                   disabled={isConnecting}
-                  className="flex items-center gap-2 h-10 px-4 rounded-full bg-linear-to-r from-cyan-500 to-teal-600 text-white hover:from-cyan-600 hover:to-teal-700 transition-colors shadow-sm hover:shadow-md disabled:opacity-50"
+                  className="flex items-center gap-2 h-10 px-4 rounded-full bg-linear-to-r from-secondary to-primary text-white hover:from-cyan-600 hover:to-teal-700 transition-colors shadow-sm hover:shadow-md disabled:opacity-50"
                 >
                   {isConnecting ? (
                     <>

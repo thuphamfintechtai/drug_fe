@@ -1,25 +1,25 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import truckSvg from '../assets/truck.svg';
+import { useEffect, useRef, useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import truckSvg from "../assets/truck.svg";
 
-export default function BlockchainTransferView({ 
-  status = 'minting', // 'minting' | 'completed' | 'error'
+export default function BlockchainTransferView({
+  status = "minting", // 'minting' | 'completed' | 'error'
   progress = 0, // 0-1: progress từ parent
   onProgressUpdate, // callback để parent có thể update progress
-  onClose // callback để đóng cửa sổ
+  onClose, // callback để đóng cửa sổ
 }) {
   const mapBarRef = useRef(null);
   const truckRef = useRef(null);
   const currentProgressRef = useRef(0);
   const animationFrameRef = useRef(null);
-  
+
   // Blockchain blocks configuration - giống BlockchainMintingView
   const totalBlocks = 4;
   const blockSize = 60;
   const spacing = 80;
   const width = (totalBlocks - 1) * spacing + blockSize;
   const height = 90;
-  
+
   // Tính toán active block dựa trên progress
   const getActiveBlock = () => {
     if (progress <= 0.25) return 0;
@@ -27,22 +27,18 @@ export default function BlockchainTransferView({
     if (progress <= 0.75) return 2;
     return 3;
   };
-  
+
   const activeBlock = getActiveBlock();
-  const isCompleted = status === 'completed';
-  const isError = status === 'error';
-  
+  const isCompleted = status === "completed";
+  const isError = status === "error";
+
   // Colors
   const cyan = "#00b4d8";
   const lightBlue = "#48cae4";
   const softCyan = "#7EE9F2";
 
   // Block component - giống BlockchainMintingView
-  const Block = ({
-    index,
-    isActive,
-    isCompleted,
-  }) => {
+  const Block = ({ index, isActive, isCompleted }) => {
     const x = index * spacing;
     return (
       <g>
@@ -100,11 +96,9 @@ export default function BlockchainTransferView({
         {/* Checkmark on completed */}
         {isCompleted && (
           <motion.path
-            d={`M ${x + 16} ${blockSize / 2} L ${
-              x + blockSize / 2 - 5
-            } ${blockSize / 2 + 10} L ${x + blockSize - 16} ${
-              blockSize / 2 - 10
-            }`}
+            d={`M ${x + 16} ${blockSize / 2} L ${x + blockSize / 2 - 5} ${
+              blockSize / 2 + 10
+            } L ${x + blockSize - 16} ${blockSize / 2 - 10}`}
             stroke="#22c55e"
             strokeWidth="3"
             strokeLinecap="round"
@@ -120,11 +114,7 @@ export default function BlockchainTransferView({
   };
 
   // LinkLine component - giống BlockchainMintingView
-  const LinkLine = ({
-    i,
-    active,
-    completed,
-  }) => {
+  const LinkLine = ({ i, active, completed }) => {
     const startX = i * spacing + blockSize;
     const endX = (i + 1) * spacing;
     const y = blockSize / 2;
@@ -220,28 +210,29 @@ export default function BlockchainTransferView({
         const pad = 18;
         const truckWidth = 90;
         const targetProgress = Math.min(Math.max(progress, 0), 1);
-        
+
         // Smooth interpolation - mượt mà hơn
         const currentProgress = currentProgressRef.current;
         const diff = targetProgress - currentProgress;
-        
+
         // Sử dụng ease-out để mượt mà hơn
         const speed = 0.08; // Điều chỉnh tốc độ "đuổi theo" (0.05-0.15)
         const newProgress = currentProgress + diff * speed;
-        
+
         // Cập nhật progress hiện tại
-        currentProgressRef.current = Math.abs(diff) < 0.001 ? targetProgress : newProgress;
-        
+        currentProgressRef.current =
+          Math.abs(diff) < 0.001 ? targetProgress : newProgress;
+
         // Tính toán vị trí
         const p = currentProgressRef.current;
         const left = pad + (width - truckWidth - pad * 2) * p;
-        
+
         // Sử dụng transform thay vì left để tối ưu performance (GPU-accelerated)
         if (truckRef.current) {
           truckRef.current.style.transform = `translateX(${left}px)`;
         }
       }
-      
+
       // Tiếp tục animation loop
       animationFrameRef.current = requestAnimationFrame(updateTruckPosition);
     };
@@ -261,13 +252,13 @@ export default function BlockchainTransferView({
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    
+    window.addEventListener("resize", handleResize);
+
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
     };
   }, [progress]);
 
@@ -286,7 +277,7 @@ export default function BlockchainTransferView({
         .transfer-card__head {
           padding: 28px 32px;
           color: #fff;
-          background: linear-gradient(135deg, #00b4d8 0%, #48cae4 100%);
+          background: linear-gradient(135deg, #077ca3 0%, #077ca3 100%);
           position: relative;
           box-shadow: 0 4px 12px rgba(0, 180, 216, 0.2);
         }
@@ -366,7 +357,7 @@ export default function BlockchainTransferView({
           font-weight: 700;
           font-size: 22px;
           text-align: center;
-          background: linear-gradient(135deg, #00b4d8 0%, #48cae4 100%);
+          background: linear-gradient(135deg, #077ca3 0%, #077ca3 100%);
           -webkit-background-clip: text;
           background-clip: text;
           color: transparent;
@@ -389,7 +380,7 @@ export default function BlockchainTransferView({
 
         .transfer-card.success .status__text {
           background: none;
-          color: #22c55e;
+          color: #077ca3;
           font-size: 24px;
         }
 
@@ -500,15 +491,19 @@ export default function BlockchainTransferView({
         }
       `}</style>
 
-      <main className={`transfer-card ${isCompleted ? 'success' : ''} ${isError ? 'error' : ''}`}>
+      <main
+        className={`transfer-card ${isCompleted ? "success" : ""} ${
+          isError ? "error" : ""
+        }`}
+      >
         <header className="transfer-card__head">
           <div className="transfer-card__title">Chờ chuyển giao NFT</div>
           <div className="transfer-card__sub">
             {isError
-              ? 'Giao dịch blockchain thất bại'
+              ? "Giao dịch blockchain thất bại"
               : isCompleted
-              ? 'NFT đã đến Distributor & được xác nhận trên blockchain'
-              : 'Đang vận chuyển NFT và xác minh trên blockchain...'}
+              ? "NFT đã đến Distributor & được xác nhận trên blockchain"
+              : "Đang vận chuyển NFT và xác minh trên blockchain..."}
           </div>
           {isError && onClose && (
             <button
@@ -526,24 +521,30 @@ export default function BlockchainTransferView({
             <div className="status__spinner"></div>
             <div className="status__text">
               {isError
-                ? 'Chuyển giao thất bại'
+                ? "Chuyển giao thất bại"
                 : isCompleted
-                ? 'Chuyển giao thành công'
-                : 'Đang chuyển giao & xác minh...'}
+                ? "Chuyển giao thành công"
+                : "Đang chuyển giao & xác minh..."}
             </div>
             <div className="status__hint">
               {isError
-                ? 'Vui lòng kiểm tra lại và thử lại sau.'
+                ? "Vui lòng kiểm tra lại và thử lại sau."
                 : isCompleted
-                ? 'Bạn có thể tiếp tục bước tiếp theo.'
-                : 'Vui lòng chờ giao dịch blockchain được xác nhận.'}
+                ? "Bạn có thể tiếp tục bước tiếp theo."
+                : "Vui lòng chờ giao dịch blockchain được xác nhận."}
             </div>
           </div>
 
           {/* MAP */}
           <div className="map">
             <div className="map__bar" ref={mapBarRef}>
-              <div className={`node node--left ${status === 'minting' || isCompleted || isError ? 'node--active' : ''}`}>
+              <div
+                className={`node node--left ${
+                  status === "minting" || isCompleted || isError
+                    ? "node--active"
+                    : ""
+                }`}
+              >
                 <span className="node__label">Manufacturer</span>
               </div>
 
@@ -555,7 +556,15 @@ export default function BlockchainTransferView({
                 alt="truck"
               />
 
-              <div className={`node node--right ${isError ? 'node--error node--active' : isCompleted ? 'node--success node--active' : ''}`}>
+              <div
+                className={`node node--right ${
+                  isError
+                    ? "node--error node--active"
+                    : isCompleted
+                    ? "node--success node--active"
+                    : ""
+                }`}
+              >
                 <span className="node__label">Distributor</span>
               </div>
             </div>
@@ -572,7 +581,13 @@ export default function BlockchainTransferView({
               {/* ====== SVG defs (gradients) ====== */}
               <defs>
                 {/* Line gradient */}
-                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <linearGradient
+                  id="lineGradient"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
                   <stop offset="0%" stopColor={cyan} stopOpacity="0.2">
                     <animate
                       attributeName="offset"
@@ -612,7 +627,11 @@ export default function BlockchainTransferView({
                   >
                     <stop offset="0%" stopColor={cyan} stopOpacity="0.85" />
                     <stop offset="50%" stopColor={softCyan} stopOpacity="1" />
-                    <stop offset="100%" stopColor={lightBlue} stopOpacity="0.9" />
+                    <stop
+                      offset="100%"
+                      stopColor={lightBlue}
+                      stopOpacity="0.9"
+                    />
                     {/* Animate gradient sliding horizontally */}
                     <animate
                       attributeName="gradientTransform"
@@ -651,4 +670,3 @@ export default function BlockchainTransferView({
     </>
   );
 }
-

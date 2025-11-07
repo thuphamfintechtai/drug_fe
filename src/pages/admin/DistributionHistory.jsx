@@ -157,7 +157,7 @@ export default function DistributionHistory() {
       ) : (
         <>
           {/* Banner */}
-          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-4">
+          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 mb-4">
             <h2 className="text-xl font-semibold text-[#007b91]">
               Lịch sử phân phối thuốc
             </h2>
@@ -168,7 +168,7 @@ export default function DistributionHistory() {
 
           {/* Filters */}
           <motion.div
-            className="rounded-2xl bg-white border border-cyan-200 shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-4"
+            className="rounded-2xl bg-white border border-card-primary shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-4"
             variants={fadeUp}
             initial="hidden"
             animate="show"
@@ -238,7 +238,7 @@ export default function DistributionHistory() {
 
           {/* List */}
           <motion.div
-            className="bg-white rounded-2xl border border-cyan-100 shadow-sm p-6"
+            className="bg-white rounded-2xl border border-card-primary shadow-sm p-6"
             variants={fadeUp}
             initial="hidden"
             animate="show"
@@ -493,7 +493,7 @@ export default function DistributionHistory() {
             <span className="text-sm text-slate-700">Trang {page}</span>
             <button
               onClick={() => updateFilter({ page: page + 1 })}
-              className="px-3 py-2 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
+              className="px-3 py-2 rounded-xl !text-white bg-secondary shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
             >
               Sau
             </button>

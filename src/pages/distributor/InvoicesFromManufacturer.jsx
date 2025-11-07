@@ -668,7 +668,7 @@ export default function InvoicesFromManufacturer() {
                         <button
                           style={{ color: "white" }}
                           onClick={() => handleOpenConfirm(item)}
-                          className="px-6 py-3 rounded-full bg-secondary text-white hover:from-emerald-600 hover:to-green-700 text-base font-semibold transition shadow-md"
+                          className="px-6 py-3 rounded-full bg-secondary text-white hover:from-slate-600 hover:to-primary text-base font-semibold transition shadow-md"
                         >
                           Xác nhận nhận hàng
                         </button>
@@ -761,7 +761,7 @@ export default function InvoicesFromManufacturer() {
               .custom-scroll::-webkit-scrollbar-track { background: transparent; }
               .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
             `}</style>
-                <div className="bg-linear-to-r from-secondary to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
+                <div className="bg-linear-to-r from-secondary to-primary px-8 py-6 rounded-t-3xl flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div>
                       <h2 className="text-2xl font-bold text-white">
