@@ -119,7 +119,6 @@ export default function Navbar() {
             {/* MetaMask Connection */}
             {isConnected ? (
               <div className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30">
-                <span className="text-lg">🦊</span>
                 <div className="flex flex-col">
                   <div className="text-xs text-white/80">MetaMask</div>
                   <div className="text-sm font-semibold text-white font-mono">
@@ -138,9 +137,8 @@ export default function Navbar() {
               <button
                 onClick={handleConnectMetaMask}
                 disabled={isConnecting || !isInstalled}
-                className="px-5 py-2.5 bg-[#4BADD1] text-white font-semibold rounded-lg shadow-md hover:bg-[#3a9bb8] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#4BADD1] flex items-center gap-2 transition-colors duration-200"
+                className="px-5 py-2.5 bg-white text-slate-900 font-semibold rounded-lg shadow-md border border-[#077ca3] hover:border-[#077ca3] hover:bg-white focus:border-[#077ca3] focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-white flex items-center gap-2 transition-colors duration-200"
               >
-                <span>🦊</span>
                 {isConnecting ? "Đang kết nối..." : "Kết nối MetaMask"}
               </button>
             )}
@@ -255,9 +253,8 @@ export default function Navbar() {
                 <button
                   onClick={handleConnectMetaMask}
                   disabled={isConnecting || !isInstalled}
-                  className="w-full px-4 py-3 text-white bg-[#4BADD1] hover:bg-[#3a9bb8] rounded-xl font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#4BADD1] flex items-center justify-center gap-2 transition-colors duration-200"
+                  className="w-full px-4 py-3 bg-white text-slate-900 rounded-xl font-semibold shadow-md border border-[#077ca3] hover:border-[#077ca3] hover:bg-white focus:border-[#077ca3] focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-white flex items-center justify-center gap-2 transition-colors duration-200"
                 >
-                  <span>🦊</span>
                   {isConnecting ? "Đang kết nối..." : "Kết nối MetaMask"}
                 </button>
               )}
