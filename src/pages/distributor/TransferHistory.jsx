@@ -206,17 +206,27 @@ export default function TransferHistory() {
               </div>
               <div>
                 <label className="block text-sm text-slate-600 mb-1">Trạng thái</label>
-                <select
-                  value={status}
-                  onChange={e => updateFilter({ status: e.target.value, page: 1 })}
-                  className="h-12 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-12 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
-                >
-                  <option value="">Tất cả</option>
-                  <option value="pending">Pending</option>
-                  <option value="sent">Sent</option>
-                  <option value="received">Received</option>
-                  <option value="paid">Paid</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={status}
+                    onChange={e => updateFilter({ status: e.target.value, page: 1 })}
+                    className="h-12 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-12 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="pending">Pending</option>
+                    <option value="sent">Sent</option>
+                    <option value="received">Received</option>
+                    <option value="paid">Paid</option>
+                  </select>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-5 h-5 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.17l3.71-2.94a.75.75 0 111.04 1.08l-4.24 3.36a.75.75 0 01-.94 0L5.21 8.31a.75.75 0 01.02-1.1z" clipRule="evenodd" />
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
