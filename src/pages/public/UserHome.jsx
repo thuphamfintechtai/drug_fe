@@ -3,8 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BsFillBoxSeamFill, BsTruck, BsShop, BsPersonFill } from 'react-icons/bs';
 import { BsCheckCircleFill } from 'react-icons/bs';
-import { Html5Qrcode } from 'html5-qrcode';
-import { BrowserMultiFormatReader } from '@zxing/library';
+import { Scanner } from '@yudiel/react-qr-scanner';
 import toast from 'react-hot-toast';
 
 export default function UserHome() {
@@ -18,9 +17,6 @@ export default function UserHome() {
   const [showUploadQR, setShowUploadQR] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
-  const qrReaderRef = useRef(null);
-  const html5QrCodeRef = useRef(null);
-  const scannerContainerRef = useRef(null);
 
   const handleTrackDrug = () => {
     const trimmedTokenId = tokenId.trim();
@@ -38,83 +34,30 @@ export default function UserHome() {
       // Nếu có quyền, đóng stream và mở scanner
       stream.getTracks().forEach(track => track.stop());
       setShowQRScanner(true);
-      // Delay một chút để đảm bảo modal đã render
-      setTimeout(() => {
-        startQRScanner();
-      }, 300);
+      setIsScanning(true);
     } catch (error) {
       console.error('Camera permission error:', error);
       toast.error('Không thể truy cập camera. Vui lòng cấp quyền truy cập camera.');
     }
   };
 
-  const startQRScanner = async () => {
-    if (!scannerContainerRef.current) {
-      console.warn('Scanner container not ready');
-      return;
-    }
-    
-    // Dọn dẹp scanner cũ nếu có
-    if (html5QrCodeRef.current) {
-      await stopQRScanner();
-    }
-
-    try {
-      const html5QrCode = new Html5Qrcode(scannerContainerRef.current.id);
-      html5QrCodeRef.current = html5QrCode;
-
-      const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-        disableFlip: false
-      };
-
-      await html5QrCode.start(
-        { facingMode: 'environment' },
-        config,
-        (decodedText, decodedResult) => {
-          console.log('QR Code scanned:', decodedText);
-          // Dừng scanner ngay khi quét được
-          stopQRScanner().then(() => {
-            processQRResult(decodedText);
-          });
-        },
-        (errorMessage) => {
-          // Bỏ qua lỗi không tìm thấy QR (sẽ tiếp tục quét)
-          // Chỉ log các lỗi quan trọng
-          if (errorMessage && 
-              !errorMessage.includes('No QR code found') && 
-              !errorMessage.includes('NotFoundException')) {
-            console.log('QR scan error:', errorMessage);
-          }
-        }
-      );
-      
-      setIsScanning(true);
-      setQrError(null);
-    } catch (error) {
-      console.error('Error starting QR scanner:', error);
-      const errorMsg = error.message || 'Không thể khởi động camera';
-      setQrError(errorMsg);
-      toast.error(errorMsg + '. Vui lòng thử lại.');
+  const handleQRResult = (result) => {
+    if (result && result[0] && result[0].rawValue) {
+      const scannedText = result[0].rawValue;
+      console.log('QR Code scanned:', scannedText);
+      setShowQRScanner(false);
       setIsScanning(false);
+      processQRResult(scannedText);
     }
   };
 
-  const stopQRScanner = async () => {
-    if (html5QrCodeRef.current) {
-      try {
-        await html5QrCodeRef.current.stop();
-        html5QrCodeRef.current.clear();
-        html5QrCodeRef.current = null;
-        setIsScanning(false);
-      } catch (err) {
-        console.error('Error stopping QR scanner:', err);
-        // Force cleanup
-        html5QrCodeRef.current = null;
-        setIsScanning(false);
-      }
+  const handleQRError = (error) => {
+    // Bỏ qua lỗi không tìm thấy QR (sẽ tiếp tục quét)
+    if (error && 
+        !error.message?.includes('No QR code found') && 
+        !error.message?.includes('NotFoundException')) {
+      console.log('QR scan error:', error);
+      setQrError(error.message || 'Lỗi khi quét QR');
     }
   };
 
@@ -206,18 +149,10 @@ export default function UserHome() {
 
 
   const handleCloseQRScanner = () => {
-    stopQRScanner();
     setShowQRScanner(false);
     setIsScanning(false);
     setQrError(null);
   };
-
-  // Cleanup khi component unmount
-  useEffect(() => {
-    return () => {
-      stopQRScanner();
-    };
-  }, []);
 
   // Hàm xử lý ảnh để tăng contrast và chuyển sang grayscale
   const enhanceImageForQR = (imageData, options = {}) => {
@@ -309,233 +244,8 @@ export default function UserHome() {
       // Giải phóng URL
       URL.revokeObjectURL(imageUrl);
       
-      // Sử dụng BrowserMultiFormatReader để decode
-      const codeReader = new BrowserMultiFormatReader();
-      
-      let result = null;
-      let scannedText = '';
-      let decodeSuccess = false;
-      
-      // Helper function để tạo HTMLImageElement từ canvas
-      const createImageFromCanvas = (canvasElement) => {
-        return new Promise((resolve, reject) => {
-          const imgElement = new Image();
-          imgElement.onload = () => resolve(imgElement);
-          imgElement.onerror = reject;
-          imgElement.src = canvasElement.toDataURL('image/png');
-        });
-      };
-      
-      // Helper function để tạo canvas từ ImageData đã enhance
-      const createCanvasFromImageData = (imageData) => {
-        const newCanvas = document.createElement('canvas');
-        newCanvas.width = imageData.width;
-        newCanvas.height = imageData.height;
-        const newCtx = newCanvas.getContext('2d');
-        newCtx.putImageData(imageData, 0, 0);
-        return newCanvas;
-      };
-      
-      // Thử nhiều phương pháp decode với các cấu hình khác nhau
-      const decodeMethods = [
-        // Phương pháp 1: Decode từ HTMLImageElement gốc
-        {
-          name: 'ImageElement (original)',
-          fn: async () => {
-            return await codeReader.decodeFromImageElement(img);
-          }
-        },
-        // Phương pháp 2: Canvas toDataURL PNG với ZXing
-        {
-          name: 'ZXing from DataURL (PNG)',
-          fn: async () => {
-            const dataUrl = canvas.toDataURL('image/png');
-            return await codeReader.decodeFromImageUrl(dataUrl);
-          }
-        },
-        // Phương pháp 3: Canvas toDataURL JPEG với ZXing
-        {
-          name: 'ZXing from DataURL (JPEG)',
-          fn: async () => {
-            const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
-            return await codeReader.decodeFromImageUrl(dataUrl);
-          }
-        },
-        // Phương pháp 4: ImageElement từ canvas
-        {
-          name: 'ImageElement from Canvas',
-          fn: async () => {
-            const imgElement = await createImageFromCanvas(canvas);
-            return await codeReader.decodeFromImageElement(imgElement);
-          }
-        },
-        // Phương pháp 5: Enhanced binary ImageData -> Canvas -> ImageElement
-        {
-          name: 'Enhanced Binary -> ImageElement',
-          fn: async () => {
-            const enhancedData = enhanceImageForQR(ctx.getImageData(0, 0, canvas.width, canvas.height), {
-              contrast: 1.5,
-              threshold: 128,
-              useBinary: true
-            });
-            const enhancedCanvas = createCanvasFromImageData(enhancedData);
-            const imgElement = await createImageFromCanvas(enhancedCanvas);
-            return await codeReader.decodeFromImageElement(imgElement);
-          }
-        },
-        // Phương pháp 6: Enhanced grayscale ImageData -> Canvas -> ImageElement
-        {
-          name: 'Enhanced Grayscale -> ImageElement',
-          fn: async () => {
-            const enhancedData = enhanceImageForQR(ctx.getImageData(0, 0, canvas.width, canvas.height), {
-              contrast: 2.0,
-              threshold: 128,
-              useBinary: false
-            });
-            const enhancedCanvas = createCanvasFromImageData(enhancedData);
-            const imgElement = await createImageFromCanvas(enhancedCanvas);
-            return await codeReader.decodeFromImageElement(imgElement);
-          }
-        },
-        // Phương pháp 7: High contrast enhanced -> ImageElement
-        {
-          name: 'High Contrast -> ImageElement',
-          fn: async () => {
-            const enhancedData = enhanceImageForQR(ctx.getImageData(0, 0, canvas.width, canvas.height), {
-              contrast: 2.5,
-              threshold: 120,
-              useBinary: true
-            });
-            const enhancedCanvas = createCanvasFromImageData(enhancedData);
-            const imgElement = await createImageFromCanvas(enhancedCanvas);
-            return await codeReader.decodeFromImageElement(imgElement);
-          }
-        },
-        // Phương pháp 8: html5-qrcode với file trực tiếp
-        {
-          name: 'html5-qrcode (file)',
-          fn: async () => {
-            const { Html5Qrcode } = await import('html5-qrcode');
-            const html5QrCode = new Html5Qrcode();
-            const result = await html5QrCode.scanFile(file, true);
-            return { getText: () => result, text: result };
-          }
-        },
-        // Phương pháp 9: html5-qrcode với DataURL PNG
-        {
-          name: 'html5-qrcode (PNG DataURL)',
-          fn: async () => {
-            const { Html5Qrcode } = await import('html5-qrcode');
-            const html5QrCode = new Html5Qrcode();
-            const dataUrl = canvas.toDataURL('image/png');
-            // Convert data URL to blob
-            const response = await fetch(dataUrl);
-            const blob = await response.blob();
-            const result = await html5QrCode.scanFile(blob, true);
-            return { getText: () => result, text: result };
-          }
-        },
-        // Phương pháp 10: html5-qrcode với DataURL JPEG
-        {
-          name: 'html5-qrcode (JPEG DataURL)',
-          fn: async () => {
-            const { Html5Qrcode } = await import('html5-qrcode');
-            const html5QrCode = new Html5Qrcode();
-            const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
-            const response = await fetch(dataUrl);
-            const blob = await response.blob();
-            const result = await html5QrCode.scanFile(blob, true);
-            return { getText: () => result, text: result };
-          }
-        }
-      ];
-      
-      // Thử từng phương pháp
-      for (const method of decodeMethods) {
-        try {
-          console.log(`Trying decode method: ${method.name}`);
-          result = await method.fn();
-          scannedText = result.getText ? result.getText() : (result.text || result.toString() || '');
-          
-          if (scannedText && scannedText.trim()) {
-            console.log(`✅ Successfully decoded using ${method.name}:`, scannedText);
-            decodeSuccess = true;
-            break;
-          }
-        } catch (methodError) {
-          console.log(`❌ Method ${method.name} failed:`, methodError.message || methodError);
-          continue;
-        }
-      }
-      
-      // Nếu vẫn không thành công, thử với URL trực tiếp từ file
-      if (!decodeSuccess) {
-        try {
-          console.log('Trying direct file URL method...');
-          const imageUrl2 = URL.createObjectURL(file);
-          result = await codeReader.decodeFromImageUrl(imageUrl2);
-          scannedText = result.getText ? result.getText() : (result.text || '');
-          URL.revokeObjectURL(imageUrl2);
-          if (scannedText && scannedText.trim()) {
-            console.log('✅ Decoded from direct file URL:', scannedText);
-            decodeSuccess = true;
-          }
-        } catch (urlError) {
-          console.log('❌ Direct file URL method also failed:', urlError.message || urlError);
-        }
-      }
-      
-      // Nếu vẫn không thành công, thử với ảnh đã resize nhỏ hơn
-      if (!decodeSuccess && (canvasWidth > 500 || canvasHeight > 500)) {
-        console.log('Trying with smaller image size...');
-        const smallCanvas = document.createElement('canvas');
-        smallCanvas.width = 500;
-        smallCanvas.height = 500;
-        const smallCtx = smallCanvas.getContext('2d', { willReadFrequently: true });
-        smallCtx.drawImage(img, 0, 0, 500, 500);
-        
-        try {
-          const smallImgElement = await createImageFromCanvas(smallCanvas);
-          result = await codeReader.decodeFromImageElement(smallImgElement);
-          scannedText = result.getText ? result.getText() : (result.text || '');
-          if (scannedText && scannedText.trim()) {
-            console.log('✅ Decoded from smaller image:', scannedText);
-            decodeSuccess = true;
-          }
-        } catch (smallError) {
-          console.log('Small image method failed:', smallError.message);
-        }
-      }
-      
-      // Thử với ảnh lớn hơn nếu ảnh hiện tại quá nhỏ
-      if (!decodeSuccess && (canvasWidth < 800 || canvasHeight < 800)) {
-        console.log('Trying with larger image size...');
-        const largeCanvas = document.createElement('canvas');
-        const scale = Math.min(2000 / canvasWidth, 2000 / canvasHeight);
-        largeCanvas.width = Math.floor(canvasWidth * scale);
-        largeCanvas.height = Math.floor(canvasHeight * scale);
-        const largeCtx = largeCanvas.getContext('2d', { willReadFrequently: true });
-        largeCtx.drawImage(img, 0, 0, largeCanvas.width, largeCanvas.height);
-        
-        try {
-          const largeImgElement = await createImageFromCanvas(largeCanvas);
-          result = await codeReader.decodeFromImageElement(largeImgElement);
-          scannedText = result.getText ? result.getText() : (result.text || '');
-          if (scannedText && scannedText.trim()) {
-            console.log('✅ Decoded from larger image:', scannedText);
-            decodeSuccess = true;
-          }
-        } catch (largeError) {
-          console.log('Large image method failed:', largeError.message);
-        }
-      }
-      
-      if (decodeSuccess && scannedText && scannedText.trim()) {
-        console.log('Successfully decoded QR text:', scannedText);
-        processQRResult(scannedText);
-      } else {
-        throw new Error('Không thể đọc mã QR từ ảnh. Vui lòng thử lại với ảnh khác hoặc sử dụng chức năng quét camera.');
-      }
+      // Tính năng upload ảnh QR tạm thời không khả dụng
+      toast.error('Tính năng upload ảnh QR tạm thời không khả dụng. Vui lòng sử dụng chức năng quét camera.');
     } catch (error) {
       console.error('Error decoding QR from image:', error);
       let errorMessage = 'Không thể đọc mã QR từ ảnh';
@@ -1296,44 +1006,23 @@ export default function UserHome() {
               <div className="relative rounded-xl overflow-hidden bg-slate-100" style={{ minHeight: '300px', width: '100%', position: 'relative' }}>
                 {showQRScanner ? (
                   <div style={{ width: '100%', height: '100%', minHeight: '300px', position: 'relative' }}>
-                    <div 
-                      id="qr-reader"
-                      ref={scannerContainerRef}
-                      style={{ width: '100%', height: '100%', minHeight: '300px' }}
-                      className="qr-scanner-container"
+                    <Scanner
+                      onScan={handleQRResult}
+                      onError={handleQRError}
+                      constraints={{
+                        facingMode: 'environment'
+                      }}
+                      styles={{
+                        container: {
+                          width: '100%',
+                          height: '100%',
+                          minHeight: '300px'
+                        }
+                      }}
                     />
-                    <style>{`
-                      #qr-reader {
-                        width: 100% !important;
-                        height: 100% !important;
-                      }
-                      #qr-reader__dashboard {
-                        display: none !important;
-                      }
-                      #qr-reader__camera_selection {
-                        display: none !important;
-                      }
-                      #qr-reader__scan_region {
-                        border-radius: 12px;
-                        overflow: hidden;
-                      }
-                      #qr-reader__scan_region video {
-                        width: 100% !important;
-                        height: 100% !important;
-                        object-fit: cover;
-                      }
-                    `}</style>
                     {qrError && (
                       <div className="absolute bottom-2 left-2 right-2 bg-red-500/90 text-white text-xs p-2 rounded z-10">
                         {qrError}
-                      </div>
-                    )}
-                    {!isScanning && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-slate-100 z-20">
-                        <div className="text-center">
-                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4BADD1] mx-auto mb-2"></div>
-                          <p className="text-slate-600">Đang khởi động camera...</p>
-                        </div>
                       </div>
                     )}
                   </div>
