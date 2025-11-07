@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BsFillBoxSeamFill, BsTruck, BsShop, BsPersonFill } from 'react-icons/bs';
 import { BsCheckCircleFill } from 'react-icons/bs';
-import { Scanner } from '@yudiel/react-qr-scanner';
+import { Html5Qrcode } from 'html5-qrcode';
+import { BrowserMultiFormatReader } from '@zxing/library';
 import toast from 'react-hot-toast';
 
 export default function UserHome() {
@@ -13,6 +14,13 @@ export default function UserHome() {
   const [searchMode, setSearchMode] = useState('nft'); // 'nft' or 'drug'
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [qrError, setQrError] = useState(null);
+  const [showUploadQR, setShowUploadQR] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
+  const qrReaderRef = useRef(null);
+  const html5QrCodeRef = useRef(null);
+  const scannerContainerRef = useRef(null);
 
   const handleTrackDrug = () => {
     const trimmedTokenId = tokenId.trim();
@@ -23,36 +31,540 @@ export default function UserHome() {
     navigate(`/track?tokenId=${trimmedTokenId}`);
   };
 
-  const handleScanQR = () => {
-    setShowQRScanner(true);
-    setIsScanning(true);
+  const handleScanQR = async () => {
+    try {
+      // Kiểm tra quyền truy cập camera
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Nếu có quyền, đóng stream và mở scanner
+      stream.getTracks().forEach(track => track.stop());
+      setShowQRScanner(true);
+      // Delay một chút để đảm bảo modal đã render
+      setTimeout(() => {
+        startQRScanner();
+      }, 300);
+    } catch (error) {
+      console.error('Camera permission error:', error);
+      toast.error('Không thể truy cập camera. Vui lòng cấp quyền truy cập camera.');
+    }
   };
 
-  const handleQRResult = (detectedCodes) => {
-    if (detectedCodes && detectedCodes.length > 0) {
-      const firstCode = detectedCodes[0];
-      const scannedText = firstCode.rawValue ? firstCode.rawValue.trim() : '';
-      if (scannedText) {
-        setTokenId(scannedText);
-        setShowQRScanner(false);
+  const startQRScanner = async () => {
+    if (!scannerContainerRef.current) {
+      console.warn('Scanner container not ready');
+      return;
+    }
+    
+    // Dọn dẹp scanner cũ nếu có
+    if (html5QrCodeRef.current) {
+      await stopQRScanner();
+    }
+
+    try {
+      const html5QrCode = new Html5Qrcode(scannerContainerRef.current.id);
+      html5QrCodeRef.current = html5QrCode;
+
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        disableFlip: false
+      };
+
+      await html5QrCode.start(
+        { facingMode: 'environment' },
+        config,
+        (decodedText, decodedResult) => {
+          console.log('QR Code scanned:', decodedText);
+          // Dừng scanner ngay khi quét được
+          stopQRScanner().then(() => {
+            processQRResult(decodedText);
+          });
+        },
+        (errorMessage) => {
+          // Bỏ qua lỗi không tìm thấy QR (sẽ tiếp tục quét)
+          // Chỉ log các lỗi quan trọng
+          if (errorMessage && 
+              !errorMessage.includes('No QR code found') && 
+              !errorMessage.includes('NotFoundException')) {
+            console.log('QR scan error:', errorMessage);
+          }
+        }
+      );
+      
+      setIsScanning(true);
+      setQrError(null);
+    } catch (error) {
+      console.error('Error starting QR scanner:', error);
+      const errorMsg = error.message || 'Không thể khởi động camera';
+      setQrError(errorMsg);
+      toast.error(errorMsg + '. Vui lòng thử lại.');
+      setIsScanning(false);
+    }
+  };
+
+  const stopQRScanner = async () => {
+    if (html5QrCodeRef.current) {
+      try {
+        await html5QrCodeRef.current.stop();
+        html5QrCodeRef.current.clear();
+        html5QrCodeRef.current = null;
         setIsScanning(false);
-        toast.success('Đã quét QR thành công!');
-        // Tự động tra cứu sau khi quét
-        setTimeout(() => {
-          navigate(`/track?tokenId=${scannedText}`);
-        }, 500);
+      } catch (err) {
+        console.error('Error stopping QR scanner:', err);
+        // Force cleanup
+        html5QrCodeRef.current = null;
+        setIsScanning(false);
       }
     }
   };
 
-  const handleQRError = (error) => {
-    console.error('QR Scan Error:', error);
-    // Không hiển thị lỗi cho user trừ khi cần thiết
+  const processQRResult = (scannedText) => {
+    if (!scannedText) {
+      console.warn('processQRResult: scannedText is empty');
+      return;
+    }
+    
+    // Convert to string and trim
+    const trimmedText = String(scannedText).trim();
+    if (!trimmedText) {
+      console.warn('processQRResult: trimmedText is empty');
+      return;
+    }
+    
+    console.log('QR Code scanned (original):', trimmedText);
+    
+    // Kiểm tra xem có phải là URL không
+    // URL có thể bắt đầu bằng http://, https://, hoặc localhost
+    const isUrl = /^(https?:\/\/|localhost|http:\/\/localhost|https:\/\/localhost)/i.test(trimmedText) ||
+                  /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}/.test(trimmedText);
+    
+    if (isUrl) {
+        try {
+          let urlToNavigate = trimmedText;
+          
+          // Nếu URL không có protocol, thêm http://
+          if (!trimmedText.startsWith('http://') && !trimmedText.startsWith('https://')) {
+            // Nếu bắt đầu bằng localhost, thêm http://
+            if (trimmedText.startsWith('localhost')) {
+              urlToNavigate = `http://${trimmedText}`;
+            } else {
+              // Thử parse để kiểm tra xem có phải domain không
+              urlToNavigate = `http://${trimmedText}`;
+            }
+          }
+          
+          // Validate URL
+          const url = new URL(urlToNavigate);
+          console.log('QR contains URL, redirecting to:', url.href);
+          
+          setShowQRScanner(false);
+          setIsScanning(false);
+          setShowUploadQR(false);
+          toast.success('Đã quét QR thành công! Đang chuyển hướng...');
+          
+          // Chuyển hướng đến URL từ QR code (giữ nguyên URL gốc nếu có protocol)
+          setTimeout(() => {
+            // Sử dụng URL gốc nếu đã có protocol, nếu không dùng URL đã thêm protocol
+            const finalUrl = trimmedText.startsWith('http://') || trimmedText.startsWith('https://') 
+              ? trimmedText 
+              : url.href;
+            console.log('Final redirect URL:', finalUrl);
+            window.location.href = finalUrl;
+          }, 500);
+      } catch (e) {
+        console.error('Error parsing URL:', e);
+        // Nếu parse URL thất bại, vẫn thử chuyển hướng với URL gốc
+        console.log('Failed to parse URL, trying direct redirect');
+        setShowQRScanner(false);
+        setIsScanning(false);
+        setShowUploadQR(false);
+        toast.success('Đã quét QR thành công! Đang chuyển hướng...');
+        setTimeout(() => {
+          // Thử chuyển hướng trực tiếp với URL gốc
+          let urlToRedirect = trimmedText;
+          if (!trimmedText.startsWith('http://') && !trimmedText.startsWith('https://')) {
+            urlToRedirect = `http://${trimmedText}`;
+          }
+          console.log('Direct redirect to:', urlToRedirect);
+          window.location.href = urlToRedirect;
+        }, 500);
+      }
+    } else {
+      // Nếu không phải URL hợp lệ, xử lý như tokenId và điều hướng đến track
+      console.log('QR does not contain URL, treating as tokenId');
+      setTokenId(trimmedText);
+      setShowQRScanner(false);
+      setIsScanning(false);
+      setShowUploadQR(false);
+      toast.success('Đã quét QR thành công!');
+      // Tự động tra cứu sau khi quét
+      setTimeout(() => {
+        navigate(`/track?tokenId=${encodeURIComponent(trimmedText)}`);
+      }, 500);
+    }
   };
 
+
   const handleCloseQRScanner = () => {
+    stopQRScanner();
     setShowQRScanner(false);
     setIsScanning(false);
+    setQrError(null);
+  };
+
+  // Cleanup khi component unmount
+  useEffect(() => {
+    return () => {
+      stopQRScanner();
+    };
+  }, []);
+
+  // Hàm xử lý ảnh để tăng contrast và chuyển sang grayscale
+  const enhanceImageForQR = (imageData, options = {}) => {
+    const { contrast = 1.5, threshold = 128, useBinary = true } = options;
+    const data = imageData.data;
+    const newData = new ImageData(
+      new Uint8ClampedArray(data),
+      imageData.width,
+      imageData.height
+    );
+    const newDataArray = newData.data;
+    
+    for (let i = 0; i < newDataArray.length; i += 4) {
+      // Chuyển sang grayscale
+      const gray = newDataArray[i] * 0.299 + newDataArray[i + 1] * 0.587 + newDataArray[i + 2] * 0.114;
+      
+      // Tăng contrast
+      const enhanced = ((gray - 128) * contrast) + 128;
+      let final = Math.max(0, Math.min(255, enhanced));
+      
+      if (useBinary) {
+        // Áp dụng threshold để tạo ảnh đen trắng rõ ràng
+        final = final > threshold ? 255 : 0;
+      }
+      
+      newDataArray[i] = final;     // R
+      newDataArray[i + 1] = final; // G
+      newDataArray[i + 2] = final; // B
+      // newDataArray[i + 3] giữ nguyên alpha
+    }
+    return newData;
+  };
+
+  const handleUploadQRImage = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      console.warn('No file selected');
+      return;
+    }
+
+    // Kiểm tra định dạng file
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file ảnh hợp lệ');
+      return;
+    }
+
+    setUploadingImage(true);
+    setQrError(null);
+
+    try {
+      console.log('Starting QR decode from image:', file.name);
+      
+      // Tạo Image element để load ảnh
+      const img = new Image();
+      const imageUrl = URL.createObjectURL(file);
+      
+      // Đợi ảnh load xong
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = imageUrl;
+      });
+
+      console.log('Image loaded, dimensions:', img.width, 'x', img.height);
+
+      // Tạo canvas để vẽ ảnh
+      // Giới hạn kích thước tối đa để tăng hiệu suất (max 2000px)
+      const maxDimension = 2000;
+      let canvasWidth = img.width;
+      let canvasHeight = img.height;
+      
+      if (canvasWidth > maxDimension || canvasHeight > maxDimension) {
+        const ratio = Math.min(maxDimension / canvasWidth, maxDimension / canvasHeight);
+        canvasWidth = Math.floor(canvasWidth * ratio);
+        canvasHeight = Math.floor(canvasHeight * ratio);
+      }
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      
+      // Vẽ ảnh với kích thước mới
+      ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+      
+      // Lấy ImageData từ canvas
+      let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      
+      // Giải phóng URL
+      URL.revokeObjectURL(imageUrl);
+      
+      // Sử dụng BrowserMultiFormatReader để decode
+      const codeReader = new BrowserMultiFormatReader();
+      
+      let result = null;
+      let scannedText = '';
+      let decodeSuccess = false;
+      
+      // Helper function để tạo HTMLImageElement từ canvas
+      const createImageFromCanvas = (canvasElement) => {
+        return new Promise((resolve, reject) => {
+          const imgElement = new Image();
+          imgElement.onload = () => resolve(imgElement);
+          imgElement.onerror = reject;
+          imgElement.src = canvasElement.toDataURL('image/png');
+        });
+      };
+      
+      // Helper function để tạo canvas từ ImageData đã enhance
+      const createCanvasFromImageData = (imageData) => {
+        const newCanvas = document.createElement('canvas');
+        newCanvas.width = imageData.width;
+        newCanvas.height = imageData.height;
+        const newCtx = newCanvas.getContext('2d');
+        newCtx.putImageData(imageData, 0, 0);
+        return newCanvas;
+      };
+      
+      // Thử nhiều phương pháp decode với các cấu hình khác nhau
+      const decodeMethods = [
+        // Phương pháp 1: Decode từ HTMLImageElement gốc
+        {
+          name: 'ImageElement (original)',
+          fn: async () => {
+            return await codeReader.decodeFromImageElement(img);
+          }
+        },
+        // Phương pháp 2: Canvas toDataURL PNG với ZXing
+        {
+          name: 'ZXing from DataURL (PNG)',
+          fn: async () => {
+            const dataUrl = canvas.toDataURL('image/png');
+            return await codeReader.decodeFromImageUrl(dataUrl);
+          }
+        },
+        // Phương pháp 3: Canvas toDataURL JPEG với ZXing
+        {
+          name: 'ZXing from DataURL (JPEG)',
+          fn: async () => {
+            const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+            return await codeReader.decodeFromImageUrl(dataUrl);
+          }
+        },
+        // Phương pháp 4: ImageElement từ canvas
+        {
+          name: 'ImageElement from Canvas',
+          fn: async () => {
+            const imgElement = await createImageFromCanvas(canvas);
+            return await codeReader.decodeFromImageElement(imgElement);
+          }
+        },
+        // Phương pháp 5: Enhanced binary ImageData -> Canvas -> ImageElement
+        {
+          name: 'Enhanced Binary -> ImageElement',
+          fn: async () => {
+            const enhancedData = enhanceImageForQR(ctx.getImageData(0, 0, canvas.width, canvas.height), {
+              contrast: 1.5,
+              threshold: 128,
+              useBinary: true
+            });
+            const enhancedCanvas = createCanvasFromImageData(enhancedData);
+            const imgElement = await createImageFromCanvas(enhancedCanvas);
+            return await codeReader.decodeFromImageElement(imgElement);
+          }
+        },
+        // Phương pháp 6: Enhanced grayscale ImageData -> Canvas -> ImageElement
+        {
+          name: 'Enhanced Grayscale -> ImageElement',
+          fn: async () => {
+            const enhancedData = enhanceImageForQR(ctx.getImageData(0, 0, canvas.width, canvas.height), {
+              contrast: 2.0,
+              threshold: 128,
+              useBinary: false
+            });
+            const enhancedCanvas = createCanvasFromImageData(enhancedData);
+            const imgElement = await createImageFromCanvas(enhancedCanvas);
+            return await codeReader.decodeFromImageElement(imgElement);
+          }
+        },
+        // Phương pháp 7: High contrast enhanced -> ImageElement
+        {
+          name: 'High Contrast -> ImageElement',
+          fn: async () => {
+            const enhancedData = enhanceImageForQR(ctx.getImageData(0, 0, canvas.width, canvas.height), {
+              contrast: 2.5,
+              threshold: 120,
+              useBinary: true
+            });
+            const enhancedCanvas = createCanvasFromImageData(enhancedData);
+            const imgElement = await createImageFromCanvas(enhancedCanvas);
+            return await codeReader.decodeFromImageElement(imgElement);
+          }
+        },
+        // Phương pháp 8: html5-qrcode với file trực tiếp
+        {
+          name: 'html5-qrcode (file)',
+          fn: async () => {
+            const { Html5Qrcode } = await import('html5-qrcode');
+            const html5QrCode = new Html5Qrcode();
+            const result = await html5QrCode.scanFile(file, true);
+            return { getText: () => result, text: result };
+          }
+        },
+        // Phương pháp 9: html5-qrcode với DataURL PNG
+        {
+          name: 'html5-qrcode (PNG DataURL)',
+          fn: async () => {
+            const { Html5Qrcode } = await import('html5-qrcode');
+            const html5QrCode = new Html5Qrcode();
+            const dataUrl = canvas.toDataURL('image/png');
+            // Convert data URL to blob
+            const response = await fetch(dataUrl);
+            const blob = await response.blob();
+            const result = await html5QrCode.scanFile(blob, true);
+            return { getText: () => result, text: result };
+          }
+        },
+        // Phương pháp 10: html5-qrcode với DataURL JPEG
+        {
+          name: 'html5-qrcode (JPEG DataURL)',
+          fn: async () => {
+            const { Html5Qrcode } = await import('html5-qrcode');
+            const html5QrCode = new Html5Qrcode();
+            const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+            const response = await fetch(dataUrl);
+            const blob = await response.blob();
+            const result = await html5QrCode.scanFile(blob, true);
+            return { getText: () => result, text: result };
+          }
+        }
+      ];
+      
+      // Thử từng phương pháp
+      for (const method of decodeMethods) {
+        try {
+          console.log(`Trying decode method: ${method.name}`);
+          result = await method.fn();
+          scannedText = result.getText ? result.getText() : (result.text || result.toString() || '');
+          
+          if (scannedText && scannedText.trim()) {
+            console.log(`✅ Successfully decoded using ${method.name}:`, scannedText);
+            decodeSuccess = true;
+            break;
+          }
+        } catch (methodError) {
+          console.log(`❌ Method ${method.name} failed:`, methodError.message || methodError);
+          continue;
+        }
+      }
+      
+      // Nếu vẫn không thành công, thử với URL trực tiếp từ file
+      if (!decodeSuccess) {
+        try {
+          console.log('Trying direct file URL method...');
+          const imageUrl2 = URL.createObjectURL(file);
+          result = await codeReader.decodeFromImageUrl(imageUrl2);
+          scannedText = result.getText ? result.getText() : (result.text || '');
+          URL.revokeObjectURL(imageUrl2);
+          if (scannedText && scannedText.trim()) {
+            console.log('✅ Decoded from direct file URL:', scannedText);
+            decodeSuccess = true;
+          }
+        } catch (urlError) {
+          console.log('❌ Direct file URL method also failed:', urlError.message || urlError);
+        }
+      }
+      
+      // Nếu vẫn không thành công, thử với ảnh đã resize nhỏ hơn
+      if (!decodeSuccess && (canvasWidth > 500 || canvasHeight > 500)) {
+        console.log('Trying with smaller image size...');
+        const smallCanvas = document.createElement('canvas');
+        smallCanvas.width = 500;
+        smallCanvas.height = 500;
+        const smallCtx = smallCanvas.getContext('2d', { willReadFrequently: true });
+        smallCtx.drawImage(img, 0, 0, 500, 500);
+        
+        try {
+          const smallImgElement = await createImageFromCanvas(smallCanvas);
+          result = await codeReader.decodeFromImageElement(smallImgElement);
+          scannedText = result.getText ? result.getText() : (result.text || '');
+          if (scannedText && scannedText.trim()) {
+            console.log('✅ Decoded from smaller image:', scannedText);
+            decodeSuccess = true;
+          }
+        } catch (smallError) {
+          console.log('Small image method failed:', smallError.message);
+        }
+      }
+      
+      // Thử với ảnh lớn hơn nếu ảnh hiện tại quá nhỏ
+      if (!decodeSuccess && (canvasWidth < 800 || canvasHeight < 800)) {
+        console.log('Trying with larger image size...');
+        const largeCanvas = document.createElement('canvas');
+        const scale = Math.min(2000 / canvasWidth, 2000 / canvasHeight);
+        largeCanvas.width = Math.floor(canvasWidth * scale);
+        largeCanvas.height = Math.floor(canvasHeight * scale);
+        const largeCtx = largeCanvas.getContext('2d', { willReadFrequently: true });
+        largeCtx.drawImage(img, 0, 0, largeCanvas.width, largeCanvas.height);
+        
+        try {
+          const largeImgElement = await createImageFromCanvas(largeCanvas);
+          result = await codeReader.decodeFromImageElement(largeImgElement);
+          scannedText = result.getText ? result.getText() : (result.text || '');
+          if (scannedText && scannedText.trim()) {
+            console.log('✅ Decoded from larger image:', scannedText);
+            decodeSuccess = true;
+          }
+        } catch (largeError) {
+          console.log('Large image method failed:', largeError.message);
+        }
+      }
+      
+      if (decodeSuccess && scannedText && scannedText.trim()) {
+        console.log('Successfully decoded QR text:', scannedText);
+        processQRResult(scannedText);
+      } else {
+        throw new Error('Không thể đọc mã QR từ ảnh. Vui lòng thử lại với ảnh khác hoặc sử dụng chức năng quét camera.');
+      }
+    } catch (error) {
+      console.error('Error decoding QR from image:', error);
+      let errorMessage = 'Không thể đọc mã QR từ ảnh';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.name === 'NotFoundException') {
+        errorMessage = 'Không tìm thấy mã QR trong ảnh. Vui lòng đảm bảo ảnh chứa mã QR rõ nét.';
+      } else if (error.message && error.message.includes('No MultiFormat Readers')) {
+        errorMessage = 'Không thể đọc mã QR. Vui lòng thử lại với ảnh rõ hơn hoặc sử dụng chức năng quét camera.';
+      }
+      
+      toast.error(errorMessage);
+      setQrError(errorMessage);
+    } finally {
+      setUploadingImage(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleOpenUploadQR = () => {
+    setShowUploadQR(true);
+    // Trigger file input click
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, 100);
   };
 
   const handleSearchDrug = () => {
@@ -304,15 +816,35 @@ export default function UserHome() {
                       />
                     </div>
                     
-                    <button
-                      onClick={handleScanQR}
-                      className="px-6 py-3.5 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm hover:border-[#54b1d3] active:scale-95"
-                    >
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zM14 13h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 2h3v2h-3v-2z"/>
-                      </svg>
-                      <span className="font-semibold">Quét QR</span>
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleScanQR}
+                        className="px-6 py-3.5 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm hover:border-[#54b1d3] active:scale-95"
+                      >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zM14 13h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 2h3v2h-3v-2z"/>
+                        </svg>
+                        <span className="font-semibold">Quét QR</span>
+                      </button>
+                      <button
+                        onClick={handleOpenUploadQR}
+                        className="px-6 py-3.5 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm hover:border-[#54b1d3] active:scale-95"
+                        title="Tải ảnh QR lên"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="font-semibold">Upload QR</span>
+                      </button>
+                    </div>
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleUploadQRImage}
+                      className="hidden"
+                    />
                     
                 <button
                   onClick={handleTrackDrug}
@@ -761,21 +1293,67 @@ export default function UserHome() {
                 </button>
               </div>
               
-              <div className="relative rounded-xl overflow-hidden bg-slate-100" style={{ minHeight: '300px' }}>
-                {isScanning && (
-                  <Scanner
-                    onScan={handleQRResult}
-                    onError={handleQRError}
-                    constraints={{
-                      facingMode: 'environment'
-                    }}
-                  />
-                )}
-                {!isScanning && (
+              <div className="relative rounded-xl overflow-hidden bg-slate-100" style={{ minHeight: '300px', width: '100%', position: 'relative' }}>
+                {showQRScanner ? (
+                  <div style={{ width: '100%', height: '100%', minHeight: '300px', position: 'relative' }}>
+                    <div 
+                      id="qr-reader"
+                      ref={scannerContainerRef}
+                      style={{ width: '100%', height: '100%', minHeight: '300px' }}
+                      className="qr-scanner-container"
+                    />
+                    <style>{`
+                      #qr-reader {
+                        width: 100% !important;
+                        height: 100% !important;
+                      }
+                      #qr-reader__dashboard {
+                        display: none !important;
+                      }
+                      #qr-reader__camera_selection {
+                        display: none !important;
+                      }
+                      #qr-reader__scan_region {
+                        border-radius: 12px;
+                        overflow: hidden;
+                      }
+                      #qr-reader__scan_region video {
+                        width: 100% !important;
+                        height: 100% !important;
+                        object-fit: cover;
+                      }
+                    `}</style>
+                    {qrError && (
+                      <div className="absolute bottom-2 left-2 right-2 bg-red-500/90 text-white text-xs p-2 rounded z-10">
+                        {qrError}
+                      </div>
+                    )}
+                    {!isScanning && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-slate-100 z-20">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4BADD1] mx-auto mb-2"></div>
+                          <p className="text-slate-600">Đang khởi động camera...</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
                   <div className="flex items-center justify-center h-[300px] text-slate-500">
                     <div className="text-center">
-                      <div className="text-4xl mb-2">📷</div>
-                      <p>Đang khởi động camera...</p>
+                      {uploadingImage ? (
+                        <>
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4BADD1] mx-auto mb-2"></div>
+                          <p>Đang xử lý ảnh QR...</p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-4xl mb-2">📷</div>
+                          <p>Nhấn "Quét QR" để bắt đầu</p>
+                        </>
+                      )}
+                      {qrError && (
+                        <p className="text-red-500 text-sm mt-2">{qrError}</p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -784,6 +1362,11 @@ export default function UserHome() {
               <p className="text-sm text-slate-600 mt-4 text-center">
                 Đưa camera vào mã QR để quét
               </p>
+              {qrError && !isScanning && (
+                <p className="text-xs text-red-500 mt-2 text-center">
+                  {qrError}
+                </p>
+              )}
             </motion.div>
           </motion.div>
         )}

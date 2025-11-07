@@ -153,7 +153,7 @@ export default function PublicNFTTracking() {
                 <div className="bg-white rounded-xl p-4 border border-purple-200">
                   <div className="text-sm text-purple-700 mb-1">Tên thuốc</div>
                   <div className="text-lg font-bold text-purple-900">
-                    {journey.drug?.tradeName || journey.drug?.genericName || 'N/A'}
+                    {journey.nft?.drug?.tradeName || journey.nft?.drug?.genericName || 'N/A'}
                   </div>
                 </div>
                 <div className="bg-white rounded-xl p-4 border border-purple-200">
@@ -285,65 +285,65 @@ export default function PublicNFTTracking() {
             </div>
 
             {/* Thông tin thuốc chi tiết */}
-            {journey.drug && (
+            {journey.nft?.drug && (
               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border border-blue-200 p-6">
                 <h2 className="text-xl font-bold text-blue-900 mb-4 flex items-center gap-2">
                   <span>ℹ️</span> Thông tin chi tiết
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {journey.drug.genericName && (
+                  {journey.nft.drug.genericName && (
                     <div className="bg-white rounded-lg p-3 border border-blue-200">
                       <div className="text-sm text-blue-700">Tên hoạt chất</div>
-                      <div className="font-semibold text-blue-900">{journey.drug.genericName}</div>
+                      <div className="font-semibold text-blue-900">{journey.nft.drug.genericName}</div>
                     </div>
                   )}
-                  {journey.drug.atcCode && (
+                  {journey.nft.drug.atcCode && (
                     <div className="bg-white rounded-lg p-3 border border-blue-200">
                       <div className="text-sm text-blue-700">Mã ATC</div>
-                      <div className="font-mono font-semibold text-blue-900">{journey.drug.atcCode}</div>
+                      <div className="font-mono font-semibold text-blue-900">{journey.nft.drug.atcCode}</div>
                     </div>
                   )}
-                  {journey.drug.dosageForm && (
+                  {journey.nft.drug.dosageForm && (
                     <div className="bg-white rounded-lg p-3 border border-blue-200">
                       <div className="text-sm text-blue-700">Dạng bào chế</div>
-                      <div className="font-semibold text-blue-900">{journey.drug.dosageForm}</div>
+                      <div className="font-semibold text-blue-900">{journey.nft.drug.dosageForm}</div>
                     </div>
                   )}
-                  {journey.drug.strength && (
+                  {journey.nft.drug.strength && (
                     <div className="bg-white rounded-lg p-3 border border-blue-200">
                       <div className="text-sm text-blue-700">Hàm lượng</div>
-                      <div className="font-semibold text-blue-900">{journey.drug.strength}</div>
+                      <div className="font-semibold text-blue-900">{journey.nft.drug.strength}</div>
                     </div>
                   )}
-                  {journey.drug.packaging && (
+                  {journey.nft.drug.packaging && (
                     <div className="bg-white rounded-lg p-3 border border-blue-200">
                       <div className="text-sm text-blue-700">Quy cách đóng gói</div>
-                      <div className="font-semibold text-blue-900">{journey.drug.packaging}</div>
+                      <div className="font-semibold text-blue-900">{journey.nft.drug.packaging}</div>
                     </div>
                   )}
-                  {journey.drug.mfgDate && (
+                  {journey.nft.mfgDate && (
                     <div className="bg-white rounded-lg p-3 border border-blue-200">
                       <div className="text-sm text-blue-700">Ngày sản xuất</div>
                       <div className="font-semibold text-blue-900">
-                        {new Date(journey.drug.mfgDate).toLocaleDateString('vi-VN')}
+                        {new Date(journey.nft.mfgDate).toLocaleDateString('vi-VN')}
                       </div>
                     </div>
                   )}
-                  {journey.drug.expDate && (
+                  {journey.nft.expDate && (
                     <div className="bg-white rounded-lg p-3 border border-blue-200">
                       <div className="text-sm text-blue-700">Hạn sử dụng</div>
                       <div className="font-semibold text-blue-900">
-                        {new Date(journey.drug.expDate).toLocaleDateString('vi-VN')}
+                        {new Date(journey.nft.expDate).toLocaleDateString('vi-VN')}
                       </div>
                     </div>
                   )}
-                  {journey.drug.manufacturer && (
+                  {journey.nft.drug.manufacturer && (
                     <div className="bg-white rounded-lg p-3 border border-blue-200">
                       <div className="text-sm text-blue-700">Nhà sản xuất</div>
                       <div className="font-semibold text-blue-900">
-                        {typeof journey.drug.manufacturer === 'object' 
-                          ? (journey.drug.manufacturer.name || journey.drug.manufacturer.fullName || JSON.stringify(journey.drug.manufacturer))
-                          : journey.drug.manufacturer}
+                        {typeof journey.nft.drug.manufacturer === 'object' 
+                          ? (journey.nft.drug.manufacturer.name || journey.nft.drug.manufacturer.fullName || JSON.stringify(journey.nft.drug.manufacturer))
+                          : journey.nft.drug.manufacturer}
                       </div>
                     </div>
                   )}
