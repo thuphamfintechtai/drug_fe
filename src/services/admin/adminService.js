@@ -18,6 +18,18 @@ export const getSupplyChainHistory = (params = {}) => api.get('/admin/supply-cha
 export const getDistributionHistory = (params = {}) => api.get('/admin/distribution/history', { params });
 export const getSystemStatistics = () => api.get('/admin/statistics');
 
+// ============ BATCH TRACKING (gộp từ batchTrackingService) ============
+const ADMIN_BT_PREFIX = '/admin/batch-tracking';
+
+export const getBatchList = (params = {}) =>
+  api.get(`${ADMIN_BT_PREFIX}/batches`, { params });
+
+export const getBatchJourney = (batchNumber, params = {}) =>
+  api.get(`${ADMIN_BT_PREFIX}/batches/${encodeURIComponent(batchNumber)}/journey`, { params });
+
+export const getNFTJourney = (tokenId) =>
+  api.get(`${ADMIN_BT_PREFIX}/nft/${encodeURIComponent(tokenId)}/journey`);
+
 export default {
   // Đơn đăng ký
   getPendingRegistrations,
@@ -36,6 +48,10 @@ export default {
   getSupplyChainHistory,
   getDistributionHistory,
   getSystemStatistics,
+  // Batch tracking
+  getBatchList,
+  getBatchJourney,
+  getNFTJourney,
 };
 
 
