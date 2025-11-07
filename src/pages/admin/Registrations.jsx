@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
-import { getPendingRegistrations } from '../../services/admin/adminService';
+import { getPendingRegistrations, retryRegistrationBlockchain } from '../../services/admin/adminService';
 import { getRegistrationStats } from '../../services/admin/statsService';
 import TruckLoader from '../../components/TruckLoader';
+import toast from 'react-hot-toast';
 
 export default function AdminRegistrations() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -13,7 +14,9 @@ export default function AdminRegistrations() {
   const [error, setError] = useState('');
   const [stats, setStats] = useState(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [retryingIds, setRetryingIds] = useState(new Set());
   const progressIntervalRef = useRef(null);
+  const loadFunctionRef = useRef(null);
 
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = 10;
@@ -57,29 +60,39 @@ export default function AdminRegistrations() {
         
         setItems(items);
         
+        // Xử lý stats response - cấu trúc: { success: true, data: { total, byStatus, byRole, recentRequests } }
         const statsRes = statsResponse?.data;
-        setStats(statsRes?.data || statsRes);
+        let statsData = null;
+        if (statsRes?.success && statsRes?.data) {
+          statsData = statsRes.data;
+        } else if (statsRes?.data) {
+          statsData = statsRes.data;
+        } else if (statsRes?.byStatus) {
+          statsData = statsRes;
+        }
+        console.log('📊 Parsed stats:', statsData);
+        setStats(statsData);
              } catch (e) {
-         console.error('❌ Error loading registrations:', e);
-         console.error('❌ Error response:', e?.response);
-         console.error('❌ Error status:', e?.response?.status);
-         console.error('❌ Error data:', e?.response?.data);
+        console.error('❌ Error loading registrations:', e);
+        console.error('❌ Error response:', e?.response);
+        console.error('❌ Error status:', e?.response?.status);
+        console.error('❌ Error data:', e?.response?.data);
          
-         // Hiển thị lỗi chi tiết hơn
-         let errorMsg = 'Không thể tải dữ liệu';
-         if (e?.response?.status === 500) {
-           errorMsg = 'Lỗi server (500): Vui lòng kiểm tra backend hoặc thử lại sau.';
-         } else if (e?.response?.status === 401) {
-           errorMsg = 'Bạn chưa đăng nhập hoặc token đã hết hạn.';
-         } else if (e?.response?.status === 403) {
-           errorMsg = 'Bạn không có quyền truy cập trang này.';
-         } else if (e?.response?.data?.message) {
-           errorMsg = e.response.data.message;
-         } else if (e?.message) {
-           errorMsg = e.message;
-         }
-         
-         setError(errorMsg);
+        // Hiển thị lỗi chi tiết hơn
+        let errorMsg = 'Không thể tải dữ liệu';
+        if (e?.response?.status === 500) {
+          errorMsg = 'Lỗi server (500): Vui lòng kiểm tra backend hoặc thử lại sau.';
+        } else if (e?.response?.status === 401) {
+          errorMsg = 'Bạn chưa đăng nhập hoặc token đã hết hạn.';
+        } else if (e?.response?.status === 403) {
+          errorMsg = 'Bạn không có quyền truy cập trang này.';
+        } else if (e?.response?.data?.message) {
+          errorMsg = e.response.data.message;
+        } else if (e?.message) {
+          errorMsg = e.message;
+        }
+        
+        setError(errorMsg);
       } finally {
         if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
         let current = 0; setLoadingProgress(p => { current = p; return p; });
@@ -101,6 +114,7 @@ export default function AdminRegistrations() {
         setTimeout(() => setLoadingProgress(0), 500);
       }
     };
+    loadFunctionRef.current = load;
     load();
     return () => {
       if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
@@ -113,6 +127,34 @@ export default function AdminRegistrations() {
       if (v === '' || v === undefined || v === null) nextParams.delete(k); else nextParams.set(k, String(v));
     });
     setSearchParams(nextParams);
+  };
+
+  const handleRetryBlockchain = async (requestId) => {
+    if (retryingIds.has(requestId)) return;
+    
+    try {
+      setRetryingIds(prev => new Set(prev).add(requestId));
+      toast.loading('Đang retry blockchain...', { id: `retry-${requestId}` });
+      
+      await retryRegistrationBlockchain(requestId);
+      
+      toast.success('Retry blockchain thành công!', { id: `retry-${requestId}` });
+      
+      // Reload data
+      if (loadFunctionRef.current) {
+        await loadFunctionRef.current();
+      }
+    } catch (error) {
+      console.error('❌ Error retrying blockchain:', error);
+      const errorMsg = error?.response?.data?.message || 'Không thể retry blockchain. Vui lòng thử lại.';
+      toast.error(errorMsg, { id: `retry-${requestId}` });
+    } finally {
+      setRetryingIds(prev => {
+        const next = new Set(prev);
+        next.delete(requestId);
+        return next;
+      });
+    }
   };
 
   const translateRole = (role) => {
@@ -197,26 +239,38 @@ export default function AdminRegistrations() {
 
       {/* Stats */}
       {stats && (
-        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4" variants={fadeUp} initial="hidden" animate="show">
+        <motion.div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4" variants={fadeUp} initial="hidden" animate="show">
+          <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-cyan-400 to-blue-400 rounded-t-2xl" />
+            <div className="p-5 pt-7 text-center">
+              <div className="text-sm text-slate-600">Tổng số</div>
+              <div className="text-2xl font-bold text-cyan-600">{stats.total || 0}</div>
+            </div>
+          </div>
           <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-amber-400 to-yellow-400 rounded-t-2xl" />
             <div className="p-5 pt-7 text-center">
               <div className="text-sm text-slate-600">Đang chờ</div>
-              <div className="text-2xl font-bold text-amber-600">{stats.summary?.totalPending || 0}</div>
+              <div className="text-2xl font-bold text-amber-600">{stats.byStatus?.pending || 0}</div>
             </div>
           </div>
           <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
             <div className="p-5 pt-7 text-center">
               <div className="text-sm text-slate-600">Đã duyệt</div>
-              <div className="text-2xl font-bold text-emerald-600">{stats.summary?.totalApproved || 0}</div>
+              <div className="text-2xl font-bold text-emerald-600">
+                {(stats.byStatus?.approved || 0) + (stats.byStatus?.approved_pending_blockchain || 0)}
+              </div>
+              <div className="text-xs text-slate-500 mt-1">
+                ({stats.byStatus?.approved || 0} hoàn tất, {stats.byStatus?.approved_pending_blockchain || 0} chờ blockchain)
+              </div>
             </div>
           </div>
           <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-rose-400 to-red-400 rounded-t-2xl" />
             <div className="p-5 pt-7 text-center">
               <div className="text-sm text-slate-600">Lỗi blockchain</div>
-              <div className="text-2xl font-bold text-rose-600">{stats.summary?.totalBlockchainFailed || 0}</div>
+              <div className="text-2xl font-bold text-rose-600">{stats.byStatus?.blockchain_failed || 0}</div>
             </div>
           </div>
         </motion.div>
@@ -248,9 +302,20 @@ export default function AdminRegistrations() {
                   <td className="px-4 py-3 text-[#003544]/80">{translateStatus(r.status)}</td>
                   <td className="px-4 py-3 text-[#003544]/80">{new Date(r.createdAt).toLocaleString('vi-VN')}</td>
                   <td className="px-4 py-3 text-right">
-                    <Link to={`/admin/registrations/${r._id}`} className="inline-flex items-center px-3 py-2 rounded-full border border-cyan-200 text-[#003544] hover:bg-[#90e0ef22] transition">
-                      Chi tiết
-                    </Link>
+                    <div className="flex items-center justify-end gap-2">
+                      <Link to={`/admin/registrations/${r._id}`} className="inline-flex items-center px-3 py-2 rounded-full border border-cyan-200 text-[#003544] hover:bg-[#90e0ef22] transition">
+                        Chi tiết
+                      </Link>
+                      {r.status === 'blockchain_failed' && (
+                        <button
+                          onClick={() => handleRetryBlockchain(r._id)}
+                          disabled={retryingIds.has(r._id)}
+                          className="px-4 py-2 border-2 border-[#3db6d9] bg-white !text-[#3db6d9] rounded-full font-semibold hover:bg-[#3db6d9] hover:!text-white hover:shadow-md hover:shadow-[#3db6d9]/40 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {retryingIds.has(r._id) ? 'Đang xử lý...' : 'Retry Blockchain'}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -18,6 +18,7 @@ export default function AdminDrugs() {
   const page = parseInt(searchParams.get('page') || '1', 10);
   const search = searchParams.get('search') || '';
   const status = searchParams.get('status') || '';
+  const manufacturerId = searchParams.get('manufacturerId') || '';
 
   const navigationItems = useMemo(() => ([
     { path: '/admin', label: 'Tổng quan', icon: null, active: false },
@@ -33,25 +34,77 @@ export default function AdminDrugs() {
       setLoadingProgress(prev => (prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev));
     }, 50);
     try {
+      // Query parameters: page, limit, search, status, manufacturerId
+      // GET /api/admin/drugs?page=1&limit=10&search=paracetamol&status=active&manufacturerId=...
       const params = { page, limit: 10 };
       if (search) params.search = search;
       if (status) params.status = status;
+      if (manufacturerId) params.manufacturerId = manufacturerId;
+
+      console.log('📤 Fetching drugs with params:', params);
 
       const [drugsRes, statsRes] = await Promise.all([
         getAllDrugs(params),
         getDrugStatistics(),
       ]);
       
-      if (drugsRes.data.success) {
-        setItems(drugsRes.data.data.drugs || []);
-        setPagination(drugsRes.data.data.pagination || { page: 1, limit: 10, total: 0, pages: 0 });
+      console.log('📥 Drugs response:', drugsRes?.data);
+      
+      // Xử lý drugs response - cấu trúc: { success: true, data: { drugs: [...], pagination: {...} } }
+      const drugsData = drugsRes?.data;
+      let items = [];
+      let paginationData = { page: 1, limit: 10, total: 0, pages: 0 };
+      
+      if (drugsData?.success && drugsData?.data) {
+        // Cấu trúc chuẩn: { success: true, data: { drugs: [...], pagination: {...} } }
+        items = Array.isArray(drugsData.data.drugs) ? drugsData.data.drugs : [];
+        paginationData = drugsData.data.pagination || paginationData;
+      } else if (Array.isArray(drugsData?.data)) {
+        // Fallback: { data: [...] }
+        items = drugsData.data;
+      } else if (Array.isArray(drugsData)) {
+        // Fallback: [...]
+        items = drugsData;
       }
       
-      if (statsRes.data.success) {
-        setStats(statsRes.data.data);
+      console.log('📋 Parsed drugs:', items);
+      console.log('📋 Parsed pagination:', paginationData);
+      
+      setItems(items);
+      setPagination(paginationData);
+      
+      // Xử lý stats response - cấu trúc: { success: true, data: { drugs: {...}, nfts: {...} } }
+      const statsResData = statsRes?.data;
+      let statsData = null;
+      if (statsResData?.success && statsResData?.data) {
+        statsData = statsResData.data;
+      } else if (statsResData?.drugs || statsResData?.nfts) {
+        // Fallback nếu response không có success wrapper
+        statsData = statsResData;
       }
+      console.log('📊 Parsed stats:', statsData);
+      setStats(statsData);
     } catch (e) { 
-      setError(e?.response?.data?.message || 'Không thể tải dữ liệu'); 
+      console.error('❌ Error loading drugs:', e);
+      console.error('❌ Error response:', e?.response);
+      console.error('❌ Error status:', e?.response?.status);
+      console.error('❌ Error data:', e?.response?.data);
+      
+      // Hiển thị lỗi chi tiết hơn
+      let errorMsg = 'Không thể tải dữ liệu';
+      if (e?.response?.status === 500) {
+        errorMsg = 'Lỗi server (500): Vui lòng kiểm tra backend hoặc thử lại sau.';
+      } else if (e?.response?.status === 401) {
+        errorMsg = 'Bạn chưa đăng nhập hoặc token đã hết hạn.';
+      } else if (e?.response?.status === 403) {
+        errorMsg = 'Bạn không có quyền truy cập trang này.';
+      } else if (e?.response?.data?.message) {
+        errorMsg = e.response.data.message;
+      } else if (e?.message) {
+        errorMsg = e.message;
+      }
+      
+      setError(errorMsg); 
     } finally { 
       if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
       let current = 0; setLoadingProgress(p => { current = p; return p; });
@@ -77,7 +130,7 @@ export default function AdminDrugs() {
   useEffect(() => { 
     load(); 
     return () => { if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; } };
-  }, [page, search, status]);
+  }, [page, search, status, manufacturerId]);
 
   const updateFilter = (next) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -145,7 +198,7 @@ export default function AdminDrugs() {
           </button>
         </div>
         <button
-          onClick={() => { updateFilter({ search: '', status: '', page: 1 }); load(); }}
+          onClick={() => { updateFilter({ search: '', status: '', manufacturerId: '', page: 1 }); }}
           className="px-4 py-2.5 rounded-full border border-gray-300 text-slate-700 hover:bg-gray-50 transition"
         >
           Reset
@@ -206,14 +259,14 @@ export default function AdminDrugs() {
       )}
 
       {/* Top manufacturers */}
-      {stats?.drugs?.byManufacturer?.length > 0 && (
+      {stats?.drugs?.byManufacturer && stats.drugs.byManufacturer.length > 0 && (
         <motion.div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#90e0ef55] shadow-[0_10px_24px_rgba(0,0,0,0.05)] p-5 mb-5" variants={fadeUp} initial="hidden" animate="show">
           <h3 className="font-semibold mb-3 text-slate-800">Top nhà sản xuất</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {stats.drugs.byManufacturer.slice(0, 6).map((item, idx) => (
-              <div key={idx} className="flex justify-between items-center p-3 bg-[#f5fcff] rounded-lg border border-[#90e0ef55]">
+            {stats.drugs.byManufacturer.slice(0, 6).map((item) => (
+              <div key={item._id || item.manufacturerId || item.manufacturerName} className="flex justify-between items-center p-3 bg-[#f5fcff] rounded-lg border border-[#90e0ef55]">
                 <span className="text-sm text-slate-700 truncate">{item.manufacturerName || 'N/A'}</span>
-                <span className="text-lg font-bold text-[#00b4d8] ml-2">{item.count}</span>
+                <span className="text-lg font-bold text-[#00b4d8] ml-2">{item.count || 0}</span>
               </div>
             ))}
           </div>
@@ -267,7 +320,7 @@ export default function AdminDrugs() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <Link to={`/admin/drugs/${d._id}`} className="inline-flex items-center px-3 py-1.5 rounded-lg border border-cyan-200 text-[#003544] hover:bg-[#90e0ef22] transition text-sm">
+                      <Link to={`/admin/drugs/${d._id}`} className="inline-flex items-center px-4 py-2 border-2 border-[#3db6d9] rounded-full font-semibold !text-[#3db6d9] hover:!text-white hover:bg-[#3db6d9] transition-all duration-200">
                         Chi tiết
                       </Link>
                     </td>
