@@ -920,12 +920,6 @@ export default function UserHome() {
                 <li>
                   <Link to="/register-business" className="hover:text-[#4BADD1] transition flex items-center gap-2 group">
                     <span className="w-1.5 h-1.5 bg-slate-400 rounded-full group-hover:bg-[#4BADD1] transition"></span>
-                    Đăng ký
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/register-business" className="hover:text-[#4BADD1] transition flex items-center gap-2 group">
-                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full group-hover:bg-[#4BADD1] transition"></span>
                     Doanh nghiệp
                   </Link>
                 </li>

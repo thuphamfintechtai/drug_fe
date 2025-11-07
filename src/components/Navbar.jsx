@@ -108,74 +108,38 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {/* MetaMask Connection */}
             {isConnected ? (
-              <motion.div 
-                className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30"
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
+              <div className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30">
                 <span className="text-lg">🦊</span>
                 <div className="flex flex-col">
                   <div className="text-xs text-white/80">MetaMask</div>
                   <div className="text-sm font-semibold text-white font-mono">{formatAddress(account)}</div>
                 </div>
-                <motion.button
+                <button
                   onClick={handleDisconnectMetaMask}
-                  className="ml-2 px-3 py-1 text-xs bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  className="ml-2 px-3 py-1 text-xs bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors duration-200"
                   title="Ngắt kết nối ví"
                 >
                   Ngắt
-                </motion.button>
-              </motion.div>
+                </button>
+              </div>
             ) : (
-              <motion.button
+              <button
                 onClick={handleConnectMetaMask}
                 disabled={isConnecting || !isInstalled}
-                className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg transition shadow-lg border border-white/30 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                whileHover={{ scale: isConnecting || !isInstalled ? 1 : 1.05, y: isConnecting || !isInstalled ? 0 : -2 }}
-                whileTap={{ scale: isConnecting || !isInstalled ? 1 : 0.95 }}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
+                className="px-5 py-2.5 bg-[#4BADD1] text-white font-semibold rounded-lg shadow-md hover:bg-[#3a9bb8] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#4BADD1] flex items-center gap-2 transition-colors duration-200"
               >
                 <span>🦊</span>
                 {isConnecting ? 'Đang kết nối...' : 'Kết nối MetaMask'}
-              </motion.button>
+              </button>
             )}
 
             {!isAuthenticated ? (
-              <>
-                <motion.div 
-                  whileHover={{ scale: 1.05, y: -2 }} 
-                  whileTap={{ scale: 0.95 }}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <Link
-                    to="/login"
-                    className="px-5 py-2 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg transition shadow-lg border border-white/30"
-                  >
-                    Đăng nhập
-                  </Link>
-                </motion.div>
-                <motion.div 
-                  whileHover={{ scale: 1.05, y: -2 }} 
-                  whileTap={{ scale: 0.95 }}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <Link
-                    to="/register-business"
-                    className="px-5 py-2 bg-white text-[#4BADD1] font-semibold rounded-lg transition shadow-lg"
-                  >
-                    Đăng ký
-                  </Link>
-                </motion.div>
-              </>
+              <Link
+                to="/login"
+                className="px-6 py-2.5 bg-white text-[#4BADD1] font-semibold rounded-lg shadow-md hover:bg-gray-50 transition-colors duration-200"
+              >
+                Đăng nhập
+              </Link>
             ) : (
               <>
                 <motion.div 
@@ -241,12 +205,7 @@ export default function Navbar() {
             <div className="px-4 py-4 space-y-3">
               {/* MetaMask Connection - Mobile */}
               {isConnected ? (
-                <motion.div
-                  className="flex items-center justify-between p-3 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30"
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.05 }}
-                >
+                <div className="flex items-center justify-between p-3 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">🦊</span>
                     <div className="flex flex-col">
@@ -254,58 +213,32 @@ export default function Navbar() {
                       <div className="text-sm font-semibold text-white font-mono">{formatAddress(account)}</div>
                     </div>
                   </div>
-                  <motion.button
+                  <button
                     onClick={handleDisconnectMetaMask}
-                    className="px-3 py-1 text-xs bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    className="px-3 py-1 text-xs bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors duration-200"
                   >
                     Ngắt
-                  </motion.button>
-                </motion.div>
+                  </button>
+                </div>
               ) : (
-                <motion.button
+                <button
                   onClick={handleConnectMetaMask}
                   disabled={isConnecting || !isInstalled}
-                  className="w-full px-4 py-3 text-white bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-xl font-medium transition border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.05 }}
+                  className="w-full px-4 py-3 text-white bg-[#4BADD1] hover:bg-[#3a9bb8] rounded-xl font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#4BADD1] flex items-center justify-center gap-2 transition-colors duration-200"
                 >
                   <span>🦊</span>
                   {isConnecting ? 'Đang kết nối...' : 'Kết nối MetaMask'}
-                </motion.button>
+                </button>
               )}
 
               {!isAuthenticated ? (
-                <>
-                  <motion.div
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.1 }}
-                  >
-                    <Link
-                      to="/login"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block w-full text-center px-4 py-3 text-white bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-xl font-medium transition border border-white/30"
-                    >
-                      Đăng nhập
-                    </Link>
-                  </motion.div>
-                  <motion.div
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    <Link
-                      to="/register"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block w-full text-center px-4 py-3 bg-white text-[#4BADD1] backdrop-blur-sm font-semibold rounded-xl border border-white/20 hover:bg-white/90 transition"
-                    >
-                      Đăng ký
-                    </Link>
-                  </motion.div>
-                </>
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block w-full text-center px-4 py-3 bg-white text-[#4BADD1] font-semibold rounded-xl shadow-md hover:bg-gray-50 transition-colors duration-200"
+                >
+                  Đăng nhập
+                </Link>
               ) : (
                 <>
                   <motion.div 
