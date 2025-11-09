@@ -6,6 +6,7 @@ import {
   BsTruck,
   BsShop,
   BsPersonFill,
+  BsInfoCircle,
 } from "react-icons/bs";
 import { BsCheckCircleFill } from "react-icons/bs";
 import { Scanner } from "@yudiel/react-qr-scanner";
@@ -132,7 +133,7 @@ export default function UserHome() {
               : url.href;
           console.log("Final redirect URL:", finalUrl);
           window.location.href = finalUrl;
-        }, 500);
+        }, 50000);
       } catch (e) {
         console.error("Error parsing URL:", e);
         // Nếu parse URL thất bại, vẫn thử chuyển hướng với URL gốc
@@ -152,7 +153,7 @@ export default function UserHome() {
           }
           console.log("Direct redirect to:", urlToRedirect);
           window.location.href = urlToRedirect;
-        }, 500);
+        }, 50000);
       }
     } else {
       // Nếu không phải URL hợp lệ, xử lý như tokenId và điều hướng đến track
@@ -165,7 +166,7 @@ export default function UserHome() {
       // Tự động tra cứu sau khi quét
       setTimeout(() => {
         navigate(`/track?tokenId=${encodeURIComponent(trimmedText)}`);
-      }, 500);
+      }, 50000);
     }
   };
 
@@ -797,15 +798,13 @@ export default function UserHome() {
                 }
               `}
                 >
-                  <motion.span
+                  <span
                     className={`text-4xl font-bold
                     ${index === 1 ? "font-text-primary " : "font-text-primary"}
                   `}
-                    whileHover={{ scale: 1.2, rotate: 360 }}
-                    transition={{ duration: 0.5 }}
                   >
                     {feature.number}
-                  </motion.span>
+                  </span>
                 </div>
 
                 <h3 className="text-xl font-bold text-slate-900 mb-3">
@@ -1160,20 +1159,25 @@ export default function UserHome() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4"
+              className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-slate-800">
-                  Quét QR Code
-                </h3>
+              <div className="flex items-center justify-between mb-4 p-6 bg-primary rounded-t-2xl">
+                <div>
+                  <h3 className="text-xl font-bold text-white ">
+                    Quét QR Code
+                  </h3>
+                  <h3 className="text-sm font-bold text-white ">
+                    Đưa mã vào khung hình để quét
+                  </h3>
+                </div>
                 <button
                   onClick={handleCloseQRScanner}
-                  className="text-slate-500 hover:text-slate-700 transition"
+                  className="text-white hover:text-slate-700 transition"
                 >
                   <svg
                     className="w-6 h-6"
                     fill="none"
-                    stroke="currentColor"
+                    stroke="white"
                     viewBox="0 0 24 24"
                   >
                     <path
@@ -1187,7 +1191,7 @@ export default function UserHome() {
               </div>
 
               <div
-                className="relative rounded-xl overflow-hidden bg-slate-100"
+                className="relative rounded-xl overflow-hidden bg-slate-100 p-6"
                 style={{
                   minHeight: "300px",
                   width: "100%",
@@ -1244,10 +1248,26 @@ export default function UserHome() {
                   </div>
                 )}
               </div>
-
-              <p className="text-sm text-slate-600 mt-4 text-center">
-                Đưa camera vào mã QR để quét
-              </p>
+              <div className="bg-secondary/20 p-6 flex items-start gap-2">
+                <div className="p-2 bg-third/20 rounded-lg w-fit">
+                  <BsInfoCircle className="w-5 h-5 text-slate-600" />
+                </div>
+                <div>
+                  <span className="text-lg text-primary font-bold mt-4 text-center">
+                    Lưu ý khi quét QR
+                  </span>
+                  <ul className="list-disc list-inside">
+                    <li className="text-sm">Đảm bảo đủ ánh sáng.</li>
+                    <li className="text-sm">
+                      Giữ camera ổn định và cách mã QR khoảng 10-20cm.
+                    </li>
+                    <li className="text-sm">
+                      Đảm bảo mã QR được rõ ràng và không bị mờ hoặc bị che
+                      khuất.
+                    </li>
+                  </ul>
+                </div>
+              </div>
               {qrError && !isScanning && (
                 <p className="text-xs text-red-500 mt-2 text-center">
                   {qrError}
