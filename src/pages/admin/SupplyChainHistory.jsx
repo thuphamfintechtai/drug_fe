@@ -282,6 +282,10 @@ export default function SupplyChainHistory() {
   const toDate = searchParams.get("toDate") || "";
   const limit = 10;
 
+  // Separate search input states from URL params
+  const [batchNumberInput, setBatchNumberInput] = useState("");
+  const [drugNameInput, setDrugNameInput] = useState("");
+
   const [batches, setBatches] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -307,6 +311,32 @@ export default function SupplyChainHistory() {
     ],
     []
   );
+
+  // Sync search inputs with URL params on mount/change (only from URL changes, not user input)
+  useEffect(() => {
+    setBatchNumberInput(batchNumber);
+    setDrugNameInput(drugName);
+  }, [batchNumber, drugName]);
+
+  // Handle search - only trigger on Enter or button click
+  const handleSearch = () => {
+    updateFilter({
+      batchNumber: batchNumberInput,
+      drugName: drugNameInput,
+      page: 1,
+    });
+  };
+
+  // Clear search button
+  const handleClearSearch = () => {
+    setBatchNumberInput("");
+    setDrugNameInput("");
+    updateFilter({
+      batchNumber: "",
+      drugName: "",
+      page: 1,
+    });
+  };
 
   const updateFilter = (next) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -660,16 +690,25 @@ export default function SupplyChainHistory() {
             initial="hidden"
             animate="show"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">
                   Số lô
                 </label>
                 <input
-                  value={batchNumber}
-                  onChange={(e) =>
-                    updateFilter({ batchNumber: e.target.value, page: 1 })
-                  }
+                  type="text"
+                  value={batchNumberInput}
+                  onChange={(e) => {
+                    // Chỉ cập nhật state, không trigger search
+                    setBatchNumberInput(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    // Chỉ search khi nhấn Enter
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSearch();
+                    }
+                  }}
                   placeholder="Nhập số lô"
                   className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
                 />
@@ -679,10 +718,19 @@ export default function SupplyChainHistory() {
                   Tên thuốc
                 </label>
                 <input
-                  value={drugName}
-                  onChange={(e) =>
-                    updateFilter({ drugName: e.target.value, page: 1 })
-                  }
+                  type="text"
+                  value={drugNameInput}
+                  onChange={(e) => {
+                    // Chỉ cập nhật state, không trigger search
+                    setDrugNameInput(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    // Chỉ search khi nhấn Enter
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSearch();
+                    }
+                  }}
                   placeholder="Lọc theo tên thuốc"
                   className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
                 />
@@ -730,6 +778,25 @@ export default function SupplyChainHistory() {
                   className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
                 />
               </div>
+            </div>
+            {/* Search buttons */}
+            <div className="flex items-center gap-3 justify-end">
+              {(batchNumberInput || drugNameInput) && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition text-sm font-medium"
+                >
+                  Xóa tìm kiếm
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleSearch}
+                className="px-6 py-2 rounded-lg bg-secondary hover:bg-primary text-white font-medium transition text-sm shadow-md"
+              >
+                Tìm kiếm
+              </button>
             </div>
           </motion.div>
 
