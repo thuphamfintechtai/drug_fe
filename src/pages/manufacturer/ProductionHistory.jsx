@@ -16,10 +16,17 @@ export default function ProductionHistory() {
     total: 0,
     pages: 0,
   });
+  // Separate search input state from URL param
+  const [searchInput, setSearchInput] = useState("");
 
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
+
+  // Sync searchInput with URL search param on mount/change
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
 
   const navigationItems = [
     {
@@ -225,6 +232,17 @@ export default function ProductionHistory() {
     }
   };
 
+  // Handle search - only trigger on Enter or button click
+  const handleSearch = () => {
+    updateFilter({ search: searchInput, page: 1 });
+  };
+
+  // Clear search button
+  const handleClearSearch = () => {
+    setSearchInput("");
+    updateFilter({ search: "", page: 1 });
+  };
+
   const updateFilter = (next) => {
     const nextParams = new URLSearchParams(searchParams);
     Object.entries(next).forEach(([k, v]) => {
@@ -340,19 +358,29 @@ export default function ProductionHistory() {
                     </svg>
                   </span>
                   <input
-                    value={search}
-                    onChange={(e) =>
-                      updateFilter({ search: e.target.value, page: 1 })
-                    }
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && updateFilter({ search, page: 1 })
-                    }
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleSearch();
+                      }
+                    }}
                     placeholder="Tìm theo tên thuốc, số lô..."
                     className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                   />
+                  {/* Clear button */}
+                  {searchInput && (
+                    <button
+                      onClick={handleClearSearch}
+                      className="absolute right-16 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      title="Xóa tìm kiếm"
+                    >
+                      ✕
+                    </button>
+                  )}
                   <button
-                    onClick={() => updateFilter({ search, page: 1 })}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary !text-white hover:shadow-lg font-medium transition"
+                    onClick={handleSearch}
+                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary text-white hover:shadow-lg font-medium transition"
                   >
                     Tìm kiếm
                   </button>

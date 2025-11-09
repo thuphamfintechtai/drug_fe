@@ -21,6 +21,11 @@ export default function TransferHistory() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
   const [retryingId, setRetryingId] = useState(null);
+  const retryAbortControllerRef = useRef(null); // FIX: Abort controller for retry
+
+  // Separate search input state from URL param
+  const [searchInput, setSearchInput] = useState("");
+
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -31,6 +36,11 @@ export default function TransferHistory() {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
+
+  // FIX: Sync searchInput with URL search param on mount/change
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
 
   const navigationItems = [
     {
@@ -183,7 +193,7 @@ export default function TransferHistory() {
         clearInterval(progressIntervalRef.current);
       }
     };
-  }, [page, search, status]); // FIX: Removed 'user' - not needed for data loading
+  }, [page, search, status]);
 
   // FIX: Simplified loading logic
   const loadData = async () => {
@@ -220,21 +230,8 @@ export default function TransferHistory() {
           pages: 0,
         };
 
-        const mappedItems = Array.isArray(invoices)
-          ? invoices.map((invoice) => ({
-              ...invoice,
-              distributor: invoice.toDistributor || invoice.distributor,
-              transactionHash: invoice.chainTxHash || invoice.transactionHash,
-              tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
-              amounts: invoice.amounts || invoice.invoice?.amounts || [],
-              invoice: {
-                _id: invoice._id,
-                invoiceNumber: invoice.invoiceNumber,
-                invoiceDate: invoice.invoiceDate,
-                tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
-              },
-            }))
-          : [];
+        // FIX: Simplify mapping with helper function
+        const mappedItems = normalizeInvoices(invoices);
 
         setItems(mappedItems);
         setPagination(paginationData);
@@ -262,6 +259,36 @@ export default function TransferHistory() {
       setLoading(false);
       setTimeout(() => setLoadingProgress(0), 500);
     }
+  };
+
+  // FIX: Helper function to normalize invoices
+  const normalizeInvoices = (invoices) => {
+    if (!Array.isArray(invoices)) return [];
+
+    return invoices.map((invoice) => ({
+      ...invoice,
+      distributor: invoice.toDistributor || invoice.distributor,
+      transactionHash: invoice.chainTxHash || invoice.transactionHash,
+      tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
+      amounts: invoice.amounts || invoice.invoice?.amounts || [],
+      invoice: {
+        _id: invoice._id,
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceDate: invoice.invoiceDate,
+        tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
+      },
+    }));
+  };
+
+  // Handle search - only trigger on Enter or button click
+  const handleSearch = () => {
+    updateFilter({ search: searchInput, page: 1 });
+  };
+
+  // Clear search button
+  const handleClearSearch = () => {
+    setSearchInput("");
+    updateFilter({ search: "", page: 1 });
   };
 
   const updateFilter = (next) => {
@@ -295,8 +322,31 @@ export default function TransferHistory() {
     return labels[status] || status;
   };
 
-  // FIX: Better error handling and validation
+  // FIX: Safe token ID parsing
+  const safeParseTokenId = (id) => {
+    if (!id && id !== 0) return BigInt(0);
+
+    try {
+      const str = String(id).trim();
+      const cleanStr = str.startsWith("0x") ? str.slice(2) : str;
+
+      // Validate hex string
+      if (!/^[0-9a-fA-F]+$/.test(cleanStr)) {
+        console.warn(`Invalid token ID format: ${id}`);
+        return BigInt(0);
+      }
+
+      return BigInt(`0x${cleanStr}`);
+    } catch (e) {
+      console.error(`Error parsing token ID ${id}:`, e);
+      return BigInt(0);
+    }
+  };
+
+  // FIX: Better error handling and validation in retry
   const handleRetry = async (item) => {
+    if (retryingId === item._id) return; // Prevent double-click
+
     if (!item.invoice?._id || !item.distributor?.walletAddress) {
       alert(
         "Thiếu thông tin cần thiết để retry. Vui lòng kiểm tra lại invoice và distributor address."
@@ -304,14 +354,24 @@ export default function TransferHistory() {
       return;
     }
 
-    const tokenIds = item.tokenIds || item.invoice?.tokenIds || [];
-    const amounts = item.amounts || item.invoice?.amounts || [];
+    const tokenIds = (item.tokenIds || item.invoice?.tokenIds || []).filter(
+      (id) => id
+    );
+    const amounts = (item.amounts || item.invoice?.amounts || []).filter(
+      (amt) => amt
+    );
 
     if (tokenIds.length === 0) {
       alert("Không tìm thấy token IDs để chuyển giao.");
       return;
     }
 
+    // FIX: Cancel previous request if exists
+    if (retryAbortControllerRef.current) {
+      retryAbortControllerRef.current.abort();
+    }
+
+    retryAbortControllerRef.current = new AbortController();
     setRetryingId(item._id);
 
     try {
@@ -328,24 +388,37 @@ export default function TransferHistory() {
         return;
       }
 
-      // Transfer on-chain
+      // FIX: Better amount validation
       let onchain;
-      if (amounts?.length > 0 && amounts.length === tokenIds.length) {
-        const normalizedAmounts = amounts.map((amt) => BigInt(amt));
-        const normalizedTokenIds = tokenIds.map((id) =>
-          typeof id === "string" && id.startsWith("0x")
-            ? BigInt(id)
-            : BigInt(id)
+      if (
+        amounts.length === tokenIds.length &&
+        amounts.length > 0 &&
+        amounts.every((amt) => amt)
+      ) {
+        // Batch transfer with amounts
+        const normalizedAmounts = amounts.map((amt) =>
+          BigInt(String(amt).trim())
         );
+        const normalizedTokenIds = tokenIds.map(safeParseTokenId);
+
         onchain = await transferBatchNFTToDistributor(
           normalizedTokenIds,
           normalizedAmounts,
-          item.distributor.walletAddress
+          item.distributor.walletAddress,
+          retryAbortControllerRef.current.signal
         );
       } else {
+        // Single transfer
+        if (amounts.length !== tokenIds.length && amounts.length > 0) {
+          console.warn(
+            `Amount count (${amounts.length}) does not match token count (${tokenIds.length}). Using single transfer.`
+          );
+        }
+
         onchain = await transferNFTToDistributor(
           tokenIds,
-          item.distributor.walletAddress
+          item.distributor.walletAddress,
+          retryAbortControllerRef.current.signal
         );
       }
 
@@ -356,13 +429,20 @@ export default function TransferHistory() {
         tokenIds,
       });
 
-      alert("Đã chuyển NFT on-chain và lưu transaction thành công!");
+      alert("✅ Đã chuyển NFT on-chain và lưu transaction thành công!");
       loadData();
     } catch (error) {
+      // FIX: Handle abort gracefully
+      if (error.name === "AbortError") {
+        console.log("Transfer cancelled by user");
+        return;
+      }
+
       console.error("Lỗi khi retry transfer:", error);
       alert(error?.message || "Giao dịch on-chain thất bại hoặc bị hủy.");
     } finally {
       setRetryingId(null);
+      retryAbortControllerRef.current = null;
     }
   };
 
@@ -426,19 +506,29 @@ export default function TransferHistory() {
                     </svg>
                   </span>
                   <input
-                    value={search}
-                    onChange={(e) =>
-                      updateFilter({ search: e.target.value, page: 1 })
-                    }
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && updateFilter({ search, page: 1 })
-                    }
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleSearch();
+                      }
+                    }}
                     placeholder="Tìm theo tên nhà phân phối, số lô..."
                     className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                   />
+                  {/* Clear button */}
+                  {searchInput && (
+                    <button
+                      onClick={handleClearSearch}
+                      className="absolute right-16 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      title="Xóa tìm kiếm"
+                    >
+                      ✕
+                    </button>
+                  )}
                   <button
-                    onClick={() => updateFilter({ search, page: 1 })}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary !text-white hover:shadow-lg font-medium transition"
+                    onClick={handleSearch}
+                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary text-white hover:shadow-lg font-medium transition"
                   >
                     Tìm kiếm
                   </button>
@@ -478,7 +568,7 @@ export default function TransferHistory() {
                 </p>
               </div>
             ) : (
-              items.map((item) => (
+              (items || []).map((item) => (
                 <div
                   key={item._id}
                   className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden hover:shadow-md transition"
@@ -719,7 +809,7 @@ export default function TransferHistory() {
                 className={`px-3 py-2 rounded-xl ${
                   page >= pagination.pages
                     ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "bg-secondary !text-white hover:shadow-lg"
+                    : "bg-secondary text-white hover:shadow-lg"
                 }`}
               >
                 Sau
