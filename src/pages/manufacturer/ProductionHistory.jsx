@@ -7,17 +7,25 @@ import { getProductionHistory } from "../../services/manufacturer/manufacturerSe
 export default function ProductionHistory() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
+  const [allItems, setAllItems] = useState([]); // Store all items for client-side filtering
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
+  const [expandedItems, setExpandedItems] = useState(new Set());
+  
+  
+  
+  const [searchInput, setSearchInput] = useState("");
+  
+  
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef(null);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
     pages: 0,
   });
-  // Separate search input state from URL param
-  const [searchInput, setSearchInput] = useState("");
 
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
@@ -171,6 +179,11 @@ export default function ProductionHistory() {
     },
   ];
 
+  // Initialize search input from URL params
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
   useEffect(() => {
     loadData();
 
@@ -178,8 +191,71 @@ export default function ProductionHistory() {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
     };
   }, [page, search, status]);
+
+  // Client-side filtering when search changes
+  useEffect(() => {
+    if (search && search.trim()) {
+      const searchTerm = search.toLowerCase().trim();
+      const filtered = allItems.filter((item) => {
+        const tradeName = (item.drug?.tradeName || "").toLowerCase();
+        const genericName = (item.drug?.genericName || "").toLowerCase();
+        const atcCode = (item.drug?.atcCode || "").toLowerCase();
+        const batchNumber = (item.batchNumber || "").toLowerCase();
+        
+        return (
+          tradeName.includes(searchTerm) ||
+          genericName.includes(searchTerm) ||
+          atcCode.includes(searchTerm) ||
+          batchNumber.includes(searchTerm)
+        );
+      });
+      setItems(filtered);
+      // Update pagination to reflect filtered results
+      setPagination((prev) => ({
+        ...prev,
+        total: filtered.length,
+        pages: Math.ceil(filtered.length / 10) || 1,
+      }));
+    } else {
+      setItems(allItems);
+      // Reset pagination to show all items
+      setPagination((prev) => ({
+        ...prev,
+        total: allItems.length,
+        pages: Math.ceil(allItems.length / 10) || 1,
+      }));
+    }
+  }, [search, allItems]);
+
+  // Debounce search input
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Only show searching indicator if input is different from current search
+    if (searchInput !== search) {
+      setIsSearching(true);
+      searchTimeoutRef.current = setTimeout(() => {
+        updateFilter({ search: searchInput, page: 1 });
+        setIsSearching(false);
+      }, 1500);
+    } else {
+      setIsSearching(false);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
 
   // FIX: Simplified loading logic
   const loadData = async () => {
@@ -195,8 +271,9 @@ export default function ProductionHistory() {
         setLoadingProgress((prev) => Math.min(prev + 0.02, 0.9));
       }, 50);
 
-      const params = { page, limit: 10 };
-      if (search) params.search = search;
+      const params = { page: 1, limit: 1000 }; // Load all items for client-side filtering
+      // Don't send search to backend - we'll filter client-side
+      // Only send status filter to backend
       if (status) params.status = status;
 
       const response = await getProductionHistory(params);
@@ -207,15 +284,20 @@ export default function ProductionHistory() {
       }
 
       if (response.data.success) {
-        setItems(response.data.data.productions || []);
+        const productions = response.data.data.productions || [];
+        setAllItems(productions);
+        // Client-side filtering will be handled by useEffect
         setPagination(
           response.data.data.pagination || {
             page: 1,
             limit: 10,
-            total: 0,
-            pages: 0,
+            total: productions.length,
+            pages: Math.ceil(productions.length / 10) || 1,
           }
         );
+      } else {
+        setItems([]);
+        setAllItems([]);
       }
 
       setLoadingProgress(1);
@@ -226,6 +308,8 @@ export default function ProductionHistory() {
         progressIntervalRef.current = null;
       }
       console.error("Lỗi khi tải lịch sử sản xuất:", error);
+      setItems([]);
+      setAllItems([]);
     } finally {
       setLoading(false);
       setTimeout(() => setLoadingProgress(0), 500);
@@ -298,6 +382,18 @@ export default function ProductionHistory() {
     return labels[transferStatus] || transferStatus;
   };
 
+  const toggleItem = (itemId) => {
+    setExpandedItems((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {loading ? (
@@ -342,27 +438,48 @@ export default function ProductionHistory() {
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
-                      />
-                    </svg>
+                    {isSearching ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-5 h-5 animate-spin text-cyan-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
+                        />
+                      </svg>
+                    )}
                   </span>
                   <input
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
-                        handleSearch();
+                        if (searchTimeoutRef.current) {
+                          clearTimeout(searchTimeoutRef.current);
+                        }
+                        updateFilter({ search: searchInput, page: 1 });
+                        setIsSearching(false);
                       }
                     }}
                     placeholder="Tìm theo tên thuốc, số lô..."
@@ -379,8 +496,14 @@ export default function ProductionHistory() {
                     </button>
                   )}
                   <button
-                    onClick={handleSearch}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary text-white hover:shadow-lg font-medium transition"
+                    onClick={() => {
+                      if (searchTimeoutRef.current) {
+                        clearTimeout(searchTimeoutRef.current);
+                      }
+                      updateFilter({ search: searchInput, page: 1 });
+                      setIsSearching(false);
+                    }}
+                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary !text-white hover:shadow-lg font-medium transition"
                   >
                     Tìm kiếm
                   </button>
@@ -399,11 +522,11 @@ export default function ProductionHistory() {
                     className="h-12 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-12 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
                   >
                     <option value="">Tất cả</option>
-                    <option value="minted">Minted (chưa chuyển)</option>
-                    <option value="transferred">Transferred</option>
-                    <option value="sold">Sold</option>
-                    <option value="expired">Expired</option>
-                    <option value="recalled">Recalled</option>
+                    <option value="minted">Đã Mint</option>
+                    <option value="transferred">Đã chuyển</option>
+                    <option value="sold">Đã bán</option>
+                    <option value="expired">Hết hạn</option>
+                    <option value="recalled">Thu hồi</option>
                   </select>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -434,139 +557,180 @@ export default function ProductionHistory() {
                 </p>
               </div>
             ) : (
-              items.map((item, idx) => (
-                <div
-                  key={item._id || idx}
-                  className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden hover:shadow-lg transition"
-                >
-                  <div className="p-5">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-slate-800">
-                        {item.drug?.tradeName || "N/A"}
-                      </h3>
-                      {item.transferStatus && (
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium border ${getTransferStatusColor(
-                            item.transferStatus
-                          )}`}
-                        >
-                          {getTransferStatusLabel(item.transferStatus)}
-                        </span>
-                      )}
+              items.map((item, idx) => {
+                const itemId = item._id || idx;
+                const isExpanded = expandedItems.has(itemId);
+                return (
+                  <div
+                    key={itemId}
+                    className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden hover:shadow-lg transition"
+                  >
+                    {/* Clickable Header */}
+                    <div
+                      className="p-5 cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => toggleItem(itemId)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div
+                            className={`transform transition-transform duration-300 ${
+                              isExpanded ? "rotate-180" : "rotate-0"
+                            }`}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="w-5 h-5 text-slate-500"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-slate-800">
+                              {item.drug?.tradeName || "N/A"}
+                            </h3>
+                            <div className="text-sm text-slate-600 mt-1">
+                              Số lô:{" "}
+                              <span className="font-mono font-medium">
+                                {item.batchNumber || "N/A"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        {item.transferStatus && (
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium border ${getTransferStatusColor(
+                              item.transferStatus
+                            )}`}
+                          >
+                            {getTransferStatusLabel(item.transferStatus)}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Top facts */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-sm">
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                        <div className="text-slate-600">
-                          Số lô:{" "}
-                          <span className="font-mono font-medium text-slate-800">
-                            {item.batchNumber || "N/A"}
-                          </span>
+                    {/* Expandable Content */}
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+                      }`}
+                    >
+                      <div className="px-5 pb-5 border-t border-slate-200">
+
+                        {/* Top facts */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-sm mt-4">
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                            {item.nftCount !== undefined && (
+                              <div className="mb-2">
+                                Số lượng NFT đã mint:{" "}
+                                <span className="font-bold text-cyan-700">
+                                  {item.nftCount}
+                                </span>
+                              </div>
+                            )}
+                            <div className="text-slate-600">
+                              ATC Code:{" "}
+                              <span className="font-mono text-cyan-700">
+                                {item.drug?.atcCode || "N/A"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                            <div className="text-slate-600">
+                              Số lượng sản xuất:{" "}
+                              <span className="font-bold text-purple-700">
+                                {item.quantity || 0}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        {item.nftCount !== undefined && (
-                          <div className="mt-1">
-                            Số lượng NFT đã mint:{" "}
-                            <span className="font-bold text-cyan-700">
-                              {item.nftCount}
-                            </span>
+
+                        {/* Dates */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                            <div className="text-xs text-slate-500 mb-1">
+                              Ngày sản xuất
+                            </div>
+                            <div className="font-semibold text-slate-800">
+                              {item.mfgDate
+                                ? new Date(item.mfgDate).toLocaleDateString("vi-VN")
+                                : "N/A"}
+                            </div>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                            <div className="text-xs text-slate-500 mb-1">
+                              Hạn sử dụng
+                            </div>
+                            <div className="font-semibold text-slate-800">
+                              {item.expDate
+                                ? new Date(item.expDate).toLocaleDateString("vi-VN")
+                                : "N/A"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                            <div className="text-xs text-slate-500 mb-1">
+                              Ngày tạo
+                            </div>
+                            <div className="font-medium text-slate-700 text-sm">
+                              {item.createdAt
+                                ? new Date(item.createdAt).toLocaleString("vi-VN")
+                                : "N/A"}
+                            </div>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                            <div className="text-xs text-slate-500 mb-1">
+                              Cập nhật lần cuối
+                            </div>
+                            <div className="font-medium text-slate-700 text-sm">
+                              {item.updatedAt
+                                ? new Date(item.updatedAt).toLocaleString("vi-VN")
+                                : "N/A"}
+                            </div>
+                          </div>
+                        </div>
+
+                        {item.chainTxHash && (
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
+                            <div className="font-semibold text-slate-800 mb-1">
+                              Transaction Hash (Blockchain)
+                            </div>
+                            <div className="font-mono text-xs text-slate-700 break-all">
+                              {item.chainTxHash}
+                            </div>
+                            <a
+                              href={`https://zeroscan.org/tx/${item.chainTxHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-slate-600 hover:text-slate-800 underline mt-1 inline-block"
+                            >
+                              Xem trên ZeroScan →
+                            </a>
+                          </div>
+                        )}
+
+                        {item.notes && (
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
+                            <div className="font-semibold text-slate-800 mb-1">
+                              Ghi chú:
+                            </div>
+                            <div className="text-slate-700">{item.notes}</div>
                           </div>
                         )}
                       </div>
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                        <div className="text-slate-600">
-                          Số lượng sản xuất:{" "}
-                          <span className="font-bold text-purple-700">
-                            {item.quantity || 0}
-                          </span>
-                        </div>
-                        <div className="mt-1">
-                          ATC Code:{" "}
-                          <span className="font-mono text-cyan-700">
-                            {item.drug?.atcCode || "N/A"}
-                          </span>
-                        </div>
-                      </div>
                     </div>
-
-                    {/* Dates */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                        <div className="text-xs text-slate-500 mb-1">
-                          Ngày sản xuất
-                        </div>
-                        <div className="font-semibold text-slate-800">
-                          {item.mfgDate
-                            ? new Date(item.mfgDate).toLocaleDateString("vi-VN")
-                            : "N/A"}
-                        </div>
-                      </div>
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                        <div className="text-xs text-slate-500 mb-1">
-                          Hạn sử dụng
-                        </div>
-                        <div className="font-semibold text-slate-800">
-                          {item.expDate
-                            ? new Date(item.expDate).toLocaleDateString("vi-VN")
-                            : "N/A"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                        <div className="text-xs text-slate-500 mb-1">
-                          Ngày tạo
-                        </div>
-                        <div className="font-medium text-slate-700 text-sm">
-                          {item.createdAt
-                            ? new Date(item.createdAt).toLocaleString("vi-VN")
-                            : "N/A"}
-                        </div>
-                      </div>
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                        <div className="text-xs text-slate-500 mb-1">
-                          Cập nhật lần cuối
-                        </div>
-                        <div className="font-medium text-slate-700 text-sm">
-                          {item.updatedAt
-                            ? new Date(item.updatedAt).toLocaleString("vi-VN")
-                            : "N/A"}
-                        </div>
-                      </div>
-                    </div>
-
-                    {item.chainTxHash && (
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
-                        <div className="font-semibold text-slate-800 mb-1">
-                          Transaction Hash (Blockchain)
-                        </div>
-                        <div className="font-mono text-xs text-slate-700 break-all">
-                          {item.chainTxHash}
-                        </div>
-                        <a
-                          href={`https://zeroscan.org/tx/${item.chainTxHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-slate-600 hover:text-slate-800 underline mt-1 inline-block"
-                        >
-                          Xem trên ZeroScan →
-                        </a>
-                      </div>
-                    )}
-
-                    {item.notes && (
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
-                        <div className="font-semibold text-slate-800 mb-1">
-                          Ghi chú:
-                        </div>
-                        <div className="text-slate-700">{item.notes}</div>
-                      </div>
-                    )}
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 

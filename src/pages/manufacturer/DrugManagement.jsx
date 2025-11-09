@@ -651,7 +651,7 @@ export default function DrugManagement() {
 
               <button
                 onClick={handleSearch}
-                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-primary hover:bg-secondary text-white font-medium transition"
+                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] hover:from-[#0096c7] hover:to-[#00b4d8] text-white font-medium transition shadow-md hover:shadow-lg"
               >
                 Tìm kiếm
               </button>
@@ -669,7 +669,7 @@ export default function DrugManagement() {
 
             <button
               onClick={handleCreate}
-              className="px-4 py-2.5 rounded-full bg-primary hover:bg-secondary text-white font-medium transition"
+              className="px-4 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] hover:from-[#0096c7] hover:to-[#00b4d8] text-white font-medium transition shadow-md hover:shadow-lg"
             >
               Tạo thuốc mới
             </button>
@@ -764,14 +764,14 @@ export default function DrugManagement() {
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => handleEdit(drug)}
-                              className="px-4 py-2 border-2 border-secondary rounded-full font-semibold text-secondary hover:text-white hover:bg-secondary transition-all duration-200"
+                              className="px-4 py-2 border-2 border-secondary rounded-full font-semibold !text-white bg-secondary hover:!text-white hover:bg-secondary transition-all duration-200"
                             >
                               Sửa
                             </button>
 
                             <button
                               onClick={() => handleDelete(drug._id)}
-                              className="px-4 py-2 border-2 border-red-500 rounded-full font-semibold text-red-500 bg-red-50 hover:bg-red-500 hover:text-white transition-all duration-200"
+                              className="px-4 py-2 border-2 border-red-500 rounded-full font-semibold !text-white bg-red-500 hover:bg-red-600 hover:!text-white transition-all duration-200"
                             >
                               Xóa
                             </button>
