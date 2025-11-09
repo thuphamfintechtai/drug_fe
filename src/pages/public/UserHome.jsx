@@ -602,7 +602,7 @@ export default function UserHome() {
                             }}
                             className="w-full px-4 py-3 text-left text-slate-700 hover:bg-[#00b4d8]/10 hover:text-[#007b91] transition-colors flex items-center gap-3 font-medium"
                           >
-                            <span>My Account</span>
+                            <span>Tài khoản của tôi</span>
                           </button>
                           <button
                             onClick={() => {
@@ -611,13 +611,13 @@ export default function UserHome() {
                             }}
                             className="w-full px-4 py-3 text-left text-slate-700 hover:bg-[#00b4d8]/10 hover:text-[#007b91] transition-colors flex items-center gap-3 font-medium"
                           >
-                            <span>My Wallet</span>
+                            <span>Ví của tôi</span>
                           </button>
                           <button
                             onClick={handleLogout}
                             className="w-full px-4 py-3 text-left text-slate-700 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center justify-between font-medium"
                           >
-                            <span>Log Out</span>
+                            <span>Đăng xuất</span>
                             <svg
                               className="w-4 h-4"
                               fill="none"
@@ -659,7 +659,7 @@ export default function UserHome() {
               {/* Header with gradient */}
               <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-6 py-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-white text-lg font-semibold">Wallet</h3>
+                  <h3 className="text-white text-lg font-semibold">Ví điện tử</h3>
                   <button
                     onClick={() => setShowWalletModal(false)}
                     className="text-white/80 hover:text-white transition-colors p-2 hover:bg-white/20 rounded-lg"
@@ -750,7 +750,7 @@ export default function UserHome() {
                         d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
                       />
                     </svg>
-                    <span className="text-slate-700 text-sm font-medium">Send</span>
+                    <span className="text-slate-700 text-sm font-medium">Gửi</span>
                   </button>
                   <button className="flex flex-col items-center gap-2 px-4 py-3 bg-gray-50 rounded-xl hover:bg-[#00b4d8]/10 border border-gray-200 hover:border-[#00b4d8] transition-colors">
                     <svg
@@ -766,7 +766,7 @@ export default function UserHome() {
                         d="M19 14l-7 7m0 0l-7-7m7 7V3"
                       />
                     </svg>
-                    <span className="text-slate-700 text-sm font-medium">Receive</span>
+                    <span className="text-slate-700 text-sm font-medium">Nhận</span>
                   </button>
                   <button className="flex flex-col items-center gap-2 px-4 py-3 bg-gray-50 rounded-xl hover:bg-[#00b4d8]/10 border border-gray-200 hover:border-[#00b4d8] transition-colors">
                     <svg
@@ -782,7 +782,7 @@ export default function UserHome() {
                         d="M12 4v16m8-8H4"
                       />
                     </svg>
-                    <span className="text-slate-700 text-sm font-medium">Buy</span>
+                    <span className="text-slate-700 text-sm font-medium">Mua</span>
                   </button>
                 </div>
 
@@ -792,8 +792,8 @@ export default function UserHome() {
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <span className="text-slate-700 text-sm font-medium">
                       {chainId 
-                        ? `Chain #${parseInt(chainId, 16) || chainId}` 
-                        : "Unknown chain"}
+                        ? `Chuỗi #${parseInt(chainId, 16) || chainId}` 
+                        : "Chuỗi không xác định"}
                     </span>
                   </div>
                   <svg
@@ -827,7 +827,7 @@ export default function UserHome() {
                         d="M4 6h16M4 12h16M4 18h16"
                       />
                     </svg>
-                    <span className="text-sm font-medium">Transactions</span>
+                    <span className="text-sm font-medium">Giao dịch</span>
                   </button>
                   <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-[#00b4d8]/10 rounded-xl transition-colors border border-transparent hover:border-[#00b4d8]/20">
                     <svg
@@ -849,7 +849,7 @@ export default function UserHome() {
                         d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                       />
                     </svg>
-                    <span className="text-sm font-medium">View Assets</span>
+                    <span className="text-sm font-medium">Xem tài sản</span>
                   </button>
                   <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-[#00b4d8]/10 rounded-xl transition-colors border border-transparent hover:border-[#00b4d8]/20">
                     <svg
@@ -865,7 +865,7 @@ export default function UserHome() {
                         d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
                       />
                     </svg>
-                    <span className="text-sm font-medium">Manage Wallet</span>
+                    <span className="text-sm font-medium">Quản lý ví</span>
                   </button>
                 </div>
 
@@ -875,9 +875,15 @@ export default function UserHome() {
                 {/* Disconnect Button */}
                 <button
                   onClick={async () => {
-                    await disconnect();
+                    // Disconnect MetaMask
+                    if (isConnected) {
+                      await disconnect();
+                    }
+                    // Logout khỏi hệ thống
+                    await logout();
                     setShowWalletModal(false);
-                    toast.success("Đã ngắt kết nối ví!");
+                    navigate("/");
+                    toast.success("Đã đăng xuất thành công!");
                   }}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors border border-red-200 hover:border-red-300"
                 >
@@ -894,7 +900,7 @@ export default function UserHome() {
                       d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                     />
                   </svg>
-                  <span className="text-sm font-medium">Disconnect Wallet</span>
+                  <span className="text-sm font-medium">Ngắt kết nối ví</span>
                 </button>
               </div>
             </motion.div>
