@@ -287,7 +287,7 @@ export default function DistributionHistory() {
                   <button
                     type="button"
                     onClick={handleSearch}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary text-white font-medium transition"
+                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition"
                   >
                     Tìm Kiếm
                   </button>
@@ -506,7 +506,7 @@ export default function DistributionHistory() {
                 className={`px-3 py-2 rounded-xl ${
                   page >= pagination.pages
                     ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "text-white bg-secondary hover:bg-primary !text-white font-medium transition"
+                    : "!text-white bg-secondary hover:bg-primary !text-white font-medium transition"
                 }`}
               >
                 Sau

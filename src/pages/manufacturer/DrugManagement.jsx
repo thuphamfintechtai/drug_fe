@@ -163,7 +163,7 @@ export default function DrugManagement() {
     if (!vial && !pill) {
       return "";
     }
-    
+
     if (vial && pill) {
       return `Hộp ${vial} vỉ x ${pill} viên`;
     } else if (vial) {
@@ -171,7 +171,7 @@ export default function DrugManagement() {
     } else if (pill) {
       return `${pill} viên`;
     }
-    
+
     return "";
   };
 
@@ -416,17 +416,17 @@ export default function DrugManagement() {
     const dosageForm = drug.dosageForm || "";
     const strength = drug.strength || "";
     const packaging = drug.packaging || "";
-    
+
     // Parse strength thành value và unit
     const { value, unit } = parseStrength(strength);
     setStrengthValue(value);
     setStrengthUnit(unit);
-    
+
     // Parse packaging thành vial và pill
     const { vial, pill } = parsePackaging(packaging);
     setPackagingVial(vial);
     setPackagingPill(pill);
-    
+
     const route = drug.route || "";
     setFormData({
       tradeName: drug.tradeName || "",
@@ -471,42 +471,42 @@ export default function DrugManagement() {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     // Validate Tên thương mại
     if (!formData.tradeName || !formData.tradeName.trim()) {
       newErrors.tradeName = "Tên thương mại không được để trống";
     }
-    
+
     // Validate Tên hoạt chất
     if (!formData.genericName || !formData.genericName.trim()) {
       newErrors.genericName = "Tên hoạt chất không được để trống";
     }
-    
+
     // Validate Mã ATC
     if (!formData.atcCode || !formData.atcCode.trim()) {
       newErrors.atcCode = "Mã ATC không được để trống";
     }
-    
+
     // Validate Dạng bào chế
     if (!formData.dosageForm || !formData.dosageForm.trim()) {
       newErrors.dosageForm = "Dạng bào chế không được để trống";
     }
-    
+
     // Validate Hàm lượng
     if (!strengthValue || !strengthValue.trim()) {
       newErrors.strength = "Hàm lượng không được để trống";
     }
-    
+
     // Validate Đường dùng
     if (!formData.route || !formData.route.trim()) {
-      newErrors.route = "Đường dùng không được để trống";
+      newErrors.route = "Cách dùng không được để trống";
     }
-    
+
     // Validate Bảo quản
     if (!formData.storage || !formData.storage.trim()) {
       newErrors.storage = "Bảo quản không được để trống";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -638,10 +638,7 @@ export default function DrugManagement() {
                 type="text"
                 value={searchAtc}
                 onChange={(e) => {
-                  // Chỉ cho phép chữ và số, tự động chuyển sang UPPERCASE
-                  const value = e.target.value
-                    .replace(/[^A-Za-z0-9]/g, "")
-                    .toUpperCase();
+                  const value = e.target.value;
                   setSearchAtc(value);
                 }}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -651,7 +648,7 @@ export default function DrugManagement() {
 
               <button
                 onClick={handleSearch}
-                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] hover:from-[#0096c7] hover:to-[#00b4d8] text-white font-medium transition shadow-md hover:shadow-lg"
+                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary !text-white font-medium transition shadow-md hover:shadow-lg"
               >
                 Tìm kiếm
               </button>
@@ -669,7 +666,7 @@ export default function DrugManagement() {
 
             <button
               onClick={handleCreate}
-              className="px-4 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] hover:from-[#0096c7] hover:to-[#00b4d8] text-white font-medium transition shadow-md hover:shadow-lg"
+              className="px-4 py-2.5 rounded-full bg-secondary !text-white font-medium transition shadow-md hover:shadow-lg"
             >
               Tạo thuốc mới
             </button>
@@ -803,9 +800,9 @@ export default function DrugManagement() {
       `}</style>
 
             {/* Header */}
-            <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
+            <div className="bg-gradient-to-r from-primary to-secondary px-8 py-6 rounded-t-3xl flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className="text-2xl font-bold !text-white">
                   {isEditMode ? "Cập nhật thuốc" : "Tạo thuốc mới"}
                 </h2>
                 <p className="text-gray-100 text-sm">
@@ -814,7 +811,7 @@ export default function DrugManagement() {
               </div>
               <button
                 onClick={() => setShowDialog(false)}
-                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition"
+                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition"
               >
                 ✕
               </button>
@@ -968,7 +965,7 @@ export default function DrugManagement() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Đường dùng
+                    Cách dùng
                   </label>
                   <select
                     value={
@@ -1071,7 +1068,10 @@ export default function DrugManagement() {
                           const value = e.target.value;
                           setPackagingVial(value);
                           // Tự động update formData.packaging khi value thay đổi
-                          const packaging = combinePackaging(value, packagingPill);
+                          const packaging = combinePackaging(
+                            value,
+                            packagingPill
+                          );
                           setFormData({ ...formData, packaging });
                         }}
                         placeholder="VD: 10"
@@ -1089,7 +1089,10 @@ export default function DrugManagement() {
                           const value = e.target.value;
                           setPackagingPill(value);
                           // Tự động update formData.packaging khi value thay đổi
-                          const packaging = combinePackaging(packagingVial, value);
+                          const packaging = combinePackaging(
+                            packagingVial,
+                            value
+                          );
                           setFormData({ ...formData, packaging });
                         }}
                         placeholder="VD: 10"
@@ -1147,7 +1150,7 @@ export default function DrugManagement() {
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 transition-all duration-200"
+                className="px-6 py-2.5 rounded-full bg-primary !text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 transition-all duration-200"
               >
                 {submitting
                   ? "Đang lưu..."

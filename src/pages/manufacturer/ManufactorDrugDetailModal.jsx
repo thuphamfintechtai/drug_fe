@@ -80,26 +80,47 @@ const ManufactorDrugDetailModal = ({ isOpen, onClose, drugId }) => {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-slate-600 font-medium">Tên thương mại</label>
-                    <p className="mt-1 text-slate-800 font-medium">{drug.tradeName || "N/A"}</p>
+                    <label className="text-sm text-slate-600 font-medium">
+                      Tên thương mại
+                    </label>
+                    <p className="mt-1 text-slate-800 font-medium">
+                      {drug.tradeName || "N/A"}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600 font-medium">Tên gốc</label>
-                    <p className="mt-1 text-slate-800 font-medium">{drug.genericName || "N/A"}</p>
+                    <label className="text-sm text-slate-600 font-medium">
+                      Tên gốc
+                    </label>
+                    <p className="mt-1 text-slate-800 font-medium">
+                      {drug.genericName || "N/A"}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600 font-medium">Mã ATC</label>
-                    <p className="mt-1 text-slate-800 font-medium">{drug.atcCode || "N/A"}</p>
+                    <label className="text-sm text-slate-600 font-medium">
+                      Mã ATC
+                    </label>
+                    <p className="mt-1 text-slate-800 font-medium">
+                      {drug.atcCode || "N/A"}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600 font-medium">Trạng thái</label>
-                    <span className={`mt-1 inline-block px-2 py-1 rounded-full text-xs font-semibold ${
-                      drug.status === "active" ? "bg-green-100 text-green-700" :
-                      drug.status === "inactive" ? "bg-red-100 text-red-700" :
-                      "bg-gray-100 text-gray-700"
-                    }`}>
-                      {drug.status === "active" ? "Hoạt động" : 
-                       drug.status === "inactive" ? "Ngừng hoạt động" : drug.status}
+                    <label className="text-sm text-slate-600 font-medium">
+                      Trạng thái
+                    </label>
+                    <span
+                      className={`mt-1 inline-block px-2 py-1 rounded-full text-xs font-semibold ${
+                        drug.status === "active"
+                          ? "bg-green-100 text-green-700"
+                          : drug.status === "inactive"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {drug.status === "active"
+                        ? "Hoạt động"
+                        : drug.status === "inactive"
+                        ? "Ngừng hoạt động"
+                        : drug.status}
                     </span>
                   </div>
                 </div>
@@ -112,20 +133,34 @@ const ManufactorDrugDetailModal = ({ isOpen, onClose, drugId }) => {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-slate-600 font-medium">Dạng bào chế</label>
-                    <p className="mt-1 text-slate-800">{drug.dosageForm || "N/A"}</p>
+                    <label className="text-sm text-slate-600 font-medium">
+                      Dạng bào chế
+                    </label>
+                    <p className="mt-1 text-slate-800">
+                      {drug.dosageForm || "N/A"}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600 font-medium">Hàm lượng</label>
-                    <p className="mt-1 text-slate-800">{drug.strength || "N/A"}</p>
+                    <label className="text-sm text-slate-600 font-medium">
+                      Hàm lượng
+                    </label>
+                    <p className="mt-1 text-slate-800">
+                      {drug.strength || "N/A"}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600 font-medium">Đường dùng</label>
+                    <label className="text-sm text-slate-600 font-medium">
+                      Cách dùng
+                    </label>
                     <p className="mt-1 text-slate-800">{drug.route || "N/A"}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600 font-medium">Đóng gói</label>
-                    <p className="mt-1 text-slate-800">{drug.packaging || "N/A"}</p>
+                    <label className="text-sm text-slate-600 font-medium">
+                      Đóng gói
+                    </label>
+                    <p className="mt-1 text-slate-800">
+                      {drug.packaging || "N/A"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -137,13 +172,18 @@ const ManufactorDrugDetailModal = ({ isOpen, onClose, drugId }) => {
                 </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm text-slate-600 font-medium">Thành phần hoạt chất</label>
+                    <label className="text-sm text-slate-600 font-medium">
+                      Thành phần hoạt chất
+                    </label>
                     <div className="mt-1">
-                      {drug.activeIngredients && drug.activeIngredients.length > 0 ? (
+                      {drug.activeIngredients &&
+                      drug.activeIngredients.length > 0 ? (
                         <ul className="list-disc list-inside text-slate-800">
                           {drug.activeIngredients.map((ingredient, index) => (
                             <li key={index}>
-                              {ingredient.name} {ingredient.concentration && `(${ingredient.concentration})`}
+                              {ingredient.name}{" "}
+                              {ingredient.concentration &&
+                                `(${ingredient.concentration})`}
                             </li>
                           ))}
                         </ul>
@@ -153,12 +193,20 @@ const ManufactorDrugDetailModal = ({ isOpen, onClose, drugId }) => {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600 font-medium">Cách bảo quản</label>
-                    <p className="mt-1 text-slate-800">{drug.storage || "N/A"}</p>
+                    <label className="text-sm text-slate-600 font-medium">
+                      Cách bảo quản
+                    </label>
+                    <p className="mt-1 text-slate-800">
+                      {drug.storage || "N/A"}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600 font-medium">Cảnh báo</label>
-                    <p className="mt-1 text-slate-800">{drug.warnings || "Không có"}</p>
+                    <label className="text-sm text-slate-600 font-medium">
+                      Cảnh báo
+                    </label>
+                    <p className="mt-1 text-slate-800">
+                      {drug.warnings || "Không có"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -170,12 +218,20 @@ const ManufactorDrugDetailModal = ({ isOpen, onClose, drugId }) => {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-slate-600 font-medium">Ngày tạo</label>
-                    <p className="mt-1 text-slate-800">{formatDate(drug.createdAt)}</p>
+                    <label className="text-sm text-slate-600 font-medium">
+                      Ngày tạo
+                    </label>
+                    <p className="mt-1 text-slate-800">
+                      {formatDate(drug.createdAt)}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600 font-medium">Cập nhật lần cuối</label>
-                    <p className="mt-1 text-slate-800">{formatDate(drug.updatedAt)}</p>
+                    <label className="text-sm text-slate-600 font-medium">
+                      Cập nhật lần cuối
+                    </label>
+                    <p className="mt-1 text-slate-800">
+                      {formatDate(drug.updatedAt)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -188,4 +244,3 @@ const ManufactorDrugDetailModal = ({ isOpen, onClose, drugId }) => {
 };
 
 export default ManufactorDrugDetailModal;
-

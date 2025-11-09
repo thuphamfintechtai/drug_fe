@@ -138,7 +138,7 @@ export default function PharmacyProfile() {
             {/* User Info */}
             <div className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden">
               <div className="px-6 py-4 bg-linear-to-r from-secondary to-primary">
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold !text-white">
                   Thông tin tài khoản
                 </h2>
               </div>
@@ -199,7 +199,7 @@ export default function PharmacyProfile() {
             {profile.pharmacy && (
               <div className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden">
                 <div className="px-6 py-4 bg-linear-to-r from-secondary to-primary">
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-xl font-bold !text-white">
                     Thông tin nhà thuốc
                   </h2>
                 </div>

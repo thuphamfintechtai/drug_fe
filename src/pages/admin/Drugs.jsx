@@ -298,7 +298,7 @@ export default function AdminDrugs() {
               <button
                 type="button"
                 onClick={handleSearch}
-                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary text-white font-medium transition"
+                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition"
               >
                 Tìm kiếm
               </button>
@@ -550,7 +550,7 @@ export default function AdminDrugs() {
                 className={`px-3 py-2 rounded-xl ${
                   page >= pagination.pages
                     ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "text-white bg-linear-to-r from-secondary to-primary shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
+                    : "!text-white bg-linear-to-r from-secondary to-primary shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
                 }`}
               >
                 Sau

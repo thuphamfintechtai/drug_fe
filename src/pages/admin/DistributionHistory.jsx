@@ -309,7 +309,7 @@ export default function DistributionHistory() {
               <button
                 type="button"
                 onClick={handleSearch}
-                className="px-6 py-2 rounded-full bg-secondary hover:bg-primary text-white font-medium transition text-sm shadow-md"
+                className="px-6 py-2 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition text-sm shadow-md"
               >
                 Tìm kiếm
               </button>

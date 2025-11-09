@@ -318,8 +318,10 @@ export default function ProductionManagement() {
     if (!formData.manufacturingDate) {
       newErrors.manufacturingDate = "Ngày sản xuất không được để trống";
     } else {
-      const validationResult = validateAndFixManufacturingDate(formData.manufacturingDate);
-      
+      const validationResult = validateAndFixManufacturingDate(
+        formData.manufacturingDate
+      );
+
       // Nếu ngày không hợp lệ, tự động sửa về ngày hiện tại
       if (!validationResult.isValid) {
         setFormData((prev) => ({
@@ -683,16 +685,16 @@ export default function ProductionManagement() {
   // Helper function để kiểm tra và sửa ngày sản xuất nếu không hợp lệ
   const validateAndFixManufacturingDate = (dateStr) => {
     if (!dateStr) return { isValid: false, fixedDate: "" };
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const minDate = new Date(today);
     minDate.setDate(today.getDate() - 60);
     minDate.setHours(0, 0, 0, 0);
-    
+
     const mfgDate = new Date(dateStr);
     mfgDate.setHours(0, 0, 0, 0);
-    
+
     // Nếu ngày không hợp lệ, trả về ngày hiện tại
     if (mfgDate < minDate || mfgDate > today) {
       return {
@@ -700,7 +702,7 @@ export default function ProductionManagement() {
         fixedDate: today.toISOString().split("T")[0],
       };
     }
-    
+
     return { isValid: true, fixedDate: dateStr };
   };
 
@@ -734,7 +736,9 @@ export default function ProductionManagement() {
     if (shelfLifeNum > maxShelfLife) {
       return {
         isValid: false,
-        error: `Thời hạn sử dụng không được vượt quá ${maxShelfLife} ${unit === "year" ? "năm" : unit === "month" ? "tháng" : "ngày"} (10 năm)`,
+        error: `Thời hạn sử dụng không được vượt quá ${maxShelfLife} ${
+          unit === "year" ? "năm" : unit === "month" ? "tháng" : "ngày"
+        } (10 năm)`,
       };
     }
 
@@ -750,7 +754,8 @@ export default function ProductionManagement() {
         if (expiryDate > maxExpiryDate) {
           return {
             isValid: false,
-            error: "Thời hạn sử dụng không được vượt quá 10 năm từ ngày sản xuất",
+            error:
+              "Thời hạn sử dụng không được vượt quá 10 năm từ ngày sản xuất",
           };
         }
       }
@@ -886,7 +891,7 @@ export default function ProductionManagement() {
           <div className="flex justify-end">
             <button
               onClick={handleStartProduction}
-              className="px-4 py-2.5 rounded-full bg-gradient-to-r from-secondary to-primary text-white font-medium shadow-md hover:shadow-lg transition flex items-center gap-2"
+              className="px-4 py-2.5 rounded-full bg-gradient-to-r from-secondary to-primary !text-white font-medium shadow-md hover:shadow-lg transition flex items-center gap-2"
             >
               Bắt đầu sản xuất mới
             </button>
@@ -910,7 +915,7 @@ export default function ProductionManagement() {
             <div className="bg-gradient-to-r from-secondary to-primary px-8 py-6 rounded-t-3xl">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-2xl font-bold text-white">
+                  <h2 className="text-2xl font-bold !text-white">
                     Sản xuất & Mint NFT
                   </h2>
                   <p className="text-cyan-100 text-sm">
@@ -923,7 +928,7 @@ export default function ProductionManagement() {
                 <button
                   onClick={handleClose}
                   disabled={step === 3}
-                  className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition disabled:opacity-50"
+                  className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition disabled:opacity-50"
                 >
                   ✕
                 </button>
@@ -1011,12 +1016,12 @@ export default function ProductionManagement() {
                         let value = e.target.value
                           .replace(/[^A-Za-z0-9]/g, "")
                           .toUpperCase();
-                        
+
                         // Giới hạn tối đa 30 ký tự
                         if (value.length > 30) {
                           value = value.substring(0, 30);
                         }
-                        
+
                         setFormData({
                           ...formData,
                           batchNumber: value,
@@ -1051,7 +1056,7 @@ export default function ProductionManagement() {
                       value={formData.quantity}
                       onChange={(e) => {
                         let value = e.target.value;
-                        
+
                         // Cho phép rỗng để người dùng có thể xóa
                         if (value === "") {
                           setFormData({ ...formData, quantity: value });
@@ -1060,10 +1065,10 @@ export default function ProductionManagement() {
                           }
                           return;
                         }
-                        
+
                         // Loại bỏ dấu trừ và các ký tự không phải số
                         value = value.replace(/[^0-9]/g, "");
-                        
+
                         if (value === "") {
                           setFormData({ ...formData, quantity: "" });
                           if (errors.quantity) {
@@ -1071,16 +1076,16 @@ export default function ProductionManagement() {
                           }
                           return;
                         }
-                        
+
                         const numValue = parseInt(value);
-                        
+
                         // Kiểm tra giới hạn tối đa
                         if (numValue >= 10000000) {
                           value = "9999999";
                         }
-                        
+
                         setFormData({ ...formData, quantity: value });
-                        
+
                         // Clear error khi người dùng nhập
                         if (errors.quantity) {
                           setErrors({ ...errors, quantity: "" });
@@ -1088,7 +1093,13 @@ export default function ProductionManagement() {
                       }}
                       onKeyDown={(e) => {
                         // Ngăn chặn nhập dấu trừ, dấu cộng, chữ e, E, dấu chấm
-                        if (e.key === "-" || e.key === "+" || e.key === "e" || e.key === "E" || e.key === ".") {
+                        if (
+                          e.key === "-" ||
+                          e.key === "+" ||
+                          e.key === "e" ||
+                          e.key === "E" ||
+                          e.key === "."
+                        ) {
                           e.preventDefault();
                         }
                       }}
@@ -1122,7 +1133,7 @@ export default function ProductionManagement() {
                       value={formData.manufacturingDate}
                       onChange={(e) => {
                         const selectedDate = e.target.value;
-                        
+
                         if (!selectedDate) {
                           setFormData({
                             ...formData,
@@ -1133,15 +1144,16 @@ export default function ProductionManagement() {
                           }
                           return;
                         }
-                        
+
                         // Kiểm tra và sửa ngày nếu không hợp lệ
-                        const validationResult = validateAndFixManufacturingDate(selectedDate);
-                        
+                        const validationResult =
+                          validateAndFixManufacturingDate(selectedDate);
+
                         setFormData({
                           ...formData,
                           manufacturingDate: validationResult.fixedDate,
                         });
-                        
+
                         // Clear error khi người dùng chọn ngày
                         if (errors.manufacturingDate) {
                           setErrors({ ...errors, manufacturingDate: "" });
@@ -1150,10 +1162,11 @@ export default function ProductionManagement() {
                       onBlur={(e) => {
                         const selectedDate = e.target.value;
                         if (!selectedDate) return;
-                        
+
                         // Kiểm tra lại khi blur và tự động sửa nếu không hợp lệ
-                        const validationResult = validateAndFixManufacturingDate(selectedDate);
-                        
+                        const validationResult =
+                          validateAndFixManufacturingDate(selectedDate);
+
                         if (!validationResult.isValid) {
                           setFormData({
                             ...formData,
@@ -1196,7 +1209,7 @@ export default function ProductionManagement() {
                         value={shelfLifeValue}
                         onChange={(e) => {
                           let value = e.target.value;
-                          
+
                           // Cho phép rỗng để người dùng có thể xóa
                           if (value === "") {
                             setShelfLifeValue(value);
@@ -1205,26 +1218,26 @@ export default function ProductionManagement() {
                             }
                             return;
                           }
-                          
+
                           // Loại bỏ ký tự không phải số và dấu chấm
                           value = value.replace(/[^0-9.]/g, "");
-                          
+
                           // Chỉ cho phép một dấu chấm
                           const parts = value.split(".");
                           if (parts.length > 2) {
                             value = parts[0] + "." + parts.slice(1).join("");
                           }
-                          
+
                           const numValue = parseFloat(value);
                           const maxValue = getMaxShelfLife(shelfLifeUnit);
-                          
+
                           // Kiểm tra giới hạn tối đa
                           if (!isNaN(numValue) && numValue > maxValue) {
                             value = maxValue.toString();
                           }
-                          
+
                           setShelfLifeValue(value);
-                          
+
                           // Validate realtime
                           if (value) {
                             const validation = validateShelfLife(
@@ -1233,7 +1246,10 @@ export default function ProductionManagement() {
                               formData.manufacturingDate
                             );
                             if (!validation.isValid) {
-                              setErrors({ ...errors, shelfLife: validation.error });
+                              setErrors({
+                                ...errors,
+                                shelfLife: validation.error,
+                              });
                             } else {
                               // Clear error khi hợp lệ
                               if (errors.shelfLife) {
@@ -1242,7 +1258,11 @@ export default function ProductionManagement() {
                             }
                           } else {
                             // Clear error khi rỗng (để người dùng có thể xóa)
-                            if (errors.shelfLife && errors.shelfLife !== "Thời hạn sử dụng không được để trống") {
+                            if (
+                              errors.shelfLife &&
+                              errors.shelfLife !==
+                                "Thời hạn sử dụng không được để trống"
+                            ) {
                               setErrors({ ...errors, shelfLife: "" });
                             }
                           }
@@ -1253,7 +1273,7 @@ export default function ProductionManagement() {
                             // Không làm gì khi blur nếu rỗng, để validation form xử lý
                             return;
                           }
-                          
+
                           // Validate khi blur
                           const validation = validateShelfLife(
                             value,
@@ -1261,7 +1281,10 @@ export default function ProductionManagement() {
                             formData.manufacturingDate
                           );
                           if (!validation.isValid) {
-                            setErrors({ ...errors, shelfLife: validation.error });
+                            setErrors({
+                              ...errors,
+                              shelfLife: validation.error,
+                            });
                           }
                         }}
                         className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
@@ -1276,25 +1299,30 @@ export default function ProductionManagement() {
                         onChange={(e) => {
                           const newUnit = e.target.value;
                           setShelfLifeUnit(newUnit);
-                          
+
                           // Kiểm tra lại giá trị với đơn vị mới
                           if (shelfLifeValue) {
                             const maxValue = getMaxShelfLife(newUnit);
                             const numValue = parseFloat(shelfLifeValue);
-                            
+
                             // Nếu giá trị vượt quá giới hạn mới, tự động điều chỉnh
                             if (!isNaN(numValue) && numValue > maxValue) {
                               setShelfLifeValue(maxValue.toString());
                             }
-                            
+
                             // Validate lại
                             const validation = validateShelfLife(
-                              numValue > maxValue ? maxValue.toString() : shelfLifeValue,
+                              numValue > maxValue
+                                ? maxValue.toString()
+                                : shelfLifeValue,
                               newUnit,
                               formData.manufacturingDate
                             );
                             if (!validation.isValid) {
-                              setErrors({ ...errors, shelfLife: validation.error });
+                              setErrors({
+                                ...errors,
+                                shelfLife: validation.error,
+                              });
                             } else {
                               setErrors({ ...errors, shelfLife: "" });
                             }
@@ -1543,7 +1571,7 @@ export default function ProductionManagement() {
                   <button
                     onClick={handleMintNFT}
                     disabled={processingMint}
-                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] !text-white font-medium shadow-md hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {mintButtonState === "minting"
                       ? "Đang mint..."
@@ -1557,7 +1585,7 @@ export default function ProductionManagement() {
                 <>
                   <button
                     onClick={handleClose}
-                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg transition"
+                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] !text-white font-medium shadow-md hover:shadow-lg transition"
                   >
                     Hoàn thành
                   </button>

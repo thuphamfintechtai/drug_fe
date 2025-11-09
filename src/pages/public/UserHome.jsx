@@ -18,7 +18,15 @@ import { formatWalletAddress } from "../../utils/walletUtils";
 export default function UserHome() {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
-  const { account, isConnected, isInstalled, connect, isConnecting, disconnect, chainId } = useMetaMask();
+  const {
+    account,
+    isConnected,
+    isInstalled,
+    connect,
+    isConnecting,
+    disconnect,
+    chainId,
+  } = useMetaMask();
   const [tokenId, setTokenId] = useState("");
   const [drugSearch, setDrugSearch] = useState("");
   const [searchMode, setSearchMode] = useState("nft"); // 'nft' or 'drug'
@@ -39,7 +47,10 @@ export default function UserHome() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowUserDropdown(false);
       }
-      if (walletModalRef.current && !walletModalRef.current.contains(event.target)) {
+      if (
+        walletModalRef.current &&
+        !walletModalRef.current.contains(event.target)
+      ) {
         setShowWalletModal(false);
       }
     };
@@ -55,7 +66,9 @@ export default function UserHome() {
 
   const handleConnectMetaMask = async () => {
     if (!isInstalled) {
-      toast.error("MetaMask chưa được cài đặt. Vui lòng cài đặt MetaMask extension.");
+      toast.error(
+        "MetaMask chưa được cài đặt. Vui lòng cài đặt MetaMask extension."
+      );
       window.open("https://metamask.io/download/", "_blank");
       return;
     }
@@ -79,7 +92,9 @@ export default function UserHome() {
   };
 
   const walletAddress = account || user?.walletAddress || "";
-  const displayWalletAddress = walletAddress ? formatWalletAddress(walletAddress, 6, 4) : "";
+  const displayWalletAddress = walletAddress
+    ? formatWalletAddress(walletAddress, 6, 4)
+    : "";
 
   const handleTrackDrug = () => {
     const trimmedTokenId = tokenId.trim();
@@ -439,7 +454,7 @@ export default function UserHome() {
       />
       <motion.div
         className={`flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center ${bgColor} transition-all shadow-md`}
-        whileHover={{ scale: 1.1, rotate: 360 }}
+        whileHover={{ scale: 1.1 }}
         transition={{ duration: 0.5 }}
       >
         <span className={`text-3xl ${color}`}>{icon}</span>
@@ -480,169 +495,6 @@ export default function UserHome() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-4 py-4 sticky top-0 z-50 shadow-md">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Logo/Brand */}
-          <Link to="/" className="flex items-center">
-            <span className="text-white text-xl font-bold">DrugTrace</span>
-          </Link>
-
-          {/* Right side - Buttons or User Icon */}
-          <div className="flex items-center gap-3">
-            {!isAuthenticated ? (
-              <>
-                {/* Kết nối MetaMask Button */}
-                <button
-                  onClick={handleConnectMetaMask}
-                  disabled={isConnecting || !isInstalled}
-                  className="px-5 py-2.5 bg-white text-slate-900 font-semibold rounded-lg shadow-md hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {isConnecting ? "Đang kết nối..." : "Kết nối MetaMask"}
-                </button>
-
-                {/* Đăng nhập Button */}
-                <Link
-                  to="/login"
-                  className="px-6 py-2.5 bg-white text-[#00b4d8] font-semibold rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-                >
-                  Đăng nhập
-                </Link>
-              </>
-            ) : (
-              <>
-                {/* User Icon - Golden Circle */}
-                <div className="relative" ref={dropdownRef}>
-                  <button
-                    onClick={() => setShowUserDropdown(!showUserDropdown)}
-                    className="w-10 h-10 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2 focus:ring-offset-cyan-500"
-                    style={{
-                      background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)",
-                      boxShadow: "0 4px 14px 0 rgba(251, 191, 36, 0.4)"
-                    }}
-                  >
-                    <div className="w-full h-full rounded-full flex items-center justify-center" style={{
-                      background: "linear-gradient(135deg, rgba(251, 191, 36, 0.9) 0%, rgba(217, 119, 6, 0.9) 100%)",
-                    }}>
-                      <span className="text-white font-bold text-lg drop-shadow-md">
-                        {user?.email?.charAt(0)?.toUpperCase() || user?.fullName?.charAt(0)?.toUpperCase() || "U"}
-                      </span>
-                    </div>
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  <AnimatePresence>
-                    {showUserDropdown && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border-2 border-gray-200 overflow-hidden z-50"
-                      >
-                        {/* User Info Section */}
-                        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-[#00b4d8]/5 to-[#48cae4]/5">
-                          <div className="text-slate-700 text-sm font-medium mb-3">
-                            {user?.email || "N/A"}
-                          </div>
-                          {walletAddress && (
-                            <div 
-                              onClick={() => setShowWalletModal(true)}
-                              className="flex items-center gap-2 px-3 py-2.5 bg-white rounded-lg border-2 border-gray-200 shadow-sm cursor-pointer hover:border-[#00b4d8] hover:shadow-md transition-all"
-                            >
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#48cae4] flex items-center justify-center flex-shrink-0 shadow-md">
-                                <svg
-                                  className="w-5 h-5 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                                  />
-                                </svg>
-                              </div>
-                              <span className="text-slate-700 text-sm font-mono flex-1 truncate font-medium">
-                                {displayWalletAddress}
-                              </span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard.writeText(walletAddress);
-                                  toast.success("Đã sao chép địa chỉ ví!");
-                                }}
-                                className="text-slate-400 hover:text-[#00b4d8] transition-colors p-1.5 rounded-lg hover:bg-[#00b4d8]/10"
-                                title="Sao chép"
-                              >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                                  />
-                                </svg>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Menu Items */}
-                        <div className="py-2 bg-white">
-                          <button
-                            onClick={() => {
-                              setShowUserDropdown(false);
-                              // Navigate to account page
-                            }}
-                            className="w-full px-4 py-3 text-left text-slate-700 hover:bg-[#00b4d8]/10 hover:text-[#007b91] transition-colors flex items-center gap-3 font-medium"
-                          >
-                            <span>Tài khoản của tôi</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setShowUserDropdown(false);
-                              setShowWalletModal(true);
-                            }}
-                            className="w-full px-4 py-3 text-left text-slate-700 hover:bg-[#00b4d8]/10 hover:text-[#007b91] transition-colors flex items-center gap-3 font-medium"
-                          >
-                            <span>Ví của tôi</span>
-                          </button>
-                          <button
-                            onClick={handleLogout}
-                            className="w-full px-4 py-3 text-left text-slate-700 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center justify-between font-medium"
-                          >
-                            <span>Đăng xuất</span>
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
 
       {/* Wallet Modal */}
       <AnimatePresence>
@@ -660,10 +512,12 @@ export default function UserHome() {
               {/* Header with gradient */}
               <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-6 py-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-white text-lg font-semibold">Ví điện tử</h3>
+                  <h3 className="!text-white text-lg font-semibold">
+                    Ví điện tử
+                  </h3>
                   <button
                     onClick={() => setShowWalletModal(false)}
-                    className="text-white/80 hover:text-white transition-colors p-2 hover:bg-white/20 rounded-lg"
+                    className="!text-white/80 hover:!text-white transition-colors p-2 hover:bg-white/20 rounded-lg"
                   >
                     <svg
                       className="w-5 h-5"
@@ -688,18 +542,36 @@ export default function UserHome() {
                   <div className="relative">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#48cae4] flex items-center justify-center shadow-lg">
                       <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00b4d8]/90 to-[#48cae4]/90 flex items-center justify-center">
-                        <span className="text-white font-bold text-xl">
-                          {user?.email?.charAt(0)?.toUpperCase() || user?.fullName?.charAt(0)?.toUpperCase() || "U"}
+                        <span className="!text-white font-bold text-xl">
+                          {user?.email?.charAt(0)?.toUpperCase() ||
+                            user?.fullName?.charAt(0)?.toUpperCase() ||
+                            "U"}
                         </span>
                       </div>
                     </div>
                     {/* MetaMask Fox Icon - Small badge */}
                     <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center border-2 border-white shadow-md">
-                      <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#E27625"/>
-                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#E27625"/>
-                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#E27625"/>
-                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#E27625"/>
+                      <svg
+                        className="w-4 h-4 !text-white"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          fill="#E27625"
+                        />
+                        <path
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          fill="#E27625"
+                        />
+                        <path
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                          fill="#E27625"
+                        />
+                        <path
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                          fill="#E27625"
+                        />
                       </svg>
                     </div>
                   </div>
@@ -731,7 +603,9 @@ export default function UserHome() {
                         </svg>
                       </button>
                     </div>
-                    <div className="text-slate-500 text-sm font-medium">MetaMask</div>
+                    <div className="text-slate-500 text-sm font-medium">
+                      MetaMask
+                    </div>
                   </div>
                 </div>
 
@@ -751,7 +625,9 @@ export default function UserHome() {
                         d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
                       />
                     </svg>
-                    <span className="text-slate-700 text-sm font-medium">Gửi</span>
+                    <span className="text-slate-700 text-sm font-medium">
+                      Gửi
+                    </span>
                   </button>
                   <button className="flex flex-col items-center gap-2 px-4 py-3 bg-gray-50 rounded-xl hover:bg-[#00b4d8]/10 border border-gray-200 hover:border-[#00b4d8] transition-colors">
                     <svg
@@ -767,7 +643,9 @@ export default function UserHome() {
                         d="M19 14l-7 7m0 0l-7-7m7 7V3"
                       />
                     </svg>
-                    <span className="text-slate-700 text-sm font-medium">Nhận</span>
+                    <span className="text-slate-700 text-sm font-medium">
+                      Nhận
+                    </span>
                   </button>
                   <button className="flex flex-col items-center gap-2 px-4 py-3 bg-gray-50 rounded-xl hover:bg-[#00b4d8]/10 border border-gray-200 hover:border-[#00b4d8] transition-colors">
                     <svg
@@ -783,7 +661,9 @@ export default function UserHome() {
                         d="M12 4v16m8-8H4"
                       />
                     </svg>
-                    <span className="text-slate-700 text-sm font-medium">Mua</span>
+                    <span className="text-slate-700 text-sm font-medium">
+                      Mua
+                    </span>
                   </button>
                 </div>
 
@@ -792,8 +672,8 @@ export default function UserHome() {
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <span className="text-slate-700 text-sm font-medium">
-                      {chainId 
-                        ? `Chuỗi #${parseInt(chainId, 16) || chainId}` 
+                      {chainId
+                        ? `Chuỗi #${parseInt(chainId, 16) || chainId}`
                         : "Chuỗi không xác định"}
                     </span>
                   </div>
@@ -1012,7 +892,7 @@ export default function UserHome() {
                   className={`px-6 py-2 rounded-lg font-semibold transition ${
                     searchMode === "nft"
                       ? "bg-white border-b-4 border-1 border-[#077CA3] text-[#4BADD1] shadow-md"
-                      : "text-white/80 hover:text-white"
+                      : "!text-white/80 hover:!text-white"
                   }`}
                 >
                   Tra cứu NFT
@@ -1022,7 +902,7 @@ export default function UserHome() {
                   className={`px-6 py-2 rounded-lg font-semibold transition ${
                     searchMode === "drug"
                       ? "bg-white text-[#4BADD1] shadow-md border-b-4 border-1 border-[#077CA3]"
-                      : "text-white/80 hover:text-white"
+                      : "!text-white/80 hover:!text-white"
                   }`}
                 >
                   Thông tin thuốc
@@ -1125,7 +1005,7 @@ export default function UserHome() {
                         className="px-6 bg-[#077CA3] py-3.5 font-semibold rounded-xl transition text-sm flex items-center gap-2 hover:opacity-90 active:scale-95"
                       >
                         <svg
-                          className="w-5 h-5 text-white"
+                          className="w-5 h-5 !text-white"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -1137,7 +1017,7 @@ export default function UserHome() {
                             d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        <span className="font-semibold text-white">
+                        <span className="font-semibold !text-white">
                           Xác thực
                         </span>
                       </button>
@@ -1496,7 +1376,7 @@ export default function UserHome() {
       </section>
 
       {/* Footer */}
-      <footer className="py-16 px-4 bg-linear-to-b from-slate-800 to-slate-900 text-white relative overflow-hidden">
+      <footer className="py-16 px-4 bg-linear-to-b from-slate-800 to-slate-900 !text-white relative overflow-hidden">
         <motion.div
           className="absolute top-0 left-0 w-full h-full opacity-10"
           style={{
@@ -1512,7 +1392,7 @@ export default function UserHome() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              <h3 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
+              <h3 className="text-xl font-bold mb-4 !text-white flex items-center gap-2">
                 <span className="w-1 h-6 bg-[#4BADD1] rounded-full"></span>
                 Về chúng tôi
               </h3>
@@ -1528,7 +1408,7 @@ export default function UserHome() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <h3 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
+              <h3 className="text-xl font-bold mb-4 !text-white flex items-center gap-2">
                 <span className="w-1 h-6 bg-[#4BADD1] rounded-full"></span>
                 Liên kết
               </h3>
@@ -1538,7 +1418,7 @@ export default function UserHome() {
                     to="/login"
                     className="hover:text-[#4BADD1] transition flex items-center gap-2 group"
                   >
-                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full group-hover:bg-[#4BADD1] transition"></span>
+                    <span className="w-1.5 h-1.5  bg-slate-400 rounded-full group-hover:bg-[#4BADD1] transition"></span>
                     Đăng nhập
                   </Link>
                 </li>
@@ -1560,7 +1440,7 @@ export default function UserHome() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <h3 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
+              <h3 className="text-xl font-bold mb-4 !text-white flex items-center gap-2">
                 <span className="w-1 h-6 bg-[#4BADD1] rounded-full"></span>
                 Liên hệ
               </h3>
@@ -1650,16 +1530,16 @@ export default function UserHome() {
             >
               <div className="flex items-center justify-between mb-4 p-6 bg-primary rounded-t-2xl">
                 <div>
-                  <h3 className="text-xl font-bold text-white ">
+                  <h3 className="text-xl font-bold !text-white ">
                     Quét QR Code
                   </h3>
-                  <h3 className="text-sm font-bold text-white ">
+                  <h3 className="text-sm font-bold !text-white ">
                     Đưa mã vào khung hình để quét
                   </h3>
                 </div>
                 <button
                   onClick={handleCloseQRScanner}
-                  className="text-white hover:text-slate-700 transition"
+                  className="!text-white hover:text-slate-700 transition"
                 >
                   <svg
                     className="w-6 h-6"
@@ -1709,7 +1589,7 @@ export default function UserHome() {
                       }}
                     />
                     {qrError && (
-                      <div className="absolute bottom-2 left-2 right-2 bg-red-500/90 text-white text-xs p-2 rounded z-10">
+                      <div className="absolute bottom-2 left-2 right-2 bg-red-500/90 !text-white text-xs p-2 rounded z-10">
                         {qrError}
                       </div>
                     )}

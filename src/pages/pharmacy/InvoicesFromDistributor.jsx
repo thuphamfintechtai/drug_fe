@@ -241,7 +241,8 @@ export default function InvoicesFromDistributor() {
     }
 
     // Mã bưu điện: bắt buộc và chỉ số
-    const receiptAddressPostalCode = confirmForm.receiptAddressPostalCode?.trim() || "";
+    const receiptAddressPostalCode =
+      confirmForm.receiptAddressPostalCode?.trim() || "";
     if (!receiptAddressPostalCode) {
       errors.receiptAddressPostalCode = "Vui lòng nhập mã bưu điện";
     } else if (!/^\d+$/.test(receiptAddressPostalCode)) {
@@ -261,7 +262,8 @@ export default function InvoicesFromDistributor() {
       if (selectedDate > today) {
         errors.receivedDate = "Ngày nhận không được vượt quá ngày hiện tại";
       } else if (selectedDate < threeDaysAgo) {
-        errors.receivedDate = "Ngày nhận không được quá khứ cách ngày hiện tại 3 ngày";
+        errors.receivedDate =
+          "Ngày nhận không được quá khứ cách ngày hiện tại 3 ngày";
       }
     }
 
@@ -271,13 +273,13 @@ export default function InvoicesFromDistributor() {
     // Lấy số lượng đã được gửi đến
     const maxQuantity = parseInt(
       selectedInvoice?.quantity ??
-      selectedInvoice?.totalQuantity ??
-      selectedInvoice?.nftQuantity ??
-      (Array.isArray(selectedInvoice?.nfts)
-        ? selectedInvoice.nfts.length
-        : Array.isArray(selectedInvoice?.items)
-        ? selectedInvoice.items.length
-        : 0)
+        selectedInvoice?.totalQuantity ??
+        selectedInvoice?.nftQuantity ??
+        (Array.isArray(selectedInvoice?.nfts)
+          ? selectedInvoice.nfts.length
+          : Array.isArray(selectedInvoice?.items)
+          ? selectedInvoice.items.length
+          : 0)
     );
 
     if (!receivedQuantity) {
@@ -616,7 +618,7 @@ export default function InvoicesFromDistributor() {
                             setShowConfirmDialog(true);
                           }}
                           disabled={isConfirming}
-                          className="px-6 py-3 rounded-full bg-secondary hover:bg-primary text-white font-semibold shadow-md hover:shadow-lg transition disabled:opacity-50"
+                          className="px-6 py-3 rounded-full bg-secondary hover:bg-primary !text-white font-semibold shadow-md hover:shadow-lg transition disabled:opacity-50"
                         >
                           Xác nhận nhận hàng
                         </button>
@@ -663,7 +665,7 @@ export default function InvoicesFromDistributor() {
                 className={`px-3 py-2 rounded-xl ${
                   page >= pagination.pages
                     ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "text-white bg-secondary hover:bg-primary !text-white font-medium transition"
+                    : "!text-white bg-secondary hover:bg-primary !text-white font-medium transition"
                 }`}
               >
                 Sau
@@ -690,7 +692,7 @@ export default function InvoicesFromDistributor() {
                 <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div>
-                      <h2 className="text-2xl font-bold text-white">
+                      <h2 className="text-2xl font-bold !text-white">
                         Xác nhận nhận hàng
                       </h2>
                       <p className="text-cyan-100 text-sm">
@@ -701,7 +703,7 @@ export default function InvoicesFromDistributor() {
                   <button
                     onClick={() => setShowConfirmDialog(false)}
                     disabled={isConfirming}
-                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition disabled:opacity-50"
+                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white transition disabled:opacity-50"
                   >
                     <svg
                       className="w-5 h-5"
@@ -851,7 +853,8 @@ export default function InvoicesFromDistributor() {
                             : 0);
                         return sentQuantity > 0 ? (
                           <p className="mt-2 text-sm text-blue-500">
-                            (Tối đa: {sentQuantity} NFT - số lượng đã được gửi đến)
+                            (Tối đa: {sentQuantity} NFT - số lượng đã được gửi
+                            đến)
                           </p>
                         ) : null;
                       })()}
@@ -1104,7 +1107,7 @@ export default function InvoicesFromDistributor() {
                   <button
                     onClick={handleConfirmReceipt}
                     disabled={isConfirming}
-                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] !text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
                   >
                     {isConfirming ? "Đang xử lý..." : "Xác nhận nhận hàng"}
                   </button>

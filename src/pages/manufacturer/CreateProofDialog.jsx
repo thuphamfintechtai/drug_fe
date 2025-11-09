@@ -17,7 +17,7 @@ const CreateProofDialog = ({
     drugs: drugs,
     drugsType: typeof drugs,
     isDrugsArray: Array.isArray(drugs),
-    drugsLength: drugs?.length || 0
+    drugsLength: drugs?.length || 0,
   });
 
   if (!open) return null;
@@ -32,35 +32,35 @@ const CreateProofDialog = ({
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.drugId) {
       newErrors.drugId = "Vui lòng chọn thuốc";
     }
-    
+
     if (!formData.mfgDate) {
       newErrors.mfgDate = "Vui lòng nhập ngày sản xuất";
     }
-    
+
     if (!formData.expDate) {
       newErrors.expDate = "Vui lòng nhập ngày hết hạn";
     }
-    
+
     if (!formData.quantity) {
       newErrors.quantity = "Vui lòng nhập số lượng";
     } else if (parseInt(formData.quantity) <= 0) {
       newErrors.quantity = "Số lượng phải lớn hơn 0";
     }
-    
+
     // Validate dates
     if (formData.mfgDate && formData.expDate) {
       const mfgDate = new Date(formData.mfgDate);
       const expDate = new Date(formData.expDate);
-      
+
       if (mfgDate >= expDate) {
         newErrors.expDate = "Ngày hết hạn phải sau ngày sản xuất";
       }
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -86,15 +86,17 @@ const CreateProofDialog = ({
                 <span className="text-3xl">🏭</span>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className="text-2xl font-bold !text-white">
                   Tạo chứng nhận sản xuất
                 </h2>
-                <p className="text-cyan-100 text-sm">Điền thông tin vào form bên dưới</p>
+                <p className="text-cyan-100 text-sm">
+                  Điền thông tin vào form bên dưới
+                </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center text-white text-xl transition-all"
+              className="w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center !text-white text-xl transition-all"
             >
               ✕
             </button>
@@ -170,7 +172,9 @@ const CreateProofDialog = ({
             <Field
               label="👤 Kiểm định viên (Tùy chọn)"
               value={formData.qaInspector || ""}
-              onChange={(e) => handleInputChange("qaInspector", e.target.value || null)}
+              onChange={(e) =>
+                handleInputChange("qaInspector", e.target.value || null)
+              }
               helper="Để trống nếu không bắt buộc"
             />
           </div>
@@ -197,7 +201,7 @@ const CreateProofDialog = ({
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className={`px-6 py-3 rounded-xl text-white font-medium transition-all shadow-lg ${
+            className={`px-6 py-3 rounded-xl !text-white font-medium transition-all shadow-lg ${
               loading
                 ? "bg-cyan-400 cursor-not-allowed"
                 : "bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 hover:shadow-xl"
@@ -221,7 +225,15 @@ const CreateProofDialog = ({
 };
 
 // Sub component tái sử dụng cho input
-const Field = ({ label, type = "text", value, onChange, required, helper, error }) => (
+const Field = ({
+  label,
+  type = "text",
+  value,
+  onChange,
+  required,
+  helper,
+  error,
+}) => (
   <div className="flex flex-col">
     <label className="text-sm font-semibold text-gray-800 mb-2">
       {label} {required && <span className="text-red-500">*</span>}
@@ -249,4 +261,3 @@ const Field = ({ label, type = "text", value, onChange, required, helper, error 
 );
 
 export default CreateProofDialog;
-

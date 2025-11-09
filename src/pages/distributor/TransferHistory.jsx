@@ -423,7 +423,7 @@ export default function TransferHistory() {
                   <button
                     type="button"
                     onClick={handleSearch}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary text-white font-medium transition"
+                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition"
                   >
                     Tìm kiếm
                   </button>
@@ -701,7 +701,7 @@ export default function TransferHistory() {
                 className={`px-3 py-2 rounded-xl ${
                   page >= pagination.pages
                     ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white hover:shadow-lg"
+                    : "bg-gradient-to-r from-[#00b4d8] to-[#48cae4] !text-white hover:shadow-lg"
                 }`}
               >
                 Sau

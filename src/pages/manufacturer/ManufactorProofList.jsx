@@ -8,29 +8,29 @@ const ManufactorProofList = ({ manufactorId }) => {
   // Mock data
   const mockProofs = [
     {
-      _id: '1',
-      batchNumber: 'BATCH-001',
-      drug: { tradeName: 'Paracetamol 500mg', genericName: 'Paracetamol' },
-      mfgDate: '2024-01-15',
-      expDate: '2026-01-15',
-      quantity: 10000
+      _id: "1",
+      batchNumber: "BATCH-001",
+      drug: { tradeName: "Paracetamol 500mg", genericName: "Paracetamol" },
+      mfgDate: "2024-01-15",
+      expDate: "2026-01-15",
+      quantity: 10000,
     },
     {
-      _id: '2',
-      batchNumber: 'BATCH-002',
-      drug: { tradeName: 'Amoxicillin 250mg', genericName: 'Amoxicillin' },
-      mfgDate: '2024-02-20',
-      expDate: '2026-02-20',
-      quantity: 5000
+      _id: "2",
+      batchNumber: "BATCH-002",
+      drug: { tradeName: "Amoxicillin 250mg", genericName: "Amoxicillin" },
+      mfgDate: "2024-02-20",
+      expDate: "2026-02-20",
+      quantity: 5000,
     },
     {
-      _id: '3',
-      batchNumber: 'BATCH-003',
-      drug: { tradeName: 'Aspirin 100mg', genericName: 'Aspirin' },
-      mfgDate: '2024-03-10',
-      expDate: '2026-03-10',
-      quantity: 8000
-    }
+      _id: "3",
+      batchNumber: "BATCH-003",
+      drug: { tradeName: "Aspirin 100mg", genericName: "Aspirin" },
+      mfgDate: "2024-03-10",
+      expDate: "2026-03-10",
+      quantity: 8000,
+    },
   ];
 
   const loadProofs = async () => {
@@ -44,14 +44,14 @@ const ManufactorProofList = ({ manufactorId }) => {
       // } else {
       //   setError('Không thể tải danh sách proofs');
       // }
-      
+
       // Using mock data for now
       setTimeout(() => {
         setProofs(mockProofs);
         setLoading(false);
       }, 500);
     } catch (err) {
-      setError('Lỗi khi tải danh sách proofs');
+      setError("Lỗi khi tải danh sách proofs");
       setLoading(false);
     }
   };
@@ -68,11 +68,15 @@ const ManufactorProofList = ({ manufactorId }) => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                <i className="fas fa-file-prescription text-white text-xl"></i>
+                <i className="fas fa-file-prescription !text-white text-xl"></i>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">Danh sách Proofs của Manufacturer</h1>
-                <p className="text-sm text-gray-500">Quản lý chứng từ sản xuất thuốc</p>
+                <h1 className="text-2xl font-bold text-gray-800">
+                  Danh sách Proofs của Manufacturer
+                </h1>
+                <p className="text-sm text-gray-500">
+                  Quản lý chứng từ sản xuất thuốc
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -110,14 +114,18 @@ const ManufactorProofList = ({ manufactorId }) => {
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <i className="fas fa-inbox text-gray-400 text-3xl"></i>
               </div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">Không có dữ liệu</h3>
-              <p className="text-gray-500">Chưa có chứng từ nào được tìm thấy</p>
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                Không có dữ liệu
+              </h3>
+              <p className="text-gray-500">
+                Chưa có chứng từ nào được tìm thấy
+              </p>
             </div>
           ) : (
             /* Table with Data */
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                <thead className="bg-gradient-to-r from-blue-500 to-purple-600 !text-white">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
                       <i className="fas fa-barcode mr-2"></i>
@@ -143,8 +151,8 @@ const ManufactorProofList = ({ manufactorId }) => {
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {proofs.map((p, index) => (
-                    <tr 
-                      key={p._id} 
+                    <tr
+                      key={p._id}
                       className="transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:shadow-md group cursor-pointer"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
@@ -163,13 +171,17 @@ const ManufactorProofList = ({ manufactorId }) => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm text-gray-700">
                           <i className="fas fa-calendar-alt mr-2 text-gray-400 group-hover:text-green-500 transition-colors"></i>
-                          <span className="font-medium">{new Date(p.mfgDate).toLocaleDateString("vi-VN")}</span>
+                          <span className="font-medium">
+                            {new Date(p.mfgDate).toLocaleDateString("vi-VN")}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm text-gray-700">
                           <i className="fas fa-calendar-times mr-2 text-gray-400 group-hover:text-red-500 transition-colors"></i>
-                          <span className="font-medium">{new Date(p.expDate).toLocaleDateString("vi-VN")}</span>
+                          <span className="font-medium">
+                            {new Date(p.expDate).toLocaleDateString("vi-VN")}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -193,4 +205,3 @@ const ManufactorProofList = ({ manufactorId }) => {
 };
 
 export default ManufactorProofList;
-

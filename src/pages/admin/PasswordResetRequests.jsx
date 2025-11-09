@@ -410,7 +410,7 @@ export default function PasswordResetRequests() {
                 className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="sticky top-0 bg-secondary text-white p-6 rounded-t-2xl">
+                <div className="sticky top-0 bg-secondary !text-white p-6 rounded-t-2xl">
                   <h3 className="text-2xl font-bold">
                     Chi tiết yêu cầu reset mật khẩu
                   </h3>
@@ -561,7 +561,7 @@ export default function PasswordResetRequests() {
                         <button
                           disabled={actionLoading}
                           onClick={() => handleReject(selectedItem._id)}
-                          className="w-full px-4 py-3 rounded-xl text-white bg-gradient-to-r from-rose-500 to-red-600 shadow hover:shadow-rose-200/60 disabled:opacity-60 font-medium"
+                          className="w-full px-4 py-3 rounded-xl !text-white bg-gradient-to-r from-rose-500 to-red-600 shadow hover:shadow-rose-200/60 disabled:opacity-60 font-medium"
                         >
                           {actionLoading ? "Đang xử lý..." : "Từ chối yêu cầu"}
                         </button>

@@ -94,7 +94,7 @@ export default function Navbar() {
           >
             {isAuthenticated && user?.role === "Distributor" && (
               <motion.span
-                className="text-sm font-medium text-white/90 mr-4 px-3 py-1 bg-white/20 rounded-lg backdrop-blur-sm"
+                className="text-sm font-medium !text-white/90 mr-4 px-3 py-1 bg-white/20 rounded-lg backdrop-blur-sm"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
@@ -104,7 +104,7 @@ export default function Navbar() {
             )}
             <Link to="/" className="flex items-center gap-3 group">
               <motion.span
-                className="font-bold text-xl text-white drop-shadow-md tracking-tight"
+                className="font-bold text-xl !text-white drop-shadow-md tracking-tight"
                 whileHover={{
                   scale: 1.05,
                   textShadow: "0 2px 8px rgba(255,255,255,0.5)",
@@ -120,8 +120,8 @@ export default function Navbar() {
             {isConnected ? (
               <div className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30">
                 <div className="flex flex-col">
-                  <div className="text-xs text-white/80">MetaMask</div>
-                  <div className="text-sm font-semibold text-white font-mono">
+                  <div className="text-xs !text-white/80">MetaMask</div>
+                  <div className="text-sm font-semibold !text-white font-mono">
                     {formatAddress(account)}
                   </div>
                 </div>
@@ -146,7 +146,7 @@ export default function Navbar() {
             {!isAuthenticated ? (
               <Link
                 to="/login"
-                className="px-6 py-2.5 text-lg bg-white font-text-primary font-semibold rounded-lg shadow-md hover:bg-gray-50 transition-colors duration-200"
+                className="px-6 py-1 text-lg bg-white font-text-primary font-semibold rounded-lg shadow-md hover:bg-gray-50 transition-colors duration-200"
               >
                 Đăng nhập
               </Link>
@@ -159,7 +159,7 @@ export default function Navbar() {
                   transition={{ type: "spring", stiffness: 300 }}
                 >
                   <motion.svg
-                    className="w-6 h-6 text-white"
+                    className="w-6 h-6 !text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -174,10 +174,10 @@ export default function Navbar() {
                     />
                   </motion.svg>
                   <div>
-                    <div className="text-sm font-semibold text-white">
+                    <div className="text-sm font-semibold !text-white">
                       {user?.fullName || user?.username}
                     </div>
-                    <div className="text-xs text-white/80">{user?.role}</div>
+                    <div className="text-xs !text-white/80">{user?.role}</div>
                   </div>
                 </motion.div>
                 <LogoutButton onLogout={handleLogout} />
@@ -187,7 +187,7 @@ export default function Navbar() {
 
           <motion.button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl hover:bg-white/20 transition text-white"
+            className="md:hidden p-2 rounded-xl hover:bg-white/20 transition !text-white"
             whileTap={{ scale: 0.9 }}
             whileHover={{ scale: 1.1 }} // Thay vì rotate
             transition={{ duration: 0.3 }}
@@ -236,15 +236,15 @@ export default function Navbar() {
                   <div className="flex items-center gap-2">
                     <span className="text-lg">🦊</span>
                     <div className="flex flex-col">
-                      <div className="text-xs text-white/80">MetaMask</div>
-                      <div className="text-sm font-semibold text-white font-mono">
+                      <div className="text-xs !text-white/80">MetaMask</div>
+                      <div className="text-sm font-semibold !text-white font-mono">
                         {formatAddress(account)}
                       </div>
                     </div>
                   </div>
                   <button
                     onClick={handleDisconnectMetaMask}
-                    className="px-3 py-1 text-xs bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors duration-200"
+                    className="px-3 py-1 text-xs bg-red-500/80 hover:bg-red-500 !text-white rounded-lg transition-colors duration-200"
                   >
                     Ngắt
                   </button>
@@ -280,7 +280,7 @@ export default function Navbar() {
                     }}
                   >
                     <motion.svg
-                      className="w-10 h-10 text-white"
+                      className="w-10 h-10 !text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -295,10 +295,10 @@ export default function Navbar() {
                       />
                     </motion.svg>
                     <div>
-                      <div className="text-sm font-semibold text-white">
+                      <div className="text-sm font-semibold !text-white">
                         {user?.fullName || user?.username}
                       </div>
-                      <div className="text-xs text-white/80">{user?.role}</div>
+                      <div className="text-xs !text-white/80">{user?.role}</div>
                     </div>
                   </motion.div>
                   <div className="flex justify-center">

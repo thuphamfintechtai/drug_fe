@@ -341,12 +341,12 @@ export default function NFTTracking() {
                 <button
                   onClick={handleTrack}
                   disabled={isSearching}
-                  className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary text-white font-medium transition disabled:opacity-50"
+                  className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition disabled:opacity-50"
                 >
                   {isSearching ? (
                     "Đang tra cứu..."
                   ) : (
-                    <span className="text-white">Tìm Kiếm</span>
+                    <span className="!text-white">Tìm Kiếm</span>
                   )}
                 </button>
               </div>
@@ -370,9 +370,9 @@ export default function NFTTracking() {
                       setTrackingData(null);
                       setTokenId("");
                     }}
-                    className="px-6 py-2.5 rounded-full bg-secondary hover:bg-primary text-white font-medium transition"
+                    className="px-6 py-2.5 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition"
                   >
-                    <span className="text-white">Thử lại</span>
+                    <span className="!text-white">Thử lại</span>
                   </button>
                 </div>
               )}
@@ -448,7 +448,11 @@ export default function NFTTracking() {
                           trackingData?.commercialInvoice?.fromDistributor;
                         if (commercialDistributor) {
                           if (typeof commercialDistributor === "object") {
-                            return commercialDistributor.fullName || commercialDistributor.name || "N/A";
+                            return (
+                              commercialDistributor.fullName ||
+                              commercialDistributor.name ||
+                              "N/A"
+                            );
                           }
                         }
                         // Kiểm tra manufacturerInvoice (hóa đơn từ NSX)
@@ -456,7 +460,11 @@ export default function NFTTracking() {
                           trackingData?.manufacturerInvoice?.toDistributor;
                         if (manufacturerDistributor) {
                           if (typeof manufacturerDistributor === "object") {
-                            return manufacturerDistributor.fullName || manufacturerDistributor.name || "N/A";
+                            return (
+                              manufacturerDistributor.fullName ||
+                              manufacturerDistributor.name ||
+                              "N/A"
+                            );
                           }
                           // Nếu là ID string, có thể hiển thị ID hoặc "N/A"
                           return "N/A";
@@ -476,7 +484,9 @@ export default function NFTTracking() {
                           trackingData?.nft?.proofOfProduction?.expDate
                       )}
                     </div>
-                    <div className="text-slate-500 mt-4">Chủ sở hữu hiện tại</div>
+                    <div className="text-slate-500 mt-4">
+                      Chủ sở hữu hiện tại
+                    </div>
                     <div className="font-medium">
                       {trackingData?.nft?.owner?.fullName ||
                         trackingData?.nft?.owner?.username ||
@@ -532,7 +542,8 @@ export default function NFTTracking() {
                   trackingData.blockchainHistory.length > 0 && (
                     <div className="mt-6 pt-6 border-t border-slate-200">
                       <h3 className="text-sm font-semibold text-slate-700 mb-3">
-                        Lịch sử giao dịch ({trackingData.blockchainHistory.length})
+                        Lịch sử giao dịch (
+                        {trackingData.blockchainHistory.length})
                       </h3>
                       <div className="space-y-2">
                         {trackingData.blockchainHistory.map((tx, idx) => (
@@ -555,7 +566,9 @@ export default function NFTTracking() {
                               </div>
                               {tx.receivedTimestamp && (
                                 <div className="col-span-2">
-                                  <span className="text-slate-500">Thời gian:</span>
+                                  <span className="text-slate-500">
+                                    Thời gian:
+                                  </span>
                                   <span className="ml-1">
                                     {new Date(
                                       tx.receivedTimestamp * 1000
@@ -646,7 +659,7 @@ export default function NFTTracking() {
                       href={`https://zeroscan.org/tx/${trackingData.nft.chainTxHash}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-6 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+                      className="px-6 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] !text-white font-medium transition"
                     >
                       Xem trên ZeroScan
                     </a>
@@ -656,7 +669,7 @@ export default function NFTTracking() {
                       href={trackingData.nft.ipfsUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white font-medium transition"
+                      className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 !text-white font-medium transition"
                     >
                       Xem trên IPFS
                     </a>

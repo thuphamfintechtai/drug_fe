@@ -1,9 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { getDistributionDetail, confirmDistribution, updateDistributionStatus } from '../../services/distributor/proofService';
-import { Button, Tag, Timeline, notification, Spin, Card, Descriptions, Form, Select, Input } from 'antd';
-import DashboardLayout from '../../components/DashboardLayout';
-import { getDistributorNavigationItems } from '../../utils/distributorNavigation';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  getDistributionDetail,
+  confirmDistribution,
+  updateDistributionStatus,
+} from "../../services/distributor/proofService";
+import {
+  Button,
+  Tag,
+  Timeline,
+  notification,
+  Spin,
+  Card,
+  Descriptions,
+  Form,
+  Select,
+  Input,
+} from "antd";
+import DashboardLayout from "../../components/DashboardLayout";
+import { getDistributorNavigationItems } from "../../utils/distributorNavigation";
 
 export default function DistributionDetail() {
   const { id } = useParams();
@@ -17,20 +32,17 @@ export default function DistributionDetail() {
     setLoading(true);
     try {
       const res = await getDistributionDetail(id);
-      const detail =
-        res?.data?.data
-          ? res.data.data
-          : res?.data || null;
+      const detail = res?.data?.data ? res.data.data : res?.data || null;
       setData(detail);
       if (detail) {
         form.setFieldsValue({
-          status: detail.status || 'pending',
-          notes: detail.notes || '',
+          status: detail.status || "pending",
+          notes: detail.notes || "",
         });
       }
     } catch (error) {
-      console.error('Fetch detail error:', error);
-      notification.error({ message: 'Không xem được chi tiết lô hàng' });
+      console.error("Fetch detail error:", error);
+      notification.error({ message: "Không xem được chi tiết lô hàng" });
       navigate(-1);
     } finally {
       setLoading(false);
@@ -44,10 +56,10 @@ export default function DistributionDetail() {
   const onConfirm = async () => {
     try {
       await confirmDistribution(id);
-      notification.success({ message: 'Đã xác nhận nhận hàng!' });
+      notification.success({ message: "Đã xác nhận nhận hàng!" });
       load();
     } catch {
-      notification.error({ message: 'Xác nhận thất bại' });
+      notification.error({ message: "Xác nhận thất bại" });
     }
   };
 
@@ -56,11 +68,11 @@ export default function DistributionDetail() {
     setUpdating(true);
     try {
       await updateDistributionStatus(id, values);
-      notification.success({ message: 'Cập nhật trạng thái thành công!' });
+      notification.success({ message: "Cập nhật trạng thái thành công!" });
       load();
     } catch (error) {
-      console.error('Update status error:', error);
-      notification.error({ message: 'Cập nhật thất bại!' });
+      console.error("Update status error:", error);
+      notification.error({ message: "Cập nhật thất bại!" });
     } finally {
       setUpdating(false);
     }
@@ -89,11 +101,11 @@ export default function DistributionDetail() {
           <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/30 blur-xl animate-float-slow" />
           <div className="absolute top-8 right-6 w-16 h-8 rounded-full bg-white/25 blur-md rotate-6 animate-float-slower" />
         </div>
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+        <div className="relative px-6 py-8 md:px-10 md:py-12 !text-white">
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">
             Chi tiết đơn phân phối
           </h1>
-          <p className="mt-2 text-white/90">
+          <p className="mt-2 !text-white/90">
             Thông tin chi tiết về đơn hàng nhận từ nhà sản xuất.
           </p>
         </div>
@@ -107,37 +119,41 @@ export default function DistributionDetail() {
         >
           <Descriptions column={{ xs: 1, sm: 2 }}>
             <Descriptions.Item label="Mã đơn">
-              <span className="font-mono font-semibold">{data.code || 'N/A'}</span>
+              <span className="font-mono font-semibold">
+                {data.code || "N/A"}
+              </span>
             </Descriptions.Item>
             <Descriptions.Item label="Mã xác minh">
-              <span className="font-mono">{data.verificationCode || 'N/A'}</span>
+              <span className="font-mono">
+                {data.verificationCode || "N/A"}
+              </span>
             </Descriptions.Item>
             <Descriptions.Item label="Tên thuốc">
-              {data.drug?.name || 
-               data.drug?.tradeName || 
-               data.proofOfProduction?.drug?.name ||
-               data.proofOfProduction?.drug?.tradeName ||
-               data.nftInfo?.drug?.name ||
-               data.nftInfo?.drug?.tradeName ||
-               data.drugName || 
-               'N/A'}
+              {data.drug?.name ||
+                data.drug?.tradeName ||
+                data.proofOfProduction?.drug?.name ||
+                data.proofOfProduction?.drug?.tradeName ||
+                data.nftInfo?.drug?.name ||
+                data.nftInfo?.drug?.tradeName ||
+                data.drugName ||
+                "N/A"}
             </Descriptions.Item>
             <Descriptions.Item label="Số lượng">
               <span className="font-medium">{data.quantity || 0}</span>
             </Descriptions.Item>
             <Descriptions.Item label="Trạng thái">
-              <Tag color={data.status === 'confirmed' ? 'green' : 'orange'}>
-                {data.status === 'confirmed' ? 'Đã xác nhận' : 'Chờ xác nhận'}
+              <Tag color={data.status === "confirmed" ? "green" : "orange"}>
+                {data.status === "confirmed" ? "Đã xác nhận" : "Chờ xác nhận"}
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Ngày tạo">
               {data.createdAt
-                ? new Date(data.createdAt).toLocaleString('vi-VN')
-                : 'N/A'}
+                ? new Date(data.createdAt).toLocaleString("vi-VN")
+                : "N/A"}
             </Descriptions.Item>
             {data.manufacturer && (
               <Descriptions.Item label="Nhà sản xuất">
-                {data.manufacturer.name || data.manufacturer.username || 'N/A'}
+                {data.manufacturer.name || data.manufacturer.username || "N/A"}
               </Descriptions.Item>
             )}
           </Descriptions>
@@ -152,10 +168,12 @@ export default function DistributionDetail() {
             <Timeline
               items={data.timeline.map((t, i) => ({
                 key: i,
-                color: t.status === 'confirmed' ? 'green' : 'orange',
+                color: t.status === "confirmed" ? "green" : "orange",
                 children: (
                   <div>
-                    <span className="font-medium text-gray-800">{t.content}</span>
+                    <span className="font-medium text-gray-800">
+                      {t.content}
+                    </span>
                     <div className="text-gray-500 text-sm">{t.time}</div>
                   </div>
                 ),
@@ -165,7 +183,7 @@ export default function DistributionDetail() {
         )}
 
         {/* Actions */}
-        {data.status === 'pending' && (
+        {data.status === "pending" && (
           <Card
             title="Xác nhận nhận hàng"
             className="rounded-2xl shadow-lg border border-gray-100"
@@ -190,7 +208,7 @@ export default function DistributionDetail() {
             <Form.Item
               name="status"
               label="Trạng thái"
-              rules={[{ required: true, message: 'Vui lòng chọn trạng thái' }]}
+              rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
             >
               <Select>
                 <Select.Option value="pending">Chờ xác nhận</Select.Option>

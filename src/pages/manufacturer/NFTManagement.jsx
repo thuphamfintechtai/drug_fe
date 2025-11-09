@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import DashboardLayout from '../../components/DashboardLayout';
-import { getMyNFTs } from '../../services/manufacturer/nftService';
-import { ipfsToHttp } from '../../utils/ipfsHelper';
-import { getManufacturerNavigationItems } from '../../utils/manufacturerNavigation.jsx';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import DashboardLayout from "../../components/DashboardLayout";
+import { getMyNFTs } from "../../services/manufacturer/nftService";
+import { ipfsToHttp } from "../../utils/ipfsHelper";
+import { getManufacturerNavigationItems } from "../../utils/manufacturerNavigation.jsx";
 
 export default function NFTManagement() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const [nfts, setNfts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedNFT, setSelectedNFT] = useState(null);
@@ -26,7 +26,7 @@ export default function NFTManagement() {
         setNfts(response.data.nfts || response.data || []);
       }
     } catch (error) {
-      console.error('Error loading NFTs:', error);
+      console.error("Error loading NFTs:", error);
       // Không hiển thị alert để tránh làm phiền người dùng
       setNfts([]);
     } finally {
@@ -41,23 +41,27 @@ export default function NFTManagement() {
 
   const getStatusBadge = (status) => {
     const styles = {
-      minted: 'bg-green-100 text-green-800',
-      transferred: 'bg-blue-100 text-blue-800',
-      sold: 'bg-teal-100 text-teal-800',
-      expired: 'bg-red-100 text-red-800',
-      recalled: 'bg-orange-100 text-orange-800'
+      minted: "bg-green-100 text-green-800",
+      transferred: "bg-blue-100 text-blue-800",
+      sold: "bg-teal-100 text-teal-800",
+      expired: "bg-red-100 text-red-800",
+      recalled: "bg-orange-100 text-orange-800",
     };
-    
+
     const labels = {
-      minted: '✓ Minted',
-      transferred: '→ Transferred',
-      sold: '$ Sold',
-      expired: '⏰ Expired',
-      recalled: '⚠️ Recalled'
+      minted: "✓ Minted",
+      transferred: "→ Transferred",
+      sold: "$ Sold",
+      expired: "⏰ Expired",
+      recalled: "⚠️ Recalled",
     };
 
     return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${styles[status] || styles.minted}`}>
+      <span
+        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+          styles[status] || styles.minted
+        }`}
+      >
         {labels[status] || status}
       </span>
     );
@@ -76,12 +80,16 @@ export default function NFTManagement() {
                 <span className="text-2xl">🎨</span>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">Quản lý NFT</h1>
+                <h1 className="text-2xl font-bold text-gray-800">
+                  Quản lý NFT
+                </h1>
                 <p className="text-sm text-gray-500">Danh sách NFT đã tạo</p>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-cyan-600">{nfts.length}</div>
+              <div className="text-3xl font-bold text-cyan-600">
+                {nfts.length}
+              </div>
               <div className="text-sm text-gray-500">Tổng NFT</div>
             </div>
           </div>
@@ -99,11 +107,15 @@ export default function NFTManagement() {
               <div className="w-24 h-24 bg-gradient-to-br from-cyan-100 to-teal-100 rounded-2xl flex items-center justify-center mb-6">
                 <span className="text-5xl">🎨</span>
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Chưa có NFT nào</h3>
-              <p className="text-gray-600 mb-4">Tạo Proof of Production để mint NFT</p>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
+                Chưa có NFT nào
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Tạo Proof of Production để mint NFT
+              </p>
               <button
-                onClick={() => navigate('/manufacturer/proofs/create')}
-                className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white rounded-xl font-semibold shadow-lg"
+                onClick={() => navigate("/manufacturer/proofs/create")}
+                className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 !text-white rounded-xl font-semibold shadow-lg"
               >
                 + Tạo Proof mới
               </button>
@@ -118,7 +130,9 @@ export default function NFTManagement() {
                 >
                   {/* NFT Image/Icon */}
                   <div className="h-48 bg-gradient-to-br from-cyan-400 to-teal-600 flex items-center justify-center relative overflow-hidden">
-                    <span className="text-6xl group-hover:scale-110 transition-transform duration-300">🎨</span>
+                    <span className="text-6xl group-hover:scale-110 transition-transform duration-300">
+                      🎨
+                    </span>
                     <div className="absolute top-3 right-3">
                       {getStatusBadge(nft.status)}
                     </div>
@@ -127,22 +141,32 @@ export default function NFTManagement() {
                   {/* NFT Info */}
                   <div className="p-5">
                     <div className="mb-3">
-                      <div className="text-xs text-cyan-600 font-semibold mb-1">Token ID</div>
-                      <div className="font-mono text-lg font-bold text-gray-800">#{nft.tokenId}</div>
+                      <div className="text-xs text-cyan-600 font-semibold mb-1">
+                        Token ID
+                      </div>
+                      <div className="font-mono text-lg font-bold text-gray-800">
+                        #{nft.tokenId}
+                      </div>
                     </div>
 
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Batch Number:</span>
-                        <span className="font-semibold text-gray-800">{nft.batchNumber}</span>
+                        <span className="font-semibold text-gray-800">
+                          {nft.batchNumber}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Drug:</span>
-                        <span className="font-semibold text-gray-800 truncate ml-2">{nft.drug?.tradeName || 'N/A'}</span>
+                        <span className="font-semibold text-gray-800 truncate ml-2">
+                          {nft.drug?.tradeName || "N/A"}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Quantity:</span>
-                        <span className="font-semibold text-gray-800">{nft.quantity?.toLocaleString() || 0}</span>
+                        <span className="font-semibold text-gray-800">
+                          {nft.quantity?.toLocaleString() || 0}
+                        </span>
                       </div>
                     </div>
 
@@ -151,7 +175,7 @@ export default function NFTManagement() {
                         e.stopPropagation();
                         handleViewDetail(nft);
                       }}
-                      className="mt-4 w-full px-4 py-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg"
+                      className="mt-4 w-full px-4 py-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 !text-white rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg"
                     >
                       Xem chi tiết →
                     </button>
@@ -173,13 +197,17 @@ export default function NFTManagement() {
                 <div className="flex items-center gap-3">
                   <span className="text-4xl">🎨</span>
                   <div>
-                    <h2 className="text-2xl font-bold text-white">NFT Details</h2>
-                    <p className="text-cyan-100 text-sm">Token ID: #{selectedNFT.tokenId}</p>
+                    <h2 className="text-2xl font-bold !text-white">
+                      NFT Details
+                    </h2>
+                    <p className="text-cyan-100 text-sm">
+                      Token ID: #{selectedNFT.tokenId}
+                    </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowDetailModal(false)}
-                  className="w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center text-white text-xl"
+                  className="w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center !text-white text-xl"
                 >
                   ✕
                 </button>
@@ -192,21 +220,49 @@ export default function NFTManagement() {
               <InfoRow label="Batch Number" value={selectedNFT.batchNumber} />
               <InfoRow label="Serial Number" value={selectedNFT.serialNumber} />
               <InfoRow label="Status" value={selectedNFT.status} />
-              <InfoRow label="Drug" value={selectedNFT.drug?.tradeName || 'N/A'} />
-              <InfoRow label="Quantity" value={`${selectedNFT.quantity?.toLocaleString() || 0} ${selectedNFT.unit || 'units'}`} />
-              <InfoRow label="Mfg Date" value={selectedNFT.mfgDate ? new Date(selectedNFT.mfgDate).toLocaleDateString('vi-VN') : 'N/A'} />
-              <InfoRow label="Exp Date" value={selectedNFT.expDate ? new Date(selectedNFT.expDate).toLocaleDateString('vi-VN') : 'N/A'} />
-              
+              <InfoRow
+                label="Drug"
+                value={selectedNFT.drug?.tradeName || "N/A"}
+              />
+              <InfoRow
+                label="Quantity"
+                value={`${selectedNFT.quantity?.toLocaleString() || 0} ${
+                  selectedNFT.unit || "units"
+                }`}
+              />
+              <InfoRow
+                label="Mfg Date"
+                value={
+                  selectedNFT.mfgDate
+                    ? new Date(selectedNFT.mfgDate).toLocaleDateString("vi-VN")
+                    : "N/A"
+                }
+              />
+              <InfoRow
+                label="Exp Date"
+                value={
+                  selectedNFT.expDate
+                    ? new Date(selectedNFT.expDate).toLocaleDateString("vi-VN")
+                    : "N/A"
+                }
+              />
+
               {selectedNFT.contractAddress && (
                 <div className="pt-2">
-                  <label className="text-sm font-semibold text-gray-600 block mb-2">Contract Address:</label>
-                  <code className="block bg-gray-100 rounded-lg p-3 text-xs font-mono break-all">{selectedNFT.contractAddress}</code>
+                  <label className="text-sm font-semibold text-gray-600 block mb-2">
+                    Contract Address:
+                  </label>
+                  <code className="block bg-gray-100 rounded-lg p-3 text-xs font-mono break-all">
+                    {selectedNFT.contractAddress}
+                  </code>
                 </div>
               )}
 
               {selectedNFT.chainTxHash && (
                 <div className="pt-2">
-                  <label className="text-sm font-semibold text-gray-600 block mb-2">Transaction Hash:</label>
+                  <label className="text-sm font-semibold text-gray-600 block mb-2">
+                    Transaction Hash:
+                  </label>
                   <a
                     href={`https://etherscan.io/tx/${selectedNFT.chainTxHash}`}
                     target="_blank"
@@ -236,7 +292,7 @@ export default function NFTManagement() {
             <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end">
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white font-medium"
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 !text-white font-medium"
               >
                 Đóng
               </button>
@@ -255,4 +311,3 @@ const InfoRow = ({ label, value }) => (
     <span className="text-sm text-gray-800 font-medium">{value}</span>
   </div>
 );
-

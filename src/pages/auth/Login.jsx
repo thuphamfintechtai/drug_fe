@@ -27,6 +27,28 @@ export default function Login() {
     }
   }, [isInstalled]);
 
+  // Hàm loại bỏ dấu tiếng Việt và khoảng trắng
+  const removeVietnameseAccents = (str) => {
+    if (!str) return "";
+    return str
+      .trim() // Loại bỏ khoảng trắng ở đầu và cuối
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .replace(/\s+/g, ""); // Loại bỏ tất cả khoảng trắng, tab, newline, etc.
+  };
+
+  const handleEmailChange = (e) => {
+    const value = removeVietnameseAccents(e.target.value);
+    setEmail(value);
+  };
+
+  const handlePasswordChange = (e) => {
+    const value = removeVietnameseAccents(e.target.value);
+    setPassword(value);
+  };
+
   const handleConnectMetaMask = async () => {
     const connected = await connect();
     if (connected) {
@@ -218,7 +240,8 @@ export default function Login() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={handleEmailChange}
+                onInput={handleEmailChange}
                 className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:border-[#4BADD1] transition"
                 style={{ "--tw-ring-color": "#4BADD1" }}
                 placeholder="your@email.com"
@@ -236,7 +259,8 @@ export default function Login() {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
+                  onInput={handlePasswordChange}
                   className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:border-[#4BADD1] transition pr-12"
                   style={{ "--tw-ring-color": "#4BADD1" }}
                   placeholder="••••••••"
@@ -268,7 +292,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition transform hover:scale-[1.02] active:scale-[0.98] bg-secondary"
+              className="w-full py-3.5 !text-white font-semibold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition transform hover:scale-[1.02] active:scale-[0.98] bg-secondary"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -276,7 +300,7 @@ export default function Login() {
                   Đang đăng nhập...
                 </span>
               ) : (
-                <span className="text-white ">Đăng nhập</span>
+                <span className="!text-white ">Đăng nhập</span>
               )}
             </button>
           </form>

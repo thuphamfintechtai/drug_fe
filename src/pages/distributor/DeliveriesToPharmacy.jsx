@@ -158,13 +158,13 @@ export default function DeliveriesToPharmacy() {
           <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/30 blur-xl animate-float-slow" />
           <div className="absolute top-8 right-6 w-16 h-8 rounded-full bg-white/25 blur-md rotate-6 animate-float-slower" />
         </div>
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+        <div className="relative px-6 py-8 md:px-10 md:py-12 !text-white">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">
                 Đơn giao đến Nhà thuốc
               </h1>
-              <p className="mt-2 text-white/90">
+              <p className="mt-2 !text-white/90">
                 Quản lý các đơn hàng đã giao đến nhà thuốc.
               </p>
             </div>

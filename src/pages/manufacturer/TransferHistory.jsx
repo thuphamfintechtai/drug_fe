@@ -218,7 +218,7 @@ export default function TransferHistory() {
         const invoiceNumber = (item.invoiceNumber || "").toLowerCase();
         const batchNumber = (item.production?.batchNumber || "").toLowerCase();
         const email = (item.distributor?.email || "").toLowerCase();
-        
+
         return (
           distributorName.includes(searchTerm) ||
           invoiceNumber.includes(searchTerm) ||
@@ -748,11 +748,12 @@ export default function TransferHistory() {
                     {/* Expandable Content */}
                     <div
                       className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                        isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+                        isExpanded
+                          ? "max-h-[2000px] opacity-100"
+                          : "max-h-0 opacity-0"
                       }`}
                     >
                       <div className="px-5 pb-5 border-t border-slate-200">
-
                         {/* Summary */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm mt-4">
                           {item.production?.batchNumber && (
@@ -775,7 +776,9 @@ export default function TransferHistory() {
                             <div className="mt-1 text-slate-600">
                               Ngày tạo:{" "}
                               <span className="font-medium">
-                                {new Date(item.createdAt).toLocaleString("vi-VN")}
+                                {new Date(item.createdAt).toLocaleString(
+                                  "vi-VN"
+                                )}
                               </span>
                             </div>
                           </div>
@@ -850,7 +853,7 @@ export default function TransferHistory() {
                                   handleRetry(item);
                                 }}
                                 disabled={retryingId === item._id}
-                                className="w-full px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#48cae4] hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all font-semibold"
+                                className="w-full px-4 py-2.5 rounded-xl !text-white bg-gradient-to-r from-[#00b4d8] to-[#48cae4] hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all font-semibold"
                               >
                                 {retryingId === item._id
                                   ? "Đang xử lý..."
@@ -866,18 +869,24 @@ export default function TransferHistory() {
                           <div className="flex items-center gap-2 text-xs">
                             <div
                               className={`flex items-center gap-1 ${
-                                ["pending", "sent", "received", "paid"].includes(
-                                  item.status
-                                )
+                                [
+                                  "pending",
+                                  "sent",
+                                  "received",
+                                  "paid",
+                                ].includes(item.status)
                                   ? "text-amber-600"
                                   : "text-slate-400"
                               }`}
                             >
                               <div
                                 className={`w-2 h-2 rounded-full ${
-                                  ["pending", "sent", "received", "paid"].includes(
-                                    item.status
-                                  )
+                                  [
+                                    "pending",
+                                    "sent",
+                                    "received",
+                                    "paid",
+                                  ].includes(item.status)
                                     ? "bg-amber-500"
                                     : "bg-slate-300"
                                 }`}
@@ -887,14 +896,18 @@ export default function TransferHistory() {
                             <div className="flex-1 h-px bg-slate-200"></div>
                             <div
                               className={`flex items-center gap-1 ${
-                                ["sent", "received", "paid"].includes(item.status)
+                                ["sent", "received", "paid"].includes(
+                                  item.status
+                                )
                                   ? "text-cyan-600"
                                   : "text-slate-400"
                               }`}
                             >
                               <div
                                 className={`w-2 h-2 rounded-full ${
-                                  ["sent", "received", "paid"].includes(item.status)
+                                  ["sent", "received", "paid"].includes(
+                                    item.status
+                                  )
                                     ? "bg-cyan-500"
                                     : "bg-slate-300"
                                 }`}
@@ -971,7 +984,7 @@ export default function TransferHistory() {
                 className={`px-3 py-2 rounded-xl ${
                   page >= pagination.pages
                     ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "bg-secondary text-white hover:shadow-lg"
+                    : "bg-secondary !text-white hover:shadow-lg"
                 }`}
               >
                 Sau

@@ -269,7 +269,7 @@ export default function Profile() {
             {/* User Info */}
             <div className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden">
               <div className="px-6 py-4 bg-secondary">
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold !text-white">
                   Thông tin tài khoản
                 </h2>
               </div>
@@ -330,7 +330,7 @@ export default function Profile() {
             {profile.company && (
               <div className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden">
                 <div className="px-6 py-4 bg-gradient-to-r from-[#00b4d8] to-[#48cae4]">
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-xl font-bold !text-white">
                     Thông tin công ty
                   </h2>
                 </div>

@@ -380,7 +380,7 @@ export default function ManufacturerDashboard() {
               <p className="text-red-600 text-lg mb-4">{error}</p>
               <button
                 onClick={loadStats}
-                className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                className="px-6 py-2.5 bg-red-600 !text-white rounded-lg hover:bg-red-700 transition"
               >
                 Thử lại
               </button>

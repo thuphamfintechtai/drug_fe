@@ -212,7 +212,7 @@ export default function PharmacyNFTTracking() {
                       setData(null);
                       setNftId("");
                     }}
-                    className="px-6 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+                    className="px-6 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] !text-white font-medium transition"
                   >
                     Thử lại
                   </button>
@@ -288,7 +288,11 @@ export default function PharmacyNFTTracking() {
                           data?.commercialInvoice?.fromDistributor;
                         if (commercialDistributor) {
                           if (typeof commercialDistributor === "object") {
-                            return commercialDistributor.fullName || commercialDistributor.name || "N/A";
+                            return (
+                              commercialDistributor.fullName ||
+                              commercialDistributor.name ||
+                              "N/A"
+                            );
                           }
                         }
                         // Kiểm tra manufacturerInvoice (hóa đơn từ NSX)
@@ -296,7 +300,11 @@ export default function PharmacyNFTTracking() {
                           data?.manufacturerInvoice?.toDistributor;
                         if (manufacturerDistributor) {
                           if (typeof manufacturerDistributor === "object") {
-                            return manufacturerDistributor.fullName || manufacturerDistributor.name || "N/A";
+                            return (
+                              manufacturerDistributor.fullName ||
+                              manufacturerDistributor.name ||
+                              "N/A"
+                            );
                           }
                           // Nếu là ID string, có thể hiển thị ID hoặc "N/A"
                           return "N/A";
@@ -315,7 +323,9 @@ export default function PharmacyNFTTracking() {
                           data?.nft?.proofOfProduction?.expDate
                       )}
                     </div>
-                    <div className="text-slate-500 mt-4">Chủ sở hữu hiện tại</div>
+                    <div className="text-slate-500 mt-4">
+                      Chủ sở hữu hiện tại
+                    </div>
                     <div className="font-medium">
                       {data?.nft?.owner?.fullName ||
                         data?.nft?.owner?.username ||
@@ -367,46 +377,49 @@ export default function PharmacyNFTTracking() {
                 )}
 
                 {/* Lịch sử blockchain */}
-                {data?.blockchainHistory && data.blockchainHistory.length > 0 && (
-                  <div className="mt-6 pt-6 border-t border-slate-200">
-                    <h3 className="text-sm font-semibold text-slate-700 mb-3">
-                      Lịch sử giao dịch ({data.blockchainHistory.length})
-                    </h3>
-                    <div className="space-y-2">
-                      {data.blockchainHistory.map((tx, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-slate-50 rounded-lg p-3 text-xs"
-                        >
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <span className="text-slate-500">Từ:</span>
-                              <span className="font-mono ml-1">
-                                {short(tx.fromUserAddress)}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-slate-500">Đến:</span>
-                              <span className="font-mono ml-1">
-                                {short(tx.toUserAddress)}
-                              </span>
-                            </div>
-                            {tx.receivedTimestamp && (
-                              <div className="col-span-2">
-                                <span className="text-slate-500">Thời gian:</span>
-                                <span className="ml-1">
-                                  {new Date(
-                                    tx.receivedTimestamp * 1000
-                                  ).toLocaleString("vi-VN")}
+                {data?.blockchainHistory &&
+                  data.blockchainHistory.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-slate-200">
+                      <h3 className="text-sm font-semibold text-slate-700 mb-3">
+                        Lịch sử giao dịch ({data.blockchainHistory.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {data.blockchainHistory.map((tx, idx) => (
+                          <div
+                            key={idx}
+                            className="bg-slate-50 rounded-lg p-3 text-xs"
+                          >
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <span className="text-slate-500">Từ:</span>
+                                <span className="font-mono ml-1">
+                                  {short(tx.fromUserAddress)}
                                 </span>
                               </div>
-                            )}
+                              <div>
+                                <span className="text-slate-500">Đến:</span>
+                                <span className="font-mono ml-1">
+                                  {short(tx.toUserAddress)}
+                                </span>
+                              </div>
+                              {tx.receivedTimestamp && (
+                                <div className="col-span-2">
+                                  <span className="text-slate-500">
+                                    Thời gian:
+                                  </span>
+                                  <span className="ml-1">
+                                    {new Date(
+                                      tx.receivedTimestamp * 1000
+                                    ).toLocaleString("vi-VN")}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Thông tin hóa đơn */}
                 {(data?.manufacturerInvoice || data?.commercialInvoice) && (
@@ -430,7 +443,9 @@ export default function PharmacyNFTTracking() {
                             <div className="mt-1">
                               <span className="text-slate-600">Ngày:</span>
                               <span className="ml-1">
-                                {formatDate(data.manufacturerInvoice.invoiceDate)}
+                                {formatDate(
+                                  data.manufacturerInvoice.invoiceDate
+                                )}
                               </span>
                             </div>
                           )}
@@ -479,7 +494,7 @@ export default function PharmacyNFTTracking() {
                       href={`https://zeroscan.org/tx/${data.nft.chainTxHash}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-6 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
+                      className="px-6 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] !text-white font-medium transition"
                     >
                       Xem trên ZeroScan
                     </a>
@@ -489,7 +504,7 @@ export default function PharmacyNFTTracking() {
                       href={data.nft.ipfsUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white font-medium transition"
+                      className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 !text-white font-medium transition"
                     >
                       Xem trên IPFS
                     </a>

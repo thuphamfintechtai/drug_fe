@@ -1,7 +1,8 @@
 import React from "react";
 
 const ManufactorDrugCard = ({ drug, onClick }) => {
-  const formatDate = (d) => (d ? new Date(d).toLocaleDateString("vi-VN") : "N/A");
+  const formatDate = (d) =>
+    d ? new Date(d).toLocaleDateString("vi-VN") : "N/A";
 
   // Màu của trạng thái (chỉ để tô chấm tròn)
   const getStatusColor = (status) => {
@@ -68,7 +69,9 @@ const ManufactorDrugCard = ({ drug, onClick }) => {
             </div>
             <div className="max-w-[200px]">
               <h3 className="text-gray-800 font-semibold text-lg leading-tight truncate group-hover:text-cyan-600 transition-colors duration-300">
-                {drug.tradeName || drug.genericName || "Tên thuốc không xác định"}
+                {drug.tradeName ||
+                  drug.genericName ||
+                  "Tên thuốc không xác định"}
               </h3>
               <p className="text-slate-500 text-sm truncate">
                 {drug.atcCode || "ATC Code không có"}
@@ -124,7 +127,9 @@ const ManufactorDrugCard = ({ drug, onClick }) => {
           <div className="text-xs text-slate-400 flex flex-col leading-tight">
             <span>📅 {formatDate(drug.createdAt)}</span>
             {drug.updatedAt && (
-              <span className="text-slate-400">🔄 {formatDate(drug.updatedAt)}</span>
+              <span className="text-slate-400">
+                🔄 {formatDate(drug.updatedAt)}
+              </span>
             )}
           </div>
         </div>
@@ -134,4 +139,3 @@ const ManufactorDrugCard = ({ drug, onClick }) => {
 };
 
 export default ManufactorDrugCard;
-

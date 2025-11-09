@@ -1,11 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { createProofToPharmacy } from '../../services/distributor/proofOfPharmacyService';
-import { getDistributions } from '../../services/distributor/proofService';
-import { getAllPharmacies } from '../../services/distributor/pharmacyService';
-import { Form, Button, notification, Select, InputNumber, Input, Card, Divider } from 'antd';
-import DashboardLayout from '../../components/DashboardLayout';
-import { useNavigate } from 'react-router-dom';
-import { getDistributorNavigationItems } from '../../utils/distributorNavigation';
+import React, { useState, useEffect } from "react";
+import { createProofToPharmacy } from "../../services/distributor/proofOfPharmacyService";
+import { getDistributions } from "../../services/distributor/proofService";
+import { getAllPharmacies } from "../../services/distributor/pharmacyService";
+import {
+  Form,
+  Button,
+  notification,
+  Select,
+  InputNumber,
+  Input,
+  Card,
+  Divider,
+} from "antd";
+import DashboardLayout from "../../components/DashboardLayout";
+import { useNavigate } from "react-router-dom";
+import { getDistributorNavigationItems } from "../../utils/distributorNavigation";
 
 const { TextArea } = Input;
 
@@ -24,17 +33,18 @@ export default function CreateProofToPharmacy() {
       setFetchingDistribution(true);
       try {
         const res = await getDistributions();
-        const list =
-          Array.isArray(res?.data)
-            ? res.data
-            : Array.isArray(res?.data?.data)
-            ? res.data.data
-            : [];
+        const list = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.data)
+          ? res.data.data
+          : [];
         // Chỉ lấy những đơn đã confirmed
-        const confirmed = list.filter((d) => d.status === 'confirmed');
+        const confirmed = list.filter((d) => d.status === "confirmed");
         setDistributions(confirmed);
       } catch (error) {
-        notification.error({ message: 'Không tải được danh sách đơn phân phối' });
+        notification.error({
+          message: "Không tải được danh sách đơn phân phối",
+        });
       } finally {
         setFetchingDistribution(false);
       }
@@ -48,22 +58,22 @@ export default function CreateProofToPharmacy() {
       setFetchingPharmacy(true);
       try {
         const res = await getAllPharmacies({ limit: 1000 });
-        const list =
-          Array.isArray(res?.data?.data)
-            ? res.data.data
-            : Array.isArray(res?.data)
-            ? res.data
-            : [];
-        
+        const list = Array.isArray(res?.data?.data)
+          ? res.data.data
+          : Array.isArray(res?.data)
+          ? res.data
+          : [];
+
         setPharmacies(
           list.map((p) => ({
             value: p._id || p.userId,
-            label: p.pharmacyName || p.name || p.fullName || p.username || 'N/A',
+            label:
+              p.pharmacyName || p.name || p.fullName || p.username || "N/A",
           }))
         );
       } catch (error) {
-        console.error('Error fetching pharmacies:', error);
-        notification.error({ message: 'Không tải được danh sách nhà thuốc' });
+        console.error("Error fetching pharmacies:", error);
+        notification.error({ message: "Không tải được danh sách nhà thuốc" });
       } finally {
         setFetchingPharmacy(false);
       }
@@ -74,20 +84,29 @@ export default function CreateProofToPharmacy() {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      const selectedDist = distributions.find((d) => d._id === values.proofOfDistributionId);
+      const selectedDist = distributions.find(
+        (d) => d._id === values.proofOfDistributionId
+      );
       if (!selectedDist) {
-        notification.error({ message: 'Đơn phân phối không hợp lệ' });
+        notification.error({ message: "Đơn phân phối không hợp lệ" });
         setLoading(false);
         return;
       }
 
-      const drug = selectedDist.drug || selectedDist.proofOfProduction?.drug || selectedDist.nftInfo?.drug;
-      const drugId = drug?._id || selectedDist.drug?._id || 
-                     selectedDist.proofOfProduction?.drug?._id || 
-                     selectedDist.nftInfo?.drug?._id;
+      const drug =
+        selectedDist.drug ||
+        selectedDist.proofOfProduction?.drug ||
+        selectedDist.nftInfo?.drug;
+      const drugId =
+        drug?._id ||
+        selectedDist.drug?._id ||
+        selectedDist.proofOfProduction?.drug?._id ||
+        selectedDist.nftInfo?.drug?._id;
 
       if (!drugId) {
-        notification.error({ message: 'Không tìm thấy thông tin thuốc trong đơn phân phối' });
+        notification.error({
+          message: "Không tìm thấy thông tin thuốc trong đơn phân phối",
+        });
         setLoading(false);
         return;
       }
@@ -98,19 +117,19 @@ export default function CreateProofToPharmacy() {
         nftInfoId: selectedDist.nftInfo?._id || selectedDist.nftInfo,
         drugId: drugId,
         deliveredQuantity: values.deliveredQuantity,
-        deliveryAddress: values.deliveryAddress || '',
+        deliveryAddress: values.deliveryAddress || "",
         estimatedDelivery: values.estimatedDelivery || null,
-        notes: values.notes || '',
+        notes: values.notes || "",
       };
       await createProofToPharmacy(payload);
-      notification.success({ message: 'Tạo đơn giao thành công!' });
+      notification.success({ message: "Tạo đơn giao thành công!" });
       form.resetFields();
-      setTimeout(() => navigate('/distributor/deliveries'), 2000);
+      setTimeout(() => navigate("/distributor/deliveries"), 2000);
     } catch (error) {
-      console.error('Create Proof error:', error);
+      console.error("Create Proof error:", error);
       notification.error({
-        message: 'Tạo đơn thất bại!',
-        description: error.response?.data?.message || 'Vui lòng thử lại.',
+        message: "Tạo đơn thất bại!",
+        description: error.response?.data?.message || "Vui lòng thử lại.",
       });
     } finally {
       setLoading(false);
@@ -128,12 +147,13 @@ export default function CreateProofToPharmacy() {
           <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/30 blur-xl animate-float-slow" />
           <div className="absolute top-8 right-6 w-16 h-8 rounded-full bg-white/25 blur-md rotate-6 animate-float-slower" />
         </div>
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+        <div className="relative px-6 py-8 md:px-10 md:py-12 !text-white">
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">
             Tạo đơn giao hàng đến Nhà thuốc
           </h1>
-          <p className="mt-2 text-white/90">
-            Chọn đơn phân phối đã được xác nhận để tạo đơn giao hàng cho nhà thuốc.
+          <p className="mt-2 !text-white/90">
+            Chọn đơn phân phối đã được xác nhận để tạo đơn giao hàng cho nhà
+            thuốc.
           </p>
         </div>
       </section>
@@ -150,8 +170,14 @@ export default function CreateProofToPharmacy() {
           >
             <Form.Item
               name="proofOfDistributionId"
-              label={<span className="font-semibold text-gray-700">Chọn đơn phân phối đã xác nhận</span>}
-              rules={[{ required: true, message: 'Vui lòng chọn đơn phân phối' }]}
+              label={
+                <span className="font-semibold text-gray-700">
+                  Chọn đơn phân phối đã xác nhận
+                </span>
+              }
+              rules={[
+                { required: true, message: "Vui lòng chọn đơn phân phối" },
+              ]}
             >
               <Select
                 showSearch
@@ -162,12 +188,24 @@ export default function CreateProofToPharmacy() {
                 }
               >
                 {distributions.map((dist) => {
-                  const drug = dist.drug || dist.proofOfProduction?.drug || dist.nftInfo?.drug;
-                  const drugName = drug?.name || drug?.tradeName || 'N/A';
+                  const drug =
+                    dist.drug ||
+                    dist.proofOfProduction?.drug ||
+                    dist.nftInfo?.drug;
+                  const drugName = drug?.name || drug?.tradeName || "N/A";
                   return (
-                    <Select.Option key={dist._id} value={dist._id} label={`${dist.code || dist.verificationCode || dist._id} - ${drugName} (${dist.distributedQuantity || dist.quantity} đơn vị)`}>
-                      {dist.code || dist.verificationCode || dist._id} - {drugName} (
-                      {dist.distributedQuantity || dist.quantity} đơn vị)
+                    <Select.Option
+                      key={dist._id}
+                      value={dist._id}
+                      label={`${
+                        dist.code || dist.verificationCode || dist._id
+                      } - ${drugName} (${
+                        dist.distributedQuantity || dist.quantity
+                      } đơn vị)`}
+                    >
+                      {dist.code || dist.verificationCode || dist._id} -{" "}
+                      {drugName} ({dist.distributedQuantity || dist.quantity}{" "}
+                      đơn vị)
                     </Select.Option>
                   );
                 })}
@@ -176,8 +214,12 @@ export default function CreateProofToPharmacy() {
 
             <Form.Item
               name="toPharmacyId"
-              label={<span className="font-semibold text-gray-700">Chọn nhà thuốc</span>}
-              rules={[{ required: true, message: 'Vui lòng chọn nhà thuốc' }]}
+              label={
+                <span className="font-semibold text-gray-700">
+                  Chọn nhà thuốc
+                </span>
+              }
+              rules={[{ required: true, message: "Vui lòng chọn nhà thuốc" }]}
             >
               <Select
                 showSearch
@@ -192,15 +234,23 @@ export default function CreateProofToPharmacy() {
 
             <Form.Item
               name="deliveredQuantity"
-              label={<span className="font-semibold text-gray-700">Số lượng giao</span>}
+              label={
+                <span className="font-semibold text-gray-700">
+                  Số lượng giao
+                </span>
+              }
               rules={[
-                { required: true, message: 'Vui lòng nhập số lượng' },
-                { type: 'number', min: 1, message: 'Số lượng phải lớn hơn 0' },
+                { required: true, message: "Vui lòng nhập số lượng" },
+                { type: "number", min: 1, message: "Số lượng phải lớn hơn 0" },
                 {
                   validator: (_, value) => {
-                    const selectedDistId = form.getFieldValue('proofOfDistributionId');
+                    const selectedDistId = form.getFieldValue(
+                      "proofOfDistributionId"
+                    );
                     if (selectedDistId) {
-                      const selectedDist = distributions.find((d) => d._id === selectedDistId);
+                      const selectedDist = distributions.find(
+                        (d) => d._id === selectedDistId
+                      );
                       if (
                         selectedDist &&
                         value >
@@ -208,7 +258,7 @@ export default function CreateProofToPharmacy() {
                             selectedDist.quantity)
                       ) {
                         return Promise.reject(
-                          'Số lượng giao không được vượt quá số lượng có sẵn'
+                          "Số lượng giao không được vượt quá số lượng có sẵn"
                         );
                       }
                     }
@@ -226,21 +276,31 @@ export default function CreateProofToPharmacy() {
 
             <Form.Item
               name="deliveryAddress"
-              label={<span className="font-semibold text-gray-700">Địa chỉ giao hàng</span>}
+              label={
+                <span className="font-semibold text-gray-700">
+                  Địa chỉ giao hàng
+                </span>
+              }
             >
               <Input placeholder="Nhập địa chỉ giao hàng (tùy chọn)" />
             </Form.Item>
 
             <Form.Item
               name="estimatedDelivery"
-              label={<span className="font-semibold text-gray-700">Ngày giao dự kiến</span>}
+              label={
+                <span className="font-semibold text-gray-700">
+                  Ngày giao dự kiến
+                </span>
+              }
             >
               <Input type="date" />
             </Form.Item>
 
             <Form.Item
               name="notes"
-              label={<span className="font-semibold text-gray-700">Ghi chú</span>}
+              label={
+                <span className="font-semibold text-gray-700">Ghi chú</span>
+              }
             >
               <TextArea rows={4} placeholder="Nhập ghi chú nếu có" />
             </Form.Item>

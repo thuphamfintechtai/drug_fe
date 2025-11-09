@@ -290,9 +290,13 @@ export default function TransferManagement() {
     }
 
     const requestedQty = parseInt(formData.quantity);
-    
+
     // FIX: Proper quantity validation
-    if (isNaN(requestedQty) || requestedQty <= 0 || requestedQty > selectedProduction.quantity) {
+    if (
+      isNaN(requestedQty) ||
+      requestedQty <= 0 ||
+      requestedQty > selectedProduction.quantity
+    ) {
       alert("Số lượng không hợp lệ");
       return;
     }
@@ -306,7 +310,9 @@ export default function TransferManagement() {
 
     // FIX: Check if token count matches requested quantity
     if (tokenIds.length < requestedQty) {
-      alert(`Chỉ có ${tokenIds.length} token khả dụng, nhưng bạn yêu cầu ${requestedQty}`);
+      alert(
+        `Chỉ có ${tokenIds.length} token khả dụng, nhưng bạn yêu cầu ${requestedQty}`
+      );
       return;
     }
 
@@ -664,7 +670,7 @@ export default function TransferManagement() {
                             className={`px-4 py-2 border-2 rounded-full font-semibold transition-all duration-200 ${
                               prod.transferStatus === "transferred"
                                 ? "border-gray-300 text-gray-400 cursor-not-allowed"
-                                : "border-secondary text-secondary hover:bg-secondary hover:text-white hover:shadow-md hover:shadow-secondary/40"
+                                : "border-secondary text-secondary hover:bg-secondary hover:!text-white hover:shadow-md hover:shadow-secondary/40"
                             }`}
                           >
                             {prod.transferStatus === "transferred"
@@ -715,7 +721,7 @@ export default function TransferManagement() {
 
             <div className="bg-gradient-to-r from-secondary to-primary px-8 py-6 rounded-t-3xl flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className="text-2xl font-bold !text-white">
                   Chuyển giao NFT
                 </h2>
                 <p className="text-cyan-100 text-sm">
@@ -724,7 +730,7 @@ export default function TransferManagement() {
               </div>
               <button
                 onClick={handleCloseDialog}
-                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition"
+                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition"
               >
                 ✕
               </button>

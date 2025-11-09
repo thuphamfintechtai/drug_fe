@@ -428,7 +428,8 @@ export default function InvoicesFromManufacturer() {
       if (selectedDate > today) {
         errors.distributionDate = "Ngày nhận không được vượt quá ngày hiện tại";
       } else if (selectedDate < threeDaysAgo) {
-        errors.distributionDate = "Ngày nhận không được quá khứ cách ngày hiện tại 3 ngày";
+        errors.distributionDate =
+          "Ngày nhận không được quá khứ cách ngày hiện tại 3 ngày";
       }
     }
 
@@ -456,7 +457,8 @@ export default function InvoicesFromManufacturer() {
     } else if (maxQuantity > 0 && quantity > maxQuantity) {
       errors.distributedQuantity = `Số lượng nhận không được vượt quá ${maxQuantity} NFT (số lượng đã được gửi đến)`;
     } else if (maxQuantity <= 0) {
-      errors.distributedQuantity = "Không thể xác định số lượng đã được gửi đến. Vui lòng liên hệ quản trị viên.";
+      errors.distributedQuantity =
+        "Không thể xác định số lượng đã được gửi đến. Vui lòng liên hệ quản trị viên.";
     }
 
     setConfirmFormErrors(errors);
@@ -741,7 +743,7 @@ export default function InvoicesFromManufacturer() {
                   )}
                   <button
                     onClick={handleSearch}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary text-white font-medium transition"
+                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition"
                   >
                     Tìm Kiếm
                   </button>
@@ -828,7 +830,8 @@ export default function InvoicesFromManufacturer() {
                                     : Array.isArray(item.items)
                                     ? item.items.length
                                     : null);
-                                return quantity !== null && quantity !== undefined
+                                return quantity !== null &&
+                                  quantity !== undefined
                                   ? `${quantity} NFT`
                                   : "N/A";
                               })()}
@@ -847,7 +850,7 @@ export default function InvoicesFromManufacturer() {
                         <button
                           onClick={() => handleOpenConfirm(item)}
                           disabled={isConfirming}
-                          className="px-6 py-3 rounded-full bg-secondary hover:bg-primary text-white font-semibold shadow-md hover:shadow-lg transition disabled:opacity-50"
+                          className="px-6 py-3 rounded-full bg-secondary hover:bg-primary !text-white font-semibold shadow-md hover:shadow-lg transition disabled:opacity-50"
                         >
                           Xác nhận nhận hàng
                         </button>
@@ -916,7 +919,7 @@ export default function InvoicesFromManufacturer() {
                 className={`px-3 py-2 rounded-xl ${
                   page >= pagination.pages
                     ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "text-white bg-linear-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
+                    : "!text-white bg-linear-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
                 }`}
               >
                 Sau
@@ -940,9 +943,9 @@ export default function InvoicesFromManufacturer() {
             `}</style>
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
+                <div className="bg-gradient-to-r from-primary to-secondary px-8 py-6 rounded-t-3xl flex justify-between items-center">
                   <div>
-                    <h2 className="text-2xl font-bold text-white">
+                    <h2 className="text-2xl font-bold !text-white">
                       Xác nhận nhận hàng
                     </h2>
                     <p className="text-gray-100 text-sm">
@@ -951,7 +954,7 @@ export default function InvoicesFromManufacturer() {
                   </div>
                   <button
                     onClick={() => setShowConfirmDialog(false)}
-                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition"
+                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition"
                   >
                     ✕
                   </button>
@@ -968,7 +971,10 @@ export default function InvoicesFromManufacturer() {
                         value={confirmForm.receivedBy.fullName}
                         onChange={(e) => {
                           // FIX: Only allow letters with proper length validation
-                          const value = e.target.value.replace(/[^a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]/g, "");
+                          const value = e.target.value.replace(
+                            /[^a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]/g,
+                            ""
+                          );
                           if (value.length <= 100) {
                             setConfirmForm({
                               ...confirmForm,
@@ -1002,7 +1008,10 @@ export default function InvoicesFromManufacturer() {
                         value={confirmForm.receivedBy.position}
                         onChange={(e) => {
                           // FIX: Only allow letters with proper length validation
-                          const value = e.target.value.replace(/[^a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]/g, "");
+                          const value = e.target.value.replace(
+                            /[^a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]/g,
+                            ""
+                          );
                           if (value.length <= 50) {
                             setConfirmForm({
                               ...confirmForm,
@@ -1122,7 +1131,10 @@ export default function InvoicesFromManufacturer() {
                             threeDaysAgo.setHours(0, 0, 0, 0);
 
                             // Nếu ngày hợp lệ, cập nhật form và xóa lỗi
-                            if (selectedDate <= today && selectedDate >= threeDaysAgo) {
+                            if (
+                              selectedDate <= today &&
+                              selectedDate >= threeDaysAgo
+                            ) {
                               setConfirmForm({
                                 ...confirmForm,
                                 distributionDate: selectedValue,
@@ -1168,12 +1180,14 @@ export default function InvoicesFromManufacturer() {
                             if (selectedDate > today) {
                               setConfirmFormErrors({
                                 ...confirmFormErrors,
-                                distributionDate: "Ngày nhận không được vượt quá ngày hiện tại",
+                                distributionDate:
+                                  "Ngày nhận không được vượt quá ngày hiện tại",
                               });
                             } else if (selectedDate < threeDaysAgo) {
                               setConfirmFormErrors({
                                 ...confirmFormErrors,
-                                distributionDate: "Ngày nhận không được quá khứ cách ngày hiện tại 3 ngày",
+                                distributionDate:
+                                  "Ngày nhận không được quá khứ cách ngày hiện tại 3 ngày",
                               });
                             } else if (confirmFormErrors.distributionDate) {
                               setConfirmFormErrors({
@@ -1300,7 +1314,8 @@ export default function InvoicesFromManufacturer() {
                             : 0);
                         return sentQuantity > 0 ? (
                           <p className="mt-2 text-sm text-blue-500">
-                            (Tối đa: {sentQuantity} NFT - số lượng đã được gửi đến)
+                            (Tối đa: {sentQuantity} NFT - số lượng đã được gửi
+                            đến)
                           </p>
                         ) : null;
                       })()}
@@ -1339,7 +1354,7 @@ export default function InvoicesFromManufacturer() {
                   <button
                     onClick={handleConfirmReceipt}
                     disabled={isConfirming}
-                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+                    className="px-6 py-2.5 rounded-full bg-primary !text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
                   >
                     {isConfirming ? "Đang xử lý..." : "Xác nhận nhận hàng"}
                   </button>

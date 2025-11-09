@@ -12,12 +12,9 @@ export default function ProductionHistory() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
   const [expandedItems, setExpandedItems] = useState(new Set());
-  
-  
-  
+
   const [searchInput, setSearchInput] = useState("");
-  
-  
+
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef(null);
   const [pagination, setPagination] = useState({
@@ -206,7 +203,7 @@ export default function ProductionHistory() {
         const genericName = (item.drug?.genericName || "").toLowerCase();
         const atcCode = (item.drug?.atcCode || "").toLowerCase();
         const batchNumber = (item.batchNumber || "").toLowerCase();
-        
+
         return (
           tradeName.includes(searchTerm) ||
           genericName.includes(searchTerm) ||
@@ -619,11 +616,12 @@ export default function ProductionHistory() {
                     {/* Expandable Content */}
                     <div
                       className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                        isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+                        isExpanded
+                          ? "max-h-[2000px] opacity-100"
+                          : "max-h-0 opacity-0"
                       }`}
                     >
                       <div className="px-5 pb-5 border-t border-slate-200">
-
                         {/* Top facts */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-sm mt-4">
                           <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
@@ -660,7 +658,9 @@ export default function ProductionHistory() {
                             </div>
                             <div className="font-semibold text-slate-800">
                               {item.mfgDate
-                                ? new Date(item.mfgDate).toLocaleDateString("vi-VN")
+                                ? new Date(item.mfgDate).toLocaleDateString(
+                                    "vi-VN"
+                                  )
                                 : "N/A"}
                             </div>
                           </div>
@@ -670,7 +670,9 @@ export default function ProductionHistory() {
                             </div>
                             <div className="font-semibold text-slate-800">
                               {item.expDate
-                                ? new Date(item.expDate).toLocaleDateString("vi-VN")
+                                ? new Date(item.expDate).toLocaleDateString(
+                                    "vi-VN"
+                                  )
                                 : "N/A"}
                             </div>
                           </div>
@@ -683,7 +685,9 @@ export default function ProductionHistory() {
                             </div>
                             <div className="font-medium text-slate-700 text-sm">
                               {item.createdAt
-                                ? new Date(item.createdAt).toLocaleString("vi-VN")
+                                ? new Date(item.createdAt).toLocaleString(
+                                    "vi-VN"
+                                  )
                                 : "N/A"}
                             </div>
                           </div>
@@ -693,7 +697,9 @@ export default function ProductionHistory() {
                             </div>
                             <div className="font-medium text-slate-700 text-sm">
                               {item.updatedAt
-                                ? new Date(item.updatedAt).toLocaleString("vi-VN")
+                                ? new Date(item.updatedAt).toLocaleString(
+                                    "vi-VN"
+                                  )
                                 : "N/A"}
                             </div>
                           </div>
