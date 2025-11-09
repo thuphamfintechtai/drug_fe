@@ -34,6 +34,8 @@ export default function InvoicesFromDistributor() {
     receivedDate: new Date().toISOString().split("T")[0],
     receivedQuantity: "",
   });
+  const [confirmFormErrors, setConfirmFormErrors] = useState({});
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
@@ -210,29 +212,130 @@ export default function InvoicesFromDistributor() {
     setExpandedInvoice(expandedInvoice === idx ? null : idx);
   };
 
+  // Validation function
+  const validateConfirmForm = () => {
+    const errors = {};
+
+    // Người nhận hàng: bắt buộc
+    const receivedByName = confirmForm.receivedByName?.trim() || "";
+    if (!receivedByName) {
+      errors.receivedByName = "Vui lòng nhập tên người nhận hàng";
+    }
+
+    // Địa chỉ nhận (đường): bắt buộc
+    const receiptAddressStreet = confirmForm.receiptAddressStreet?.trim() || "";
+    if (!receiptAddressStreet) {
+      errors.receiptAddressStreet = "Vui lòng nhập địa chỉ nhận";
+    }
+
+    // Thành phố: bắt buộc
+    const receiptAddressCity = confirmForm.receiptAddressCity?.trim() || "";
+    if (!receiptAddressCity) {
+      errors.receiptAddressCity = "Vui lòng nhập thành phố";
+    }
+
+    // Tỉnh/Thành: bắt buộc
+    const receiptAddressState = confirmForm.receiptAddressState?.trim() || "";
+    if (!receiptAddressState) {
+      errors.receiptAddressState = "Vui lòng nhập tỉnh/thành";
+    }
+
+    // Mã bưu điện: bắt buộc và chỉ số
+    const receiptAddressPostalCode = confirmForm.receiptAddressPostalCode?.trim() || "";
+    if (!receiptAddressPostalCode) {
+      errors.receiptAddressPostalCode = "Vui lòng nhập mã bưu điện";
+    } else if (!/^\d+$/.test(receiptAddressPostalCode)) {
+      errors.receiptAddressPostalCode = "Mã bưu điện chỉ được chứa số";
+    }
+
+    // Ngày nhận: không được quá khứ cách ngày hiện tại 3 ngày và không vượt quá ngày hiện tại
+    if (confirmForm.receivedDate) {
+      const selectedDate = new Date(confirmForm.receivedDate);
+      selectedDate.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      threeDaysAgo.setHours(0, 0, 0, 0);
+
+      if (selectedDate > today) {
+        errors.receivedDate = "Ngày nhận không được vượt quá ngày hiện tại";
+      } else if (selectedDate < threeDaysAgo) {
+        errors.receivedDate = "Ngày nhận không được quá khứ cách ngày hiện tại 3 ngày";
+      }
+    }
+
+    // Số lượng nhận: bắt buộc, >= 1 và <= số lượng NFT đã được gửi đến
+    const receivedQuantity = confirmForm.receivedQuantity?.trim() || "";
+    const quantity = parseInt(receivedQuantity) || 0;
+    // Lấy số lượng đã được gửi đến
+    const maxQuantity = parseInt(
+      selectedInvoice?.quantity ??
+      selectedInvoice?.totalQuantity ??
+      selectedInvoice?.nftQuantity ??
+      (Array.isArray(selectedInvoice?.nfts)
+        ? selectedInvoice.nfts.length
+        : Array.isArray(selectedInvoice?.items)
+        ? selectedInvoice.items.length
+        : 0)
+    );
+
+    if (!receivedQuantity) {
+      errors.receivedQuantity = "Vui lòng nhập số lượng nhận";
+    } else if (isNaN(quantity)) {
+      errors.receivedQuantity = "Số lượng phải là số";
+    } else if (quantity < 1) {
+      errors.receivedQuantity = "Số lượng nhận phải >= 1";
+    } else if (maxQuantity > 0 && quantity > maxQuantity) {
+      errors.receivedQuantity = `Số lượng nhận không được vượt quá ${maxQuantity} NFT`;
+    } else if (maxQuantity <= 0) {
+      errors.receivedQuantity = "Không thể xác định số lượng đã được gửi đến";
+    }
+
+    setConfirmFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleConfirmReceipt = async () => {
-    if (!selectedInvoice) return;
-    if (!confirmForm.receivedByName || !confirmForm.receiptAddressStreet) {
-      alert(
-        "Vui lòng điền đầy đủ thông tin bắt buộc (Tên người nhận và Địa chỉ)"
-      );
+    if (isConfirming || !selectedInvoice) return;
+
+    // Validate form
+    if (!validateConfirmForm()) {
       return;
     }
 
+    setIsConfirming(true);
     setLoading(true);
     try {
+      // Tính số lượng đã được gửi đến
+      const sentQuantity =
+        selectedInvoice?.quantity ??
+        selectedInvoice?.totalQuantity ??
+        selectedInvoice?.nftQuantity ??
+        (Array.isArray(selectedInvoice?.nfts)
+          ? selectedInvoice.nfts.length
+          : Array.isArray(selectedInvoice?.items)
+          ? selectedInvoice.items.length
+          : 0);
+
       const requestData = {
         invoiceId: selectedInvoice._id,
-        receivedBy: confirmForm.receivedBy,
-        deliveryAddress: confirmForm.deliveryAddress,
+        receivedBy: {
+          fullName: confirmForm.receivedByName.trim(),
+        },
+        deliveryAddress: {
+          street: confirmForm.receiptAddressStreet.trim(),
+          city: confirmForm.receiptAddressCity.trim(),
+          state: confirmForm.receiptAddressState.trim(),
+          postalCode: confirmForm.receiptAddressPostalCode.trim(),
+          country: confirmForm.receiptAddressCountry || "Vietnam",
+        },
         shippingInfo: confirmForm.shippingInfo || "",
         notes: confirmForm.notes || "",
         receivedDate:
           confirmForm.receivedDate || new Date().toISOString().split("T")[0],
         receivedQuantity:
-          parseInt(confirmForm.receivedQuantity) ||
-          selectedInvoice.quantity ||
-          0,
+          parseInt(confirmForm.receivedQuantity) || sentQuantity,
       };
 
       console.log("Gửi request xác nhận nhận hàng:", {
@@ -248,6 +351,20 @@ export default function InvoicesFromDistributor() {
         alert(
           "✅ Xác nhận nhận hàng thành công!\n\nTrạng thái: Đang chờ Distributor xác nhận chuyển quyền sở hữu NFT."
         );
+        // Reset form
+        setConfirmForm({
+          receivedByName: "",
+          receiptAddressStreet: "",
+          receiptAddressCity: "",
+          receiptAddressState: "",
+          receiptAddressPostalCode: "",
+          receiptAddressCountry: "Vietnam",
+          shippingInfo: "",
+          notes: "",
+          receivedDate: new Date().toISOString().split("T")[0],
+          receivedQuantity: "",
+        });
+        setConfirmFormErrors({});
         setShowConfirmDialog(false);
         loadData();
       } else {
@@ -276,6 +393,7 @@ export default function InvoicesFromDistributor() {
 
       alert("❌ Lỗi server khi xác nhận nhận hàng: " + errorMessage);
     } finally {
+      setIsConfirming(false);
       setLoading(false);
     }
   };
@@ -467,9 +585,18 @@ export default function InvoicesFromDistributor() {
 
                       {item.status === "sent" && (
                         <button
-                          style={{ color: "white" }}
                           onClick={() => {
                             setSelectedInvoice(item);
+                            // Tính số lượng đã được gửi đến
+                            const sentQuantity =
+                              item.quantity ??
+                              item.totalQuantity ??
+                              item.nftQuantity ??
+                              (Array.isArray(item.nfts)
+                                ? item.nfts.length
+                                : Array.isArray(item.items)
+                                ? item.items.length
+                                : 0);
                             setConfirmForm({
                               receivedByName: "",
                               receiptAddressStreet: "",
@@ -482,11 +609,14 @@ export default function InvoicesFromDistributor() {
                               receivedDate: new Date()
                                 .toISOString()
                                 .split("T")[0],
-                              receivedQuantity: item.quantity?.toString() || "",
+                              receivedQuantity:
+                                sentQuantity > 0 ? sentQuantity.toString() : "",
                             });
+                            setConfirmFormErrors({});
                             setShowConfirmDialog(true);
                           }}
-                          className="px-6 py-3 rounded-full bg-secondary text-white hover:from-slate-600 hover:to-primary text-base font-semibold transition shadow-md"
+                          disabled={isConfirming}
+                          className="px-6 py-3 rounded-full bg-secondary hover:bg-primary text-white font-semibold shadow-md hover:shadow-lg transition disabled:opacity-50"
                         >
                           Xác nhận nhận hàng
                         </button>
@@ -557,7 +687,7 @@ export default function InvoicesFromDistributor() {
               .custom-scroll::-webkit-scrollbar-track { background: transparent; }
               .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
             `}</style>
-                <div className="bg-linear-to-r from-secondary to-primary px-8 py-6 rounded-t-3xl flex justify-between items-center">
+                <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div>
                       <h2 className="text-2xl font-bold text-white">
@@ -570,7 +700,8 @@ export default function InvoicesFromDistributor() {
                   </div>
                   <button
                     onClick={() => setShowConfirmDialog(false)}
-                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition"
+                    disabled={isConfirming}
+                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition disabled:opacity-50"
                   >
                     <svg
                       className="w-5 h-5"
@@ -588,130 +719,362 @@ export default function InvoicesFromDistributor() {
                   </button>
                 </div>
 
-                <div className="p-8 space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-8 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Người nhận hàng *
                       </label>
                       <input
                         value={confirmForm.receivedByName}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setConfirmForm({
                             ...confirmForm,
                             receivedByName: e.target.value,
-                          })
-                        }
+                          });
+                          if (confirmFormErrors.receivedByName) {
+                            setConfirmFormErrors({
+                              ...confirmFormErrors,
+                              receivedByName: "",
+                            });
+                          }
+                        }}
                         placeholder="Họ và tên"
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        maxLength={100}
+                        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                          confirmFormErrors.receivedByName
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                        }`}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Số lượng nhận
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Số lượng nhận *
                       </label>
                       <input
                         type="number"
+                        min="1"
+                        max={(() => {
+                          const sentQuantity =
+                            selectedInvoice?.quantity ??
+                            selectedInvoice?.totalQuantity ??
+                            selectedInvoice?.nftQuantity ??
+                            (Array.isArray(selectedInvoice?.nfts)
+                              ? selectedInvoice.nfts.length
+                              : Array.isArray(selectedInvoice?.items)
+                              ? selectedInvoice.items.length
+                              : 0);
+                          return sentQuantity > 0 ? sentQuantity : undefined;
+                        })()}
                         value={confirmForm.receivedQuantity}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          let value = e.target.value;
+                          if (value === "" || value === "-") {
+                            setConfirmForm({
+                              ...confirmForm,
+                              receivedQuantity: value,
+                            });
+                            if (confirmFormErrors.receivedQuantity) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                receivedQuantity: "",
+                              });
+                            }
+                            return;
+                          }
+                          const numValue = parseInt(value);
+                          if (isNaN(numValue) || numValue <= 0) {
+                            value = "1";
+                          } else {
+                            const sentQuantity =
+                              selectedInvoice?.quantity ??
+                              selectedInvoice?.totalQuantity ??
+                              selectedInvoice?.nftQuantity ??
+                              (Array.isArray(selectedInvoice?.nfts)
+                                ? selectedInvoice.nfts.length
+                                : Array.isArray(selectedInvoice?.items)
+                                ? selectedInvoice.items.length
+                                : 0);
+                            if (sentQuantity > 0 && numValue > sentQuantity) {
+                              value = sentQuantity.toString();
+                            } else {
+                              value = numValue.toString();
+                            }
+                          }
                           setConfirmForm({
                             ...confirmForm,
-                            receivedQuantity: e.target.value,
-                          })
-                        }
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                            receivedQuantity: value,
+                          });
+                          if (confirmFormErrors.receivedQuantity) {
+                            setConfirmFormErrors({
+                              ...confirmFormErrors,
+                              receivedQuantity: "",
+                            });
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const value = e.target.value;
+                          if (
+                            !value ||
+                            value === "-" ||
+                            isNaN(parseInt(value)) ||
+                            parseInt(value) <= 0
+                          ) {
+                            setConfirmForm({
+                              ...confirmForm,
+                              receivedQuantity: "1",
+                            });
+                            if (confirmFormErrors.receivedQuantity) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                receivedQuantity: "",
+                              });
+                            }
+                          }
+                        }}
+                        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                          confirmFormErrors.receivedQuantity
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                        }`}
                       />
+                      {(() => {
+                        const sentQuantity =
+                          selectedInvoice?.quantity ??
+                          selectedInvoice?.totalQuantity ??
+                          selectedInvoice?.nftQuantity ??
+                          (Array.isArray(selectedInvoice?.nfts)
+                            ? selectedInvoice.nfts.length
+                            : Array.isArray(selectedInvoice?.items)
+                            ? selectedInvoice.items.length
+                            : 0);
+                        return sentQuantity > 0 ? (
+                          <p className="mt-2 text-sm text-blue-500">
+                            (Tối đa: {sentQuantity} NFT - số lượng đã được gửi đến)
+                          </p>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Địa chỉ nhận (đường) *
                       </label>
                       <input
                         value={confirmForm.receiptAddressStreet}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value.slice(0, 200);
                           setConfirmForm({
                             ...confirmForm,
-                            receiptAddressStreet: e.target.value,
-                          })
-                        }
+                            receiptAddressStreet: value,
+                          });
+                          if (confirmFormErrors.receiptAddressStreet) {
+                            setConfirmFormErrors({
+                              ...confirmFormErrors,
+                              receiptAddressStreet: "",
+                            });
+                          }
+                        }}
                         placeholder="Số nhà, đường..."
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        maxLength={200}
+                        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                          confirmFormErrors.receiptAddressStreet
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                        }`}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Thành phố *
                       </label>
                       <input
                         value={confirmForm.receiptAddressCity}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value.slice(0, 100);
                           setConfirmForm({
                             ...confirmForm,
-                            receiptAddressCity: e.target.value,
-                          })
-                        }
+                            receiptAddressCity: value,
+                          });
+                          if (confirmFormErrors.receiptAddressCity) {
+                            setConfirmFormErrors({
+                              ...confirmFormErrors,
+                              receiptAddressCity: "",
+                            });
+                          }
+                        }}
                         placeholder="TP/Huyện"
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        maxLength={100}
+                        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                          confirmFormErrors.receiptAddressCity
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                        }`}
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Ngày nhận
                       </label>
                       <input
                         type="date"
                         value={confirmForm.receivedDate}
-                        onChange={(e) =>
-                          setConfirmForm({
-                            ...confirmForm,
-                            receivedDate: e.target.value,
-                          })
-                        }
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        min={(() => {
+                          const threeDaysAgo = new Date();
+                          threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                          return threeDaysAgo.toISOString().split("T")[0];
+                        })()}
+                        max={new Date().toISOString().split("T")[0]}
+                        onChange={(e) => {
+                          const selectedValue = e.target.value;
+                          if (selectedValue) {
+                            const selectedDate = new Date(selectedValue);
+                            selectedDate.setHours(0, 0, 0, 0);
+                            const today = new Date();
+                            today.setHours(23, 59, 59, 999);
+                            const threeDaysAgo = new Date();
+                            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                            threeDaysAgo.setHours(0, 0, 0, 0);
+
+                            if (
+                              selectedDate <= today &&
+                              selectedDate >= threeDaysAgo
+                            ) {
+                              setConfirmForm({
+                                ...confirmForm,
+                                receivedDate: selectedValue,
+                              });
+                              if (confirmFormErrors.receivedDate) {
+                                setConfirmFormErrors({
+                                  ...confirmFormErrors,
+                                  receivedDate: "",
+                                });
+                              }
+                            } else {
+                              setConfirmForm({
+                                ...confirmForm,
+                                receivedDate: selectedValue,
+                              });
+                            }
+                          } else {
+                            setConfirmForm({
+                              ...confirmForm,
+                              receivedDate: selectedValue,
+                            });
+                            if (confirmFormErrors.receivedDate) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                receivedDate: "",
+                              });
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const selectedValue = e.target.value;
+                          if (selectedValue) {
+                            const selectedDate = new Date(selectedValue);
+                            selectedDate.setHours(0, 0, 0, 0);
+                            const today = new Date();
+                            today.setHours(23, 59, 59, 999);
+                            const threeDaysAgo = new Date();
+                            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                            threeDaysAgo.setHours(0, 0, 0, 0);
+
+                            if (selectedDate > today) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                receivedDate:
+                                  "Ngày nhận không được vượt quá ngày hiện tại",
+                              });
+                            } else if (selectedDate < threeDaysAgo) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                receivedDate:
+                                  "Ngày nhận không được quá khứ cách ngày hiện tại 3 ngày",
+                              });
+                            } else if (confirmFormErrors.receivedDate) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                receivedDate: "",
+                              });
+                            }
+                          }
+                        }}
+                        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 bg-white ${
+                          confirmFormErrors.receivedDate
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                        }`}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Tỉnh/Thành
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Tỉnh/Thành *
                       </label>
                       <input
                         value={confirmForm.receiptAddressState}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value.slice(0, 100);
                           setConfirmForm({
                             ...confirmForm,
-                            receiptAddressState: e.target.value,
-                          })
-                        }
+                            receiptAddressState: value,
+                          });
+                          if (confirmFormErrors.receiptAddressState) {
+                            setConfirmFormErrors({
+                              ...confirmFormErrors,
+                              receiptAddressState: "",
+                            });
+                          }
+                        }}
                         placeholder="Tỉnh/Thành"
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Mã bưu điện
-                      </label>
-                      <input
-                        value={confirmForm.receiptAddressPostalCode}
-                        onChange={(e) =>
-                          setConfirmForm({
-                            ...confirmForm,
-                            receiptAddressPostalCode: e.target.value,
-                          })
-                        }
-                        placeholder="Mã bưu điện"
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        maxLength={100}
+                        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                          confirmFormErrors.receiptAddressState
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                        }`}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Mã bưu điện *
+                    </label>
+                    <input
+                      value={confirmForm.receiptAddressPostalCode}
+                      onChange={(e) => {
+                        // Chỉ cho phép số
+                        const value = e.target.value.replace(/[^\d]/g, "");
+                        setConfirmForm({
+                          ...confirmForm,
+                          receiptAddressPostalCode: value,
+                        });
+                        if (confirmFormErrors.receiptAddressPostalCode) {
+                          setConfirmFormErrors({
+                            ...confirmFormErrors,
+                            receiptAddressPostalCode: "",
+                          });
+                        }
+                      }}
+                      placeholder="Mã bưu điện"
+                      maxLength={10}
+                      className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                        confirmFormErrors.receiptAddressPostalCode
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Ghi chú
                     </label>
                     <textarea
@@ -720,30 +1083,31 @@ export default function InvoicesFromDistributor() {
                       onChange={(e) =>
                         setConfirmForm({
                           ...confirmForm,
-                          notes: e.target.value,
+                          notes: e.target.value.slice(0, 500),
                         })
                       }
-                      className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      maxLength={500}
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150 focus:ring-gray-400"
                       placeholder="Ghi chú thêm..."
                     />
                   </div>
+                </div>
 
-                  <div className="pt-2 flex justify-end gap-3">
-                    <button
-                      onClick={() => setShowConfirmDialog(false)}
-                      className="px-5 py-2 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-100 transition"
-                    >
-                      Hủy
-                    </button>
-                    <button
-                      style={{ color: "white" }}
-                      onClick={handleConfirmReceipt}
-                      disabled={loading}
-                      className="px-6 py-3 rounded-full bg-secondary text-white font-semibold shadow-md hover:from-slate-600 hover:to-primary transition disabled:opacity-50"
-                    >
-                      {loading ? "Đang xử lý..." : "Xác nhận nhận hàng"}
-                    </button>
-                  </div>
+                <div className="px-8 py-6 border-t border-gray-300 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowConfirmDialog(false)}
+                    disabled={isConfirming}
+                    className="px-5 py-2.5 rounded-full border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-all duration-200 font-medium disabled:opacity-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={handleConfirmReceipt}
+                    disabled={isConfirming}
+                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+                  >
+                    {isConfirming ? "Đang xử lý..." : "Xác nhận nhận hàng"}
+                  </button>
                 </div>
               </div>
             </div>

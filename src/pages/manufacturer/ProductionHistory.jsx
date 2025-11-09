@@ -12,7 +12,12 @@ export default function ProductionHistory() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
   const [expandedItems, setExpandedItems] = useState(new Set());
+  
+  
+  
   const [searchInput, setSearchInput] = useState("");
+  
+  
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef(null);
   const [pagination, setPagination] = useState({
@@ -25,6 +30,11 @@ export default function ProductionHistory() {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
+
+  // Sync searchInput with URL search param on mount/change
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
 
   const navigationItems = [
     {
@@ -306,6 +316,17 @@ export default function ProductionHistory() {
     }
   };
 
+  // Handle search - only trigger on Enter or button click
+  const handleSearch = () => {
+    updateFilter({ search: searchInput, page: 1 });
+  };
+
+  // Clear search button
+  const handleClearSearch = () => {
+    setSearchInput("");
+    updateFilter({ search: "", page: 1 });
+  };
+
   const updateFilter = (next) => {
     const nextParams = new URLSearchParams(searchParams);
     Object.entries(next).forEach(([k, v]) => {
@@ -464,6 +485,16 @@ export default function ProductionHistory() {
                     placeholder="Tìm theo tên thuốc, số lô..."
                     className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                   />
+                  {/* Clear button */}
+                  {searchInput && (
+                    <button
+                      onClick={handleClearSearch}
+                      className="absolute right-16 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      title="Xóa tìm kiếm"
+                    >
+                      ✕
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       if (searchTimeoutRef.current) {

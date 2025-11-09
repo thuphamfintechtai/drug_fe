@@ -12,6 +12,7 @@ export default function InvoicesFromManufacturer() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isConfirming, setIsConfirming] = useState(false); // FIX: Prevent double submission
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -42,10 +43,19 @@ export default function InvoicesFromManufacturer() {
   });
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
+  // Separate search input state from URL param
+  const [searchInput, setSearchInput] = useState("");
+  // Form validation errors
+  const [confirmFormErrors, setConfirmFormErrors] = useState({});
 
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
+
+  // Sync searchInput with URL search param on mount/change
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
 
   const navigationItems = [
     {
@@ -307,6 +317,17 @@ export default function InvoicesFromManufacturer() {
     }
   };
 
+  // Handle search - only trigger on Enter or button click
+  const handleSearch = () => {
+    updateFilter({ search: searchInput, page: 1 });
+  };
+
+  // Clear search button
+  const handleClearSearch = () => {
+    setSearchInput("");
+    updateFilter({ search: "", page: 1 });
+  };
+
   const updateFilter = (next) => {
     const nextParams = new URLSearchParams(searchParams);
     Object.entries(next).forEach(([k, v]) => {
@@ -336,23 +357,121 @@ export default function InvoicesFromManufacturer() {
       },
       notes: "",
       distributionDate: new Date().toISOString().split("T")[0],
-      distributedQuantity: invoice.totalQuantity?.toString() || "",
+      distributedQuantity: (() => {
+        // Tính số lượng đã được gửi đến
+        const sentQuantity =
+          invoice.totalQuantity ??
+          invoice.quantity ??
+          invoice.nftQuantity ??
+          (Array.isArray(invoice.nfts)
+            ? invoice.nfts.length
+            : Array.isArray(invoice.items)
+            ? invoice.items.length
+            : 0);
+        return sentQuantity > 0 ? sentQuantity.toString() : "";
+      })(),
     });
+    setConfirmFormErrors({});
     setShowConfirmDialog(true);
   };
 
-  const handleConfirmReceipt = async () => {
-    if (!selectedInvoice) return;
+  // FIX: Better form validation logic
+  const validateConfirmForm = () => {
+    const errors = {};
 
-    if (
-      !confirmForm.receivedBy?.fullName ||
-      !confirmForm.deliveryAddress?.street ||
-      !confirmForm.deliveryAddress?.city
-    ) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc");
+    // Người nhận hàng: bắt buộc và chỉ chữ
+    const fullName = confirmForm.receivedBy?.fullName?.trim() || "";
+    if (!fullName) {
+      errors.receivedByFullName = "Vui lòng nhập tên người nhận hàng";
+    } else if (!/^[a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]+$/.test(fullName)) {
+      errors.receivedByFullName = "Tên người nhận hàng chỉ được chứa chữ cái";
+    } else if (fullName.length > 100) {
+      errors.receivedByFullName = "Tên không được vượt quá 100 ký tự";
+    }
+
+    // Chức vụ: bắt buộc và chỉ chữ
+    const position = confirmForm.receivedBy?.position?.trim() || "";
+    if (!position) {
+      errors.receivedByPosition = "Vui lòng nhập chức vụ";
+    } else if (!/^[a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]+$/.test(position)) {
+      errors.receivedByPosition = "Chức vụ chỉ được chứa chữ cái";
+    } else if (position.length > 50) {
+      errors.receivedByPosition = "Chức vụ không được vượt quá 50 ký tự";
+    }
+
+    // Địa chỉ nhận: bắt buộc
+    const street = confirmForm.deliveryAddress?.street?.trim() || "";
+    if (!street) {
+      errors.deliveryAddressStreet = "Vui lòng nhập địa chỉ nhận";
+    } else if (street.length > 200) {
+      errors.deliveryAddressStreet = "Địa chỉ không được vượt quá 200 ký tự";
+    }
+
+    // Thành phố: bắt buộc
+    const city = confirmForm.deliveryAddress?.city?.trim() || "";
+    if (!city) {
+      errors.deliveryAddressCity = "Vui lòng nhập thành phố";
+    } else if (city.length > 100) {
+      errors.deliveryAddressCity = "Thành phố không được vượt quá 100 ký tự";
+    }
+
+    // Ngày nhận: không được quá khứ cách ngày hiện tại 3 ngày và không vượt quá ngày hiện tại
+    if (confirmForm.distributionDate) {
+      const selectedDate = new Date(confirmForm.distributionDate);
+      selectedDate.setHours(0, 0, 0, 0); // Reset time to start of day
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // End of today
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      threeDaysAgo.setHours(0, 0, 0, 0); // Start of 3 days ago
+
+      if (selectedDate > today) {
+        errors.distributionDate = "Ngày nhận không được vượt quá ngày hiện tại";
+      } else if (selectedDate < threeDaysAgo) {
+        errors.distributionDate = "Ngày nhận không được quá khứ cách ngày hiện tại 3 ngày";
+      }
+    }
+
+    // Số lượng nhận: bắt buộc, >= 1 và <= số lượng NFT đã được gửi đến
+    const distributedQuantity = confirmForm.distributedQuantity?.trim() || "";
+    const quantity = parseInt(distributedQuantity) || 0;
+    // Lấy số lượng đã được gửi đến - kiểm tra nhiều trường để đảm bảo chính xác
+    const maxQuantity = parseInt(
+      selectedInvoice?.totalQuantity ??
+        selectedInvoice?.quantity ??
+        selectedInvoice?.nftQuantity ??
+        (Array.isArray(selectedInvoice?.nfts)
+          ? selectedInvoice.nfts.length
+          : Array.isArray(selectedInvoice?.items)
+          ? selectedInvoice.items.length
+          : 0)
+    );
+
+    if (!distributedQuantity) {
+      errors.distributedQuantity = "Vui lòng nhập số lượng nhận";
+    } else if (isNaN(quantity)) {
+      errors.distributedQuantity = "Số lượng phải là số";
+    } else if (quantity < 1) {
+      errors.distributedQuantity = "Số lượng nhận phải >= 1";
+    } else if (maxQuantity > 0 && quantity > maxQuantity) {
+      errors.distributedQuantity = `Số lượng nhận không được vượt quá ${maxQuantity} NFT (số lượng đã được gửi đến)`;
+    } else if (maxQuantity <= 0) {
+      errors.distributedQuantity = "Không thể xác định số lượng đã được gửi đến. Vui lòng liên hệ quản trị viên.";
+    }
+
+    setConfirmFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleConfirmReceipt = async () => {
+    if (isConfirming || !selectedInvoice) return;
+
+    // Validate form
+    if (!validateConfirmForm()) {
       return;
     }
 
+    setIsConfirming(true);
     setLoading(true);
     // Bắt đầu progress cho TruckLoader
     setLoadingProgress(0);
@@ -365,51 +484,62 @@ export default function InvoicesFromManufacturer() {
         prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
       );
     }, 50);
+
     try {
+      // Tính số lượng đã được gửi đến
+      const sentQuantity =
+        selectedInvoice?.totalQuantity ??
+        selectedInvoice?.quantity ??
+        selectedInvoice?.nftQuantity ??
+        (Array.isArray(selectedInvoice?.nfts)
+          ? selectedInvoice.nfts.length
+          : Array.isArray(selectedInvoice?.items)
+          ? selectedInvoice.items.length
+          : 0);
+
       const payload = {
         invoiceId: selectedInvoice._id,
         distributionDate: confirmForm.distributionDate,
         distributedQuantity:
-          parseInt(confirmForm.distributedQuantity) ||
-          selectedInvoice.totalQuantity,
+          parseInt(confirmForm.distributedQuantity) || sentQuantity,
         notes: confirmForm.notes || undefined,
       };
 
-      if (confirmForm.receivedBy?.fullName) {
+      const fullName = confirmForm.receivedBy?.fullName?.trim();
+      if (fullName) {
         payload.receivedBy = {
-          fullName: confirmForm.receivedBy.fullName,
-          ...(confirmForm.receivedBy.position && {
-            position: confirmForm.receivedBy.position,
+          fullName,
+          ...(confirmForm.receivedBy.position?.trim() && {
+            position: confirmForm.receivedBy.position.trim(),
           }),
-          ...(confirmForm.receivedBy.signature && {
-            signature: confirmForm.receivedBy.signature,
+          ...(confirmForm.receivedBy.signature?.trim() && {
+            signature: confirmForm.receivedBy.signature.trim(),
           }),
         };
       }
 
-      if (
-        confirmForm.deliveryAddress?.street &&
-        confirmForm.deliveryAddress?.city
-      ) {
+      const street = confirmForm.deliveryAddress?.street?.trim();
+      const city = confirmForm.deliveryAddress?.city?.trim();
+      if (street && city) {
         payload.deliveryAddress = {
-          street: confirmForm.deliveryAddress.street,
-          ...(confirmForm.deliveryAddress.district && {
-            district: confirmForm.deliveryAddress.district,
+          street,
+          ...(confirmForm.deliveryAddress.district?.trim() && {
+            district: confirmForm.deliveryAddress.district.trim(),
           }),
-          city: confirmForm.deliveryAddress.city,
+          city,
         };
       }
 
       if (
-        confirmForm.shippingInfo?.carrier ||
-        confirmForm.shippingInfo?.trackingNumber
+        confirmForm.shippingInfo?.carrier?.trim() ||
+        confirmForm.shippingInfo?.trackingNumber?.trim()
       ) {
         payload.shippingInfo = {
-          ...(confirmForm.shippingInfo.carrier && {
-            carrier: confirmForm.shippingInfo.carrier,
+          ...(confirmForm.shippingInfo.carrier?.trim() && {
+            carrier: confirmForm.shippingInfo.carrier.trim(),
           }),
-          ...(confirmForm.shippingInfo.trackingNumber && {
-            trackingNumber: confirmForm.shippingInfo.trackingNumber,
+          ...(confirmForm.shippingInfo.trackingNumber?.trim() && {
+            trackingNumber: confirmForm.shippingInfo.trackingNumber.trim(),
           }),
           ...(confirmForm.shippingInfo.shippedDate && {
             shippedDate: confirmForm.shippingInfo.shippedDate,
@@ -423,7 +553,31 @@ export default function InvoicesFromManufacturer() {
         alert(
           "Xác nhận nhận hàng thành công!\n\nTrạng thái: Đang chờ Manufacturer xác nhận chuyển quyền sở hữu NFT."
         );
+
+        // FIX: Reset form after successful submission
+        setConfirmForm({
+          receivedBy: {
+            fullName: "",
+            position: "",
+            signature: "",
+          },
+          deliveryAddress: {
+            street: "",
+            district: "",
+            city: "",
+          },
+          shippingInfo: {
+            carrier: "",
+            trackingNumber: "",
+            shippedDate: "",
+          },
+          notes: "",
+          distributionDate: new Date().toISOString().split("T")[0],
+          distributedQuantity: "",
+        });
+        setConfirmFormErrors({});
         setShowConfirmDialog(false);
+
         // Hoàn tất progress trước khi reload
         if (progressIntervalRef.current) {
           clearInterval(progressIntervalRef.current);
@@ -475,6 +629,7 @@ export default function InvoicesFromManufacturer() {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
+      setIsConfirming(false);
       setLoading(false);
       setTimeout(() => setLoadingProgress(0), 500);
     }
@@ -563,21 +718,32 @@ export default function InvoicesFromManufacturer() {
                     </svg>
                   </span>
                   <input
-                    value={search}
-                    onChange={(e) =>
-                      updateFilter({ search: e.target.value, page: 1 })
-                    }
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && updateFilter({ search, page: 1 })
-                    }
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleSearch();
+                      }
+                    }}
                     placeholder="Tìm theo số đơn, ghi chú..."
                     className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+                    maxLength={200}
                   />
+                  {/* FIX: Clear button */}
+                  {searchInput && (
+                    <button
+                      onClick={handleClearSearch}
+                      className="absolute right-24 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      title="Xóa tìm kiếm"
+                    >
+                      ✕
+                    </button>
+                  )}
                   <button
-                    onClick={() => updateFilter({ search, page: 1 })}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary font-medium transition"
+                    onClick={handleSearch}
+                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary text-white font-medium transition"
                   >
-                    <span className="text-white">Tìm Kiếm</span>
+                    Tìm Kiếm
                   </button>
                 </div>
               </div>
@@ -652,7 +818,20 @@ export default function InvoicesFromManufacturer() {
                           <div>
                             Số lượng:{" "}
                             <span className="font-bold text-blue-700">
-                              {item.totalQuantity} NFT
+                              {(() => {
+                                const quantity =
+                                  item.totalQuantity ??
+                                  item.quantity ??
+                                  item.nftQuantity ??
+                                  (Array.isArray(item.nfts)
+                                    ? item.nfts.length
+                                    : Array.isArray(item.items)
+                                    ? item.items.length
+                                    : null);
+                                return quantity !== null && quantity !== undefined
+                                  ? `${quantity} NFT`
+                                  : "N/A";
+                              })()}
                             </span>
                           </div>
                           <div>
@@ -666,9 +845,9 @@ export default function InvoicesFromManufacturer() {
 
                       {item.status === "sent" && (
                         <button
-                          style={{ color: "white" }}
                           onClick={() => handleOpenConfirm(item)}
-                          className="px-6 py-3 rounded-full bg-secondary text-white hover:from-slate-600 hover:to-primary text-base font-semibold transition shadow-md"
+                          disabled={isConfirming}
+                          className="px-6 py-3 rounded-full bg-secondary hover:bg-primary text-white font-semibold shadow-md hover:shadow-lg transition disabled:opacity-50"
                         >
                           Xác nhận nhận hàng
                         </button>
@@ -758,161 +937,378 @@ export default function InvoicesFromManufacturer() {
                 <style>{`
               .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
               .custom-scroll::-webkit-scrollbar { width: 0; height: 0; }
-              .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-              .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
             `}</style>
-                <div className="bg-linear-to-r from-secondary to-primary px-8 py-6 rounded-t-3xl flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <h2 className="text-2xl font-bold text-white">
-                        Xác nhận nhận hàng
-                      </h2>
-                      <p className="text-cyan-100 text-sm">
-                        Đơn: {selectedInvoice.invoiceNumber}
-                      </p>
-                    </div>
+
+                {/* Header */}
+                <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">
+                      Xác nhận nhận hàng
+                    </h2>
+                    <p className="text-gray-100 text-sm">
+                      Đơn: {selectedInvoice.invoiceNumber}
+                    </p>
                   </div>
                   <button
                     onClick={() => setShowConfirmDialog(false)}
-                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition"
+                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition"
                   >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    ✕
                   </button>
                 </div>
 
-                <div className="p-8 space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Body */}
+                <div className="p-8 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Người nhận hàng *
                       </label>
                       <input
                         value={confirmForm.receivedBy.fullName}
-                        onChange={(e) =>
-                          setConfirmForm({
-                            ...confirmForm,
-                            receivedBy: {
-                              ...confirmForm.receivedBy,
-                              fullName: e.target.value,
-                            },
-                          })
-                        }
+                        onChange={(e) => {
+                          // FIX: Only allow letters with proper length validation
+                          const value = e.target.value.replace(/[^a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]/g, "");
+                          if (value.length <= 100) {
+                            setConfirmForm({
+                              ...confirmForm,
+                              receivedBy: {
+                                ...confirmForm.receivedBy,
+                                fullName: value,
+                              },
+                            });
+                            if (confirmFormErrors.receivedByFullName) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                receivedByFullName: "",
+                              });
+                            }
+                          }
+                        }}
                         placeholder="Họ và tên"
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        maxLength={100}
+                        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                          confirmFormErrors.receivedByFullName
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                        }`}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Chức vụ
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Chức vụ *
                       </label>
                       <input
                         value={confirmForm.receivedBy.position}
-                        onChange={(e) =>
-                          setConfirmForm({
-                            ...confirmForm,
-                            receivedBy: {
-                              ...confirmForm.receivedBy,
-                              position: e.target.value,
-                            },
-                          })
-                        }
+                        onChange={(e) => {
+                          // FIX: Only allow letters with proper length validation
+                          const value = e.target.value.replace(/[^a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]/g, "");
+                          if (value.length <= 50) {
+                            setConfirmForm({
+                              ...confirmForm,
+                              receivedBy: {
+                                ...confirmForm.receivedBy,
+                                position: value,
+                              },
+                            });
+                            if (confirmFormErrors.receivedByPosition) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                receivedByPosition: "",
+                              });
+                            }
+                          }
+                        }}
                         placeholder="VD: Thủ kho"
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        maxLength={50}
+                        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                          confirmFormErrors.receivedByPosition
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                        }`}
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Địa chỉ nhận (đường) *
                       </label>
                       <input
                         value={confirmForm.deliveryAddress.street}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value.slice(0, 200);
                           setConfirmForm({
                             ...confirmForm,
                             deliveryAddress: {
                               ...confirmForm.deliveryAddress,
-                              street: e.target.value,
+                              street: value,
                             },
-                          })
-                        }
+                          });
+                          if (confirmFormErrors.deliveryAddressStreet) {
+                            setConfirmFormErrors({
+                              ...confirmFormErrors,
+                              deliveryAddressStreet: "",
+                            });
+                          }
+                        }}
                         placeholder="Số nhà, đường..."
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        maxLength={200}
+                        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                          confirmFormErrors.deliveryAddressStreet
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                        }`}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Thành phố *
                       </label>
                       <input
                         value={confirmForm.deliveryAddress.city}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value.slice(0, 100);
                           setConfirmForm({
                             ...confirmForm,
                             deliveryAddress: {
                               ...confirmForm.deliveryAddress,
-                              city: e.target.value,
+                              city: value,
                             },
-                          })
-                        }
+                          });
+                          if (confirmFormErrors.deliveryAddressCity) {
+                            setConfirmFormErrors({
+                              ...confirmFormErrors,
+                              deliveryAddressCity: "",
+                            });
+                          }
+                        }}
                         placeholder="TP/Huyện"
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        maxLength={100}
+                        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                          confirmFormErrors.deliveryAddressCity
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                        }`}
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Ngày nhận
                       </label>
                       <input
                         type="date"
                         value={confirmForm.distributionDate}
-                        onChange={(e) =>
-                          setConfirmForm({
-                            ...confirmForm,
-                            distributionDate: e.target.value,
-                          })
-                        }
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        min={(() => {
+                          const threeDaysAgo = new Date();
+                          threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                          return threeDaysAgo.toISOString().split("T")[0];
+                        })()}
+                        max={new Date().toISOString().split("T")[0]}
+                        onChange={(e) => {
+                          const selectedValue = e.target.value;
+                          // Validate ngay khi onChange
+                          if (selectedValue) {
+                            const selectedDate = new Date(selectedValue);
+                            selectedDate.setHours(0, 0, 0, 0);
+                            const today = new Date();
+                            today.setHours(23, 59, 59, 999);
+                            const threeDaysAgo = new Date();
+                            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                            threeDaysAgo.setHours(0, 0, 0, 0);
+
+                            // Nếu ngày hợp lệ, cập nhật form và xóa lỗi
+                            if (selectedDate <= today && selectedDate >= threeDaysAgo) {
+                              setConfirmForm({
+                                ...confirmForm,
+                                distributionDate: selectedValue,
+                              });
+                              if (confirmFormErrors.distributionDate) {
+                                setConfirmFormErrors({
+                                  ...confirmFormErrors,
+                                  distributionDate: "",
+                                });
+                              }
+                            } else {
+                              // Nếu ngày không hợp lệ, vẫn cập nhật nhưng sẽ validate lại khi submit
+                              setConfirmForm({
+                                ...confirmForm,
+                                distributionDate: selectedValue,
+                              });
+                            }
+                          } else {
+                            setConfirmForm({
+                              ...confirmForm,
+                              distributionDate: selectedValue,
+                            });
+                            if (confirmFormErrors.distributionDate) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                distributionDate: "",
+                              });
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          // Validate khi blur để hiển thị lỗi ngay
+                          const selectedValue = e.target.value;
+                          if (selectedValue) {
+                            const selectedDate = new Date(selectedValue);
+                            selectedDate.setHours(0, 0, 0, 0);
+                            const today = new Date();
+                            today.setHours(23, 59, 59, 999);
+                            const threeDaysAgo = new Date();
+                            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                            threeDaysAgo.setHours(0, 0, 0, 0);
+
+                            if (selectedDate > today) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                distributionDate: "Ngày nhận không được vượt quá ngày hiện tại",
+                              });
+                            } else if (selectedDate < threeDaysAgo) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                distributionDate: "Ngày nhận không được quá khứ cách ngày hiện tại 3 ngày",
+                              });
+                            } else if (confirmFormErrors.distributionDate) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                distributionDate: "",
+                              });
+                            }
+                          }
+                        }}
+                        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 bg-white ${
+                          confirmFormErrors.distributionDate
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                        }`}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Số lượng nhận
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Số lượng nhận *
                       </label>
                       <input
                         type="number"
                         min="1"
+                        max={(() => {
+                          // Tính số lượng đã được gửi đến
+                          const sentQuantity =
+                            selectedInvoice?.totalQuantity ??
+                            selectedInvoice?.quantity ??
+                            selectedInvoice?.nftQuantity ??
+                            (Array.isArray(selectedInvoice?.nfts)
+                              ? selectedInvoice.nfts.length
+                              : Array.isArray(selectedInvoice?.items)
+                              ? selectedInvoice.items.length
+                              : 0);
+                          return sentQuantity > 0 ? sentQuantity : undefined;
+                        })()}
                         value={confirmForm.distributedQuantity}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          let value = e.target.value;
+                          if (value === "" || value === "-") {
+                            setConfirmForm({
+                              ...confirmForm,
+                              distributedQuantity: value,
+                            });
+                            if (confirmFormErrors.distributedQuantity) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                distributedQuantity: "",
+                              });
+                            }
+                            return;
+                          }
+                          // Chuyển sang number để kiểm tra
+                          const numValue = parseInt(value);
+                          // Nếu là NaN hoặc <= 0, tự động set về 1
+                          if (isNaN(numValue) || numValue <= 0) {
+                            value = "1";
+                          } else {
+                            // Tính số lượng đã được gửi đến
+                            const sentQuantity =
+                              selectedInvoice?.totalQuantity ??
+                              selectedInvoice?.quantity ??
+                              selectedInvoice?.nftQuantity ??
+                              (Array.isArray(selectedInvoice?.nfts)
+                                ? selectedInvoice.nfts.length
+                                : Array.isArray(selectedInvoice?.items)
+                                ? selectedInvoice.items.length
+                                : 0);
+                            // Đảm bảo không vượt quá số lượng đã được gửi đến
+                            if (sentQuantity > 0 && numValue > sentQuantity) {
+                              value = sentQuantity.toString();
+                            } else {
+                              value = numValue.toString();
+                            }
+                          }
                           setConfirmForm({
                             ...confirmForm,
-                            distributedQuantity: e.target.value,
-                          })
-                        }
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                            distributedQuantity: value,
+                          });
+                          if (confirmFormErrors.distributedQuantity) {
+                            setConfirmFormErrors({
+                              ...confirmFormErrors,
+                              distributedQuantity: "",
+                            });
+                          }
+                        }}
+                        onBlur={(e) => {
+                          // Khi blur (rời khỏi field), nếu rỗng hoặc <= 0, tự động set về 1
+                          const value = e.target.value;
+                          if (
+                            !value ||
+                            value === "-" ||
+                            isNaN(parseInt(value)) ||
+                            parseInt(value) <= 0
+                          ) {
+                            setConfirmForm({
+                              ...confirmForm,
+                              distributedQuantity: "1",
+                            });
+                            if (confirmFormErrors.distributedQuantity) {
+                              setConfirmFormErrors({
+                                ...confirmFormErrors,
+                                distributedQuantity: "",
+                              });
+                            }
+                          }
+                        }}
+                        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                          confirmFormErrors.distributedQuantity
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                        }`}
                       />
+                      {(() => {
+                        // Tính số lượng đã được gửi đến
+                        const sentQuantity =
+                          selectedInvoice?.totalQuantity ??
+                          selectedInvoice?.quantity ??
+                          selectedInvoice?.nftQuantity ??
+                          (Array.isArray(selectedInvoice?.nfts)
+                            ? selectedInvoice.nfts.length
+                            : Array.isArray(selectedInvoice?.items)
+                            ? selectedInvoice.items.length
+                            : 0);
+                        return sentQuantity > 0 ? (
+                          <p className="mt-2 text-sm text-blue-500">
+                            (Tối đa: {sentQuantity} NFT - số lượng đã được gửi đến)
+                          </p>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Ghi chú
                     </label>
                     <textarea
@@ -921,29 +1317,32 @@ export default function InvoicesFromManufacturer() {
                       onChange={(e) =>
                         setConfirmForm({
                           ...confirmForm,
-                          notes: e.target.value,
+                          notes: e.target.value.slice(0, 500),
                         })
                       }
-                      className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      maxLength={500}
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150 focus:ring-gray-400"
                       placeholder="Ghi chú thêm..."
                     />
                   </div>
+                </div>
 
-                  <div className="pt-2 flex justify-end gap-3">
-                    <button
-                      onClick={() => setShowConfirmDialog(false)}
-                      className="px-5 py-2 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-100 transition"
-                    >
-                      Hủy
-                    </button>
-                    <button
-                      style={{ color: "white" }}
-                      onClick={handleConfirmReceipt}
-                      className="px-6 py-3 rounded-full bg-secondary text-white font-semibold shadow-md hover:bg-primary transition"
-                    >
-                      Xác nhận nhận hàng
-                    </button>
-                  </div>
+                {/* Footer */}
+                <div className="px-8 py-6 border-t border-gray-300 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowConfirmDialog(false)}
+                    disabled={isConfirming}
+                    className="px-5 py-2.5 rounded-full border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-all duration-200 font-medium disabled:opacity-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={handleConfirmReceipt}
+                    disabled={isConfirming}
+                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+                  >
+                    {isConfirming ? "Đang xử lý..." : "Xác nhận nhận hàng"}
+                  </button>
                 </div>
               </div>
             </div>

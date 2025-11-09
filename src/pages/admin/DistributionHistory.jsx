@@ -18,12 +18,23 @@ export default function DistributionHistory() {
   });
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
+  // Separate search input states from URL params
+  const [distributorIdInput, setDistributorIdInput] = useState("");
+  const [pharmacyIdInput, setPharmacyIdInput] = useState("");
+  const [drugIdInput, setDrugIdInput] = useState("");
 
   const page = parseInt(searchParams.get("page") || "1", 10);
   const distributorId = searchParams.get("distributorId") || "";
   const pharmacyId = searchParams.get("pharmacyId") || "";
   const drugId = searchParams.get("drugId") || "";
   const status = searchParams.get("status") || "";
+
+  // Sync search inputs with URL params on mount/change (only from URL changes, not user input)
+  useEffect(() => {
+    setDistributorIdInput(distributorId);
+    setPharmacyIdInput(pharmacyId);
+    setDrugIdInput(drugId);
+  }, [distributorId, pharmacyId, drugId]);
 
   const navigationItems = useMemo(
     () => [
@@ -126,6 +137,29 @@ export default function DistributionHistory() {
     };
   }, [page, distributorId, pharmacyId, drugId, status]);
 
+  // Handle search - only trigger on Enter or button click
+  const handleSearch = () => {
+    updateFilter({
+      distributorId: distributorIdInput,
+      pharmacyId: pharmacyIdInput,
+      drugId: drugIdInput,
+      page: 1,
+    });
+  };
+
+  // Clear search button
+  const handleClearSearch = () => {
+    setDistributorIdInput("");
+    setPharmacyIdInput("");
+    setDrugIdInput("");
+    updateFilter({
+      distributorId: "",
+      pharmacyId: "",
+      drugId: "",
+      page: 1,
+    });
+  };
+
   const updateFilter = (next) => {
     const nextParams = new URLSearchParams(searchParams);
     Object.entries(next).forEach(([k, v]) => {
@@ -173,16 +207,25 @@ export default function DistributionHistory() {
             initial="hidden"
             animate="show"
           >
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
               <div>
                 <label className="block text-sm text-[#003544]/70 mb-1">
                   Mã NPP
                 </label>
                 <input
-                  value={distributorId}
-                  onChange={(e) =>
-                    updateFilter({ distributorId: e.target.value, page: 1 })
-                  }
+                  type="text"
+                  value={distributorIdInput}
+                  onChange={(e) => {
+                    // Chỉ cập nhật state, không trigger search
+                    setDistributorIdInput(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    // Chỉ search khi nhấn Enter
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSearch();
+                    }
+                  }}
                   placeholder="Lọc theo NPP"
                   className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
                 />
@@ -193,10 +236,19 @@ export default function DistributionHistory() {
                   Mã nhà thuốc
                 </label>
                 <input
-                  value={pharmacyId}
-                  onChange={(e) =>
-                    updateFilter({ pharmacyId: e.target.value, page: 1 })
-                  }
+                  type="text"
+                  value={pharmacyIdInput}
+                  onChange={(e) => {
+                    // Chỉ cập nhật state, không trigger search
+                    setPharmacyIdInput(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    // Chỉ search khi nhấn Enter
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSearch();
+                    }
+                  }}
                   placeholder="Lọc theo Nhà thuốc"
                   className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
                 />
@@ -207,10 +259,19 @@ export default function DistributionHistory() {
                   Mã thuốc
                 </label>
                 <input
-                  value={drugId}
-                  onChange={(e) =>
-                    updateFilter({ drugId: e.target.value, page: 1 })
-                  }
+                  type="text"
+                  value={drugIdInput}
+                  onChange={(e) => {
+                    // Chỉ cập nhật state, không trigger search
+                    setDrugIdInput(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    // Chỉ search khi nhấn Enter
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSearch();
+                    }
+                  }}
                   placeholder="Lọc theo thuốc"
                   className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
                 />
@@ -233,6 +294,25 @@ export default function DistributionHistory() {
                   <option value="confirmed">Đã xác nhận</option>
                 </select>
               </div>
+            </div>
+            {/* Search buttons */}
+            <div className="flex items-center gap-3 justify-end">
+              {(distributorIdInput || pharmacyIdInput || drugIdInput) && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className="px-4 py-2 rounded-full border border-gray-300 text-slate-700 hover:bg-gray-50 transition text-sm font-medium"
+                >
+                  Xóa tìm kiếm
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleSearch}
+                className="px-6 py-2 rounded-full bg-secondary hover:bg-primary text-white font-medium transition text-sm shadow-md"
+              >
+                Tìm kiếm
+              </button>
             </div>
           </motion.div>
 

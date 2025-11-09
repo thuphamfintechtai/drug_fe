@@ -388,9 +388,6 @@ export default function NFTTracking() {
             >
               <div className="bg-white rounded-2xl border border-cyan-100 shadow-sm p-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-cyan-500 text-white flex items-center justify-center">
-                    🔗
-                  </div>
                   <h2 className="text-lg font-semibold text-[#007b91]">
                     Thông tin chi tiết thuốc
                   </h2>
@@ -399,46 +396,271 @@ export default function NFTTracking() {
                   <div className="space-y-2">
                     <div className="text-slate-500">NFT ID</div>
                     <div className="font-mono text-cyan-700">
-                      {short(trackingData?.nft?.tokenId)}
+                      {trackingData?.nft?.tokenId
+                        ? short(String(trackingData.nft.tokenId))
+                        : tokenId
+                        ? short(String(tokenId))
+                        : "N/A"}
                     </div>
                     <div className="text-slate-500 mt-4">Nhà sản xuất</div>
                     <div className="font-medium">
-                      {trackingData?.manufacturer?.name ||
-                        trackingData?.drug?.manufacturer ||
+                      {trackingData?.manufacturerInvoice?.fromManufacturer
+                        ?.fullName ||
+                        trackingData?.nft?.proofOfProduction?.manufacturer
+                          ?.fullName ||
+                        trackingData?.nft?.owner?.fullName ||
                         "N/A"}
                     </div>
                     <div className="text-slate-500 mt-4">Ngày sản xuất</div>
                     <div className="font-medium">
-                      {formatDate(trackingData?.drug?.manufacturingDate)}
+                      {formatDate(
+                        trackingData?.nft?.mfgDate ||
+                          trackingData?.nft?.proofOfProduction?.mfgDate
+                      )}
+                    </div>
+                    <div className="text-slate-500 mt-4">Số lô</div>
+                    <div className="font-medium">
+                      {trackingData?.nft?.batchNumber ||
+                        trackingData?.nft?.proofOfProduction?.batchNumber ||
+                        "N/A"}
+                    </div>
+                    <div className="text-slate-500 mt-4">Số serial</div>
+                    <div className="font-mono">
+                      {trackingData?.nft?.serialNumber || "N/A"}
                     </div>
                   </div>
                   <div className="space-y-2">
                     <div className="text-slate-500">Tên thuốc</div>
                     <div className="font-medium">
-                      {trackingData?.drug?.tradeName || "N/A"}
+                      {trackingData?.nft?.drug?.tradeName ||
+                        trackingData?.nft?.drug?.genericName ||
+                        "N/A"}
+                    </div>
+                    <div className="text-slate-500 mt-4">Mã ATC</div>
+                    <div className="font-mono">
+                      {trackingData?.nft?.drug?.atcCode || "N/A"}
                     </div>
                     <div className="text-slate-500 mt-4">Nhà phân phối</div>
                     <div className="font-medium">
-                      {trackingData?.distributor?.name || "N/A"}
+                      {(() => {
+                        // Kiểm tra commercialInvoice trước (hóa đơn thương mại)
+                        const commercialDistributor =
+                          trackingData?.commercialInvoice?.fromDistributor;
+                        if (commercialDistributor) {
+                          if (typeof commercialDistributor === "object") {
+                            return commercialDistributor.fullName || commercialDistributor.name || "N/A";
+                          }
+                        }
+                        // Kiểm tra manufacturerInvoice (hóa đơn từ NSX)
+                        const manufacturerDistributor =
+                          trackingData?.manufacturerInvoice?.toDistributor;
+                        if (manufacturerDistributor) {
+                          if (typeof manufacturerDistributor === "object") {
+                            return manufacturerDistributor.fullName || manufacturerDistributor.name || "N/A";
+                          }
+                          // Nếu là ID string, có thể hiển thị ID hoặc "N/A"
+                          return "N/A";
+                        }
+                        return "N/A";
+                      })()}
+                    </div>
+                    <div className="text-slate-500 mt-4">Nhà thuốc</div>
+                    <div className="font-medium">
+                      {trackingData?.commercialInvoice?.toPharmacy?.fullName ||
+                        "N/A"}
                     </div>
                     <div className="text-slate-500 mt-4">Hạn sử dụng</div>
                     <div className="font-medium">
-                      {formatDate(trackingData?.drug?.expiryDate)}
+                      {formatDate(
+                        trackingData?.nft?.expDate ||
+                          trackingData?.nft?.proofOfProduction?.expDate
+                      )}
+                    </div>
+                    <div className="text-slate-500 mt-4">Chủ sở hữu hiện tại</div>
+                    <div className="font-medium">
+                      {trackingData?.nft?.owner?.fullName ||
+                        trackingData?.nft?.owner?.username ||
+                        "N/A"}
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-6 flex justify-end">
-                  {trackingData?.explorerUrl ? (
+                {/* Thông tin bổ sung */}
+                {(trackingData?.nft?.chainTxHash ||
+                  trackingData?.nft?.ipfsUrl ||
+                  trackingData?.nft?.contractAddress) && (
+                  <div className="mt-6 pt-6 border-t border-slate-200">
+                    <h3 className="text-sm font-semibold text-slate-700 mb-3">
+                      Thông tin Blockchain
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                      {trackingData?.nft?.contractAddress && (
+                        <div>
+                          <div className="text-slate-500">Contract Address</div>
+                          <div className="font-mono text-slate-700 break-all">
+                            {trackingData.nft.contractAddress}
+                          </div>
+                        </div>
+                      )}
+                      {trackingData?.nft?.chainTxHash && (
+                        <div>
+                          <div className="text-slate-500">Transaction Hash</div>
+                          <div className="font-mono text-slate-700 break-all">
+                            {short(trackingData.nft.chainTxHash)}
+                          </div>
+                        </div>
+                      )}
+                      {trackingData?.nft?.ipfsUrl && (
+                        <div className="md:col-span-2">
+                          <div className="text-slate-500">IPFS URL</div>
+                          <a
+                            href={trackingData.nft.ipfsUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-mono text-cyan-600 hover:text-cyan-700 break-all"
+                          >
+                            {trackingData.nft.ipfsUrl}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Lịch sử blockchain */}
+                {trackingData?.blockchainHistory &&
+                  trackingData.blockchainHistory.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-slate-200">
+                      <h3 className="text-sm font-semibold text-slate-700 mb-3">
+                        Lịch sử giao dịch ({trackingData.blockchainHistory.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {trackingData.blockchainHistory.map((tx, idx) => (
+                          <div
+                            key={idx}
+                            className="bg-slate-50 rounded-lg p-3 text-xs"
+                          >
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <span className="text-slate-500">Từ:</span>
+                                <span className="font-mono ml-1">
+                                  {short(tx.fromUserAddress)}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-slate-500">Đến:</span>
+                                <span className="font-mono ml-1">
+                                  {short(tx.toUserAddress)}
+                                </span>
+                              </div>
+                              {tx.receivedTimestamp && (
+                                <div className="col-span-2">
+                                  <span className="text-slate-500">Thời gian:</span>
+                                  <span className="ml-1">
+                                    {new Date(
+                                      tx.receivedTimestamp * 1000
+                                    ).toLocaleString("vi-VN")}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Thông tin hóa đơn */}
+                {(trackingData?.manufacturerInvoice ||
+                  trackingData?.commercialInvoice) && (
+                  <div className="mt-6 pt-6 border-t border-slate-200">
+                    <h3 className="text-sm font-semibold text-slate-700 mb-3">
+                      Thông tin Hóa đơn
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                      {trackingData?.manufacturerInvoice && (
+                        <div className="bg-blue-50 rounded-lg p-3">
+                          <div className="font-semibold text-blue-800 mb-2">
+                            Hóa đơn từ NSX
+                          </div>
+                          <div>
+                            <span className="text-slate-600">Số HD:</span>
+                            <span className="font-mono ml-1">
+                              {trackingData.manufacturerInvoice.invoiceNumber}
+                            </span>
+                          </div>
+                          {trackingData.manufacturerInvoice.invoiceDate && (
+                            <div className="mt-1">
+                              <span className="text-slate-600">Ngày:</span>
+                              <span className="ml-1">
+                                {formatDate(
+                                  trackingData.manufacturerInvoice.invoiceDate
+                                )}
+                              </span>
+                            </div>
+                          )}
+                          <div className="mt-1">
+                            <span className="text-slate-600">Trạng thái:</span>
+                            <span className="ml-1 capitalize">
+                              {trackingData.manufacturerInvoice.status}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {trackingData?.commercialInvoice && (
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <div className="font-semibold text-green-800 mb-2">
+                            Hóa đơn thương mại
+                          </div>
+                          <div>
+                            <span className="text-slate-600">Số HD:</span>
+                            <span className="font-mono ml-1">
+                              {trackingData.commercialInvoice.invoiceNumber}
+                            </span>
+                          </div>
+                          {trackingData.commercialInvoice.invoiceDate && (
+                            <div className="mt-1">
+                              <span className="text-slate-600">Ngày:</span>
+                              <span className="ml-1">
+                                {formatDate(
+                                  trackingData.commercialInvoice.invoiceDate
+                                )}
+                              </span>
+                            </div>
+                          )}
+                          <div className="mt-1">
+                            <span className="text-slate-600">Trạng thái:</span>
+                            <span className="ml-1 capitalize">
+                              {trackingData.commercialInvoice.status}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-6 flex justify-end gap-3">
+                  {trackingData?.nft?.chainTxHash && (
                     <a
-                      href={trackingData.explorerUrl}
+                      href={`https://zeroscan.org/tx/${trackingData.nft.chainTxHash}`}
                       target="_blank"
                       rel="noreferrer"
                       className="px-6 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] text-white font-medium transition"
                     >
-                      Xem trên Blockchain →
+                      Xem trên ZeroScan
                     </a>
-                  ) : null}
+                  )}
+                  {trackingData?.nft?.ipfsUrl && (
+                    <a
+                      href={trackingData.nft.ipfsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white font-medium transition"
+                    >
+                      Xem trên IPFS
+                    </a>
+                  )}
                 </div>
               </div>
             </motion.div>
