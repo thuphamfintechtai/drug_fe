@@ -885,7 +885,6 @@ export default function ProductionManagement() {
           {/* Action Button */}
           <div className="flex justify-end">
             <button
-              style={{ color: "white" }}
               onClick={handleStartProduction}
               className="px-4 py-2.5 rounded-full bg-gradient-to-r from-secondary to-primary text-white font-medium shadow-md hover:shadow-lg transition flex items-center gap-2"
             >
@@ -1357,7 +1356,7 @@ export default function ProductionManagement() {
                 {/* Box: Bước 1 hoàn thành */}
                 <div className="rounded-xl p-5 border border-cyan-200 bg-cyan-50">
                   <div className="flex items-start gap-3 mb-3">
-                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white text-cyan-600 border border-cyan-200 shadow-sm">
+                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white text-cyan-600 border border-cyan-200 shadow-sm flex-shrink-0">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 20 20"
@@ -1436,7 +1435,7 @@ export default function ProductionManagement() {
                 {/* Box: Cảnh báo */}
                 <div className="rounded-xl p-4 border border-amber-200 bg-amber-50">
                   <div className="flex items-start gap-3">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white text-amber-600 border border-amber-200 shadow-sm">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white text-amber-600 border border-amber-200 shadow-sm flex-shrink-0">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 20 20"
