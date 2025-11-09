@@ -9,7 +9,6 @@ export default defineConfig({
         target: 'http://localhost:9000',
         changeOrigin: true,
         secure: false,
-        // giữ nguyên đường dẫn /api để khớp với backend
       },
     },
   },
