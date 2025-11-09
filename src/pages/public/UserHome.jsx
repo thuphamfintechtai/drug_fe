@@ -10,9 +10,14 @@ import {
 import { BsCheckCircleFill } from "react-icons/bs";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
+import { useMetaMask } from "../../hooks/useMetaMask";
+import { formatWalletAddress } from "../../utils/walletUtils";
 
 export default function UserHome() {
   const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
+  const { account, isConnected, isInstalled, connect, isConnecting, disconnect, chainId } = useMetaMask();
   const [tokenId, setTokenId] = useState("");
   const [drugSearch, setDrugSearch] = useState("");
   const [searchMode, setSearchMode] = useState("nft"); // 'nft' or 'drug'
@@ -22,6 +27,58 @@ export default function UserHome() {
   const [showUploadQR, setShowUploadQR] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const dropdownRef = useRef(null);
+  const walletModalRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowUserDropdown(false);
+      }
+      if (walletModalRef.current && !walletModalRef.current.contains(event.target)) {
+        setShowWalletModal(false);
+      }
+    };
+
+    if (showUserDropdown || showWalletModal) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showUserDropdown, showWalletModal]);
+
+  const handleConnectMetaMask = async () => {
+    if (!isInstalled) {
+      toast.error("MetaMask chưa được cài đặt. Vui lòng cài đặt MetaMask extension.");
+      window.open("https://metamask.io/download/", "_blank");
+      return;
+    }
+
+    const success = await connect();
+    if (success) {
+      toast.success("Đã kết nối với MetaMask!");
+    } else {
+      toast.error("Không thể kết nối với MetaMask.");
+    }
+  };
+
+  const handleLogout = async () => {
+    if (isConnected) {
+      await disconnect();
+    }
+    await logout();
+    setShowUserDropdown(false);
+    navigate("/");
+    toast.success("Đã đăng xuất thành công!");
+  };
+
+  const walletAddress = account || user?.walletAddress || "";
+  const displayWalletAddress = walletAddress ? formatWalletAddress(walletAddress, 6, 4) : "";
 
   const handleTrackDrug = () => {
     const trimmedTokenId = tokenId.trim();
@@ -421,6 +478,430 @@ export default function UserHome() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-4 py-4 sticky top-0 z-50 shadow-md">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          {/* Logo/Brand */}
+          <Link to="/" className="flex items-center">
+            <span className="text-white text-xl font-bold">DrugTrace</span>
+          </Link>
+
+          {/* Right side - Buttons or User Icon */}
+          <div className="flex items-center gap-3">
+            {!isAuthenticated ? (
+              <>
+                {/* Kết nối MetaMask Button */}
+                <button
+                  onClick={handleConnectMetaMask}
+                  disabled={isConnecting || !isInstalled}
+                  className="px-5 py-2.5 bg-white text-slate-900 font-semibold rounded-lg shadow-md hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isConnecting ? "Đang kết nối..." : "Kết nối MetaMask"}
+                </button>
+
+                {/* Đăng nhập Button */}
+                <Link
+                  to="/login"
+                  className="px-6 py-2.5 bg-white text-[#00b4d8] font-semibold rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+                >
+                  Đăng nhập
+                </Link>
+              </>
+            ) : (
+              <>
+                {/* User Icon - Golden Circle */}
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setShowUserDropdown(!showUserDropdown)}
+                    className="w-10 h-10 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2 focus:ring-offset-cyan-500"
+                    style={{
+                      background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)",
+                      boxShadow: "0 4px 14px 0 rgba(251, 191, 36, 0.4)"
+                    }}
+                  >
+                    <div className="w-full h-full rounded-full flex items-center justify-center" style={{
+                      background: "linear-gradient(135deg, rgba(251, 191, 36, 0.9) 0%, rgba(217, 119, 6, 0.9) 100%)",
+                    }}>
+                      <span className="text-white font-bold text-lg drop-shadow-md">
+                        {user?.email?.charAt(0)?.toUpperCase() || user?.fullName?.charAt(0)?.toUpperCase() || "U"}
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  <AnimatePresence>
+                    {showUserDropdown && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border-2 border-gray-200 overflow-hidden z-50"
+                      >
+                        {/* User Info Section */}
+                        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-[#00b4d8]/5 to-[#48cae4]/5">
+                          <div className="text-slate-700 text-sm font-medium mb-3">
+                            {user?.email || "N/A"}
+                          </div>
+                          {walletAddress && (
+                            <div 
+                              onClick={() => setShowWalletModal(true)}
+                              className="flex items-center gap-2 px-3 py-2.5 bg-white rounded-lg border-2 border-gray-200 shadow-sm cursor-pointer hover:border-[#00b4d8] hover:shadow-md transition-all"
+                            >
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#48cae4] flex items-center justify-center flex-shrink-0 shadow-md">
+                                <svg
+                                  className="w-5 h-5 text-white"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                                  />
+                                </svg>
+                              </div>
+                              <span className="text-slate-700 text-sm font-mono flex-1 truncate font-medium">
+                                {displayWalletAddress}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(walletAddress);
+                                  toast.success("Đã sao chép địa chỉ ví!");
+                                }}
+                                className="text-slate-400 hover:text-[#00b4d8] transition-colors p-1.5 rounded-lg hover:bg-[#00b4d8]/10"
+                                title="Sao chép"
+                              >
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Menu Items */}
+                        <div className="py-2 bg-white">
+                          <button
+                            onClick={() => {
+                              setShowUserDropdown(false);
+                              // Navigate to account page
+                            }}
+                            className="w-full px-4 py-3 text-left text-slate-700 hover:bg-[#00b4d8]/10 hover:text-[#007b91] transition-colors flex items-center gap-3 font-medium"
+                          >
+                            <span>My Account</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowUserDropdown(false);
+                              setShowWalletModal(true);
+                            }}
+                            className="w-full px-4 py-3 text-left text-slate-700 hover:bg-[#00b4d8]/10 hover:text-[#007b91] transition-colors flex items-center gap-3 font-medium"
+                          >
+                            <span>My Wallet</span>
+                          </button>
+                          <button
+                            onClick={handleLogout}
+                            className="w-full px-4 py-3 text-left text-slate-700 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center justify-between font-medium"
+                          >
+                            <span>Log Out</span>
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Wallet Modal */}
+      <AnimatePresence>
+        {showWalletModal && walletAddress && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <motion.div
+              ref={walletModalRef}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border-2 border-gray-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header with gradient */}
+              <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-white text-lg font-semibold">Wallet</h3>
+                  <button
+                    onClick={() => setShowWalletModal(false)}
+                    className="text-white/80 hover:text-white transition-colors p-2 hover:bg-white/20 rounded-lg"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Account Info Section */}
+              <div className="px-6 py-4 bg-white">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00b4d8] to-[#48cae4] flex items-center justify-center shadow-lg">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00b4d8]/90 to-[#48cae4]/90 flex items-center justify-center">
+                        <span className="text-white font-bold text-xl">
+                          {user?.email?.charAt(0)?.toUpperCase() || user?.fullName?.charAt(0)?.toUpperCase() || "U"}
+                        </span>
+                      </div>
+                    </div>
+                    {/* MetaMask Fox Icon - Small badge */}
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                      <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#E27625"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#E27625"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#E27625"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#E27625"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-slate-700 font-mono text-lg font-semibold">
+                        {displayWalletAddress}
+                      </span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(walletAddress);
+                          toast.success("Đã sao chép địa chỉ ví!");
+                        }}
+                        className="text-slate-400 hover:text-[#00b4d8] transition-colors p-1 hover:bg-[#00b4d8]/10 rounded"
+                        title="Sao chép"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="text-slate-500 text-sm font-medium">MetaMask</div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <button className="flex flex-col items-center gap-2 px-4 py-3 bg-gray-50 rounded-xl hover:bg-[#00b4d8]/10 border border-gray-200 hover:border-[#00b4d8] transition-colors">
+                    <svg
+                      className="w-6 h-6 text-[#00b4d8]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                      />
+                    </svg>
+                    <span className="text-slate-700 text-sm font-medium">Send</span>
+                  </button>
+                  <button className="flex flex-col items-center gap-2 px-4 py-3 bg-gray-50 rounded-xl hover:bg-[#00b4d8]/10 border border-gray-200 hover:border-[#00b4d8] transition-colors">
+                    <svg
+                      className="w-6 h-6 text-[#00b4d8]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                      />
+                    </svg>
+                    <span className="text-slate-700 text-sm font-medium">Receive</span>
+                  </button>
+                  <button className="flex flex-col items-center gap-2 px-4 py-3 bg-gray-50 rounded-xl hover:bg-[#00b4d8]/10 border border-gray-200 hover:border-[#00b4d8] transition-colors">
+                    <svg
+                      className="w-6 h-6 text-[#00b4d8]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    <span className="text-slate-700 text-sm font-medium">Buy</span>
+                  </button>
+                </div>
+
+                {/* Chain Information */}
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl mb-4 cursor-pointer hover:bg-[#00b4d8]/10 border border-gray-200 hover:border-[#00b4d8] transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-slate-700 text-sm font-medium">
+                      {chainId 
+                        ? `Chain #${parseInt(chainId, 16) || chainId}` 
+                        : "Unknown chain"}
+                    </span>
+                  </div>
+                  <svg
+                    className="w-5 h-5 text-slate-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </div>
+
+                {/* Menu Items */}
+                <div className="space-y-1 mb-4">
+                  <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-[#00b4d8]/10 rounded-xl transition-colors border border-transparent hover:border-[#00b4d8]/20">
+                    <svg
+                      className="w-5 h-5 text-[#00b4d8]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 6h16M4 12h16M4 18h16"
+                      />
+                    </svg>
+                    <span className="text-sm font-medium">Transactions</span>
+                  </button>
+                  <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-[#00b4d8]/10 rounded-xl transition-colors border border-transparent hover:border-[#00b4d8]/20">
+                    <svg
+                      className="w-5 h-5 text-[#00b4d8]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
+                    </svg>
+                    <span className="text-sm font-medium">View Assets</span>
+                  </button>
+                  <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-[#00b4d8]/10 rounded-xl transition-colors border border-transparent hover:border-[#00b4d8]/20">
+                    <svg
+                      className="w-5 h-5 text-[#00b4d8]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
+                    </svg>
+                    <span className="text-sm font-medium">Manage Wallet</span>
+                  </button>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-gray-200 my-4"></div>
+
+                {/* Disconnect Button */}
+                <button
+                  onClick={async () => {
+                    await disconnect();
+                    setShowWalletModal(false);
+                    toast.success("Đã ngắt kết nối ví!");
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors border border-red-200 hover:border-red-300"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                  <span className="text-sm font-medium">Disconnect Wallet</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Hero Section - Banner với nền trắng */}
       <div className="min-h-screen bg-white relative overflow-hidden">
         {/* Animated background elements */}
