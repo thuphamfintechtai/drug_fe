@@ -17,10 +17,17 @@ export default function DistributionHistory() {
     total: 0,
     pages: 0,
   });
+  // Separate search input state from URL param
+  const [searchInput, setSearchInput] = useState("");
 
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
+
+  // Sync searchInput with URL search param on mount/change (only from URL changes, not user input)
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
 
   const navigationItems = [
     { path: "/pharmacy", label: "Tổng quan", active: false },
@@ -143,6 +150,17 @@ export default function DistributionHistory() {
     }
   };
 
+  // Handle search - only trigger on Enter or button click
+  const handleSearch = () => {
+    updateFilter({ search: searchInput, page: 1 });
+  };
+
+  // Clear search button
+  const handleClearSearch = () => {
+    setSearchInput("");
+    updateFilter({ search: "", page: 1 });
+  };
+
   const updateFilter = (next) => {
     const nextParams = new URLSearchParams(searchParams);
     Object.entries(next).forEach(([k, v]) => {
@@ -239,19 +257,37 @@ export default function DistributionHistory() {
                     </svg>
                   </span>
                   <input
-                    value={search}
-                    onChange={(e) =>
-                      updateFilter({ search: e.target.value, page: 1 })
-                    }
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && updateFilter({ search, page: 1 })
-                    }
+                    type="text"
+                    value={searchInput}
+                    onChange={(e) => {
+                      // Chỉ cập nhật state, không trigger search
+                      setSearchInput(e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                      // Chỉ search khi nhấn Enter
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSearch();
+                      }
+                    }}
                     placeholder="Tìm theo tên thuốc, mã..."
                     className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
                   />
+                  {/* Clear button */}
+                  {searchInput && (
+                    <button
+                      type="button"
+                      onClick={handleClearSearch}
+                      className="absolute right-24 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                      title="Xóa tìm kiếm"
+                    >
+                      ✕
+                    </button>
+                  )}
                   <button
-                    onClick={() => updateFilter({ search, page: 1 })}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition"
+                    type="button"
+                    onClick={handleSearch}
+                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary text-white font-medium transition"
                   >
                     Tìm Kiếm
                   </button>

@@ -23,8 +23,9 @@ export default function TransferHistory() {
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
 
-  // Sync searchInput with URL search param on mount/change
+  // Sync searchInput with URL search param on mount/change (only from URL changes, not user input)
   useEffect(() => {
+    // Chỉ đồng bộ khi URL thay đổi từ bên ngoài (không phải từ user input)
     setSearchInput(search);
   }, [search]);
 
@@ -392,10 +393,16 @@ export default function TransferHistory() {
                 </label>
                 <div className="relative">
                   <input
+                    type="text"
                     value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
+                    onChange={(e) => {
+                      // Chỉ cập nhật state, không trigger search
+                      setSearchInput(e.target.value);
+                    }}
                     onKeyDown={(e) => {
+                      // Chỉ search khi nhấn Enter
                       if (e.key === "Enter") {
+                        e.preventDefault();
                         handleSearch();
                       }
                     }}
@@ -405,18 +412,20 @@ export default function TransferHistory() {
                   {/* Clear button */}
                   {searchInput && (
                     <button
+                      type="button"
                       onClick={handleClearSearch}
-                      className="absolute right-24 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-24 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
                       title="Xóa tìm kiếm"
                     >
                       ✕
                     </button>
                   )}
                   <button
+                    type="button"
                     onClick={handleSearch}
                     className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary text-white font-medium transition"
                   >
-                    <span className="text-white">Tìm kiếm</span>
+                    Tìm kiếm
                   </button>
                 </div>
               </div>
