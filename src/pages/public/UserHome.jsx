@@ -856,7 +856,7 @@ export default function UserHome() {
                   className={`px-3 sm:px-6 py-2 text-xs sm:text-sm md:text-base rounded-lg font-semibold transition whitespace-nowrap ${
                     searchMode === "nft"
                       ? "bg-white border-b-4 border-1 border-[#077CA3] text-[#4BADD1] shadow-md"
-                      : "!text-white/80 hover:!text-white"
+                      : "bg-white/20 text-white/90 hover:bg-white/30 hover:text-white border border-white/30"
                   }`}
                 >
                   Tra cứu NFT
@@ -866,7 +866,7 @@ export default function UserHome() {
                   className={`px-3 sm:px-6 py-2 text-xs sm:text-sm md:text-base rounded-lg font-semibold transition whitespace-nowrap ${
                     searchMode === "drug"
                       ? "bg-white text-[#4BADD1] shadow-md border-b-4 border-1 border-[#077CA3]"
-                      : "!text-white/80 hover:!text-white"
+                      : "bg-white/20 text-white/90 hover:bg-white/30 hover:text-white border border-white/30"
                   }`}
                 >
                   Thông tin thuốc

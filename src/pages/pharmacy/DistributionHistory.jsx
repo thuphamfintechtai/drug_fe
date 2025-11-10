@@ -198,6 +198,58 @@ export default function DistributionHistory() {
     return statusMap[status] || status;
   };
 
+  const extractName = (entity, fallback = "Không có") => {
+    if (!entity) return fallback;
+    if (typeof entity === "string" || typeof entity === "number") {
+      return entity;
+    }
+    if (Array.isArray(entity)) {
+      return entity.length > 0
+        ? entity
+            .map((item) =>
+              extractName(item, "")
+                .toString()
+                .trim()
+            )
+            .filter(Boolean)
+            .join(", ") || fallback
+        : fallback;
+    }
+    if (typeof entity === "object") {
+      const {
+        fullName,
+        name,
+        username,
+        email,
+        contactName,
+        phoneNumber,
+        _id,
+      } = entity;
+      return (
+        fullName ||
+        name ||
+        username ||
+        email ||
+        contactName ||
+        phoneNumber ||
+        _id ||
+        fallback
+      );
+    }
+    return fallback;
+  };
+
+  const formatNotes = (value) => {
+    if (!value) return "—";
+    if (typeof value === "string") return value;
+    if (typeof value === "number") return String(value);
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch (error) {
+      return "—";
+    }
+  };
+
   const fadeUp = {
     hidden: { opacity: 0, y: 16, filter: "blur(6px)" },
     show: {
@@ -447,7 +499,7 @@ export default function DistributionHistory() {
                           Người nhận
                         </div>
                         <div className="text-sm text-slate-700">
-                          {item.receivedBy}
+                          {extractName(item.receivedBy, "—")}
                         </div>
                       </div>
                     )}
@@ -472,7 +524,7 @@ export default function DistributionHistory() {
                         Ghi chú
                       </div>
                       <div className="text-sm text-slate-700">
-                        {item.notes || "—"}
+                        {formatNotes(item.notes)}
                       </div>
                     </div>
                   </div>

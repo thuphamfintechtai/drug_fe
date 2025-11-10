@@ -63,6 +63,13 @@ export default function Navbar() {
   };
 
   const handleConnectMetaMask = async () => {
+    // Nếu đã kết nối, ngắt kết nối
+    if (isConnected) {
+      await disconnect();
+      toast.success("Đã ngắt kết nối với MetaMask");
+      return;
+    }
+
     if (!isInstalled) {
       toast.error(
         "MetaMask chưa được cài đặt. Vui lòng cài đặt MetaMask extension."
@@ -153,13 +160,13 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={handleConnectMetaMask}
-                  disabled={isConnecting || !isInstalled}
-                  className="px-4 md:px-6 py-1.5 md:py-1 text-base md:text-lg bg-white text-gray-900 font-semibold rounded-lg shadow-md hover:bg-gray-50 transition-colors duration-200 inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isConnecting || (!isInstalled && !isConnected)}
+                  className=" bg-transparent hover:bg-white/10 rounded-lg transition-colors duration-200 inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 507.83 470.86"
-                    className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0"
+                    className="w-7 h-7 md:w-7 md:h-7 flex-shrink-0"
                   >
                     <defs>
                       <style>{`
