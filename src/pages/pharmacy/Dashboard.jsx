@@ -1,21 +1,69 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+} from "recharts";
 import DashboardLayout from "../../components/DashboardLayout";
 import TruckLoader from "../../components/TruckLoader";
 import pharmacyService from "../../services/pharmacy/pharmacyService";
 
+// App colors from index.css
+const COLORS = {
+  primary: "#054f67",
+  secondary: "#077ca3",
+  third: "#00c0e8",
+  purple: "#8b5cf6",
+  pink: "#ec4899",
+  cyan: "#06b6d4",
+  sky: "#0ea5e9",
+  blue: "#3b82f6",
+  emerald: "#10b981",
+  green: "#22c55e",
+  amber: "#f59e0b",
+  orange: "#f97316",
+};
+
+const CHART_COLORS = [
+  COLORS.secondary,
+  COLORS.third,
+  COLORS.cyan,
+  COLORS.sky,
+  COLORS.blue,
+  COLORS.emerald,
+];
+
 export default function PharmacyDashboard() {
   const [stats, setStats] = useState(null);
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [qualityStats, setQualityStats] = useState(null);
+  const [chartData, setChartData] = useState({
+    oneWeek: null,
+    todayYesterday: null,
+    monthly: null,
+  });
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
 
   useEffect(() => {
-    loadStats();
+    loadAllData();
 
     return () => {
-      // Cleanup progress interval nếu có
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
@@ -23,18 +71,16 @@ export default function PharmacyDashboard() {
     };
   }, []);
 
-  const loadStats = async () => {
+  const loadAllData = async () => {
     try {
       setLoading(true);
       setLoadingProgress(0);
 
-      // Clear interval cũ nếu có
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
 
-      // Simulate progress từ 0 đến 90% trong khi đang load
       progressIntervalRef.current = setInterval(() => {
         setLoadingProgress((prev) => {
           if (prev < 0.9) {
@@ -44,72 +90,94 @@ export default function PharmacyDashboard() {
         });
       }, 50);
 
-      const response = await pharmacyService.getStatistics();
+      // Load all data in parallel
+      const [
+        statsRes,
+        dashboardRes,
+        qualityRes,
+        oneWeekRes,
+        todayYesterdayRes,
+        monthlyRes,
+      ] = await Promise.allSettled([
+        pharmacyService.getStatistics(),
+        pharmacyService.getDashboardStats(),
+        pharmacyService.getQualityStats(),
+        pharmacyService.getChartOneWeek(),
+        pharmacyService.getChartTodayYesterday(),
+        pharmacyService.getMonthlyTrends(6),
+      ]);
 
-      // Clear interval khi có response
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
 
-      // Xử lý data trước
-      if (response.data.success) {
-        setStats(response.data.data);
+      // Process stats
+      if (statsRes.status === "fulfilled" && statsRes.value.data?.success) {
+        setStats(statsRes.value.data.data);
       }
 
-      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
-      let currentProgress = 0;
-      setLoadingProgress((prev) => {
-        currentProgress = prev;
-        return prev;
-      });
-
-      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
-      if (currentProgress < 0.9) {
-        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
-        await new Promise((resolve) => {
-          const speedUpInterval = setInterval(() => {
-            setLoadingProgress((prev) => {
-              if (prev < 1) {
-                const newProgress = Math.min(prev + 0.15, 1);
-                if (newProgress >= 1) {
-                  clearInterval(speedUpInterval);
-                  resolve();
-                }
-                return newProgress;
-              }
-              clearInterval(speedUpInterval);
-              resolve();
-              return 1;
-            });
-          }, 30);
-
-          // Safety timeout
-          setTimeout(() => {
-            clearInterval(speedUpInterval);
-            setLoadingProgress(1);
-            resolve();
-          }, 500);
-        });
-      } else {
-        setLoadingProgress(1);
-        await new Promise((resolve) => setTimeout(resolve, 200));
+      // Process dashboard stats
+      if (dashboardRes.status === "fulfilled" && dashboardRes.value.data?.success) {
+        setDashboardStats(dashboardRes.value.data.data);
       }
 
-      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Process quality stats
+      if (qualityRes.status === "fulfilled" && qualityRes.value.data?.success) {
+        setQualityStats(qualityRes.value.data.data);
+      }
+
+      // Process chart data - one week
+      if (oneWeekRes.status === "fulfilled" && oneWeekRes.value.data?.success) {
+        const data = oneWeekRes.value.data.data;
+        const formattedData = Object.entries(data.dailyStats || {})
+          .map(([date, stats]) => ({
+            date: new Date(date).toLocaleDateString("vi-VN", {
+              day: "2-digit",
+              month: "2-digit",
+            }),
+            invoicesReceived: stats.count || 0,
+            quantity: stats.quantity || 0,
+          }))
+          .sort((a, b) => a.date.localeCompare(b.date));
+        setChartData((prev) => ({ ...prev, oneWeek: formattedData }));
+      }
+
+      // Process today vs yesterday
+      if (
+        todayYesterdayRes.status === "fulfilled" &&
+        todayYesterdayRes.value.data?.success
+      ) {
+        const data = todayYesterdayRes.value.data.data;
+        setChartData((prev) => ({
+          ...prev,
+          todayYesterday: [
+            { name: "Hôm qua", count: data.yesterdayCount || 0 },
+            { name: "Hôm nay", count: data.todayCount || 0 },
+          ],
+        }));
+      }
+
+      // Process monthly trends
+      if (monthlyRes.status === "fulfilled" && monthlyRes.value.data?.success) {
+        const data = monthlyRes.value.data.data;
+        const formattedData = (data.trends || []).map((item) => ({
+          month: item.month,
+          receipts: item.receipts || 0,
+        }));
+        setChartData((prev) => ({ ...prev, monthly: formattedData }));
+      }
+
+      setLoadingProgress(1);
+      await new Promise((resolve) => setTimeout(resolve, 300));
     } catch (error) {
-      // Clear interval khi có lỗi
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
-
       console.error("Lỗi khi tải thống kê:", error);
-      setLoadingProgress(0);
     } finally {
       setLoading(false);
-      // Reset progress sau 0.5s
       setTimeout(() => {
         setLoadingProgress(0);
       }, 500);
@@ -139,9 +207,77 @@ export default function PharmacyDashboard() {
     },
   };
 
+  const displayStats = dashboardStats || stats;
+
+  // Prepare invoice status data for pie chart
+  const invoiceStatusData = displayStats?.invoicesReceived?.byStatus ||
+    displayStats?.invoices?.byStatus
+    ? Object.entries(
+        displayStats.invoicesReceived?.byStatus ||
+          displayStats.invoices?.byStatus
+      )
+        .map(([name, value]) => ({
+          name:
+            name === "draft"
+              ? "Nháp"
+              : name === "issued"
+              ? "Đã phát hành"
+              : name === "sent"
+              ? "Đã nhận"
+              : name === "paid"
+              ? "Đã thanh toán"
+              : name === "cancelled"
+              ? "Đã hủy"
+              : name,
+          value: value || 0,
+        }))
+        .filter((item) => item.value > 0)
+    : [];
+
+  // Prepare NFT status data
+  const nftStatusData = displayStats?.nfts?.byStatus
+    ? Object.entries(displayStats.nfts.byStatus)
+        .map(([name, value]) => ({
+          name:
+            name === "minted"
+              ? "Đã mint"
+              : name === "transferred"
+              ? "Đã chuyển"
+              : name === "sold"
+              ? "Đã bán"
+              : name === "expired"
+              ? "Hết hạn"
+              : name === "recalled"
+              ? "Thu hồi"
+              : name,
+          value: value || 0,
+        }))
+        .filter((item) => item.value > 0)
+    : [];
+
+  // Prepare receipts status data
+  const receiptsStatusData = displayStats?.receipts?.byStatus
+    ? Object.entries(displayStats.receipts.byStatus)
+        .map(([name, value]) => ({
+          name:
+            name === "pending"
+              ? "Chờ xử lý"
+              : name === "received"
+              ? "Đã nhận"
+              : name === "verified"
+              ? "Đã xác minh"
+              : name === "completed"
+              ? "Hoàn tất"
+              : name === "rejected"
+              ? "Từ chối"
+              : name,
+          value: value || 0,
+        }))
+        .filter((item) => item.value > 0)
+    : [];
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Loading State - chỉ hiển thị khi đang tải, không hiển thị content cho đến khi loading = false */}
       {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
           <div className="w-full max-w-2xl">
@@ -162,9 +298,8 @@ export default function PharmacyDashboard() {
               </p>
             </div>
 
-            {/* Refresh Button */}
             <button
-              onClick={loadStats}
+              onClick={loadAllData}
               disabled={loading}
               className="p-2.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 transition disabled:opacity-50"
               title="Làm mới dữ liệu"
@@ -187,47 +322,425 @@ export default function PharmacyDashboard() {
             </button>
           </div>
 
-          {stats ? (
+          {displayStats && (
             <div className="space-y-8">
-              {/* Thống kê đơn hàng */}
+              {/* Overview Cards */}
               <motion.div variants={fadeUp} initial="hidden" animate="show">
                 <h2 className="text-lg font-semibold text-slate-800 mb-4">
-                  Đơn hàng từ nhà phân phối
+                  Tổng quan
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   <Link
                     to="/pharmacy/invoices"
                     className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
                   >
-                    <div className="absolute top-0 left-0 w-full h-[5px] bg-linear-to-r from-blue-400 to-cyan-400 rounded-t-2xl" />
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.blue}, ${COLORS.cyan})`,
+                      }}
+                    />
                     <div className="p-5 pt-7 text-center">
                       <div className="text-sm text-slate-600 mb-1">
                         Tổng đơn nhận
                       </div>
                       <div className="text-3xl font-bold text-blue-600">
-                        {stats?.invoices?.total || 0}
+                        {displayStats?.overview?.totalInvoicesReceived ||
+                          displayStats?.invoicesReceived?.total ||
+                          displayStats?.invoices?.total ||
+                          0}
                       </div>
                       <div className="text-xs text-slate-500 mt-2">
-                        Đơn hàng
+                        Đơn từ NPP
                       </div>
                     </div>
                   </Link>
 
+                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.emerald}, ${COLORS.green})`,
+                      }}
+                    />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">
+                        Tổng biên nhận
+                      </div>
+                      <div className="text-3xl font-bold text-emerald-600">
+                        {displayStats?.overview?.totalReceipts ||
+                          displayStats?.receipts?.total ||
+                          0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Biên nhận
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.cyan}, ${COLORS.sky})`,
+                      }}
+                    />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Tổng NFT</div>
+                      <div className="text-3xl font-bold text-cyan-600">
+                        {displayStats?.overview?.totalNFTs ||
+                          displayStats?.nfts?.total ||
+                          0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Token đã nhận
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.purple}, ${COLORS.pink})`,
+                      }}
+                    />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">
+                        Chuỗi cung ứng
+                      </div>
+                      <div className="text-3xl font-bold text-purple-600">
+                        {displayStats?.overview?.completedSupplyChains ||
+                          displayStats?.supplyChain?.completed ||
+                          0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Hoàn tất:{" "}
+                        {displayStats?.supplyChain?.completionRate || "0"}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Quality Stats Card */}
+              {qualityStats && (
+                <motion.div
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                >
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    Chất lượng sản phẩm
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-emerald-50 rounded-lg">
+                      <div className="text-sm text-emerald-600 mb-2">
+                        Tỷ lệ đạt
+                      </div>
+                      <div className="text-3xl font-bold text-emerald-600">
+                        {qualityStats.qualityChecks?.passRate || "0"}%
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Đã kiểm tra: {qualityStats.qualityChecks?.total || 0}
+                      </div>
+                    </div>
+                    <div className="text-center p-4 bg-red-50 rounded-lg">
+                      <div className="text-sm text-red-600 mb-2">Hết hạn</div>
+                      <div className="text-3xl font-bold text-red-600">
+                        {qualityStats.expiration?.expired || 0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Sản phẩm
+                      </div>
+                    </div>
+                    <div className="text-center p-4 bg-amber-50 rounded-lg">
+                      <div className="text-sm text-amber-600 mb-2">
+                        Sắp hết hạn
+                      </div>
+                      <div className="text-3xl font-bold text-amber-600">
+                        {qualityStats.expiration?.expiringSoon || 0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Trong 30 ngày
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Charts Row 1: Line Chart (7 days) and Bar Chart (Today vs Yesterday) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <motion.div
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                >
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    Đơn hàng nhận 7 ngày gần nhất
+                  </h3>
+                  {chartData.oneWeek && chartData.oneWeek.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={chartData.oneWeek}>
+                        <defs>
+                          <linearGradient id="colorInvoicesPharmacy" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={COLORS.secondary} stopOpacity={0.8} />
+                            <stop offset="95%" stopColor={COLORS.secondary} stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="date" stroke="#6b7280" />
+                        <YAxis stroke="#6b7280" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "white",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "8px",
+                          }}
+                        />
+                        <Legend />
+                        <Area
+                          type="monotone"
+                          dataKey="invoicesReceived"
+                          stroke={COLORS.secondary}
+                          fillOpacity={1}
+                          fill="url(#colorInvoicesPharmacy)"
+                          name="Số đơn"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[300px] text-slate-400">
+                      Chưa có dữ liệu
+                    </div>
+                  )}
+                </motion.div>
+
+                <motion.div
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                >
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    So sánh hôm nay và hôm qua
+                  </h3>
+                  {chartData.todayYesterday ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={chartData.todayYesterday}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="name" stroke="#6b7280" />
+                        <YAxis stroke="#6b7280" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "white",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "8px",
+                          }}
+                        />
+                        <Bar
+                          dataKey="count"
+                          fill={COLORS.third}
+                          name="Số đơn nhận"
+                          radius={[8, 8, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[300px] text-slate-400">
+                      Chưa có dữ liệu
+                    </div>
+                  )}
+                </motion.div>
+              </div>
+
+              {/* Charts Row 2: Pie Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <motion.div
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                >
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    Phân bố đơn hàng
+                  </h3>
+                  {invoiceStatusData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={invoiceStatusData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) =>
+                            `${name}: ${(percent * 100).toFixed(0)}%`
+                          }
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {invoiceStatusData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[300px] text-slate-400">
+                      Chưa có dữ liệu
+                    </div>
+                  )}
+                </motion.div>
+
+                <motion.div
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                >
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    Phân bố NFT
+                  </h3>
+                  {nftStatusData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={nftStatusData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) =>
+                            `${name}: ${(percent * 100).toFixed(0)}%`
+                          }
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {nftStatusData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[300px] text-slate-400">
+                      Chưa có dữ liệu
+                    </div>
+                  )}
+                </motion.div>
+
+                <motion.div
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                >
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    Phân bố biên nhận
+                  </h3>
+                  {receiptsStatusData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={receiptsStatusData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) =>
+                            `${name}: ${(percent * 100).toFixed(0)}%`
+                          }
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {receiptsStatusData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[300px] text-slate-400">
+                      Chưa có dữ liệu
+                    </div>
+                  )}
+                </motion.div>
+              </div>
+
+              {/* Monthly Trends Chart */}
+              {chartData.monthly && chartData.monthly.length > 0 && (
+                <motion.div
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                >
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    Xu hướng 6 tháng gần nhất
+                  </h3>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={chartData.monthly}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="month" stroke="#6b7280" />
+                      <YAxis stroke="#6b7280" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "white",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "8px",
+                        }}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="receipts"
+                        stroke={COLORS.third}
+                        strokeWidth={3}
+                        name="Biên nhận"
+                        dot={{ fill: COLORS.third, r: 5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </motion.div>
+              )}
+
+              {/* Detailed Statistics Cards */}
+              <motion.div variants={fadeUp} initial="hidden" animate="show">
+                <h2 className="text-lg font-semibold text-slate-800 mb-4">
+                  Chi tiết đơn hàng
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   <Link
                     to="/pharmacy/invoices?status=pending"
                     className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
                   >
-                    <div className="absolute top-0 left-0 w-full h-[5px] bg-linear-to-r from-amber-400 to-yellow-400 rounded-t-2xl" />
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.amber}, ${COLORS.orange})`,
+                      }}
+                    />
                     <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        Chờ nhận
-                      </div>
+                      <div className="text-sm text-slate-600 mb-1">Chờ nhận</div>
                       <div className="text-3xl font-bold text-amber-600">
-                        {stats?.invoices?.byStatus.draft || 0}
+                        {displayStats?.invoices?.byStatus?.draft || 0}
                       </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Đang chờ
-                      </div>
+                      <div className="text-xs text-slate-500 mt-2">Đang chờ</div>
                     </div>
                   </Link>
 
@@ -235,11 +748,16 @@ export default function PharmacyDashboard() {
                     to="/pharmacy/invoices?status=received"
                     className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
                   >
-                    <div className="absolute top-0 left-0 w-full h-[5px] bg-linear-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.emerald}, ${COLORS.green})`,
+                      }}
+                    />
                     <div className="p-5 pt-7 text-center">
                       <div className="text-sm text-slate-600 mb-1">Đã nhận</div>
                       <div className="text-3xl font-bold text-emerald-600">
-                        {stats?.invoices?.byStatus.sent || 0}
+                        {displayStats?.invoices?.byStatus?.sent || 0}
                       </div>
                       <div className="text-xs text-slate-500 mt-2">
                         Đã xác nhận
@@ -251,77 +769,45 @@ export default function PharmacyDashboard() {
                     to="/pharmacy/invoices?status=paid"
                     className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
                   >
-                    <div className="absolute top-0 left-0 w-full h-[5px] bg-linear-to-r from-green-400 to-emerald-400 rounded-t-2xl" />
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.green}, ${COLORS.emerald})`,
+                      }}
+                    />
                     <div className="p-5 pt-7 text-center">
                       <div className="text-sm text-slate-600 mb-1">
                         Đã thanh toán
                       </div>
                       <div className="text-3xl font-bold text-green-600">
-                        {stats?.invoices?.byStatus.paid || 0}
+                        {displayStats?.invoices?.byStatus?.paid || 0}
                       </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Hoàn tất
-                      </div>
+                      <div className="text-xs text-slate-500 mt-2">Hoàn tất</div>
                     </div>
                   </Link>
-                </div>
-              </motion.div>
 
-              {/* Thống kê thuốc & NFT */}
-              <motion.div variants={fadeUp} initial="hidden" animate="show">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">
-                  Thuốc & NFT
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Link
-                    to="/pharmacy/drugs"
-                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
-                  >
-                    <div className="absolute top-0 left-0 w-full h-[5px] bg-linear-to-r from-cyan-400 to-sky-400 rounded-t-2xl" />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        Tổng NFT
-                      </div>
-                      <div className="text-3xl font-bold text-cyan-600">
-                        {stats?.nfts?.total || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Token đã nhận
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-              </motion.div>
-
-              {/* Thống kê phân phối */}
-              <motion.div variants={fadeUp} initial="hidden" animate="show">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">
-                  Phân phối
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <Link
                     to="/pharmacy/distribution-history"
                     className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
                   >
-                    <div className="absolute top-0 left-0 w-full h-[5px] bg-linear-to-r from-purple-400 to-pink-400 rounded-t-2xl" />
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.purple}, ${COLORS.pink})`,
+                      }}
+                    />
                     <div className="p-5 pt-7 text-center">
                       <div className="text-sm text-slate-600 mb-1">
                         Tổng phân phối
                       </div>
                       <div className="text-3xl font-bold text-purple-600">
-                        {stats?.transfers?.total || 0}
+                        {displayStats?.transfers?.total || 0}
                       </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Giao dịch
-                      </div>
+                      <div className="text-xs text-slate-500 mt-2">Giao dịch</div>
                     </div>
                   </Link>
                 </div>
               </motion.div>
-            </div>
-          ) : (
-            <div className="text-center py-20 text-slate-500">
-              Không có dữ liệu
             </div>
           )}
         </div>

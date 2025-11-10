@@ -1,26 +1,75 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+} from "recharts";
 import DashboardLayout from "../../components/DashboardLayout";
 import TruckLoader from "../../components/TruckLoader";
-import { getStatistics } from "../../services/manufacturer/manufacturerService";
+import {
+  getStatistics,
+  getDashboardStats,
+  getChartOneWeek,
+  getChartTodayYesterday,
+  getMonthlyTrends,
+} from "../../services/manufacturer/manufacturerService";
+
+// App colors from index.css
+const COLORS = {
+  primary: "#054f67",
+  secondary: "#077ca3",
+  third: "#00c0e8",
+  purple: "#8b5cf6",
+  pink: "#ec4899",
+  cyan: "#06b6d4",
+  sky: "#0ea5e9",
+  blue: "#3b82f6",
+  emerald: "#10b981",
+  green: "#22c55e",
+  amber: "#f59e0b",
+  orange: "#f97316",
+};
+
+const CHART_COLORS = [
+  COLORS.secondary,
+  COLORS.third,
+  COLORS.cyan,
+  COLORS.sky,
+  COLORS.blue,
+  COLORS.emerald,
+];
 
 export default function ManufacturerDashboard() {
   const [stats, setStats] = useState(null);
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [chartData, setChartData] = useState({
+    oneWeek: null,
+    todayYesterday: null,
+    monthly: null,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
 
   useEffect(() => {
-    loadStats();
-
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(loadStats, 30000);
+    loadAllData();
 
     return () => {
-      clearInterval(interval);
-      // Cleanup progress interval nếu có
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
@@ -28,118 +77,104 @@ export default function ManufacturerDashboard() {
     };
   }, []);
 
-  const loadStats = async () => {
+  const loadAllData = async () => {
     try {
       setLoading(true);
       setError(null);
       setLoadingProgress(0);
 
-      // Clear interval cũ nếu có
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
 
-      // Simulate progress từ 0 đến 90% trong khi đang load
       progressIntervalRef.current = setInterval(() => {
         setLoadingProgress((prev) => {
           if (prev < 0.9) {
-            // Tăng progress từ 0 đến 90% trong khi chờ response
             return Math.min(prev + 0.02, 0.9);
           }
           return prev;
         });
-      }, 50); // Update mỗi 50ms để mượt
+      }, 50);
 
-      const response = await getStatistics();
+      // Load all data in parallel
+      const [statsRes, dashboardRes, oneWeekRes, todayYesterdayRes, monthlyRes] =
+        await Promise.allSettled([
+          getStatistics(),
+          getDashboardStats(),
+          getChartOneWeek(),
+          getChartTodayYesterday(),
+          getMonthlyTrends(6),
+        ]);
 
-      // Clear interval khi có response
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
 
-      // Xử lý data trước
-      if (response.data.success) {
-        setStats(response.data.data);
-      } else {
-        setError(response.data.message || "Không thể tải thống kê");
+      // Process stats
+      if (statsRes.status === "fulfilled" && statsRes.value.data?.success) {
+        setStats(statsRes.value.data.data);
       }
 
-      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
-      // Lấy current progress từ state bằng cách dùng callback để đảm bảo lấy đúng giá trị
-      let currentProgress = 0;
-      setLoadingProgress((prev) => {
-        currentProgress = prev;
-        return prev;
-      });
-
-      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
-      if (currentProgress < 0.9) {
-        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
-        await new Promise((resolve) => {
-          const speedUpInterval = setInterval(() => {
-            setLoadingProgress((prev) => {
-              if (prev < 1) {
-                // Tăng nhanh hơn (0.15 mỗi lần thay vì 0.02) - cùng một chiếc xe tăng tốc
-                const newProgress = Math.min(prev + 0.15, 1);
-                if (newProgress >= 1) {
-                  clearInterval(speedUpInterval);
-                  resolve();
-                }
-                return newProgress;
-              }
-              clearInterval(speedUpInterval);
-              resolve();
-              return 1;
-            });
-          }, 30); // Update nhanh hơn (30ms) để xe tăng tốc mượt
-
-          // Safety timeout: đảm bảo không chờ quá lâu
-          setTimeout(() => {
-            clearInterval(speedUpInterval);
-            setLoadingProgress(1);
-            resolve();
-          }, 500);
-        });
-      } else {
-        // Nếu đã chạy gần hết, chỉ cần set 100% và đợi một chút để đảm bảo animation hoàn thành
-        setLoadingProgress(1);
-        await new Promise((resolve) => setTimeout(resolve, 200));
+      // Process dashboard stats
+      if (dashboardRes.status === "fulfilled" && dashboardRes.value.data?.success) {
+        setDashboardStats(dashboardRes.value.data.data);
       }
 
-      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
-      // Chờ một chút nữa để đảm bảo animation hoàn toàn kết thúc
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Process chart data
+      if (oneWeekRes.status === "fulfilled" && oneWeekRes.value.data?.success) {
+        const data = oneWeekRes.value.data.data;
+        const formattedData = Object.entries(data.dailyStats || {})
+          .map(([date, stats]) => ({
+            date: new Date(date).toLocaleDateString("vi-VN", {
+              day: "2-digit",
+              month: "2-digit",
+            }),
+            count: stats.count || 0,
+            quantity: stats.quantity || 0,
+          }))
+          .sort((a, b) => a.date.localeCompare(b.date));
+        setChartData((prev) => ({ ...prev, oneWeek: formattedData }));
+      }
+
+      if (
+        todayYesterdayRes.status === "fulfilled" &&
+        todayYesterdayRes.value.data?.success
+      ) {
+        const data = todayYesterdayRes.value.data.data;
+        setChartData((prev) => ({
+          ...prev,
+          todayYesterday: [
+            { name: "Hôm qua", count: data.yesterdayCount || 0 },
+            { name: "Hôm nay", count: data.todayCount || 0 },
+          ],
+        }));
+      }
+
+      if (monthlyRes.status === "fulfilled" && monthlyRes.value.data?.success) {
+        const data = monthlyRes.value.data.data;
+        const formattedData = (data.trends || []).map((item) => ({
+          month: item.month,
+          productions: item.productions || 0,
+          transfers: item.transfers || 0,
+        }));
+        setChartData((prev) => ({ ...prev, monthly: formattedData }));
+      }
+
+      setLoadingProgress(1);
+      await new Promise((resolve) => setTimeout(resolve, 300));
     } catch (error) {
-      // Clear interval khi có lỗi
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
 
       console.error("Lỗi khi tải thống kê:", error);
-
-      if (error.response) {
-        // Server responded with error
-        setError(
-          error.response.data?.message ||
-            `Lỗi server (${error.response.status})`
-        );
-      } else if (error.request) {
-        // Request was made but no response
-        setError(
-          "Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng."
-        );
-      } else {
-        // Something else happened
-        setError(error.message || "Đã xảy ra lỗi không xác định");
-      }
-
+      setError(error.message || "Đã xảy ra lỗi không xác định");
       setLoadingProgress(0);
     } finally {
       setLoading(false);
-      // Reset progress sau 0.5s
       setTimeout(() => {
         setLoadingProgress(0);
       }, 500);
@@ -165,7 +200,7 @@ export default function ManufacturerDashboard() {
           />
         </svg>
       ),
-      active: false,
+      active: true,
     },
     {
       path: "/manufacturer/drugs",
@@ -299,9 +334,50 @@ export default function ManufacturerDashboard() {
     },
   };
 
+  // Prepare NFT status data for pie chart
+  const nftStatusData = dashboardStats?.nfts?.byStatus
+    ? Object.entries(dashboardStats.nfts.byStatus)
+        .map(([name, value]) => ({
+          name:
+            name === "minted"
+              ? "Đã mint"
+              : name === "transferred"
+              ? "Đã chuyển"
+              : name === "sold"
+              ? "Đã bán"
+              : name === "expired"
+              ? "Hết hạn"
+              : name === "recalled"
+              ? "Thu hồi"
+              : name,
+          value: value || 0,
+        }))
+        .filter((item) => item.value > 0)
+    : [];
+
+  // Prepare transfer status data for pie chart
+  const transferStatusData = dashboardStats?.transfers?.byStatus
+    ? Object.entries(dashboardStats.transfers.byStatus)
+        .map(([name, value]) => ({
+          name:
+            name === "pending"
+              ? "Chờ xử lý"
+              : name === "sent"
+              ? "Đã gửi"
+              : name === "paid"
+              ? "Đã thanh toán"
+              : name === "cancelled"
+              ? "Đã hủy"
+              : name,
+          value: value || 0,
+        }))
+        .filter((item) => item.value > 0)
+    : [];
+
+  const displayStats = dashboardStats || stats;
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Loading State - chỉ hiển thị khi đang tải, không hiển thị content cho đến khi loading = false */}
       {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
           <div className="w-full max-w-2xl">
@@ -336,9 +412,8 @@ export default function ManufacturerDashboard() {
               </p>
             </div>
 
-            {/* Refresh Button */}
             <button
-              onClick={loadStats}
+              onClick={loadAllData}
               disabled={loading}
               className="p-2.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 transition disabled:opacity-50"
               title="Làm mới dữ liệu"
@@ -361,7 +436,6 @@ export default function ManufacturerDashboard() {
             </button>
           </div>
 
-          {/* Error State */}
           {error ? (
             <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
               <svg
@@ -379,81 +453,348 @@ export default function ManufacturerDashboard() {
               </svg>
               <p className="text-red-600 text-lg mb-4">{error}</p>
               <button
-                onClick={loadStats}
+                onClick={loadAllData}
                 className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
               >
                 Thử lại
               </button>
             </div>
-          ) : stats ? (
+          ) : displayStats ? (
             <div className="space-y-8">
-              {/* Thống kê thuốc */}
+              {/* Overview Cards */}
               <motion.div variants={fadeUp} initial="hidden" animate="show">
                 <h2 className="text-lg font-semibold text-slate-800 mb-4">
-                  Quản lý thuốc
+                  Tổng quan
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {/* Cards giữ nguyên */}
-                  {/* ... */}
-                </div>
-              </motion.div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{ background: `linear-gradient(to right, ${COLORS.secondary}, ${COLORS.third})` }}
+                    />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Tổng thuốc</div>
+                      <div
+                        className="text-3xl font-bold"
+                        style={{ color: COLORS.primary }}
+                      >
+                        {displayStats?.overview?.totalDrugs ||
+                          displayStats?.drugs?.total ||
+                          0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Hoạt động:{" "}
+                        {displayStats?.overview?.activeDrugs ||
+                          displayStats?.drugs?.active ||
+                          0}
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Thống kê sản xuất & NFT */}
-              <motion.div variants={fadeUp} initial="hidden" animate="show">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">
-                  Sản xuất & NFT
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                  {/* Tổng sản xuất */}
-                  <Link
-                    to="/manufacturer/production-history"
-                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
-                  >
-                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-purple-400 to-pink-400 rounded-t-2xl" />
+                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.purple}, ${COLORS.pink})`,
+                      }}
+                    />
                     <div className="p-5 pt-7 text-center">
                       <div className="text-sm text-slate-600 mb-1">
                         Tổng sản xuất
                       </div>
                       <div className="text-3xl font-bold text-purple-600">
-                        {stats?.productions?.total || 0}
+                        {displayStats?.overview?.totalProductions ||
+                          displayStats?.productions?.total ||
+                          0}
                       </div>
                       <div className="text-xs text-slate-500 mt-2">
-                        Lô sản xuất
+                        Số lượng:{" "}
+                        {displayStats?.overview?.totalQuantityProduced?.toLocaleString() ||
+                          0}
                       </div>
                     </div>
-                  </Link>
+                  </div>
 
-                  {/* ✅ Sửa: Chuyển về production-history thay vì /nfts */}
-                  <Link
-                    to="/manufacturer/production-history"
-                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
-                  >
-                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-cyan-400 to-sky-400 rounded-t-2xl" />
+                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.cyan}, ${COLORS.sky})`,
+                      }}
+                    />
                     <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        Tổng NFT
-                      </div>
+                      <div className="text-sm text-slate-600 mb-1">Tổng NFT</div>
                       <div className="text-3xl font-bold text-cyan-600">
-                        {stats?.nfts?.total || 0}
+                        {displayStats?.overview?.totalNFTs ||
+                          displayStats?.nfts?.total ||
+                          0}
                       </div>
                       <div className="text-xs text-slate-500 mt-2">
                         Token đã mint
                       </div>
                     </div>
-                  </Link>
+                  </div>
 
-                  {/* NFT Minted */}
+                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.emerald}, ${COLORS.green})`,
+                      }}
+                    />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">
+                        Tổng chuyển giao
+                      </div>
+                      <div className="text-3xl font-bold text-emerald-600">
+                        {displayStats?.overview?.totalTransfers ||
+                          displayStats?.transfers?.total ||
+                          0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Giao dịch
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Charts Row 1: Line Chart (7 days) and Bar Chart (Today vs Yesterday) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <motion.div
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                >
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    Sản xuất 7 ngày gần nhất
+                  </h3>
+                  {chartData.oneWeek && chartData.oneWeek.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={chartData.oneWeek}>
+                        <defs>
+                          <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={COLORS.secondary} stopOpacity={0.8} />
+                            <stop offset="95%" stopColor={COLORS.secondary} stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="date" stroke="#6b7280" />
+                        <YAxis stroke="#6b7280" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "white",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "8px",
+                          }}
+                        />
+                        <Legend />
+                        <Area
+                          type="monotone"
+                          dataKey="count"
+                          stroke={COLORS.secondary}
+                          fillOpacity={1}
+                          fill="url(#colorCount)"
+                          name="Số lô"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[300px] text-slate-400">
+                      Chưa có dữ liệu
+                    </div>
+                  )}
+                </motion.div>
+
+                <motion.div
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                >
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    So sánh hôm nay và hôm qua
+                  </h3>
+                  {chartData.todayYesterday ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={chartData.todayYesterday}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="name" stroke="#6b7280" />
+                        <YAxis stroke="#6b7280" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "white",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "8px",
+                          }}
+                        />
+                        <Bar
+                          dataKey="count"
+                          fill={COLORS.third}
+                          name="Số lô sản xuất"
+                          radius={[8, 8, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[300px] text-slate-400">
+                      Chưa có dữ liệu
+                    </div>
+                  )}
+                </motion.div>
+              </div>
+
+              {/* Charts Row 2: Pie Charts for NFT Status and Transfer Status */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <motion.div
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                >
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    Phân bố NFT theo trạng thái
+                  </h3>
+                  {nftStatusData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={nftStatusData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) =>
+                            `${name}: ${(percent * 100).toFixed(0)}%`
+                          }
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {nftStatusData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[300px] text-slate-400">
+                      Chưa có dữ liệu
+                    </div>
+                  )}
+                </motion.div>
+
+                <motion.div
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                >
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    Phân bố chuyển giao theo trạng thái
+                  </h3>
+                  {transferStatusData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={transferStatusData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) =>
+                            `${name}: ${(percent * 100).toFixed(0)}%`
+                          }
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {transferStatusData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[300px] text-slate-400">
+                      Chưa có dữ liệu
+                    </div>
+                  )}
+                </motion.div>
+              </div>
+
+              {/* Monthly Trends Chart */}
+              {chartData.monthly && chartData.monthly.length > 0 && (
+                <motion.div
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                >
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    Xu hướng 6 tháng gần nhất
+                  </h3>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={chartData.monthly}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="month" stroke="#6b7280" />
+                      <YAxis stroke="#6b7280" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "white",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "8px",
+                        }}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="productions"
+                        stroke={COLORS.secondary}
+                        strokeWidth={3}
+                        name="Sản xuất"
+                        dot={{ fill: COLORS.secondary, r: 5 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="transfers"
+                        stroke={COLORS.third}
+                        strokeWidth={3}
+                        name="Chuyển giao"
+                        dot={{ fill: COLORS.third, r: 5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </motion.div>
+              )}
+
+              {/* Detailed Statistics Cards */}
+              <motion.div variants={fadeUp} initial="hidden" animate="show">
+                <h2 className="text-lg font-semibold text-slate-800 mb-4">
+                  Chi tiết NFT & Chuyển giao
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
                   <Link
                     to="/manufacturer/production-history?status=minted"
                     className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
                   >
-                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-blue-400 to-cyan-400 rounded-t-2xl" />
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.blue}, ${COLORS.cyan})`,
+                      }}
+                    />
                     <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        NFT Minted
-                      </div>
+                      <div className="text-sm text-slate-600 mb-1">NFT Minted</div>
                       <div className="text-3xl font-bold text-blue-600">
-                        {stats?.nfts?.byStatus?.minted || 0}
+                        {displayStats?.nfts?.byStatus?.minted || 0}
                       </div>
                       <div className="text-xs text-slate-500 mt-2">
                         Chưa chuyển giao
@@ -461,32 +802,86 @@ export default function ManufacturerDashboard() {
                     </div>
                   </Link>
 
-                  {/* NFT Transferred */}
                   <Link
                     to="/manufacturer/production-history?status=transferred"
                     className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
                   >
-                    <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-emerald-400 to-green-400 rounded-t-2xl" />
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.emerald}, ${COLORS.green})`,
+                      }}
+                    />
                     <div className="p-5 pt-7 text-center">
                       <div className="text-sm text-slate-600 mb-1">
                         NFT Transferred
                       </div>
                       <div className="text-3xl font-bold text-emerald-600">
-                        {stats?.nfts?.byStatus?.transferred || 0}
+                        {displayStats?.nfts?.byStatus?.transferred || 0}
                       </div>
-                      <div className="text-xs text-emerald-600/70 mt-2">
+                      <div className="text-xs text-slate-500 mt-2">
                         Đã chuyển giao
                       </div>
                     </div>
                   </Link>
+
+                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.green}, ${COLORS.emerald})`,
+                      }}
+                    />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">NFT Sold</div>
+                      <div className="text-3xl font-bold text-green-600">
+                        {displayStats?.nfts?.byStatus?.sold || 0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Đã bán cho NPP
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.amber}, ${COLORS.orange})`,
+                      }}
+                    />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Pending</div>
+                      <div className="text-3xl font-bold text-amber-600">
+                        {displayStats?.transfers?.byStatus?.pending || 0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Chờ xử lý
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.emerald}, ${COLORS.green})`,
+                      }}
+                    />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Paid</div>
+                      <div className="text-3xl font-bold text-emerald-600">
+                        {displayStats?.transfers?.byStatus?.paid || 0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Đã thanh toán
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
-
-              {/* Thống kê chuyển giao - giữ nguyên */}
-              {/* ... */}
             </div>
           ) : (
-            /* No data state */
             <div className="text-center py-20 text-slate-500">
               Không có dữ liệu
             </div>

@@ -32,6 +32,34 @@ export const getTransferHistory = (params = {}) => api.get('/pharma-company/tran
 
 // Thống kê
 export const getStatistics = () => api.get('/pharma-company/statistics');
+export const getDashboardStats = () => api.get('/statistics/manufacturer/dashboard');
+
+// Chart APIs
+export const getChartOneWeek = () => api.get('/pharma-company/chart/one-week');
+export const getChartTodayYesterday = () => api.get('/pharma-company/chart/today-yesterday');
+export const getChartProductionsByDateRange = (startDate, endDate) => 
+  api.get('/pharma-company/chart/productions-by-date-range', { 
+    params: { startDate, endDate } 
+  });
+export const getChartDistributionsByDateRange = (startDate, endDate) => 
+  api.get('/pharma-company/chart/distributions-by-date-range', { 
+    params: { startDate, endDate } 
+  });
+export const getChartTransfersByDateRange = (startDate, endDate) => 
+  api.get('/pharma-company/chart/transfers-by-date-range', { 
+    params: { startDate, endDate } 
+  });
+
+// Additional statistics
+export const getMonthlyTrends = (months = 6) => 
+  api.get('/statistics/trends/monthly', { params: { months } });
+export const getPerformanceMetrics = (startDate, endDate) => 
+  api.get('/statistics/performance', { params: { startDate, endDate } });
+export const getComplianceStats = () => api.get('/statistics/compliance');
+export const getBlockchainStats = () => api.get('/statistics/blockchain');
+export const getAlertsStats = () => api.get('/statistics/alerts');
+export const getProductAnalytics = () => api.get('/statistics/manufacturer/products');
+export const getSupplyChainStats = () => api.get('/statistics/manufacturer/supply-chain');
 
 // ============ QUẢN LÝ THÔNG TIN CÁ NHÂN ============
 export const getProfile = () => api.get('/pharma-company/profile');
@@ -59,6 +87,23 @@ export default {
   getAvailableTokensForProduction,
   getTransferHistory,
   getStatistics,
+  getDashboardStats,
+  
+  // Chart APIs
+  getChartOneWeek,
+  getChartTodayYesterday,
+  getChartProductionsByDateRange,
+  getChartDistributionsByDateRange,
+  getChartTransfersByDateRange,
+  
+  // Additional statistics
+  getMonthlyTrends,
+  getPerformanceMetrics,
+  getComplianceStats,
+  getBlockchainStats,
+  getAlertsStats,
+  getProductAnalytics,
+  getSupplyChainStats,
   
   // Profile
   getProfile,
