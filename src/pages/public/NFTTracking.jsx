@@ -252,32 +252,30 @@ export default function PublicNFTTracking() {
                 <div className="relative space-y-6">
                   {journey.journey.map((step, idx) => (
                     <div key={idx} className="relative">
-                      <div className="bg-gradient-to-br from-slate-50 to-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
+                      <div className="rounded-xl border border-[#4BADD1]/30 bg-gradient-to-br from-[#4BADD1] via-[#3aaad8] to-[#2f9ac4] p-5 shadow-sm hover:shadow-md transition">
                         <div className="flex items-start justify-between mb-3">
                           <div>
-                            <h3 className="text-lg font-bold text-slate-800">
+                            <h3 className="text-lg font-bold text-white">
                               {step.description || step.stage || "N/A"}
                             </h3>
-                            <div className="text-sm text-slate-600 mt-1">
+                            <div className="text-sm text-white/80 mt-1">
                               {step.date
                                 ? new Date(step.date).toLocaleString("vi-VN")
                                 : "N/A"}
                             </div>
                           </div>
                           {step.stage && (
-                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200 capitalize">
+                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white border border-white/30 capitalize">
                               {step.stage}
                             </span>
                           )}
                         </div>
 
-                        <div className="space-y-2 text-sm">
+                        <div className="space-y-2 text-sm text-white/85">
                           {step.manufacturer && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">
-                                Nhà sản xuất:
-                              </span>
-                              <span className="font-medium text-slate-800">
+                              <span className="text-white/70">Nhà sản xuất:</span>
+                              <span className="font-medium text-white">
                                 {typeof step.manufacturer === "object"
                                   ? step.manufacturer.fullName ||
                                     step.manufacturer.username ||
@@ -291,20 +289,16 @@ export default function PublicNFTTracking() {
                             <>
                               {step.details.quantity && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-slate-500">
-                                    Số lượng:
-                                  </span>
-                                  <span className="font-bold text-emerald-600">
+                                  <span className="text-white/70">Số lượng:</span>
+                                  <span className="font-bold text-white">
                                     {step.details.quantity}
                                   </span>
                                 </div>
                               )}
                               {step.details.mfgDate && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-slate-500">
-                                    Ngày sản xuất:
-                                  </span>
-                                  <span className="font-medium text-slate-800">
+                                  <span className="text-white/70">Ngày sản xuất:</span>
+                                  <span className="font-medium text-white">
                                     {new Date(
                                       step.details.mfgDate
                                     ).toLocaleDateString("vi-VN")}
@@ -315,16 +309,16 @@ export default function PublicNFTTracking() {
                           )}
                           {step.quantity && !step.details?.quantity && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">Số lượng:</span>
-                              <span className="font-bold text-emerald-600">
+                              <span className="text-white/70">Số lượng:</span>
+                              <span className="font-bold text-white">
                                 {step.quantity}
                               </span>
                             </div>
                           )}
                           {step.from && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">Từ:</span>
-                              <span className="font-medium text-slate-800">
+                              <span className="text-white/70">Từ:</span>
+                              <span className="font-medium text-white">
                                 {typeof step.from === "object"
                                   ? step.from.fullName ||
                                     step.from.username ||
@@ -336,8 +330,8 @@ export default function PublicNFTTracking() {
                           )}
                           {step.to && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">Đến:</span>
-                              <span className="font-medium text-slate-800">
+                              <span className="text-white/70">Đến:</span>
+                              <span className="font-medium text-white">
                                 {typeof step.to === "object"
                                   ? step.to.fullName ||
                                     step.to.username ||
@@ -349,17 +343,15 @@ export default function PublicNFTTracking() {
                           )}
                           {step.transactionHash && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">
-                                Mã giao dịch
-                              </span>
-                              <span className="font-mono text-xs text-blue-600 truncate">
+                              <span className="text-white/70">Mã giao dịch</span>
+                              <span className="font-mono text-xs text-white truncate">
                                 {step.transactionHash}
                               </span>
                             </div>
                           )}
                           {step.notes && (
-                            <div className="mt-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                              <span className="text-amber-800 text-xs">
+                            <div className="mt-2 p-3 bg-white/15 rounded-lg border border-white/20">
+                              <span className="text-white text-xs">
                                 {step.notes}
                               </span>
                             </div>
