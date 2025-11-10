@@ -249,12 +249,9 @@ export default function PublicNFTTracking() {
               {journey.journey &&
               Array.isArray(journey.journey) &&
               journey.journey.length > 0 ? (
-                <div className="relative pl-8 space-y-6">
-                  <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gradient-to-b from-emerald-500 via-cyan-500 to-purple-500"></div>
-
+                <div className="relative space-y-6">
                   {journey.journey.map((step, idx) => (
                     <div key={idx} className="relative">
-                      <div className="absolute -left-6 w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 border-4 border-white shadow-lg"></div>
                       <div className="bg-gradient-to-br from-slate-50 to-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
                         <div className="flex items-start justify-between mb-3">
                           <div>
