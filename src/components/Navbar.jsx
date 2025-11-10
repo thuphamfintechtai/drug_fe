@@ -1,15 +1,18 @@
-import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
-import LogoutButton from "./LogoutButton";
 import { useMetaMask } from "../hooks/useMetaMask";
 import toast from "react-hot-toast";
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { theme, toggleTheme, isDark } = useTheme();
+  const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const dropdownRef = useRef(null);
   const {
     account,
     isConnected,
@@ -27,7 +30,25 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Đóng dropdown khi click bên ngoài
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    if (dropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownOpen]);
+
   const handleLogout = async () => {
+    setDropdownOpen(false);
     // Disconnect MetaMask trước khi logout
     if (isConnected) {
       await disconnect();
@@ -35,9 +56,8 @@ export default function Navbar() {
     }
     // Sau đó logout khỏi hệ thống
     await logout();
-    setMobileMenuOpen(false);
     // Redirect về trang chủ
-    window.location.href = "/";
+    navigate("/");
   };
 
   const handleConnectMetaMask = async () => {
@@ -67,6 +87,17 @@ export default function Navbar() {
   const formatAddress = (addr) => {
     if (!addr) return "";
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
+
+  const getProfileRoute = () => {
+    if (!user?.role) return "/";
+    const roleMap = {
+      system_admin: "/admin",
+      pharma_company: "/manufacturer/profile",
+      distributor: "/distributor/profile",
+      pharmacy: "/pharmacy/profile",
+    };
+    return roleMap[user.role] || "/";
   };
 
   return (
@@ -115,201 +146,154 @@ export default function Navbar() {
             </Link>
           </motion.div>
 
-          <div className="hidden md:flex items-center gap-3">
-            {/* MetaMask Connection */}
-            {isConnected ? (
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30">
-                <div className="flex flex-col">
-                  <div className="text-xs !text-white/80">MetaMask</div>
-                  <div className="text-sm font-semibold !text-white font-mono">
-                    {formatAddress(account)}
-                  </div>
-                </div>
-                <button
-                  onClick={handleDisconnectMetaMask}
-                  className="ml-2 px-3 py-1 text-xs bg-white font-text-primary rounded-lg transition-colors duration-200"
-                  title="Ngắt kết nối ví"
-                >
-                  Ngắt
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={handleConnectMetaMask}
-                disabled={isConnecting || !isInstalled}
-                className="px-5 py-2.5 bg-white text-slate-900 font-semibold rounded-lg shadow-md border border-[#077ca3] hover:border-[#077ca3] hover:bg-white focus:border-[#077ca3] focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-white flex items-center gap-2 transition-colors duration-200"
-              >
-                {isConnecting ? "Đang kết nối..." : "Kết nối MetaMask"}
-              </button>
-            )}
-
+          <div className="flex items-center gap-3">
             {!isAuthenticated ? (
               <Link
                 to="/login"
-                className="px-6 py-1 text-lg bg-white font-text-primary font-semibold rounded-lg shadow-md hover:bg-gray-50 transition-colors duration-200"
+                className="px-4 md:px-6 py-1.5 md:py-1 text-base md:text-lg bg-white text-gray-900 font-semibold rounded-lg shadow-md hover:bg-gray-50 transition-colors duration-200"
               >
                 Đăng nhập
               </Link>
             ) : (
-              <>
-                <motion.div
-                  className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30"
-                  whileHover={{ scale: 1.05, y: -2 }}
+              <div className="relative" ref={dropdownRef}>
+                {/* Nút tròn màu vàng */}
+                <motion.button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="w-10 h-10 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 border-2 border-gray-700 shadow-lg hover:shadow-xl transition-shadow duration-200 flex items-center justify-center"
+                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 300 }}
                 >
-                  <motion.svg
-                    className="w-6 h-6 !text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    whileHover={{ rotate: 360 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </motion.svg>
-                  <div>
-                    <div className="text-sm font-semibold !text-white">
-                      {user?.fullName || user?.username}
-                    </div>
-                    <div className="text-xs !text-white/80">{user?.role}</div>
-                  </div>
-                </motion.div>
-                <LogoutButton onLogout={handleLogout} />
-              </>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500"></div>
+                </motion.button>
+
+                {/* Dropdown Menu */}
+                <AnimatePresence>
+                  {dropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-72 md:w-80 bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden z-50"
+                    >
+                      <div className="p-4 space-y-4">
+                        {/* Email */}
+                        {user?.email && (
+                          <div className="text-gray-900 text-sm font-medium">
+                            {user.email}
+                          </div>
+                        )}
+
+                        {/* Wallet Address */}
+                        {isConnected && account ? (
+                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0">
+                              <svg
+                                className="w-6 h-6 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                />
+                              </svg>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-gray-900 text-sm font-mono">
+                                {formatAddress(account)}
+                              </div>
+                              <div className="h-1 bg-gray-300 rounded-full mt-1"></div>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={handleConnectMetaMask}
+                            disabled={isConnecting || !isInstalled}
+                            className="w-full flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0">
+                              <svg
+                                className="w-6 h-6 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                />
+                              </svg>
+                            </div>
+                            <span className="text-gray-900 text-sm">
+                              {isConnecting
+                                ? "Đang kết nối..."
+                                : "Kết nối MetaMask"}
+                            </span>
+                          </button>
+                        )}
+
+                        {/* Menu Items */}
+                        <div className="space-y-1">
+                          <button
+                            onClick={() => {
+                              setDropdownOpen(false);
+                              navigate(getProfileRoute());
+                            }}
+                            className="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm"
+                          >
+                            Tài khoản của tôi
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setDropdownOpen(false);
+                              if (isConnected) {
+                                // Show wallet info or navigate to wallet page
+                                toast.info("Thông tin ví của bạn: " + account);
+                              } else {
+                                handleConnectMetaMask();
+                              }
+                            }}
+                            className="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm"
+                          >
+                            Ví của tôi
+                          </button>
+
+                          <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center justify-between px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm"
+                          >
+                            <span>Đăng xuất</span>
+                            <svg
+                              className="w-4 h-4 text-gray-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             )}
           </div>
-
-          <motion.button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl hover:bg-white/20 transition !text-white"
-            whileTap={{ scale: 0.9 }}
-            whileHover={{ scale: 1.1 }} // Thay vì rotate
-            transition={{ duration: 0.3 }}
-          >
-            <motion.svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              animate={{ rotate: mobileMenuOpen ? 90 : 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {mobileMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              )}
-            </motion.svg>
-          </motion.button>
         </div>
       </div>
-
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="md:hidden bg-[#4BADD1]/98 backdrop-blur-xl border-t border-white/20"
-          >
-            <div className="px-4 py-4 space-y-3">
-              {/* MetaMask Connection - Mobile */}
-              {isConnected ? (
-                <div className="flex items-center justify-between p-3 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🦊</span>
-                    <div className="flex flex-col">
-                      <div className="text-xs !text-white/80">MetaMask</div>
-                      <div className="text-sm font-semibold !text-white font-mono">
-                        {formatAddress(account)}
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleDisconnectMetaMask}
-                    className="px-3 py-1 text-xs bg-red-500/80 hover:bg-red-500 !text-white rounded-lg transition-colors duration-200"
-                  >
-                    Ngắt
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={handleConnectMetaMask}
-                  disabled={isConnecting || !isInstalled}
-                  className="w-full px-4 py-3 bg-white text-slate-900 rounded-xl font-semibold shadow-md border border-[#077ca3] hover:border-[#077ca3] hover:bg-white focus:border-[#077ca3] focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-white flex items-center justify-center gap-2 transition-colors duration-200"
-                >
-                  {isConnecting ? "Đang kết nối..." : "Kết nối MetaMask"}
-                </button>
-              )}
-
-              {!isAuthenticated ? (
-                <Link
-                  to="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block w-full text-center px-4 py-3 bg-white text-[#4BADD1] font-semibold rounded-xl shadow-md hover:bg-gray-50 transition-colors duration-200"
-                >
-                  Đăng nhập
-                </Link>
-              ) : (
-                <>
-                  <motion.div
-                    className="flex items-center gap-3 p-3 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30"
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.1 }}
-                    whileHover={{
-                      scale: 1.02,
-                      backgroundColor: "rgba(255,255,255,0.3)",
-                    }}
-                  >
-                    <motion.svg
-                      className="w-10 h-10 !text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      whileHover={{ rotate: 360 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </motion.svg>
-                    <div>
-                      <div className="text-sm font-semibold !text-white">
-                        {user?.fullName || user?.username}
-                      </div>
-                      <div className="text-xs !text-white/80">{user?.role}</div>
-                    </div>
-                  </motion.div>
-                  <div className="flex justify-center">
-                    <LogoutButton onLogout={handleLogout} />
-                  </div>
-                </>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.nav>
   );
 }

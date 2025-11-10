@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Register from './pages/auth/Register';
 import RegisterBusiness from './pages/auth/RegisterBusiness';
 import ForgotPasswordBusiness from './pages/auth/ForgotPasswordBusiness';
@@ -43,11 +44,13 @@ import Login from './pages/auth/Login';
 import VerifyPage from './pages/public/VerifyPage';
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
