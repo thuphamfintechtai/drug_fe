@@ -60,6 +60,7 @@ export const getBlockchainStats = () => api.get('/statistics/blockchain');
 export const getAlertsStats = () => api.get('/statistics/alerts');
 export const getProductAnalytics = () => api.get('/statistics/manufacturer/products');
 export const getSupplyChainStats = () => api.get('/statistics/manufacturer/supply-chain');
+export const getManufactureIPFSStatus = () => api.get('/pharma-company/ipfs-status');
 
 // ============ QUẢN LÝ THÔNG TIN CÁ NHÂN ============
 export const getProfile = () => api.get('/pharma-company/profile');
@@ -104,6 +105,7 @@ export default {
   getAlertsStats,
   getProductAnalytics,
   getSupplyChainStats,
+  getManufactureIPFSStatus,
   
   // Profile
   getProfile,

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import TruckAnimationButton from "../../components/TruckAnimationButton";
 import NFTMintButton from "../../components/NFTMintButton";
@@ -21,6 +22,7 @@ import {
 import { ethers } from "ethers";
 
 export default function ProductionManagement() {
+  const [searchParams] = useSearchParams();
   const [drugs, setDrugs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
@@ -68,7 +70,7 @@ export default function ProductionManagement() {
           />
         </svg>
       ),
-      active: false,
+      active: true,
     },
     {
       path: "/manufacturer/drugs",
@@ -170,6 +172,14 @@ export default function ProductionManagement() {
       ),
       active: false,
     },
+    { path: "/manufacturer/ipfs-status", label: "Lịch sử IPFS",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-6l-2 2m0 0l-2-2m2 2l2-2m8 6v-6l-2 2m0 0l-2-2m2 2l2-2"/>
+        </svg>
+      ),
+      active: true,
+    },
     {
       path: "/manufacturer/profile",
       label: "Hồ sơ",
@@ -227,6 +237,23 @@ export default function ProductionManagement() {
         clearInterval(progressIntervalRef.current);
       }
     };
+  }, []);
+
+  // Khi load bằng IPFS từ trang lịch sử: tự nạp ipfsUrl + quantity và chuyển sang bước mint
+  useEffect(() => {
+    const ipfsUrl = searchParams.get("ipfsUrl");
+    const qty = searchParams.get("quantity");
+    if (ipfsUrl) {
+      const cidMatch = ipfsUrl.match(/\/ipfs\/([^/?#]+)/i);
+      const ipfsHash = cidMatch ? cidMatch[1] : "";
+      setIpfsData({ ipfsUrl, ipfsHash, amount: qty ? parseInt(qty) : undefined });
+      if (qty && !isNaN(parseInt(qty))) {
+        setFormData((prev) => ({ ...prev, quantity: String(parseInt(qty)) }));
+      }
+      setShowDialog(true);
+      setStep(2); // Bỏ qua bước upload, sẵn sàng mint
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
