@@ -35,7 +35,7 @@ import PharmacyDashboard from './pages/pharmacy/Dashboard';
 import PharmacyInvoices from './pages/pharmacy/InvoicesFromDistributor';
 import PharmacyDistributionHistory from './pages/pharmacy/DistributionHistory';
 import PharmacyDrugs from './pages/pharmacy/Drugs';
-import PharmacyNftTracking from './pages/pharmacy/NFTTracking';
+import PharmacyNftTracking from './pages/pharmacy/NftTracking';
 import PharmacyProfile from './pages/pharmacy/Profile';
 import UserHome from './pages/public/UserHome';
 import MetaMaskConnect from './pages/MetaMaskConnect';

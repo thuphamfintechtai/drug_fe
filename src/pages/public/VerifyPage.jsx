@@ -4,7 +4,6 @@ import { useSearchParams } from "react-router-dom";
 
 // --- HÀM HELPER ---
 
-// 1. Giải mã Base64URL (an toàn cho trình duyệt)
 function decodeBase64Url(base64Url) {
   try {
     let base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");

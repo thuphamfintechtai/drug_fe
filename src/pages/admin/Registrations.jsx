@@ -94,19 +94,24 @@ export default function AdminRegistrations() {
         console.log("📊 Parsed stats:", statsData);
         setStats(statsData);
       } catch (e) {
-        console.error("❌ Error loading registrations:", e);
-        console.error("❌ Error response:", e?.response);
-        console.error("❌ Error status:", e?.response?.status);
-        console.error("❌ Error data:", e?.response?.data);
+        const status = e?.response?.status;
+        // Don't log 401/403 errors as they're expected authentication/authorization failures
+        // The API interceptor already handles clearing tokens for these cases
+        if (status !== 401 && status !== 403) {
+          console.error("❌ Error loading registrations:", e);
+          console.error("❌ Error response:", e?.response);
+          console.error("❌ Error status:", status);
+          console.error("❌ Error data:", e?.response?.data);
+        }
 
         // Hiển thị lỗi chi tiết hơn
         let errorMsg = "Không thể tải dữ liệu";
-        if (e?.response?.status === 500) {
+        if (status === 500) {
           errorMsg =
             "Lỗi server (500): Vui lòng kiểm tra backend hoặc thử lại sau.";
-        } else if (e?.response?.status === 401) {
+        } else if (status === 401) {
           errorMsg = "Bạn chưa đăng nhập hoặc token đã hết hạn.";
-        } else if (e?.response?.status === 403) {
+        } else if (status === 403) {
           errorMsg = "Bạn không có quyền truy cập trang này.";
         } else if (e?.response?.data?.message) {
           errorMsg = e.response.data.message;
