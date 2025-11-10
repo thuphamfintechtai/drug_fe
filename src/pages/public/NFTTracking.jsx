@@ -70,7 +70,7 @@ export default function PublicNFTTracking() {
         <motion.section
           className="relative overflow-hidden rounded-2xl mb-8 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
           style={{
-            background: "linear-gradient(135deg, #4BADD1 0%, #2176FF 100%)",
+            backgroundColor: "#077ca3",
           }}
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -254,9 +254,7 @@ export default function PublicNFTTracking() {
 
                   {journey.journey.map((step, idx) => (
                     <div key={idx} className="relative">
-                      <div className="absolute -left-6 w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 border-4 border-white shadow-lg flex items-center justify-center !text-white text-xs font-bold">
-                        {idx + 1}
-                      </div>
+                      <div className="absolute -left-6 w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 border-4 border-white shadow-lg"></div>
                       <div className="bg-gradient-to-br from-slate-50 to-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
                         <div className="flex items-start justify-between mb-3">
                           <div>
