@@ -14,6 +14,27 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Fetch full history để Vercel có thể xác định commit author
+          fetch-depth: 0
+          # Sử dụng token để có quyền đọc commit author
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git với tài khoản GitHub
+        run: |
+          # Set git config với thông tin tài khoản mặc định
+          # Email: thupham@fintechai.vn
+          # Username: thuphamfintechai
+          git config --global user.name "thuphamfintechai"
+          git config --global user.email "thupham@fintechai.vn"
+          
+          # Hiển thị thông tin đã set
+          echo "✅ Git user: $(git config --global user.name)"
+          echo "✅ Git email: $(git config --global user.email)"
+          
+          # Export để sử dụng ở các steps sau
+          echo "GIT_USER_NAME=thuphamfintechai" >> $GITHUB_ENV
+          echo "GIT_USER_EMAIL=thupham@fintechai.vn" >> $GITHUB_ENV
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -27,26 +48,36 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Pull Vercel environment info
+      - name: Configure Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          # Set Vercel environment variables
+          echo "VERCEL_ORG_ID=$VERCEL_ORG_ID" >> $GITHUB_ENV
+          echo "VERCEL_PROJECT_ID=$VERCEL_PROJECT_ID" >> $GITHUB_ENV
+          
+          # Link project với team (nếu chưa link)
+          vercel link --yes --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --project "$VERCEL_PROJECT_ID" || true
+
+      - name: Pull Vercel environment info
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
 
       - name: Build project
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           vercel build --prod --token "$VERCEL_TOKEN"
 
       - name: Deploy to Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
+          # Deploy với VERCEL_TOKEN
+          # Quan trọng: VERCEL_TOKEN phải được tạo từ account owner của team "ZuZu's projects"
+          echo "🚀 Deploying to Vercel..."
           vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN" --yes
