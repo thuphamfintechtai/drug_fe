@@ -193,42 +193,42 @@ export default function PublicNFTTracking() {
             animate="show"
           >
             {/* Thông tin NFT */}
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border border-purple-200 p-6">
-              <h2 className="text-xl font-bold text-purple-900 mb-4 flex items-center gap-2">
+            <div className="bg-gradient-to-br from-[#4BADD1]/10 to-[#3aaad8]/10 rounded-2xl border border-[#4BADD1]/30 p-6">
+              <h2 className="text-xl font-bold text-[#077ca3] mb-4 flex items-center gap-2">
                 Thông tin thuốc
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white rounded-xl p-4 border border-purple-200">
-                  <div className="text-sm text-purple-700 mb-1">Token ID</div>
-                  <div className="text-lg font-bold text-purple-900">
+                <div className="bg-white rounded-xl p-4 border border-[#4BADD1]/50">
+                  <div className="text-sm text-[#4BADD1] mb-1">Token ID</div>
+                  <div className="text-lg font-bold text-[#077ca3]">
                     {journey.nft?.tokenId || tokenId}
                   </div>
                 </div>
-                <div className="bg-white rounded-xl p-4 border border-purple-200">
-                  <div className="text-sm text-purple-700 mb-1">Số Serial</div>
-                  <div className="text-lg font-bold text-purple-900">
+                <div className="bg-white rounded-xl p-4 border border-[#4BADD1]/50">
+                  <div className="text-sm text-[#4BADD1] mb-1">Số Serial</div>
+                  <div className="text-lg font-bold text-[#077ca3]">
                     {journey.nft?.serialNumber || "N/A"}
                   </div>
                 </div>
-                <div className="bg-white rounded-xl p-4 border border-purple-200">
-                  <div className="text-sm text-purple-700 mb-1">Tên thuốc</div>
-                  <div className="text-lg font-bold text-purple-900">
+                <div className="bg-white rounded-xl p-4 border border-[#4BADD1]/50">
+                  <div className="text-sm text-[#4BADD1] mb-1">Tên thuốc</div>
+                  <div className="text-lg font-bold text-[#077ca3]">
                     {journey.nft?.drug?.tradeName ||
                       journey.nft?.drug?.genericName ||
                       "N/A"}
                   </div>
                 </div>
-                <div className="bg-white rounded-xl p-4 border border-purple-200">
-                  <div className="text-sm text-purple-700 mb-1">Số lô</div>
-                  <div className="text-lg font-bold text-purple-900">
+                <div className="bg-white rounded-xl p-4 border border-[#4BADD1]/50">
+                  <div className="text-sm text-[#4BADD1] mb-1">Số lô</div>
+                  <div className="text-lg font-bold text-[#077ca3]">
                     {journey.nft?.batchNumber || "N/A"}
                   </div>
                 </div>
-                <div className="bg-white rounded-xl p-4 border border-purple-200">
-                  <div className="text-sm text-purple-700 mb-1">
+                <div className="bg-white rounded-xl p-4 border border-[#4BADD1]/50">
+                  <div className="text-sm text-[#4BADD1] mb-1">
                     Chủ sở hữu hiện tại
                   </div>
-                  <div className="text-sm font-mono text-purple-900 truncate">
+                  <div className="text-sm font-mono text-[#077ca3] truncate">
                     {typeof journey.nft?.currentOwner === "object"
                       ? journey.nft.currentOwner.fullName ||
                         journey.nft.currentOwner.username ||
@@ -370,57 +370,57 @@ export default function PublicNFTTracking() {
 
             {/* Thông tin thuốc chi tiết */}
             {journey.nft?.drug && (
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border border-blue-200 p-6">
-                <h2 className="text-xl font-bold text-blue-900 mb-4 flex items-center gap-2">
+              <div className="bg-gradient-to-br from-[#4BADD1]/10 to-[#3aaad8]/10 rounded-2xl border border-[#4BADD1]/30 p-6">
+                <h2 className="text-xl font-bold text-[#077ca3] mb-4 flex items-center gap-2">
                   Thông tin chi tiết
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {journey.nft.drug.genericName && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Tên hoạt chất</div>
-                      <div className="font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Tên hoạt chất</div>
+                      <div className="font-semibold text-[#077ca3]">
                         {journey.nft.drug.genericName}
                       </div>
                     </div>
                   )}
                   {journey.nft.drug.atcCode && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Mã ATC</div>
-                      <div className="font-mono font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Mã ATC</div>
+                      <div className="font-mono font-semibold text-[#077ca3]">
                         {journey.nft.drug.atcCode}
                       </div>
                     </div>
                   )}
                   {journey.nft.drug.dosageForm && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Dạng bào chế</div>
-                      <div className="font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Dạng bào chế</div>
+                      <div className="font-semibold text-[#077ca3]">
                         {journey.nft.drug.dosageForm}
                       </div>
                     </div>
                   )}
                   {journey.nft.drug.strength && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Hàm lượng</div>
-                      <div className="font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Hàm lượng</div>
+                      <div className="font-semibold text-[#077ca3]">
                         {journey.nft.drug.strength}
                       </div>
                     </div>
                   )}
                   {journey.nft.drug.packaging && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">
                         Quy cách đóng gói
                       </div>
-                      <div className="font-semibold text-blue-900">
+                      <div className="font-semibold text-[#077ca3]">
                         {journey.nft.drug.packaging}
                       </div>
                     </div>
                   )}
                   {journey.nft.mfgDate && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Ngày sản xuất</div>
-                      <div className="font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Ngày sản xuất</div>
+                      <div className="font-semibold text-[#077ca3]">
                         {new Date(journey.nft.mfgDate).toLocaleDateString(
                           "vi-VN"
                         )}
@@ -428,9 +428,9 @@ export default function PublicNFTTracking() {
                     </div>
                   )}
                   {journey.nft.expDate && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Hạn sử dụng</div>
-                      <div className="font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Hạn sử dụng</div>
+                      <div className="font-semibold text-[#077ca3]">
                         {new Date(journey.nft.expDate).toLocaleDateString(
                           "vi-VN"
                         )}
@@ -438,9 +438,9 @@ export default function PublicNFTTracking() {
                     </div>
                   )}
                   {journey.nft.drug.manufacturer && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Nhà sản xuất</div>
-                      <div className="font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Nhà sản xuất</div>
+                      <div className="font-semibold text-[#077ca3]">
                         {typeof journey.nft.drug.manufacturer === "object"
                           ? journey.nft.drug.manufacturer.name ||
                             journey.nft.drug.manufacturer.fullName ||
