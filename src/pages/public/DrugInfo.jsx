@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import api from "axios";
+import api from "../../utils/api";
 import Navbar from "../../components/Navbar";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
@@ -41,13 +41,9 @@ export default function PublicDrugInfo() {
 
     try {
       let response;
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
-      response = await api.get(
-        `${API_BASE_URL}/api/publicRoute/drugs/search`,
-        {
-          params: { atcCode: searchTerm.trim() },
-        }
-      );
+      response = await api.get("/publicRoute/drugs/search", {
+        params: { atcCode: searchTerm.trim() },
+      });
       console.log("Drug search response:", response);
 
       if (response.data.success) {
