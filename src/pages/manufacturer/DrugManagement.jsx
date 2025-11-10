@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
+import { toast } from "react-hot-toast";
 import TruckLoader from "../../components/TruckLoader";
 import {
   getDrugs,
@@ -375,7 +376,9 @@ export default function DrugManagement() {
         progressIntervalRef.current = null;
       }
       console.error("Lỗi khi tải danh sách thuốc:", error);
-      alert("Không thể tải danh sách thuốc");
+      toast.error("Không thể tải danh sách thuốc", {
+        position: "top-right",
+      });
     } finally {
       setLoading(false);
       resetProgress();
@@ -457,14 +460,15 @@ export default function DrugManagement() {
     try {
       const response = await deleteDrug(drugId);
       if (response.data.success) {
-        alert("Xóa thuốc thành công!");
+        toast.success("Xóa thuốc thành công!", { position: "top-right" });
         loadDrugs();
       }
     } catch (error) {
       console.error("Lỗi khi xóa thuốc:", error);
-      alert(
+      toast.error(
         "Không thể xóa thuốc: " +
-          (error.response?.data?.message || error.message)
+          (error.response?.data?.message || error.message),
+        { position: "top-right" }
       );
     }
   };
@@ -516,7 +520,9 @@ export default function DrugManagement() {
 
     // Validate form trước khi submit
     if (!validateForm()) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc");
+      toast.error("Vui lòng điền đầy đủ thông tin bắt buộc", {
+        position: "top-right",
+      });
       return;
     }
 
@@ -536,12 +542,12 @@ export default function DrugManagement() {
       if (isEditMode && selectedDrug) {
         const response = await updateDrug(selectedDrug._id, submitData);
         if (response.data.success) {
-          alert("Cập nhật thuốc thành công!");
+          toast.success("Cập nhật thuốc thành công!", { position: "top-right" });
         }
       } else {
         const response = await addDrug(submitData);
         if (response.data.success) {
-          alert("Tạo thuốc thành công!");
+          toast.success("Tạo thuốc thành công!", { position: "top-right" });
         }
       }
 
@@ -550,9 +556,10 @@ export default function DrugManagement() {
       loadDrugs();
     } catch (error) {
       console.error("Lỗi khi lưu thuốc:", error);
-      alert(
+      toast.error(
         "Không thể lưu thuốc: " +
-          (error.response?.data?.message || error.message)
+          (error.response?.data?.message || error.message),
+        { position: "top-right" }
       );
     } finally {
       setSubmitting(false);

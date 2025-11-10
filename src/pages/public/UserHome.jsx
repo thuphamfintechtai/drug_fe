@@ -258,7 +258,7 @@ export default function UserHome() {
               : url.href;
           console.log("Final redirect URL:", finalUrl);
           window.location.href = finalUrl;
-        }, 50000);
+        }, 800);
       } catch (e) {
         console.error("Error parsing URL:", e);
         setShowQRScanner(false);
@@ -275,7 +275,7 @@ export default function UserHome() {
           }
           console.log("Direct redirect to:", urlToRedirect);
           window.location.href = urlToRedirect;
-        }, 50000);
+        }, 800);
       }
     } else {
       console.log("QR does not contain URL, treating as tokenId");
@@ -286,7 +286,7 @@ export default function UserHome() {
       toast.success("Đã quét QR thành công!");
       setTimeout(() => {
         navigate(`/track?tokenId=${encodeURIComponent(trimmedText)}`);
-      }, 50000);
+      }, 800);
     }
   };
 
