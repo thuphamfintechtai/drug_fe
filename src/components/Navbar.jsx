@@ -20,6 +20,7 @@ export default function Navbar() {
     isConnecting,
     connect,
     disconnect,
+    chainId,
   } = useMetaMask();
 
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [dropdownOpen]);
+
 
   const handleLogout = async () => {
     setDropdownOpen(false);
@@ -77,16 +79,15 @@ export default function Navbar() {
     }
   };
 
-  const handleDisconnectMetaMask = async () => {
-    await disconnect();
-    toast.success(
-      "Đã ngắt kết nối ví MetaMask. Bạn sẽ cần chọn lại tài khoản khi kết nối lại."
-    );
-  };
-
   const formatAddress = (addr) => {
     if (!addr) return "";
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
+
+  const handleWalletClick = () => {
+    setDropdownOpen(false);
+    // Dispatch custom event để UserHome mở modal
+    window.dispatchEvent(new CustomEvent('openWalletModal'));
   };
 
   const getProfileRoute = () => {
@@ -186,7 +187,10 @@ export default function Navbar() {
 
                         {/* Wallet Address */}
                         {isConnected && account ? (
-                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <button
+                            onClick={handleWalletClick}
+                            className="w-full flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
+                          >
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0">
                               <svg
                                 className="w-6 h-6 text-white"
@@ -202,13 +206,13 @@ export default function Navbar() {
                                 />
                               </svg>
                             </div>
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 text-left">
                               <div className="text-gray-900 text-sm font-mono">
                                 {formatAddress(account)}
                               </div>
                               <div className="h-1 bg-gray-300 rounded-full mt-1"></div>
                             </div>
-                          </div>
+                          </button>
                         ) : (
                           <button
                             onClick={handleConnectMetaMask}
@@ -254,8 +258,8 @@ export default function Navbar() {
                             onClick={() => {
                               setDropdownOpen(false);
                               if (isConnected) {
-                                // Show wallet info or navigate to wallet page
-                                toast.info("Thông tin ví của bạn: " + account);
+                                // Dispatch event để UserHome mở modal
+                                window.dispatchEvent(new CustomEvent('openWalletModal'));
                               } else {
                                 handleConnectMetaMask();
                               }
