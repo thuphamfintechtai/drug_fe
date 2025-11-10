@@ -690,6 +690,7 @@ export default function TransferToPharmacy() {
             status={chainStatus}
             progress={chainProgress}
             onClose={() => setShowChainView(false)}
+            transferType="distributor-to-pharmacy"
           />
         </div>
       )}

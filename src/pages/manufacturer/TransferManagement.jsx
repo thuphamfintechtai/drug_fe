@@ -717,6 +717,7 @@ export default function TransferManagement() {
                 setButtonAnimating(false);
                 setButtonDone(false);
               }}
+              transferType="manufacturer-to-distributor"
             />
           </div>
         </div>
