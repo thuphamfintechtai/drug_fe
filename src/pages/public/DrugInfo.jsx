@@ -41,8 +41,9 @@ export default function PublicDrugInfo() {
 
     try {
       let response;
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
       response = await api.get(
-        "http://localhost:9000/api/publicRoute/drugs/search",
+        `${API_BASE_URL}/api/publicRoute/drugs/search`,
         {
           params: { atcCode: searchTerm.trim() },
         }

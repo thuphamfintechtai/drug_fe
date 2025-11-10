@@ -65,7 +65,7 @@ Hệ thống hỗ trợ các role sau:
 
 Mặc định API base URL được đặt trong `src/utils/api.js`:
 ```javascript
-baseURL: 'http://localhost:5000/api'
+baseURL: 'https://drug-be.vercel.app/api'
 ```
 
 Để thay đổi, sửa file `src/utils/api.js` hoặc sử dụng biến môi trường.

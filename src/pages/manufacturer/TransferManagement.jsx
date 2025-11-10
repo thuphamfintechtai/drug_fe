@@ -3,6 +3,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import TruckAnimationButton from "../../components/TruckAnimationButton";
 import BlockchainTransferView from "../../components/BlockchainTransferView";
 import TruckLoader from "../../components/TruckLoader";
+import { toast } from "react-hot-toast";
 import {
   getProductionHistory,
   getDistributors,
@@ -285,7 +286,9 @@ export default function TransferManagement() {
     if (buttonAnimating) return; // Already processing
 
     if (!formData.distributorId || !formData.quantity) {
-      alert("Vui lòng chọn nhà phân phối và nhập số lượng");
+      toast.error("Vui lòng chọn nhà phân phối và nhập số lượng", {
+        position: "top-right",
+      });
       return;
     }
 
@@ -297,21 +300,24 @@ export default function TransferManagement() {
       requestedQty <= 0 ||
       requestedQty > selectedProduction.quantity
     ) {
-      alert("Số lượng không hợp lệ");
+      toast.error("Số lượng không hợp lệ", { position: "top-right" });
       return;
     }
 
     const tokenIds = (availableTokenIds || []).slice(0, requestedQty);
 
     if (tokenIds.length === 0) {
-      alert("Không tìm thấy tokenId phù hợp để chuyển.");
+      toast.error("Không tìm thấy tokenId phù hợp để chuyển.", {
+        position: "top-right",
+      });
       return;
     }
 
     // FIX: Check if token count matches requested quantity
     if (tokenIds.length < requestedQty) {
-      alert(
-        `Chỉ có ${tokenIds.length} token khả dụng, nhưng bạn yêu cầu ${requestedQty}`
+      toast.error(
+        `Chỉ có ${tokenIds.length} token khả dụng, nhưng bạn yêu cầu ${requestedQty}`,
+        { position: "top-right" }
       );
       return;
     }
@@ -337,7 +343,9 @@ export default function TransferManagement() {
           handleBlockchainTransfer(invoice, distributorAddress, tokenIds);
         } else {
           setButtonAnimating(false);
-          alert("✅ Tạo yêu cầu chuyển giao thành công!");
+          toast.success("Tạo yêu cầu chuyển giao thành công!", {
+            position: "top-right",
+          });
           setShowDialog(false);
           setAvailableTokenIds([]);
           loadData();
@@ -345,9 +353,10 @@ export default function TransferManagement() {
       }
     } catch (error) {
       console.error("Lỗi khi tạo chuyển giao:", error);
-      alert(
-        "❌ Không thể tạo chuyển giao: " +
-          (error.response?.data?.message || error.message)
+      toast.error(
+        "Không thể tạo chuyển giao: " +
+          (error.response?.data?.message || error.message),
+        { position: "top-right" }
       );
       setButtonAnimating(false);
       setShowBlockchainView(false);
@@ -376,9 +385,10 @@ export default function TransferManagement() {
         user?.walletAddress &&
         currentWallet.toLowerCase() !== user.walletAddress.toLowerCase()
       ) {
-        alert(
-          "Ví đang kết nối không khớp với ví của manufacturer.\nVui lòng chuyển sang: " +
-            user.walletAddress
+        toast.error(
+          "Ví đang kết nối không khớp với ví của manufacturer. Vui lòng chuyển sang: " +
+            user.walletAddress,
+          { position: "top-right" }
         );
         throw new Error("Wrong wallet connected");
       }
@@ -417,6 +427,11 @@ export default function TransferManagement() {
       setTransferStatus("completed");
       setButtonDone(true);
       setButtonAnimating(false);
+
+      // Thông báo thành công khi hoàn tất on-chain + lưu DB
+      toast.success("Chuyển giao NFT thành công!", {
+        position: "top-right",
+      });
 
       setTimeout(() => {
         setButtonDone(false);

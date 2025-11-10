@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:9000',
+        target: 'https://drug-be.vercel.app',
         changeOrigin: true,
         secure: false,
       },

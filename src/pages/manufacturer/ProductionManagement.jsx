@@ -4,6 +4,7 @@ import TruckAnimationButton from "../../components/TruckAnimationButton";
 import NFTMintButton from "../../components/NFTMintButton";
 import BlockchainMintingView from "../../components/BlockchainMintingView";
 import TruckLoader from "../../components/TruckLoader";
+import { toast } from "react-hot-toast";
 import {
   getDrugs,
   uploadToIPFS,
@@ -375,7 +376,9 @@ export default function ProductionManagement() {
   const handleUploadToIPFS = async () => {
     // Validate form trước khi submit
     if (!validateForm()) {
-      alert("Vui lòng kiểm tra và sửa các lỗi trong form");
+      toast.error("Vui lòng kiểm tra và sửa các lỗi trong form", {
+        position: "top-right",
+      });
       return;
     }
 
@@ -385,7 +388,7 @@ export default function ProductionManagement() {
       // Parse quantity từ formData
       const quantity = parseInt(formData.quantity);
       if (isNaN(quantity) || quantity <= 0) {
-        alert("Số lượng không hợp lệ");
+        toast.error("Số lượng không hợp lệ", { position: "top-right" });
         setUploadButtonState("idle");
         return;
       }
@@ -438,16 +441,19 @@ export default function ProductionManagement() {
         setTimeout(() => {
           setStep(2);
           setUploadButtonState("idle");
-          alert("Bước 1 thành công: Đã lưu thông tin lên IPFS!");
+          toast.success("Bước 1 thành công: Đã lưu thông tin lên IPFS!", {
+            position: "top-right",
+          });
         }, 4500);
 
         console.log("IPFS data:", ipfsData);
       }
     } catch (error) {
       console.error("Lỗi khi upload IPFS:", error);
-      alert(
-        "❌ Không thể upload lên IPFS: " +
-          (error.response?.data?.message || error.message)
+      toast.error(
+        "Không thể upload lên IPFS: " +
+          (error.response?.data?.message || error.message),
+        { position: "top-right" }
       );
       setUploadButtonState("idle");
     }
@@ -455,7 +461,9 @@ export default function ProductionManagement() {
 
   const checkWalletConnection = async () => {
     if (!isMetaMaskInstalled()) {
-      alert("Vui lòng cài đặt MetaMask để mint NFT!");
+      toast.error("Vui lòng cài đặt MetaMask để mint NFT!", {
+        position: "top-right",
+      });
       return false;
     }
 
@@ -469,7 +477,9 @@ export default function ProductionManagement() {
       return false;
     } catch (error) {
       console.error("Lỗi kết nối ví:", error);
-      alert("❌ Không thể kết nối ví MetaMask: " + error.message);
+      toast.error("Không thể kết nối ví MetaMask: " + error.message, {
+        position: "top-right",
+      });
       return false;
     }
   };
@@ -553,18 +563,20 @@ export default function ProductionManagement() {
     if (processingMint) return;
 
     if (!ipfsData) {
-      alert("Chưa có dữ liệu IPFS");
+      toast.error("Chưa có dữ liệu IPFS", { position: "top-right" });
       return;
     }
 
     if (!formData.drugId || !formData.batchNumber || !formData.quantity) {
-      alert("❌ Thiếu thông tin bắt buộc");
+      toast.error("Thiếu thông tin bắt buộc", { position: "top-right" });
       return;
     }
 
     const quantity = parseInt(formData.quantity);
     if (quantity <= 0 || quantity >= 10000000) {
-      alert("❌ Số lượng không hợp lệ (1-9,999,999)");
+      toast.error("Số lượng không hợp lệ (1-9,999,999)", {
+        position: "top-right",
+      });
       return;
     }
 
@@ -651,7 +663,7 @@ export default function ProductionManagement() {
         errorMsg = error.message;
       }
 
-      alert(errorMsg);
+      toast.error(errorMsg, { position: "top-right" });
       setMintButtonState("idle");
       setStep(2);
     } finally {
