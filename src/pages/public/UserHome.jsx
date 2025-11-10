@@ -220,7 +220,7 @@ export default function UserHome() {
     console.log("QR Code scanned (original):", trimmedText);
 
     const isUrl =
-      /^(https?:\/\/|localhost|http:\/\/localhost|https:\/\/localhost)/i.test(
+      /^(https?:\/\/|drug-be.vercel.app|http:\/\/drug-be.vercel.app|https:\/\/drug-be.vercel.app)/i.test(
         trimmedText
       ) ||
       /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}/.test(
@@ -235,7 +235,7 @@ export default function UserHome() {
           !trimmedText.startsWith("http://") &&
           !trimmedText.startsWith("https://")
         ) {
-          if (trimmedText.startsWith("localhost")) {
+          if (trimmedText.startsWith("drug-be.vercel.app")) {
             urlToNavigate = `http://${trimmedText}`;
           } else {
             urlToNavigate = `http://${trimmedText}`;
