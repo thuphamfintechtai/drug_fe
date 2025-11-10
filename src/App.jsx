@@ -22,6 +22,7 @@ import ManufacturerTransferManagement from './pages/manufacturer/TransferManagem
 import ManufacturerProductionHistory from './pages/manufacturer/ProductionHistory';
 import ManufacturerTransferHistory from './pages/manufacturer/TransferHistory';
 import ManufacturerProfile from './pages/manufacturer/Profile';
+import ManufacturerIPFSStatus from './pages/manufacturer/IPFSStatus';
 import DistributorDashboard from './pages/distributor/Dashboard';
 import DistributorInvoices from './pages/distributor/InvoicesFromManufacturer';
 import DistributorTransferPharmacy from './pages/distributor/TransferToPharmacy';
@@ -34,7 +35,7 @@ import PharmacyDashboard from './pages/pharmacy/Dashboard';
 import PharmacyInvoices from './pages/pharmacy/InvoicesFromDistributor';
 import PharmacyDistributionHistory from './pages/pharmacy/DistributionHistory';
 import PharmacyDrugs from './pages/pharmacy/Drugs';
-import PharmacyNftTracking from './pages/pharmacy/NFTTracking';
+import PharmacyNftTracking from './pages/pharmacy/NftTracking';
 import PharmacyProfile from './pages/pharmacy/Profile';
 import UserHome from './pages/public/UserHome';
 import MetaMaskConnect from './pages/MetaMaskConnect';
@@ -107,6 +108,7 @@ function AppContent() {
         <Route path="/manufacturer/transfer" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerTransferManagement /></ProtectedRoute>} />
         <Route path="/manufacturer/production-history" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerProductionHistory /></ProtectedRoute>} />
         <Route path="/manufacturer/transfer-history" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerTransferHistory /></ProtectedRoute>} />
+        <Route path="/manufacturer/ipfs-status" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerIPFSStatus /></ProtectedRoute>} />
         {/* Trang distribution-confirmation đã được loại bỏ */}
         <Route path="/manufacturer/profile" element={<ProtectedRoute allowedRoles={['pharma_company']}><ManufacturerProfile /></ProtectedRoute>} />
         {/* Distributor Routes */}

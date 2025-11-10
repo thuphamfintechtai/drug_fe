@@ -1,13 +1,23 @@
 import api from '../../utils/api';
 
+// Helper function to handle errors - only log unexpected errors
+const handleError = (error, context) => {
+  const status = error?.response?.status;
+  // Don't log 401 (Unauthorized) or 403 (Forbidden) as they're expected authentication/authorization failures
+  // The API interceptor already handles clearing tokens for these cases
+  if (status !== 401 && status !== 403) {
+    console.error(`Error ${context}:`, error);
+  }
+  throw error;
+};
+
 // Lấy thống kê đăng ký
 export const getRegistrationStats = async () => {
   try {
     const response = await api.get('/admin/registration/statistics');
     return response.data;
   } catch (error) {
-    console.error('Error fetching registration stats:', error);
-    throw error;
+    handleError(error, 'fetching registration stats');
   }
 };
 
@@ -17,8 +27,7 @@ export const getUserStats = async () => {
     const response = await api.get('/users/stats');
     return response.data;
   } catch (error) {
-    console.error('Error fetching user stats:', error);
-    throw error;
+    handleError(error, 'fetching user stats');
   }
 };
 
@@ -28,8 +37,7 @@ export const getDrugStats = async () => {
     const response = await api.get('/admin/drugs/statistics');
     return response.data;
   } catch (error) {
-    console.error('Error fetching drug stats:', error);
-    throw error;
+    handleError(error, 'fetching drug stats');
   }
 };
 
@@ -39,8 +47,7 @@ export const getSystemStats = async () => {
     const response = await api.get('/admin/statistics');
     return response.data;
   } catch (error) {
-    console.error('Error fetching system stats:', error);
-    throw error;
+    handleError(error, 'fetching system stats');
   }
 };
 
@@ -52,8 +59,7 @@ export const getMonthlyTrends = async (months = 6) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error fetching monthly trends:', error);
-    throw error;
+    handleError(error, 'fetching monthly trends');
   }
 };
 
@@ -63,8 +69,7 @@ export const getComplianceStats = async () => {
     const response = await api.get('/statistics/compliance');
     return response.data;
   } catch (error) {
-    console.error('Error fetching compliance stats:', error);
-    throw error;
+    handleError(error, 'fetching compliance stats');
   }
 };
 
@@ -73,8 +78,7 @@ export const getBlockchainStats = async () => {
     const response = await api.get('/statistics/blockchain');
     return response.data;
   } catch (error) {
-    console.error('Error fetching blockchain stats:', error);
-    throw error;
+    handleError(error, 'fetching blockchain stats');
   }
 };
 
@@ -83,8 +87,7 @@ export const getAlertsStats = async () => {
     const response = await api.get('/statistics/alerts');
     return response.data;
   } catch (error) {
-    console.error('Error fetching alerts stats:', error);
-    throw error;
+    handleError(error, 'fetching alerts stats');
   }
 };
 

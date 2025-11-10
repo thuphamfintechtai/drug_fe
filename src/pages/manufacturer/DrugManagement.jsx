@@ -195,7 +195,7 @@ export default function DrugManagement() {
           />
         </svg>
       ),
-      active: false,
+      active: true,
     },
     {
       path: "/manufacturer/drugs",
@@ -296,6 +296,14 @@ export default function DrugManagement() {
         </svg>
       ),
       active: false,
+    },
+    { path: "/manufacturer/ipfs-status", label: "Lịch sử IPFS",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-6l-2 2m0 0l-2-2m2 2l2-2m8 6v-6l-2 2m0 0l-2-2m2 2l2-2"/>
+        </svg>
+      ),
+      active: true,
     },
     {
       path: "/manufacturer/profile",
