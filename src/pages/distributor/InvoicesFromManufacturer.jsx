@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import DashboardLayout from "../../components/DashboardLayout";
 import TruckLoader from "../../components/TruckLoader";
 import {
@@ -311,6 +312,11 @@ export default function InvoicesFromManufacturer() {
       console.error("Lỗi khi tải danh sách đơn hàng:", error);
       setItems([]);
       setLoadingProgress(0);
+      toast.error(
+        "Không thể tải danh sách đơn hàng: " +
+          (error.response?.data?.message || error.message),
+        { position: "top-right", duration: 4000 }
+      );
     } finally {
       setLoading(false);
       setTimeout(() => setLoadingProgress(0), 500);
@@ -470,6 +476,10 @@ export default function InvoicesFromManufacturer() {
 
     // Validate form
     if (!validateConfirmForm()) {
+      toast.error("Vui lòng kiểm tra và sửa các lỗi trong form", {
+        position: "top-right",
+        duration: 4000,
+      });
       return;
     }
 
@@ -552,8 +562,9 @@ export default function InvoicesFromManufacturer() {
       const response = await confirmReceipt(payload);
 
       if (response.data.success) {
-        alert(
-          "Xác nhận nhận hàng thành công!\n\nTrạng thái: Đang chờ Manufacturer xác nhận chuyển quyền sở hữu NFT."
+        toast.success(
+          "Xác nhận nhận hàng thành công! Trạng thái: Đang chờ Manufacturer xác nhận chuyển quyền sở hữu NFT.",
+          { position: "top-right", duration: 5000 }
         );
 
         // FIX: Reset form after successful submission
@@ -622,9 +633,10 @@ export default function InvoicesFromManufacturer() {
       }
     } catch (error) {
       console.error("Lỗi khi xác nhận:", error);
-      alert(
+      toast.error(
         "Không thể xác nhận nhận hàng: " +
-          (error.response?.data?.message || error.message)
+          (error.response?.data?.message || error.message),
+        { position: "top-right", duration: 4000 }
       );
     } finally {
       if (progressIntervalRef.current) {
