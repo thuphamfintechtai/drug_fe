@@ -103,14 +103,33 @@ export default function PublicNFTTracking() {
             <button
               onClick={handleSearch}
               disabled={loading}
-              className="px-8 py-3 rounded-xl !text-white font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 transition"
+              className="px-8 py-3 rounded-xl !text-white font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 transition flex items-center justify-center gap-2"
               style={{ backgroundColor: "#4BADD1" }}
             >
-              {loading ? "⏳ Đang tìm..." : "🔍 Tra cứu"}
+              {loading ? (
+                "Đang tìm..."
+              ) : (
+                <>
+                  <svg
+                    className="w-4 sm:w-5 h-4 sm:h-5 !text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  Tra cứu
+                </>
+              )}
             </button>
           </div>
           <div className="mt-3 text-sm text-slate-600">
-            💡 <strong>Mẹo:</strong> NFT ID thường được in trên bao bì thuốc
+            <strong>Mẹo:</strong> NFT ID thường được in trên bao bì thuốc
             hoặc trong hóa đơn mua hàng
           </div>
         </motion.div>
@@ -128,7 +147,21 @@ export default function PublicNFTTracking() {
             initial="hidden"
             animate="show"
           >
-            <div className="text-6xl mb-4">🔍</div>
+            <div className="flex justify-center mb-4">
+              <svg
+                className="w-16 h-16 sm:w-20 sm:h-20 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
             <h3 className="text-2xl font-bold text-slate-800 mb-2">
               Bắt đầu tra cứu
             </h3>
@@ -144,7 +177,6 @@ export default function PublicNFTTracking() {
             initial="hidden"
             animate="show"
           >
-            <div className="text-6xl mb-4">❌</div>
             <h3 className="text-2xl font-bold text-red-600 mb-2">
               Không tìm thấy NFT
             </h3>
