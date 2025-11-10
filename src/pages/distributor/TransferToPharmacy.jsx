@@ -597,7 +597,7 @@ export default function TransferToPharmacy() {
               });
 
               if (saveResponse.data.success) {
-                console.log("✅ Transaction hash đã được lưu");
+                console.log("Transaction hash đã được lưu");
                 toast.success("Chuyển giao NFT thành công!", {
                   position: "top-right",
                   duration: 5000,
