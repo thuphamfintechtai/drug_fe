@@ -219,26 +219,61 @@ export default function UserHome() {
 
     console.log("QR Code scanned (original):", trimmedText);
 
+    // FIX: Chuyển đổi localhost:9000 sang production URL hoặc extract tokenId từ scanQR endpoint
+    let processedText = trimmedText;
+    
+    // Nếu QR code chứa localhost:9000, thay thế bằng production domain
+    if (trimmedText.includes("localhost:9000")) {
+      const productionDomain = "https://ailusion.io.vn";
+      processedText = trimmedText.replace(
+        /https?:\/\/localhost:9000/g,
+        productionDomain
+      );
+      processedText = processedText.replace(
+        /localhost:9000/g,
+        productionDomain
+      );
+      console.log("Converted localhost:9000 to production URL:", processedText);
+    }
+
+    // Nếu QR code là API endpoint scanQR, extract tokenId và navigate
+    if (processedText.includes("/api/publicRoute/scanQR/") || processedText.includes("/publicRoute/scanQR/")) {
+      const tokenIdMatch = processedText.match(/\/scanQR\/(\d+)/);
+      if (tokenIdMatch && tokenIdMatch[1]) {
+        const tokenId = tokenIdMatch[1];
+        console.log("Extracted tokenId from QR URL:", tokenId);
+        setTokenId(tokenId);
+        setShowQRScanner(false);
+        setIsScanning(false);
+        setShowUploadQR(false);
+        toast.success("Đã quét QR thành công!");
+        setTimeout(() => {
+          navigate(`/track?tokenId=${encodeURIComponent(tokenId)}`);
+        }, 800);
+        return;
+      }
+    }
+
     const isUrl =
-      /^(https?:\/\/|drug-be.vercel.app|http:\/\/drug-be.vercel.app|https:\/\/drug-be.vercel.app)/i.test(
-        trimmedText
+      /^(https?:\/\/|drug-be.vercel.app|ailusion.io.vn|http:\/\/drug-be.vercel.app|https:\/\/drug-be.vercel.app|http:\/\/ailusion.io.vn|https:\/\/ailusion.io.vn)/i.test(
+        processedText
       ) ||
       /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}/.test(
-        trimmedText
+        processedText
       );
 
     if (isUrl) {
       try {
-        let urlToNavigate = trimmedText;
+        let urlToNavigate = processedText;
 
         if (
-          !trimmedText.startsWith("http://") &&
-          !trimmedText.startsWith("https://")
+          !processedText.startsWith("http://") &&
+          !processedText.startsWith("https://")
         ) {
-          if (trimmedText.startsWith("drug-be.vercel.app")) {
-            urlToNavigate = `http://${trimmedText}`;
+          if (processedText.startsWith("drug-be.vercel.app")) {
+            urlToNavigate = `https://${processedText}`;
           } else {
-            urlToNavigate = `http://${trimmedText}`;
+            urlToNavigate = `https://${processedText}`;
           }
         }
 
@@ -252,9 +287,9 @@ export default function UserHome() {
 
         setTimeout(() => {
           const finalUrl =
-            trimmedText.startsWith("http://") ||
-            trimmedText.startsWith("https://")
-              ? trimmedText
+            processedText.startsWith("http://") ||
+            processedText.startsWith("https://")
+              ? processedText
               : url.href;
           console.log("Final redirect URL:", finalUrl);
           window.location.href = finalUrl;
@@ -266,12 +301,12 @@ export default function UserHome() {
         setShowUploadQR(false);
         toast.success("Đã quét QR thành công! Đang chuyển hướng...");
         setTimeout(() => {
-          let urlToRedirect = trimmedText;
+          let urlToRedirect = processedText;
           if (
-            !trimmedText.startsWith("http://") &&
-            !trimmedText.startsWith("https://")
+            !processedText.startsWith("http://") &&
+            !processedText.startsWith("https://")
           ) {
-            urlToRedirect = `http://${trimmedText}`;
+            urlToRedirect = `https://${processedText}`;
           }
           console.log("Direct redirect to:", urlToRedirect);
           window.location.href = urlToRedirect;
@@ -279,13 +314,13 @@ export default function UserHome() {
       }
     } else {
       console.log("QR does not contain URL, treating as tokenId");
-      setTokenId(trimmedText);
+      setTokenId(processedText);
       setShowQRScanner(false);
       setIsScanning(false);
       setShowUploadQR(false);
       toast.success("Đã quét QR thành công!");
       setTimeout(() => {
-        navigate(`/track?tokenId=${encodeURIComponent(trimmedText)}`);
+        navigate(`/track?tokenId=${encodeURIComponent(processedText)}`);
       }, 800);
     }
   };
