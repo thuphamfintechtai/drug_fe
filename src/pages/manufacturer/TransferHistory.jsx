@@ -17,10 +17,17 @@ export default function TransferHistory() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
+  const [allItems, setAllItems] = useState([]); // Store all items for client-side filtering
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
   const [retryingId, setRetryingId] = useState(null);
+  const [expandedItems, setExpandedItems] = useState(new Set());
+  const [searchInput, setSearchInput] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef(null);
+  const retryAbortControllerRef = useRef(null); // FIX: Abort controller for retry
+
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -31,6 +38,11 @@ export default function TransferHistory() {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
+
+  // FIX: Sync searchInput with URL search param on mount/change
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
 
   const navigationItems = [
     {
@@ -175,6 +187,11 @@ export default function TransferHistory() {
     },
   ];
 
+  // Initialize search input from URL params
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
   useEffect(() => {
     loadData();
 
@@ -182,8 +199,75 @@ export default function TransferHistory() {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
     };
-  }, [page, search, status]); // FIX: Removed 'user' - not needed for data loading
+  }, [page, search, status]);
+
+  // Client-side filtering when search changes
+  useEffect(() => {
+    if (search && search.trim()) {
+      const searchTerm = search.toLowerCase().trim();
+      const filtered = allItems.filter((item) => {
+        const distributorName = (
+          item.distributor?.fullName ||
+          item.distributor?.name ||
+          ""
+        ).toLowerCase();
+        const invoiceNumber = (item.invoiceNumber || "").toLowerCase();
+        const batchNumber = (item.production?.batchNumber || "").toLowerCase();
+        const email = (item.distributor?.email || "").toLowerCase();
+
+        return (
+          distributorName.includes(searchTerm) ||
+          invoiceNumber.includes(searchTerm) ||
+          batchNumber.includes(searchTerm) ||
+          email.includes(searchTerm)
+        );
+      });
+      setItems(filtered);
+      // Update pagination to reflect filtered results
+      setPagination((prev) => ({
+        ...prev,
+        total: filtered.length,
+        pages: Math.ceil(filtered.length / 10) || 1,
+      }));
+    } else {
+      setItems(allItems);
+      // Reset pagination to show all items
+      setPagination((prev) => ({
+        ...prev,
+        total: allItems.length,
+        pages: Math.ceil(allItems.length / 10) || 1,
+      }));
+    }
+  }, [search, allItems]);
+
+  // Debounce search input
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Only show searching indicator if input is different from current search
+    if (searchInput !== search) {
+      setIsSearching(true);
+      searchTimeoutRef.current = setTimeout(() => {
+        updateFilter({ search: searchInput, page: 1 });
+        setIsSearching(false);
+      }, 1500);
+    } else {
+      setIsSearching(false);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
 
   // FIX: Simplified loading logic
   const loadData = async () => {
@@ -199,8 +283,9 @@ export default function TransferHistory() {
         setLoadingProgress((prev) => Math.min(prev + 0.02, 0.9));
       }, 50);
 
-      const params = { page, limit: 10 };
-      if (search) params.search = search;
+      const params = { page: 1, limit: 1000 }; // Load all items for client-side filtering
+      // Don't send search to backend - we'll filter client-side
+      // Only send status filter to backend
       if (status) params.status = status;
 
       const response = await getTransferHistory(params);
@@ -220,26 +305,15 @@ export default function TransferHistory() {
           pages: 0,
         };
 
-        const mappedItems = Array.isArray(invoices)
-          ? invoices.map((invoice) => ({
-              ...invoice,
-              distributor: invoice.toDistributor || invoice.distributor,
-              transactionHash: invoice.chainTxHash || invoice.transactionHash,
-              tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
-              amounts: invoice.amounts || invoice.invoice?.amounts || [],
-              invoice: {
-                _id: invoice._id,
-                invoiceNumber: invoice.invoiceNumber,
-                invoiceDate: invoice.invoiceDate,
-                tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
-              },
-            }))
-          : [];
+        // FIX: Simplify mapping with helper function
+        const mappedItems = normalizeInvoices(invoices);
 
-        setItems(mappedItems);
+        setAllItems(mappedItems);
+        // Client-side filtering will be handled by useEffect
         setPagination(paginationData);
       } else {
         setItems([]);
+        setAllItems([]);
       }
 
       setLoadingProgress(1);
@@ -252,6 +326,7 @@ export default function TransferHistory() {
 
       console.error("Lỗi khi tải lịch sử chuyển giao:", error);
       setItems([]);
+      setAllItems([]);
 
       if (error?.response?.status === 401) {
         alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
@@ -262,6 +337,36 @@ export default function TransferHistory() {
       setLoading(false);
       setTimeout(() => setLoadingProgress(0), 500);
     }
+  };
+
+  // FIX: Helper function to normalize invoices
+  const normalizeInvoices = (invoices) => {
+    if (!Array.isArray(invoices)) return [];
+
+    return invoices.map((invoice) => ({
+      ...invoice,
+      distributor: invoice.toDistributor || invoice.distributor,
+      transactionHash: invoice.chainTxHash || invoice.transactionHash,
+      tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
+      amounts: invoice.amounts || invoice.invoice?.amounts || [],
+      invoice: {
+        _id: invoice._id,
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceDate: invoice.invoiceDate,
+        tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
+      },
+    }));
+  };
+
+  // Handle search - only trigger on Enter or button click
+  const handleSearch = () => {
+    updateFilter({ search: searchInput, page: 1 });
+  };
+
+  // Clear search button
+  const handleClearSearch = () => {
+    setSearchInput("");
+    updateFilter({ search: "", page: 1 });
   };
 
   const updateFilter = (next) => {
@@ -295,8 +400,44 @@ export default function TransferHistory() {
     return labels[status] || status;
   };
 
+  const toggleItem = (itemId) => {
+    setExpandedItems((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
   // FIX: Better error handling and validation
+  // FIX: Safe token ID parsing
+  const safeParseTokenId = (id) => {
+    if (!id && id !== 0) return BigInt(0);
+
+    try {
+      const str = String(id).trim();
+      const cleanStr = str.startsWith("0x") ? str.slice(2) : str;
+
+      // Validate hex string
+      if (!/^[0-9a-fA-F]+$/.test(cleanStr)) {
+        console.warn(`Invalid token ID format: ${id}`);
+        return BigInt(0);
+      }
+
+      return BigInt(`0x${cleanStr}`);
+    } catch (e) {
+      console.error(`Error parsing token ID ${id}:`, e);
+      return BigInt(0);
+    }
+  };
+
+  // FIX: Better error handling and validation in retry
   const handleRetry = async (item) => {
+    if (retryingId === item._id) return; // Prevent double-click
+
     if (!item.invoice?._id || !item.distributor?.walletAddress) {
       alert(
         "Thiếu thông tin cần thiết để retry. Vui lòng kiểm tra lại invoice và distributor address."
@@ -304,14 +445,24 @@ export default function TransferHistory() {
       return;
     }
 
-    const tokenIds = item.tokenIds || item.invoice?.tokenIds || [];
-    const amounts = item.amounts || item.invoice?.amounts || [];
+    const tokenIds = (item.tokenIds || item.invoice?.tokenIds || []).filter(
+      (id) => id
+    );
+    const amounts = (item.amounts || item.invoice?.amounts || []).filter(
+      (amt) => amt
+    );
 
     if (tokenIds.length === 0) {
       alert("Không tìm thấy token IDs để chuyển giao.");
       return;
     }
 
+    // FIX: Cancel previous request if exists
+    if (retryAbortControllerRef.current) {
+      retryAbortControllerRef.current.abort();
+    }
+
+    retryAbortControllerRef.current = new AbortController();
     setRetryingId(item._id);
 
     try {
@@ -328,24 +479,37 @@ export default function TransferHistory() {
         return;
       }
 
-      // Transfer on-chain
+      // FIX: Better amount validation
       let onchain;
-      if (amounts?.length > 0 && amounts.length === tokenIds.length) {
-        const normalizedAmounts = amounts.map((amt) => BigInt(amt));
-        const normalizedTokenIds = tokenIds.map((id) =>
-          typeof id === "string" && id.startsWith("0x")
-            ? BigInt(id)
-            : BigInt(id)
+      if (
+        amounts.length === tokenIds.length &&
+        amounts.length > 0 &&
+        amounts.every((amt) => amt)
+      ) {
+        // Batch transfer with amounts
+        const normalizedAmounts = amounts.map((amt) =>
+          BigInt(String(amt).trim())
         );
+        const normalizedTokenIds = tokenIds.map(safeParseTokenId);
+
         onchain = await transferBatchNFTToDistributor(
           normalizedTokenIds,
           normalizedAmounts,
-          item.distributor.walletAddress
+          item.distributor.walletAddress,
+          retryAbortControllerRef.current.signal
         );
       } else {
+        // Single transfer
+        if (amounts.length !== tokenIds.length && amounts.length > 0) {
+          console.warn(
+            `Amount count (${amounts.length}) does not match token count (${tokenIds.length}). Using single transfer.`
+          );
+        }
+
         onchain = await transferNFTToDistributor(
           tokenIds,
-          item.distributor.walletAddress
+          item.distributor.walletAddress,
+          retryAbortControllerRef.current.signal
         );
       }
 
@@ -356,13 +520,20 @@ export default function TransferHistory() {
         tokenIds,
       });
 
-      alert("Đã chuyển NFT on-chain và lưu transaction thành công!");
+      alert("✅ Đã chuyển NFT on-chain và lưu transaction thành công!");
       loadData();
     } catch (error) {
+      // FIX: Handle abort gracefully
+      if (error.name === "AbortError") {
+        console.log("Transfer cancelled by user");
+        return;
+      }
+
       console.error("Lỗi khi retry transfer:", error);
       alert(error?.message || "Giao dịch on-chain thất bại hoặc bị hủy.");
     } finally {
       setRetryingId(null);
+      retryAbortControllerRef.current = null;
     }
   };
 
@@ -410,34 +581,71 @@ export default function TransferHistory() {
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
-                      />
-                    </svg>
+                    {isSearching ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-5 h-5 animate-spin text-cyan-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
+                        />
+                      </svg>
+                    )}
                   </span>
                   <input
-                    value={search}
-                    onChange={(e) =>
-                      updateFilter({ search: e.target.value, page: 1 })
-                    }
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && updateFilter({ search, page: 1 })
-                    }
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        if (searchTimeoutRef.current) {
+                          clearTimeout(searchTimeoutRef.current);
+                        }
+                        updateFilter({ search: searchInput, page: 1 });
+                        setIsSearching(false);
+                      }
+                    }}
                     placeholder="Tìm theo tên nhà phân phối, số lô..."
                     className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                   />
+                  {/* Clear button */}
+                  {searchInput && (
+                    <button
+                      onClick={handleClearSearch}
+                      className="absolute right-16 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      title="Xóa tìm kiếm"
+                    >
+                      ✕
+                    </button>
+                  )}
                   <button
-                    onClick={() => updateFilter({ search, page: 1 })}
+                    onClick={() => {
+                      if (searchTimeoutRef.current) {
+                        clearTimeout(searchTimeoutRef.current);
+                      }
+                      updateFilter({ search: searchInput, page: 1 });
+                      setIsSearching(false);
+                    }}
                     className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary !text-white hover:shadow-lg font-medium transition"
                   >
                     Tìm kiếm
@@ -478,218 +686,275 @@ export default function TransferHistory() {
                 </p>
               </div>
             ) : (
-              items.map((item) => (
-                <div
-                  key={item._id}
-                  className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden hover:shadow-md transition"
-                >
-                  <div className="p-5">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-lg font-semibold text-slate-800">
-                        {item.distributor?.fullName ||
-                          item.distributor?.name ||
-                          "N/A"}
-                      </h3>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                          item.status
-                        )}`}
-                      >
-                        {getStatusLabel(item.status)}
-                      </span>
-                    </div>
-
-                    {/* Summary */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm">
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                        <div className="text-slate-600">
-                          Số hóa đơn:{" "}
-                          <span className="font-mono font-medium text-slate-800">
-                            {item.invoiceNumber || "N/A"}
-                          </span>
-                        </div>
-                        {item.production?.batchNumber && (
-                          <div className="mt-1 text-slate-600">
-                            Số lô:{" "}
-                            <span className="font-mono font-medium text-slate-800">
-                              {item.production.batchNumber}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                        <div className="text-slate-600">
-                          Số lượng:{" "}
-                          <span className="font-semibold text-slate-800">
-                            {item.quantity} NFT
-                          </span>
-                        </div>
-                        <div className="mt-1 text-slate-600">
-                          Ngày tạo:{" "}
-                          <span className="font-medium">
-                            {new Date(item.createdAt).toLocaleString("vi-VN")}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Distributor Panel */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                        <div className="text-xs text-slate-500 mb-1">
-                          Nhà phân phối
-                        </div>
-                        <div className="font-semibold text-slate-800">
-                          {item.distributor?.fullName ||
-                            item.distributor?.name ||
-                            "N/A"}
-                        </div>
-                        {item.distributor?.email && (
-                          <div className="text-xs text-slate-500 mt-1">
-                            {item.distributor.email}
-                          </div>
-                        )}
-                        {item.distributor?.address && (
-                          <div className="text-xs text-slate-500 mt-1">
-                            {item.distributor.address}
-                          </div>
-                        )}
-                      </div>
-                      {item.distributor?.walletAddress && (
-                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                          <div className="text-xs text-slate-500 mb-1">
-                            Wallet Address
-                          </div>
-                          <div className="font-mono text-xs text-slate-800 break-all">
-                            {item.distributor.walletAddress}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {item.transactionHash && (
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
-                        <div className="font-semibold text-slate-800 mb-1">
-                          Transaction Hash (Blockchain)
-                        </div>
-                        <div className="font-mono text-xs text-slate-700 break-all">
-                          {item.transactionHash}
-                        </div>
-                        <a
-                          href={`https://zeroscan.org/tx/${item.transactionHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-slate-600 hover:text-slate-800 underline mt-1 inline-block"
-                        >
-                          Xem trên ZeroScan →
-                        </a>
-                      </div>
-                    )}
-
-                    {/* Retry button */}
-                    {["pending", "sent"].includes(item.status) &&
-                      !item.transactionHash &&
-                      item.distributor?.walletAddress && (
-                        <div className="mt-4 pt-4 border-t border-slate-200">
-                          <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 text-sm text-amber-800 mb-3">
-                            {item.status === "sent"
-                              ? "Distributor đã xác nhận. Vui lòng chuyển quyền sở hữu NFT on-chain."
-                              : "Chưa chuyển NFT on-chain. Vui lòng xác nhận chuyển quyền sở hữu NFT."}
-                          </div>
-                          <button
-                            onClick={() => handleRetry(item)}
-                            disabled={retryingId === item._id}
-                            className="w-full px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] to-[#48cae4] hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all font-semibold"
+              items.map((item) => {
+                const itemId = item._id;
+                const isExpanded = expandedItems.has(itemId);
+                return (
+                  <div
+                    key={itemId}
+                    className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden hover:shadow-md transition"
+                  >
+                    {/* Clickable Header */}
+                    <div
+                      className="p-5 cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => toggleItem(itemId)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div
+                            className={`transform transition-transform duration-300 ${
+                              isExpanded ? "rotate-180" : "rotate-0"
+                            }`}
                           >
-                            {retryingId === item._id
-                              ? "Đang xử lý..."
-                              : item.status === "sent"
-                              ? "Xác nhận chuyển NFT"
-                              : "Thử lại chuyển giao"}
-                          </button>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="w-5 h-5 text-slate-500"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-slate-800">
+                              {item.distributor?.fullName ||
+                                item.distributor?.name ||
+                                "N/A"}
+                            </h3>
+                            <div className="text-sm text-slate-600 mt-1">
+                              Số hóa đơn:{" "}
+                              <span className="font-mono font-medium">
+                                {item.invoiceNumber || "N/A"}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      )}
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            item.status
+                          )}`}
+                        >
+                          {getStatusLabel(item.status)}
+                        </span>
+                      </div>
+                    </div>
 
-                    {/* Status Timeline */}
-                    <div className="mt-4 pt-4 border-t border-slate-200">
-                      <div className="flex items-center gap-2 text-xs">
-                        <div
-                          className={`flex items-center gap-1 ${
-                            ["pending", "sent", "received", "paid"].includes(
-                              item.status
-                            )
-                              ? "text-amber-600"
-                              : "text-slate-400"
-                          }`}
-                        >
-                          <div
-                            className={`w-2 h-2 rounded-full ${
-                              ["pending", "sent", "received", "paid"].includes(
-                                item.status
-                              )
-                                ? "bg-amber-500"
-                                : "bg-slate-300"
-                            }`}
-                          ></div>
-                          <span>Pending</span>
+                    {/* Expandable Content */}
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        isExpanded
+                          ? "max-h-[2000px] opacity-100"
+                          : "max-h-0 opacity-0"
+                      }`}
+                    >
+                      <div className="px-5 pb-5 border-t border-slate-200">
+                        {/* Summary */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm mt-4">
+                          {item.production?.batchNumber && (
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                              <div className="text-slate-600">
+                                Số lô:{" "}
+                                <span className="font-mono font-medium text-slate-800">
+                                  {item.production.batchNumber}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                            <div className="text-slate-600">
+                              Số lượng:{" "}
+                              <span className="font-semibold text-slate-800">
+                                {item.quantity} NFT
+                              </span>
+                            </div>
+                            <div className="mt-1 text-slate-600">
+                              Ngày tạo:{" "}
+                              <span className="font-medium">
+                                {new Date(item.createdAt).toLocaleString(
+                                  "vi-VN"
+                                )}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1 h-px bg-slate-200"></div>
-                        <div
-                          className={`flex items-center gap-1 ${
-                            ["sent", "received", "paid"].includes(item.status)
-                              ? "text-cyan-600"
-                              : "text-slate-400"
-                          }`}
-                        >
-                          <div
-                            className={`w-2 h-2 rounded-full ${
-                              ["sent", "received", "paid"].includes(item.status)
-                                ? "bg-cyan-500"
-                                : "bg-slate-300"
-                            }`}
-                          ></div>
-                          <span>Sent</span>
+
+                        {/* Distributor Panel */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                            <div className="text-xs text-slate-500 mb-1">
+                              Nhà phân phối
+                            </div>
+                            <div className="font-semibold text-slate-800">
+                              {item.distributor?.fullName ||
+                                item.distributor?.name ||
+                                "N/A"}
+                            </div>
+                            {item.distributor?.email && (
+                              <div className="text-xs text-slate-500 mt-1">
+                                {item.distributor.email}
+                              </div>
+                            )}
+                            {item.distributor?.address && (
+                              <div className="text-xs text-slate-500 mt-1">
+                                {item.distributor.address}
+                              </div>
+                            )}
+                          </div>
+                          {item.distributor?.walletAddress && (
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                              <div className="text-xs text-slate-500 mb-1">
+                                Wallet Address
+                              </div>
+                              <div className="font-mono text-xs text-slate-800 break-all">
+                                {item.distributor.walletAddress}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex-1 h-px bg-slate-200"></div>
-                        <div
-                          className={`flex items-center gap-1 ${
-                            ["received", "paid"].includes(item.status)
-                              ? "text-blue-600"
-                              : "text-slate-400"
-                          }`}
-                        >
-                          <div
-                            className={`w-2 h-2 rounded-full ${
-                              ["received", "paid"].includes(item.status)
-                                ? "bg-blue-500"
-                                : "bg-slate-300"
-                            }`}
-                          ></div>
-                          <span>Received</span>
-                        </div>
-                        <div className="flex-1 h-px bg-slate-200"></div>
-                        <div
-                          className={`flex items-center gap-1 ${
-                            item.status === "paid"
-                              ? "text-emerald-600"
-                              : "text-slate-400"
-                          }`}
-                        >
-                          <div
-                            className={`w-2 h-2 rounded-full ${
-                              item.status === "paid"
-                                ? "bg-emerald-500"
-                                : "bg-slate-300"
-                            }`}
-                          ></div>
-                          <span>Paid</span>
+
+                        {item.transactionHash && (
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
+                            <div className="font-semibold text-slate-800 mb-1">
+                              Transaction Hash (Blockchain)
+                            </div>
+                            <div className="font-mono text-xs text-slate-700 break-all">
+                              {item.transactionHash}
+                            </div>
+                            <a
+                              href={`https://zeroscan.org/tx/${item.transactionHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-slate-600 hover:text-slate-800 underline mt-1 inline-block"
+                            >
+                              Xem trên ZeroScan →
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Retry button */}
+                        {["pending", "sent"].includes(item.status) &&
+                          !item.transactionHash &&
+                          item.distributor?.walletAddress && (
+                            <div className="mt-4 pt-4 border-t border-slate-200">
+                              <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 text-sm text-amber-800 mb-3">
+                                {item.status === "sent"
+                                  ? "Distributor đã xác nhận. Vui lòng chuyển quyền sở hữu NFT on-chain."
+                                  : "Chưa chuyển NFT on-chain. Vui lòng xác nhận chuyển quyền sở hữu NFT."}
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRetry(item);
+                                }}
+                                disabled={retryingId === item._id}
+                                className="w-full px-4 py-2.5 rounded-xl !text-white bg-gradient-to-r from-[#00b4d8] to-[#48cae4] hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all font-semibold"
+                              >
+                                {retryingId === item._id
+                                  ? "Đang xử lý..."
+                                  : item.status === "sent"
+                                  ? "Xác nhận chuyển NFT"
+                                  : "Thử lại chuyển giao"}
+                              </button>
+                            </div>
+                          )}
+
+                        {/* Status Timeline */}
+                        <div className="mt-4 pt-4 border-t border-slate-200">
+                          <div className="flex items-center gap-2 text-xs">
+                            <div
+                              className={`flex items-center gap-1 ${
+                                [
+                                  "pending",
+                                  "sent",
+                                  "received",
+                                  "paid",
+                                ].includes(item.status)
+                                  ? "text-amber-600"
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  [
+                                    "pending",
+                                    "sent",
+                                    "received",
+                                    "paid",
+                                  ].includes(item.status)
+                                    ? "bg-amber-500"
+                                    : "bg-slate-300"
+                                }`}
+                              ></div>
+                              <span>Pending</span>
+                            </div>
+                            <div className="flex-1 h-px bg-slate-200"></div>
+                            <div
+                              className={`flex items-center gap-1 ${
+                                ["sent", "received", "paid"].includes(
+                                  item.status
+                                )
+                                  ? "text-cyan-600"
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  ["sent", "received", "paid"].includes(
+                                    item.status
+                                  )
+                                    ? "bg-cyan-500"
+                                    : "bg-slate-300"
+                                }`}
+                              ></div>
+                              <span>Sent</span>
+                            </div>
+                            <div className="flex-1 h-px bg-slate-200"></div>
+                            <div
+                              className={`flex items-center gap-1 ${
+                                ["received", "paid"].includes(item.status)
+                                  ? "text-blue-600"
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  ["received", "paid"].includes(item.status)
+                                    ? "bg-blue-500"
+                                    : "bg-slate-300"
+                                }`}
+                              ></div>
+                              <span>Received</span>
+                            </div>
+                            <div className="flex-1 h-px bg-slate-200"></div>
+                            <div
+                              className={`flex items-center gap-1 ${
+                                item.status === "paid"
+                                  ? "text-emerald-600"
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  item.status === "paid"
+                                    ? "bg-emerald-500"
+                                    : "bg-slate-300"
+                                }`}
+                              ></div>
+                              <span>Paid</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 

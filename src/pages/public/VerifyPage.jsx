@@ -1,15 +1,15 @@
 // src/pages/VerifyPage.jsx
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
 // --- HÀM HELPER ---
 
 // 1. Giải mã Base64URL (an toàn cho trình duyệt)
 function decodeBase64Url(base64Url) {
   try {
-    let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    let base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
     while (base64.length % 4) {
-      base64 += '=';
+      base64 += "=";
     }
     const binaryString = atob(base64);
     const bytes = new Uint8Array(binaryString.length);
@@ -19,46 +19,44 @@ function decodeBase64Url(base64Url) {
     const decodedString = new TextDecoder().decode(bytes);
     return decodedString;
   } catch (error) {
-    console.error('Lỗi giải mã Base64URL:', error);
-    throw new Error('Dữ liệu Base64URL không hợp lệ');
+    console.error("Lỗi giải mã Base64URL:", error);
+    throw new Error("Dữ liệu Base64URL không hợp lệ");
   }
 }
 
 // 2. Format ngày giờ
 function formatDate(isoString) {
-  if (!isoString) return 'N/A';
-  return new Date(isoString).toLocaleString('vi-VN');
+  if (!isoString) return "N/A";
+  return new Date(isoString).toLocaleString("vi-VN");
 }
 
 // 3. Icon cho từng giai đoạn
-function getStageIcon(stage = '') {
+function getStageIcon(stage = "") {
   const value = String(stage).toLowerCase();
-  if (value.includes('manufacturing')) return '🏭';
-  if (value.includes('distributor')) return '🚚';
-  if (value.includes('pharmacy')) return '🏥';
-  return '📦';
+  if (value.includes("manufacturing")) return "🏭";
+  if (value.includes("distributor")) return "🚚";
+  if (value.includes("pharmacy")) return "🏥";
+  return "📦";
 }
 
 function StatusBadge({ isVerified }) {
   return (
     <span
       className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium shadow-sm ${
-        isVerified
-          ? 'bg-[#66b9d8] text-white'
-          : 'bg-[#ff7a59] text-white'
+        isVerified ? "bg-[#66b9d8] !text-white" : "bg-[#ff7a59] !text-white"
       }`}
     >
       <span
         className={`inline-block h-2.5 w-2.5 rounded-full ${
-          isVerified ? 'bg-white' : 'bg-white'
+          isVerified ? "bg-white" : "bg-white"
         }`}
       />
-      {isVerified ? 'Đã xác thực' : 'Chưa hoàn tất'}
+      {isVerified ? "Đã xác thực" : "Chưa hoàn tất"}
     </span>
   );
 }
 
-function LabelValue({ label, children, withCopy = false, copyText = '' }) {
+function LabelValue({ label, children, withCopy = false, copyText = "" }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -82,7 +80,7 @@ function LabelValue({ label, children, withCopy = false, copyText = '' }) {
             aria-label="Sao chép"
             title="Sao chép"
           >
-            {copied ? 'Đã chép' : 'Sao chép'}
+            {copied ? "Đã chép" : "Sao chép"}
           </button>
         ) : null}
       </div>
@@ -100,9 +98,9 @@ function VerifyPage() {
   const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
-    const dataParam = searchParams.get('data');
+    const dataParam = searchParams.get("data");
     if (!dataParam) {
-      setError('Không tìm thấy dữ liệu (data) trên URL.');
+      setError("Không tìm thấy dữ liệu (data) trên URL.");
       setLoading(false);
       return;
     }
@@ -112,8 +110,8 @@ function VerifyPage() {
       const parsedData = JSON.parse(decodedJson);
       setData(parsedData);
     } catch (err) {
-      console.error('Lỗi khi xử lý dữ liệu:', err);
-      setError('Dữ liệu xác thực không hợp lệ hoặc bị hỏng.');
+      console.error("Lỗi khi xử lý dữ liệu:", err);
+      setError("Dữ liệu xác thực không hợp lệ hoặc bị hỏng.");
     } finally {
       setLoading(false);
     }
@@ -151,20 +149,25 @@ function VerifyPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 mt-16 to-slate-100">
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         {/* Header */}
-        <div className={`relative overflow-hidden rounded-2xl border ${
-          isVerified ? 'bg-[#66b9d8] border-[#66b9d8]' : 'bg-[#ff7a59] border-[#ff7a59]'
-        } shadow-lg`}
+        <div
+          className={`relative overflow-hidden rounded-2xl border ${
+            isVerified
+              ? "bg-[#66b9d8] border-[#66b9d8]"
+              : "bg-[#ff7a59] border-[#ff7a59]"
+          } shadow-lg`}
         >
-          <div className="p-6 sm:p-8 text-white">
+          <div className="p-6 sm:p-8 !text-white">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                  {isVerified ? 'Xác thực thành công' : 'Đang trong chuỗi cung ứng'}
+                  {isVerified
+                    ? "Xác thực thành công"
+                    : "Đang trong chuỗi cung ứng"}
                 </h1>
                 <p className="opacity-90 mt-1">
                   {isVerified
-                    ? 'Sản phẩm này đã hoàn thành chuỗi cung ứng.'
-                    : 'Sản phẩm này chưa được ghi nhận tại điểm cuối.'}
+                    ? "Sản phẩm này đã hoàn thành chuỗi cung ứng."
+                    : "Sản phẩm này chưa được ghi nhận tại điểm cuối."}
                 </p>
               </div>
               <StatusBadge isVerified={isVerified} />
@@ -180,24 +183,30 @@ function VerifyPage() {
                 Thông tin Sản phẩm (NFT)
               </h2>
               <span className="text-xs px-2 py-1 rounded-md bg-slate-100 text-slate-600">
-                {data.nft?.status ? String(data.nft.status).toUpperCase() : 'N/A'}
+                {data.nft?.status
+                  ? String(data.nft.status).toUpperCase()
+                  : "N/A"}
               </span>
             </div>
             <div className="px-6 py-4 divide-y divide-slate-100">
               <LabelValue label="Tên thuốc">
-                {data.nft?.drug?.tradeName || 'N/A'}
+                {data.nft?.drug?.tradeName || "N/A"}
               </LabelValue>
               <LabelValue label="Số lô">
-                {data.nft?.batchNumber || 'N/A'}
+                {data.nft?.batchNumber || "N/A"}
               </LabelValue>
               <LabelValue label="Số sê-ri">
-                {data.nft?.serialNumber || 'N/A'}
+                {data.nft?.serialNumber || "N/A"}
               </LabelValue>
-              <LabelValue label="Token ID" withCopy copyText={data.nft?.tokenId}>
-                {data.nft?.tokenId || 'N/A'}
+              <LabelValue
+                label="Token ID"
+                withCopy
+                copyText={data.nft?.tokenId}
+              >
+                {data.nft?.tokenId || "N/A"}
               </LabelValue>
               <LabelValue label="Chủ sở hữu">
-                {data.nft?.currentOwner?.fullName || 'N/A'}
+                {data.nft?.currentOwner?.fullName || "N/A"}
               </LabelValue>
               <LabelValue label="Ngày sản xuất">
                 {formatDate(data.nft?.mfgDate)}
@@ -219,24 +228,31 @@ function VerifyPage() {
             </div>
             <div className="px-6 py-6">
               {journey.length === 0 ? (
-                <div className="text-sm text-slate-500">Chưa có dữ liệu hành trình.</div>
+                <div className="text-sm text-slate-500">
+                  Chưa có dữ liệu hành trình.
+                </div>
               ) : (
                 <ol className="relative ml-5 border-s-l border-slate-200">
                   {journey.map((step, index) => {
                     const active = index === journey.length - 1;
-                    const icon = getStageIcon(step?.stage || '');
+                    const icon = getStageIcon(step?.stage || "");
                     return (
                       <li key={index} className="relative pl-6 pb-8 last:pb-0">
-                        <span className={`absolute -left-3 top-0 inline-flex items-center justify-center h-6 w-6 rounded-full ring-2 ${
-                          active ? 'bg-blue-600 text-white ring-blue-100' : 'bg-slate-200 text-slate-700 ring-white'
-                        } shadow`}
+                        <span
+                          className={`absolute -left-3 top-0 inline-flex items-center justify-center h-6 w-6 rounded-full ring-2 ${
+                            active
+                              ? "bg-blue-600 !text-white ring-blue-100"
+                              : "bg-slate-200 text-slate-700 ring-white"
+                          } shadow`}
                         >
-                          <span className="text-[13px] leading-none">{icon}</span>
+                          <span className="text-[13px] leading-none">
+                            {icon}
+                          </span>
                         </span>
                         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-base font-semibold text-slate-800 m-0">
-                              {step?.description || 'Sự kiện' }
+                              {step?.description || "Sự kiện"}
                             </h3>
                             {step?.status ? (
                               <span className="text-[11px] px-2 py-0.5 rounded-md bg-slate-200 text-slate-700 capitalize">
@@ -263,7 +279,8 @@ function VerifyPage() {
         </section>
 
         {/* Blockchain history */}
-        {Array.isArray(data.blockchainHistory) && data.blockchainHistory.length > 0 ? (
+        {Array.isArray(data.blockchainHistory) &&
+        data.blockchainHistory.length > 0 ? (
           <section className="mt-6">
             <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
               <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
@@ -275,13 +292,13 @@ function VerifyPage() {
                   onClick={() => setShowHistory((v) => !v)}
                   className="text-sm px-3 py-1.5 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 active:bg-slate-100"
                 >
-                  {showHistory ? 'Ẩn' : 'Hiện'}
+                  {showHistory ? "Ẩn" : "Hiện"}
                 </button>
               </div>
               {showHistory ? (
                 <div className="px-6 py-6">
-                  <pre className="p-4 text-[13px] text-white bg-slate-800 rounded-md overflow-x-auto">
-{JSON.stringify(data.blockchainHistory, null, 2)}
+                  <pre className="p-4 text-[13px] !text-white bg-slate-800 rounded-md overflow-x-auto">
+                    {JSON.stringify(data.blockchainHistory, null, 2)}
                   </pre>
                 </div>
               ) : null}

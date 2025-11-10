@@ -20,6 +20,13 @@ export default function DrugManagement() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
   const [submitting, setSubmitting] = useState(false); // FIX: Separate state
+  const [showCustomDosageForm, setShowCustomDosageForm] = useState(false);
+  const [showCustomRoute, setShowCustomRoute] = useState(false);
+  const [strengthValue, setStrengthValue] = useState("");
+  const [strengthUnit, setStrengthUnit] = useState("mg");
+  const [packagingVial, setPackagingVial] = useState("");
+  const [packagingPill, setPackagingPill] = useState("");
+  const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
     tradeName: "",
@@ -33,6 +40,140 @@ export default function DrugManagement() {
     warnings: "",
     activeIngredients: [],
   });
+
+  // Danh sách các dạng bào chế phổ biến
+  const dosageFormOptions = [
+    "Viên nén",
+    "Viên nang",
+    "Viên sủi",
+    "Viên bao phim",
+    "Viên nhai",
+    "Viên đặt",
+    "Sirô",
+    "Hỗn dịch",
+    "Dung dịch",
+    "Kem",
+    "Thuốc mỡ",
+    "Gel",
+    "Bột",
+    "Thuốc nhỏ mắt",
+    "Thuốc nhỏ mũi",
+    "Thuốc xịt",
+    "Dạng lỏng",
+    "Dạng bột",
+    "Dạng kem bôi",
+    "Khác",
+  ];
+
+  // Danh sách các đơn vị hàm lượng
+  const strengthUnits = [
+    "mg",
+    "g",
+    "ml",
+    "l",
+    "IU",
+    "mcg",
+    "µg",
+    "%",
+    "mEq",
+    "unit",
+  ];
+
+  // Danh sách các đường dùng phổ biến
+  const routeOptions = [
+    "Uống",
+    "Tiêm",
+    "Tiêm bắp",
+    "Tiêm tĩnh mạch",
+    "Tiêm dưới da",
+    "Bôi ngoài da",
+    "Nhỏ mắt",
+    "Nhỏ mũi",
+    "Nhỏ tai",
+    "Đặt",
+    "Xịt",
+    "Hít",
+    "Ngậm",
+    "Súc miệng",
+    "Thụt",
+    "Khác",
+  ];
+
+  // Hàm để parse strength từ chuỗi (ví dụ: "500mg" -> {value: "500", unit: "mg"})
+  const parseStrength = (strengthStr) => {
+    if (!strengthStr || !strengthStr.trim()) {
+      return { value: "", unit: "mg" };
+    }
+
+    // Tìm đơn vị trong chuỗi
+    for (const unit of strengthUnits) {
+      if (strengthStr.toLowerCase().endsWith(unit.toLowerCase())) {
+        const value = strengthStr
+          .slice(0, -unit.length)
+          .trim()
+          .replace(/[^\d.,]/g, "");
+        return { value, unit };
+      }
+    }
+
+    // Nếu không tìm thấy đơn vị, thử tách số và chữ
+    const match = strengthStr.match(/^([\d.,]+)\s*(.*)$/);
+    if (match) {
+      return {
+        value: match[1].replace(/[^\d.,]/g, ""),
+        unit: match[2].trim() || "mg",
+      };
+    }
+
+    // Nếu chỉ có số, mặc định đơn vị là mg
+    const numMatch = strengthStr.match(/[\d.,]+/);
+    if (numMatch) {
+      return { value: numMatch[0], unit: "mg" };
+    }
+
+    return { value: strengthStr, unit: "mg" };
+  };
+
+  // Hàm để combine value và unit thành chuỗi
+  const combineStrength = (value, unit) => {
+    if (!value || !value.trim()) {
+      return "";
+    }
+    return `${value.trim()}${unit}`;
+  };
+
+  // Hàm để parse packaging từ chuỗi (ví dụ: "Hộp 10 vỉ x 10 viên" -> {vial: "10", pill: "10"})
+  const parsePackaging = (packagingStr) => {
+    if (!packagingStr || !packagingStr.trim()) {
+      return { vial: "", pill: "" };
+    }
+
+    // Tìm số vỉ và số viên
+    const vialMatch = packagingStr.match(/(\d+)\s*vỉ/i);
+    const pillMatch = packagingStr.match(/(\d+)\s*viên/i);
+
+    return {
+      vial: vialMatch ? vialMatch[1] : "",
+      pill: pillMatch ? pillMatch[1] : "",
+    };
+  };
+
+  // Hàm để combine vial và pill thành chuỗi
+  const combinePackaging = (vial, pill) => {
+    if (!vial && !pill) {
+      return "";
+    }
+
+    if (vial && pill) {
+      return `Hộp ${vial} vỉ x ${pill} viên`;
+    } else if (vial) {
+      return `${vial} vỉ`;
+    } else if (pill) {
+      return `${pill} viên`;
+    }
+
+    return "";
+  };
 
   const navigationItems = [
     {
@@ -263,24 +404,48 @@ export default function DrugManagement() {
     setIsEditMode(false);
     setSelectedDrug(null);
     resetForm();
+    setShowCustomDosageForm(false);
+    setShowCustomRoute(false);
+    setErrors({});
     setShowDialog(true);
   };
 
   const handleEdit = (drug) => {
     setIsEditMode(true);
     setSelectedDrug(drug);
+    const dosageForm = drug.dosageForm || "";
+    const strength = drug.strength || "";
+    const packaging = drug.packaging || "";
+
+    // Parse strength thành value và unit
+    const { value, unit } = parseStrength(strength);
+    setStrengthValue(value);
+    setStrengthUnit(unit);
+
+    // Parse packaging thành vial và pill
+    const { vial, pill } = parsePackaging(packaging);
+    setPackagingVial(vial);
+    setPackagingPill(pill);
+
+    const route = drug.route || "";
     setFormData({
       tradeName: drug.tradeName || "",
       genericName: drug.genericName || "",
       atcCode: drug.atcCode || "",
-      dosageForm: drug.dosageForm || "",
-      strength: drug.strength || "",
-      route: drug.route || "",
-      packaging: drug.packaging || "",
+      dosageForm: dosageForm,
+      strength: strength,
+      route: route,
+      packaging: packaging,
       storage: drug.storage || "",
       warnings: drug.warnings || "",
       activeIngredients: drug.activeIngredients || [],
     });
+    // Nếu giá trị không có trong options, hiển thị input field tùy chỉnh
+    setShowCustomDosageForm(
+      dosageForm && !dosageFormOptions.includes(dosageForm)
+    );
+    setShowCustomRoute(route && !routeOptions.includes(route));
+    setErrors({});
     setShowDialog(true);
   };
 
@@ -304,19 +469,77 @@ export default function DrugManagement() {
     }
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Validate Tên thương mại
+    if (!formData.tradeName || !formData.tradeName.trim()) {
+      newErrors.tradeName = "Tên thương mại không được để trống";
+    }
+
+    // Validate Tên hoạt chất
+    if (!formData.genericName || !formData.genericName.trim()) {
+      newErrors.genericName = "Tên hoạt chất không được để trống";
+    }
+
+    // Validate Mã ATC
+    if (!formData.atcCode || !formData.atcCode.trim()) {
+      newErrors.atcCode = "Mã ATC không được để trống";
+    }
+
+    // Validate Dạng bào chế
+    if (!formData.dosageForm || !formData.dosageForm.trim()) {
+      newErrors.dosageForm = "Dạng bào chế không được để trống";
+    }
+
+    // Validate Hàm lượng
+    if (!strengthValue || !strengthValue.trim()) {
+      newErrors.strength = "Hàm lượng không được để trống";
+    }
+
+    // Validate Đường dùng
+    if (!formData.route || !formData.route.trim()) {
+      newErrors.route = "Cách dùng không được để trống";
+    }
+
+    // Validate Bảo quản
+    if (!formData.storage || !formData.storage.trim()) {
+      newErrors.storage = "Bảo quản không được để trống";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async () => {
     if (submitting) return; // Prevent double submission
+
+    // Validate form trước khi submit
+    if (!validateForm()) {
+      alert("Vui lòng điền đầy đủ thông tin bắt buộc");
+      return;
+    }
 
     try {
       setSubmitting(true);
 
+      // Combine strength value và unit trước khi submit
+      const strength = combineStrength(strengthValue, strengthUnit);
+      // Combine packaging vial và pill trước khi submit
+      const packaging = combinePackaging(packagingVial, packagingPill);
+      const submitData = {
+        ...formData,
+        strength: strength,
+        packaging: packaging,
+      };
+
       if (isEditMode && selectedDrug) {
-        const response = await updateDrug(selectedDrug._id, formData);
+        const response = await updateDrug(selectedDrug._id, submitData);
         if (response.data.success) {
           alert("Cập nhật thuốc thành công!");
         }
       } else {
-        const response = await addDrug(formData);
+        const response = await addDrug(submitData);
         if (response.data.success) {
           alert("Tạo thuốc thành công!");
         }
@@ -349,6 +572,11 @@ export default function DrugManagement() {
       warnings: "",
       activeIngredients: [],
     });
+    setStrengthValue("");
+    setStrengthUnit("mg");
+    setPackagingVial("");
+    setPackagingPill("");
+    setErrors({});
   };
 
   return (
@@ -409,16 +637,18 @@ export default function DrugManagement() {
               <input
                 type="text"
                 value={searchAtc}
-                onChange={(e) => setSearchAtc(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchAtc(value);
+                }}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Tìm theo tên thương mại, tên hoạt chất, mã ATC..."
                 className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
               />
 
               <button
-                style={{ color: "white" }}
                 onClick={handleSearch}
-                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-primary hover:bg-secondary text-white font-medium transition"
+                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary !text-white font-medium transition shadow-md hover:shadow-lg"
               >
                 Tìm kiếm
               </button>
@@ -436,8 +666,7 @@ export default function DrugManagement() {
 
             <button
               onClick={handleCreate}
-              style={{ color: "white" }}
-              className="px-4 py-2.5 rounded-full bg-primary hover:bg-secondary font-medium transition"
+              className="px-4 py-2.5 rounded-full bg-secondary !text-white font-medium transition shadow-md hover:shadow-lg"
             >
               Tạo thuốc mới
             </button>
@@ -532,14 +761,14 @@ export default function DrugManagement() {
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => handleEdit(drug)}
-                              className="px-4 py-2 border-2 border-secondary rounded-full font-semibold !text-secondary hover:!text-white hover:bg-secondary transition-all duration-200"
+                              className="px-4 py-2 border-2 border-secondary rounded-full font-semibold !text-white bg-secondary hover:!text-white hover:bg-secondary transition-all duration-200"
                             >
                               Sửa
                             </button>
 
                             <button
                               onClick={() => handleDelete(drug._id)}
-                              className="px-4 py-2 border-2 border-red-500 rounded-full font-semibold !text-red-500 bg-red-50 hover:bg-red-500 hover:!text-white transition-all duration-200"
+                              className="px-4 py-2 border-2 border-red-500 rounded-full font-semibold !text-white bg-red-500 hover:bg-red-600 hover:!text-white transition-all duration-200"
                             >
                               Xóa
                             </button>
@@ -571,9 +800,9 @@ export default function DrugManagement() {
       `}</style>
 
             {/* Header */}
-            <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
+            <div className="bg-gradient-to-r from-primary to-secondary px-8 py-6 rounded-t-3xl flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className="text-2xl font-bold !text-white">
                   {isEditMode ? "Cập nhật thuốc" : "Tạo thuốc mới"}
                 </h2>
                 <p className="text-gray-100 text-sm">
@@ -582,7 +811,7 @@ export default function DrugManagement() {
               </div>
               <button
                 onClick={() => setShowDialog(false)}
-                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition"
+                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition"
               >
                 ✕
               </button>
@@ -591,53 +820,304 @@ export default function DrugManagement() {
             {/* Body */}
             <div className="p-8 space-y-4">
               <div className="grid grid-cols-2 gap-6">
+                {/* Row 1: Tên thương mại, Tên hoạt chất */}
                 <InputField
                   label="Tên thương mại"
                   placeholder="VD: Vitamin A, ..."
                   value={formData.tradeName}
-                  onChange={(v) => setFormData({ ...formData, tradeName: v })}
+                  onChange={(v) => {
+                    setFormData({ ...formData, tradeName: v });
+                    if (errors.tradeName) {
+                      setErrors({ ...errors, tradeName: "" });
+                    }
+                  }}
+                  error={errors.tradeName}
                 />
                 <InputField
                   label="Tên hoạt chất"
                   placeholder="VD: Khoáng chất a, ..."
                   value={formData.genericName}
-                  onChange={(v) => setFormData({ ...formData, genericName: v })}
+                  onChange={(v) => {
+                    setFormData({ ...formData, genericName: v });
+                    if (errors.genericName) {
+                      setErrors({ ...errors, genericName: "" });
+                    }
+                  }}
+                  error={errors.genericName}
                 />
+
+                {/* Row 2: Mã ATC, Hàm lượng */}
                 <InputField
                   label="Mã ATC"
                   placeholder="VD: N1A65E03, ..."
                   value={formData.atcCode}
-                  onChange={(v) => setFormData({ ...formData, atcCode: v })}
+                  onChange={(v) => {
+                    // Chỉ cho phép chữ và số, tự động chuyển sang UPPERCASE
+                    const value = v.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+                    setFormData({ ...formData, atcCode: value });
+                    if (errors.atcCode) {
+                      setErrors({ ...errors, atcCode: "" });
+                    }
+                  }}
+                  error={errors.atcCode}
                 />
-                <InputField
-                  label="Dạng bào chế"
-                  placeholder="VD: Viên nén, ..."
-                  value={formData.dosageForm}
-                  onChange={(v) => setFormData({ ...formData, dosageForm: v })}
-                />
-                <InputField
-                  label="Hàm lượng"
-                  placeholder="VD: 500mg, ..."
-                  value={formData.strength}
-                  onChange={(v) => setFormData({ ...formData, strength: v })}
-                />
-                <InputField
-                  label="Đường dùng"
-                  placeholder="VD: Uống, ..."
-                  value={formData.route}
-                  onChange={(v) => setFormData({ ...formData, route: v })}
-                />
-                <InputField
-                  label="Quy cách đóng gói"
-                  placeholder="VD: Hộp 10 vỉ x 10 viên, ..."
-                  value={formData.packaging}
-                  onChange={(v) => setFormData({ ...formData, packaging: v })}
-                />
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Hàm lượng
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={strengthValue}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setStrengthValue(value);
+                          // Tự động update formData.strength khi value thay đổi
+                          const strength = combineStrength(value, strengthUnit);
+                          setFormData({ ...formData, strength: strength });
+                          if (errors.strength) {
+                            setErrors({ ...errors, strength: "" });
+                          }
+                        }}
+                        placeholder="VD: 500"
+                        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                          errors.strength
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <select
+                        value={strengthUnit}
+                        onChange={(e) => {
+                          const unit = e.target.value;
+                          setStrengthUnit(unit);
+                          // Tự động update formData.strength khi unit thay đổi
+                          const strength = combineStrength(strengthValue, unit);
+                          setFormData({ ...formData, strength: strength });
+                        }}
+                        className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150 bg-white"
+                      >
+                        {strengthUnits.map((unit, index) => (
+                          <option key={index} value={unit}>
+                            {unit}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 3: Dạng bào chế, Đường dùng */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Dạng bào chế
+                  </label>
+                  <select
+                    value={
+                      showCustomDosageForm
+                        ? "Khác"
+                        : dosageFormOptions.includes(formData.dosageForm)
+                        ? formData.dosageForm
+                        : ""
+                    }
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "Khác") {
+                        // Khi chọn "Khác", hiển thị input field và set giá trị rỗng nếu chưa có giá trị tùy chỉnh
+                        setShowCustomDosageForm(true);
+                        if (!dosageFormOptions.includes(formData.dosageForm)) {
+                          // Giữ nguyên giá trị tùy chỉnh
+                        } else {
+                          // Set rỗng để người dùng nhập
+                          setFormData({ ...formData, dosageForm: "" });
+                        }
+                      } else if (v) {
+                        // Khi chọn option khác, ẩn input field và set giá trị là option đó
+                        setShowCustomDosageForm(false);
+                        setFormData({ ...formData, dosageForm: v });
+                      } else {
+                        // Khi chọn rỗng
+                        setShowCustomDosageForm(false);
+                        setFormData({ ...formData, dosageForm: "" });
+                      }
+                      if (errors.dosageForm) {
+                        setErrors({ ...errors, dosageForm: "" });
+                      }
+                    }}
+                    className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 bg-white ${
+                      errors.dosageForm
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                    }`}
+                  >
+                    <option value="">Chọn dạng bào chế</option>
+                    {dosageFormOptions.map((option, index) => (
+                      <option key={index} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Cách dùng
+                  </label>
+                  <select
+                    value={
+                      showCustomRoute
+                        ? "Khác"
+                        : routeOptions.includes(formData.route)
+                        ? formData.route
+                        : ""
+                    }
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "Khác") {
+                        // Khi chọn "Khác", hiển thị input field và set giá trị rỗng nếu chưa có giá trị tùy chỉnh
+                        setShowCustomRoute(true);
+                        if (!routeOptions.includes(formData.route)) {
+                          // Giữ nguyên giá trị tùy chỉnh
+                        } else {
+                          // Set rỗng để người dùng nhập
+                          setFormData({ ...formData, route: "" });
+                        }
+                      } else if (v) {
+                        // Khi chọn option khác, ẩn input field và set giá trị là option đó
+                        setShowCustomRoute(false);
+                        setFormData({ ...formData, route: v });
+                      } else {
+                        // Khi chọn rỗng
+                        setShowCustomRoute(false);
+                        setFormData({ ...formData, route: "" });
+                      }
+                      if (errors.route) {
+                        setErrors({ ...errors, route: "" });
+                      }
+                    }}
+                    className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 bg-white ${
+                      errors.route
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                    }`}
+                  >
+                    <option value="">Chọn đường dùng</option>
+                    {routeOptions.map((option, index) => (
+                      <option key={index} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Row 4: Input tùy chỉnh cho Dạng bào chế và Đường dùng - chỉ hiện khi chọn "Khác" */}
+                {(showCustomDosageForm || showCustomRoute) && (
+                  <>
+                    {showCustomDosageForm ? (
+                      <InputField
+                        label="Nhập dạng bào chế"
+                        placeholder="VD: Viên nén bao đường, ..."
+                        value={formData.dosageForm || ""}
+                        onChange={(v) => {
+                          setFormData({ ...formData, dosageForm: v });
+                          if (errors.dosageForm) {
+                            setErrors({ ...errors, dosageForm: "" });
+                          }
+                        }}
+                        error={errors.dosageForm}
+                      />
+                    ) : (
+                      <div></div>
+                    )}
+                    {showCustomRoute ? (
+                      <InputField
+                        label="Nhập đường dùng"
+                        placeholder="VD: Uống với nước, ..."
+                        value={formData.route || ""}
+                        onChange={(v) => {
+                          setFormData({ ...formData, route: v });
+                          if (errors.route) {
+                            setErrors({ ...errors, route: "" });
+                          }
+                        }}
+                        error={errors.route}
+                      />
+                    ) : (
+                      <div></div>
+                    )}
+                  </>
+                )}
+
+                {/* Row 5: Quy cách đóng gói, Bảo quản */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Quy cách đóng gói
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={packagingVial}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setPackagingVial(value);
+                          // Tự động update formData.packaging khi value thay đổi
+                          const packaging = combinePackaging(
+                            value,
+                            packagingPill
+                          );
+                          setFormData({ ...formData, packaging });
+                        }}
+                        placeholder="VD: 10"
+                        className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
+                      />
+                      <div className="text-xs text-gray-500 mt-1">Số vỉ</div>
+                    </div>
+                    <div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={packagingPill}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setPackagingPill(value);
+                          // Tự động update formData.packaging khi value thay đổi
+                          const packaging = combinePackaging(
+                            packagingVial,
+                            value
+                          );
+                          setFormData({ ...formData, packaging });
+                        }}
+                        placeholder="VD: 10"
+                        className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
+                      />
+                      <div className="text-xs text-gray-500 mt-1">Số viên</div>
+                    </div>
+                  </div>
+                  {packagingVial || packagingPill ? (
+                    <div className="text-xs text-cyan-600 mt-2 font-medium">
+                      Kết quả: {combinePackaging(packagingVial, packagingPill)}
+                    </div>
+                  ) : null}
+                </div>
                 <InputField
                   label="Bảo quản"
                   placeholder="VD: Để nơi khô ráo, ..."
                   value={formData.storage}
-                  onChange={(v) => setFormData({ ...formData, storage: v })}
+                  onChange={(v) => {
+                    setFormData({ ...formData, storage: v });
+                    if (errors.storage) {
+                      setErrors({ ...errors, storage: "" });
+                    }
+                  }}
+                  error={errors.storage}
                 />
               </div>
 
@@ -668,10 +1148,9 @@ export default function DrugManagement() {
             {/* Footer */}
             <div className="px-8 py-6 border-t border-gray-300 bg-gray-50 rounded-b-3xl flex justify-end">
               <button
-                style={{ color: "white" }}
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 transition-all duration-200"
+                className="px-6 py-2.5 rounded-full bg-primary !text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 transition-all duration-200"
               >
                 {submitting
                   ? "Đang lưu..."
@@ -687,7 +1166,7 @@ export default function DrugManagement() {
   );
 }
 
-function InputField({ label, placeholder, value, onChange }) {
+function InputField({ label, placeholder, value, onChange, error }) {
   return (
     <div>
       <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -698,8 +1177,34 @@ function InputField({ label, placeholder, value, onChange }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
+        className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+          error
+            ? "border-red-500 focus:ring-red-500"
+            : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+        }`}
       />
+    </div>
+  );
+}
+
+function SelectField({ label, value, onChange, options, placeholder }) {
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 mb-2">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150 bg-white"
+      >
+        <option value="">{placeholder || "Chọn..."}</option>
+        {options.map((option, index) => (
+          <option key={index} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

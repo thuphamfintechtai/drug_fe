@@ -289,7 +289,7 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <aside
         onTransitionEnd={() => setShowLabels(sidebarOpen)}
-        className={`fixed left-0 top-0 h-full z-50 text-white
+        className={`fixed left-0 top-0 h-full z-50 !text-white
         bg-linear-to-b from-[#007b91] to-[#009fbf] shadow-lg
         transition-all duration-200 ease-linear
         ${sidebarOpen ? "w-64" : "w-20"}`}
@@ -361,8 +361,8 @@ export default function DashboardLayout({
                       } gap-3 rounded-md transition-colors duration-150 ease-out
                         ${
                           isActive
-                            ? "bg-white/20 text-white"
-                            : "hover:bg-white/10 text-white/90"
+                            ? "bg-white/20 !text-white"
+                            : "hover:bg-white/10 !text-white/90"
                         }`}
                     >
                       <span className="text-xl shrink-0">{item.icon}</span>
@@ -394,10 +394,10 @@ export default function DashboardLayout({
                 <div className="relative group">
                   <button
                     onClick={handleCopyAddress}
-                    className="flex items-center gap-2 h-10 px-4 rounded-full bg-secondary  text-white hover:from-cyan-600 hover:to-teal-700 transition-colors shadow-sm hover:shadow-md"
+                    className="flex items-center gap-2 h-10 px-4 rounded-full bg-secondary  !text-white hover:from-cyan-600 hover:to-teal-700 transition-colors shadow-sm hover:shadow-md"
                   >
                     <svg
-                      className="w-5 h-5 text-white"
+                      className="w-5 h-5 !text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -409,11 +409,11 @@ export default function DashboardLayout({
                         d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                       />
                     </svg>
-                    <span className="font-medium text-sm text-white">
+                    <span className="font-medium text-sm !text-white">
                       {formatAddress(walletAddress)}
                     </span>
                     {showCopied && (
-                      <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap">
+                      <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 !text-white text-xs rounded whitespace-nowrap">
                         Đã sao chép!
                       </span>
                     )}
@@ -423,12 +423,12 @@ export default function DashboardLayout({
                 <button
                   onClick={handleConnectWallet}
                   disabled={isConnecting}
-                  className="flex items-center gap-2 h-10 px-4 rounded-full bg-linear-to-r from-secondary to-primary text-white hover:from-cyan-600 hover:to-teal-700 transition-colors shadow-sm hover:shadow-md disabled:opacity-50"
+                  className="flex items-center gap-2 h-10 px-4 rounded-full bg-linear-to-r from-secondary to-primary !text-white hover:from-cyan-600 hover:to-teal-700 transition-colors shadow-sm hover:shadow-md disabled:opacity-50"
                 >
                   {isConnecting ? (
                     <>
                       <svg
-                        className="animate-spin h-5 w-5 text-white"
+                        className="animate-spin h-5 w-5 !text-white"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -447,14 +447,14 @@ export default function DashboardLayout({
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      <span className="font-medium text-sm text-white">
+                      <span className="font-medium text-sm !text-white">
                         Đang kết nối...
                       </span>
                     </>
                   ) : (
                     <>
                       <svg
-                        className="w-5 h-5 text-white"
+                        className="w-5 h-5 !text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -466,7 +466,7 @@ export default function DashboardLayout({
                           d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                         />
                       </svg>
-                      <span className="font-medium text-sm text-white">
+                      <span className="font-medium text-sm !text-white">
                         Kết nối ví
                       </span>
                     </>

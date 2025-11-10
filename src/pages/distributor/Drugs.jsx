@@ -358,9 +358,9 @@ export default function Drugs() {
 
               <button
                 onClick={handleSearch}
-                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary text-white font-medium transition"
+                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition"
               >
-                <span className="text-white">Tìm kiếm</span>
+                <span className="!text-white">Tìm kiếm</span>
               </button>
             </div>
 

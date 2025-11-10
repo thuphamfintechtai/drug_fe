@@ -17,10 +17,17 @@ export default function DistributionHistory() {
   });
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
+  // Separate search input state from URL param
+  const [searchInput, setSearchInput] = useState("");
 
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
+
+  // Sync searchInput with URL search param on mount/change
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
 
   const navigationItems = [
     {
@@ -281,6 +288,17 @@ export default function DistributionHistory() {
     }
   };
 
+  // Handle search - only trigger on Enter or button click
+  const handleSearch = () => {
+    updateFilter({ search: searchInput, page: 1 });
+  };
+
+  // Clear search button
+  const handleClearSearch = () => {
+    setSearchInput("");
+    updateFilter({ search: "", page: 1 });
+  };
+
   const updateFilter = (next) => {
     const nextParams = new URLSearchParams(searchParams);
     Object.entries(next).forEach(([k, v]) => {
@@ -358,21 +376,31 @@ export default function DistributionHistory() {
                     </svg>
                   </span>
                   <input
-                    value={search}
-                    onChange={(e) =>
-                      updateFilter({ search: e.target.value, page: 1 })
-                    }
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && updateFilter({ search, page: 1 })
-                    }
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleSearch();
+                      }
+                    }}
                     placeholder="Tìm theo đơn hàng, người gửi..."
-                    className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg_white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+                    className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
                   />
+                  {/* Clear button */}
+                  {searchInput && (
+                    <button
+                      onClick={handleClearSearch}
+                      className="absolute right-24 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      title="Xóa tìm kiếm"
+                    >
+                      ✕
+                    </button>
+                  )}
                   <button
-                    onClick={() => updateFilter({ search, page: 1 })}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary text-white font-medium transition"
+                    onClick={handleSearch}
+                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition"
                   >
-                    <span className="text-white">Tìm kiếm</span>
+                    <span className="!text-white">Tìm kiếm</span>
                   </button>
                 </div>
               </div>
@@ -576,7 +604,7 @@ export default function DistributionHistory() {
                 className={`px-3 py-2 rounded-xl ${
                   page >= pagination.pages
                     ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
+                    : "!text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
                 }`}
               >
                 Sau

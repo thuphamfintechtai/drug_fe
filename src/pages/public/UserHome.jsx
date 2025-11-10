@@ -6,22 +6,160 @@ import {
   BsTruck,
   BsShop,
   BsPersonFill,
+  BsInfoCircle,
 } from "react-icons/bs";
 import { BsCheckCircleFill } from "react-icons/bs";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
+import { useMetaMask } from "../../hooks/useMetaMask";
+import { formatWalletAddress } from "../../utils/walletUtils";
 
 export default function UserHome() {
   const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
+  const {
+    account,
+    isConnected,
+    isInstalled,
+    connect,
+    isConnecting,
+    disconnect,
+    chainId,
+  } = useMetaMask();
   const [tokenId, setTokenId] = useState("");
   const [drugSearch, setDrugSearch] = useState("");
-  const [searchMode, setSearchMode] = useState("nft"); // 'nft' or 'drug'
+  const [searchMode, setSearchMode] = useState("nft");
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [qrError, setQrError] = useState(null);
   const [showUploadQR, setShowUploadQR] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const dropdownRef = useRef(null);
+  const walletModalRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowUserDropdown(false);
+      }
+    };
+
+    if (showUserDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showUserDropdown]);
+
+  useEffect(() => {
+    const handleOpenWalletModal = () => {
+      if (account) {
+        setShowWalletModal(true);
+      }
+    };
+
+    window.addEventListener('openWalletModal', handleOpenWalletModal);
+
+    return () => {
+      window.removeEventListener('openWalletModal', handleOpenWalletModal);
+    };
+  }, [account]);
+
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === "Escape" && showWalletModal) {
+        setShowWalletModal(false);
+      }
+    };
+
+    if (showWalletModal) {
+      document.addEventListener("keydown", handleEscape);
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "unset";
+    };
+  }, [showWalletModal]);
+
+  const handleConnectMetaMask = async () => {
+    if (!isInstalled) {
+      toast.error(
+        "MetaMask chưa được cài đặt. Vui lòng cài đặt MetaMask extension."
+      );
+      window.open("https://metamask.io/download/", "_blank");
+      return;
+    }
+
+    const success = await connect();
+    if (success) {
+      toast.success("Đã kết nối với MetaMask!");
+    } else {
+      toast.error("Không thể kết nối với MetaMask.");
+    }
+  };
+
+  const handleLogout = async () => {
+    if (isConnected) {
+      await disconnect();
+    }
+    await logout();
+    setShowUserDropdown(false);
+    navigate("/");
+    toast.success("Đã đăng xuất thành công!");
+  };
+
+  const formatAddress = (addr) => {
+    if (!addr) return "";
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
+
+  const getNetworkName = (chainId) => {
+    if (!chainId) return "Mạng không xác định";
+    const networkMap = {
+      "0x1": "Ethereum Mainnet",
+      "0x5": "Goerli Testnet",
+      "0xaa36a7": "Sepolia Testnet",
+      "0x38": "BNB Smart Chain",
+      "0x61": "BSC Testnet",
+      "0x89": "Polygon",
+      "0x13881": "Polygon Mumbai",
+      "0x1e240": "PIONE Network",
+    };
+    const chainIdNum = parseInt(chainId, 16);
+    return networkMap[chainId] || `Mạng không xác định #${chainIdNum}`;
+  };
+
+  const handleCopyAddress = () => {
+    if (account) {
+      navigator.clipboard.writeText(account);
+      setCopied(true);
+      toast.success("Đã sao chép địa chỉ ví!");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleDisconnectMetaMask = async () => {
+    await disconnect();
+    setShowWalletModal(false);
+    toast.success(
+      "Đã ngắt kết nối ví MetaMask. Bạn sẽ cần chọn lại tài khoản khi kết nối lại."
+    );
+  };
+
+  const walletAddress = account || user?.walletAddress || "";
+  const displayWalletAddress = walletAddress
+    ? formatWalletAddress(walletAddress, 6, 4)
+    : "";
 
   const handleTrackDrug = () => {
     const trimmedTokenId = tokenId.trim();
@@ -34,9 +172,7 @@ export default function UserHome() {
 
   const handleScanQR = async () => {
     try {
-      // Kiểm tra quyền truy cập camera
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      // Nếu có quyền, đóng stream và mở scanner
       stream.getTracks().forEach((track) => track.stop());
       setShowQRScanner(true);
       setIsScanning(true);
@@ -59,7 +195,6 @@ export default function UserHome() {
   };
 
   const handleQRError = (error) => {
-    // Bỏ qua lỗi không tìm thấy QR (sẽ tiếp tục quét)
     if (
       error &&
       !error.message?.includes("No QR code found") &&
@@ -76,7 +211,6 @@ export default function UserHome() {
       return;
     }
 
-    // Convert to string and trim
     const trimmedText = String(scannedText).trim();
     if (!trimmedText) {
       console.warn("processQRResult: trimmedText is empty");
@@ -85,8 +219,6 @@ export default function UserHome() {
 
     console.log("QR Code scanned (original):", trimmedText);
 
-    // Kiểm tra xem có phải là URL không
-    // URL có thể bắt đầu bằng http://, https://, hoặc localhost
     const isUrl =
       /^(https?:\/\/|localhost|http:\/\/localhost|https:\/\/localhost)/i.test(
         trimmedText
@@ -99,21 +231,17 @@ export default function UserHome() {
       try {
         let urlToNavigate = trimmedText;
 
-        // Nếu URL không có protocol, thêm http://
         if (
           !trimmedText.startsWith("http://") &&
           !trimmedText.startsWith("https://")
         ) {
-          // Nếu bắt đầu bằng localhost, thêm http://
           if (trimmedText.startsWith("localhost")) {
             urlToNavigate = `http://${trimmedText}`;
           } else {
-            // Thử parse để kiểm tra xem có phải domain không
             urlToNavigate = `http://${trimmedText}`;
           }
         }
 
-        // Validate URL
         const url = new URL(urlToNavigate);
         console.log("QR contains URL, redirecting to:", url.href);
 
@@ -122,9 +250,7 @@ export default function UserHome() {
         setShowUploadQR(false);
         toast.success("Đã quét QR thành công! Đang chuyển hướng...");
 
-        // Chuyển hướng đến URL từ QR code (giữ nguyên URL gốc nếu có protocol)
         setTimeout(() => {
-          // Sử dụng URL gốc nếu đã có protocol, nếu không dùng URL đã thêm protocol
           const finalUrl =
             trimmedText.startsWith("http://") ||
             trimmedText.startsWith("https://")
@@ -132,17 +258,14 @@ export default function UserHome() {
               : url.href;
           console.log("Final redirect URL:", finalUrl);
           window.location.href = finalUrl;
-        }, 500);
+        }, 50000);
       } catch (e) {
         console.error("Error parsing URL:", e);
-        // Nếu parse URL thất bại, vẫn thử chuyển hướng với URL gốc
-        console.log("Failed to parse URL, trying direct redirect");
         setShowQRScanner(false);
         setIsScanning(false);
         setShowUploadQR(false);
         toast.success("Đã quét QR thành công! Đang chuyển hướng...");
         setTimeout(() => {
-          // Thử chuyển hướng trực tiếp với URL gốc
           let urlToRedirect = trimmedText;
           if (
             !trimmedText.startsWith("http://") &&
@@ -152,20 +275,18 @@ export default function UserHome() {
           }
           console.log("Direct redirect to:", urlToRedirect);
           window.location.href = urlToRedirect;
-        }, 500);
+        }, 50000);
       }
     } else {
-      // Nếu không phải URL hợp lệ, xử lý như tokenId và điều hướng đến track
       console.log("QR does not contain URL, treating as tokenId");
       setTokenId(trimmedText);
       setShowQRScanner(false);
       setIsScanning(false);
       setShowUploadQR(false);
       toast.success("Đã quét QR thành công!");
-      // Tự động tra cứu sau khi quét
       setTimeout(() => {
         navigate(`/track?tokenId=${encodeURIComponent(trimmedText)}`);
-      }, 500);
+      }, 50000);
     }
   };
 
@@ -175,7 +296,6 @@ export default function UserHome() {
     setQrError(null);
   };
 
-  // Hàm xử lý ảnh để tăng contrast và chuyển sang grayscale
   const enhanceImageForQR = (imageData, options = {}) => {
     const { contrast = 1.5, threshold = 128, useBinary = true } = options;
     const data = imageData.data;
@@ -187,25 +307,21 @@ export default function UserHome() {
     const newDataArray = newData.data;
 
     for (let i = 0; i < newDataArray.length; i += 4) {
-      // Chuyển sang grayscale
       const gray =
         newDataArray[i] * 0.299 +
         newDataArray[i + 1] * 0.587 +
         newDataArray[i + 2] * 0.114;
 
-      // Tăng contrast
       const enhanced = (gray - 128) * contrast + 128;
       let final = Math.max(0, Math.min(255, enhanced));
 
       if (useBinary) {
-        // Áp dụng threshold để tạo ảnh đen trắng rõ ràng
         final = final > threshold ? 255 : 0;
       }
 
-      newDataArray[i] = final; // R
-      newDataArray[i + 1] = final; // G
-      newDataArray[i + 2] = final; // B
-      // newDataArray[i + 3] giữ nguyên alpha
+      newDataArray[i] = final;
+      newDataArray[i + 1] = final;
+      newDataArray[i + 2] = final;
     }
     return newData;
   };
@@ -217,7 +333,6 @@ export default function UserHome() {
       return;
     }
 
-    // Kiểm tra định dạng file
     if (!file.type.startsWith("image/")) {
       toast.error("Vui lòng chọn file ảnh hợp lệ");
       return;
@@ -229,11 +344,9 @@ export default function UserHome() {
     try {
       console.log("Starting QR decode from image:", file.name);
 
-      // Tạo Image element để load ảnh
       const img = new Image();
       const imageUrl = URL.createObjectURL(file);
 
-      // Đợi ảnh load xong
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = reject;
@@ -242,8 +355,6 @@ export default function UserHome() {
 
       console.log("Image loaded, dimensions:", img.width, "x", img.height);
 
-      // Tạo canvas để vẽ ảnh
-      // Giới hạn kích thước tối đa để tăng hiệu suất (max 2000px)
       const maxDimension = 2000;
       let canvasWidth = img.width;
       let canvasHeight = img.height;
@@ -262,16 +373,12 @@ export default function UserHome() {
       canvas.height = canvasHeight;
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-      // Vẽ ảnh với kích thước mới
       ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
 
-      // Lấy ImageData từ canvas
       let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-      // Giải phóng URL
       URL.revokeObjectURL(imageUrl);
 
-      // Tính năng upload ảnh QR tạm thời không khả dụng
       toast.error(
         "Tính năng upload ảnh QR tạm thời không khả dụng. Vui lòng sử dụng chức năng quét camera."
       );
@@ -296,7 +403,6 @@ export default function UserHome() {
       setQrError(errorMessage);
     } finally {
       setUploadingImage(false);
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -305,7 +411,6 @@ export default function UserHome() {
 
   const handleOpenUploadQR = () => {
     setShowUploadQR(true);
-    // Trigger file input click
     setTimeout(() => {
       fileInputRef.current?.click();
     }, 100);
@@ -365,7 +470,7 @@ export default function UserHome() {
 
   const StepCard = ({ step, desc, icon, color, bgColor }) => (
     <motion.div
-      className="flex items-center gap-5 p-6 bg-white rounded-2xl shadow-lg border border-slate-200/50 max-w-md hover:border-[#4BADD1]/50 transition-all relative overflow-hidden group"
+      className="flex items-center gap-4 sm:gap-5 p-4 sm:p-6 bg-white rounded-2xl shadow-lg border border-slate-200/50 max-w-md hover:border-[#4BADD1]/50 transition-all relative overflow-hidden group"
       whileHover={{
         scale: 1.03,
         boxShadow: "0 12px 40px rgba(75, 173, 209, 0.25)",
@@ -380,15 +485,19 @@ export default function UserHome() {
         transition={{ duration: 0.3 }}
       />
       <motion.div
-        className={`flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center ${bgColor} transition-all shadow-md`}
-        whileHover={{ scale: 1.1, rotate: 360 }}
+        className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center ${bgColor} transition-all shadow-md`}
+        whileHover={{ scale: 1.1 }}
         transition={{ duration: 0.5 }}
       >
-        <span className={`text-3xl ${color}`}>{icon}</span>
+        <span className={`text-2xl sm:text-3xl ${color}`}>{icon}</span>
       </motion.div>
-      <div className="flex-1">
-        <h3 className="font-bold text-slate-800 mb-2 text-base">{step}</h3>
-        <p className="text-sm text-slate-600 leading-relaxed">{desc}</p>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-bold text-slate-800 mb-1 sm:mb-2 text-sm sm:text-base">
+          {step}
+        </h3>
+        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+          {desc}
+        </p>
       </div>
     </motion.div>
   );
@@ -413,17 +522,240 @@ export default function UserHome() {
         "Dữ liệu được bảo mật bằng công nghệ blockchain, không thể thay đổi hay giả mạo.",
     },
   ];
-  const stats = [
-    { value: "10,000+", label: "Sản phẩm" },
-    { value: "500+", label: "Doanh nghiệp" },
-    { value: "50,000+", label: "Người dùng" },
-  ];
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section - Banner với nền trắng */}
+      {/* Wallet Modal */}
+      <AnimatePresence mode="wait">
+        {showWalletModal && account && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowWalletModal(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
+            />
+            
+            {/* Modal */}
+            <motion.div
+              ref={walletModalRef}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="fixed inset-0 flex items-center justify-center z-[101] p-4 pointer-events-none"
+            >
+              <div 
+                className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-6 pointer-events-auto border border-gray-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowWalletModal(false)}
+                  className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5 text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+
+                {/* Wallet Info Section */}
+                <div className="flex items-start gap-4">
+                  {/* Profile Icon */}
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 flex items-center justify-center flex-shrink-0">
+                      <svg
+                        className="w-10 h-10 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center border-2 border-white">
+                      <span className="text-xs">🦊</span>
+                    </div>
+                  </div>
+
+                  {/* Address */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <p className="text-base sm:text-lg font-mono text-gray-900 font-semibold break-all">
+                        {formatAddress(account)}
+                      </p>
+                      <button
+                        onClick={handleCopyAddress}
+                        className="p-1.5 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
+                        title="Sao chép"
+                      >
+                        {copied ? (
+                          <svg
+                            className="w-4 h-4 text-green-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="w-4 h-4 text-gray-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-500">MetaMask</p>
+                  </div>
+                </div>
+
+                {/* Chain Information */}
+                <button className="w-full flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors text-sm sm:text-base">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span className="text-sm text-gray-700">
+                      {chainId ? getNetworkName(chainId) : "Mạng không xác định"}
+                    </span>
+                  </div>
+                  <svg
+                    className="w-4 h-4 text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+
+                {/* Menu Items */}
+                <div className="space-y-1">
+                  <button className="w-full flex items-center gap-3 px-3 sm:px-4 py-2 sm:py-3 hover:bg-gray-50 rounded-lg transition-colors text-left text-sm sm:text-base">
+                    <svg
+                      className="w-5 h-5 text-gray-500 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 6h16M4 12h16M4 18h16"
+                      />
+                    </svg>
+                    <span className="text-sm text-gray-700">Giao dịch</span>
+                  </button>
+                  <button className="w-full flex items-center gap-3 px-3 sm:px-4 py-2 sm:py-3 hover:bg-gray-50 rounded-lg transition-colors text-left text-sm sm:text-base">
+                    <svg
+                      className="w-5 h-5 text-gray-500 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
+                    </svg>
+                    <span className="text-sm text-gray-700">Xem tài sản</span>
+                  </button>
+                  <button className="w-full flex items-center gap-3 px-3 sm:px-4 py-2 sm:py-3 hover:bg-gray-50 rounded-lg transition-colors text-left text-sm sm:text-base">
+                    <svg
+                      className="w-5 h-5 text-gray-500 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                      />
+                    </svg>
+                    <span className="text-sm text-gray-700">Quản lý ví</span>
+                  </button>
+                </div>
+
+                {/* Separator */}
+                <div className="border-t border-gray-200"></div>
+
+                {/* Disconnect */}
+                <button
+                  onClick={handleDisconnectMetaMask}
+                  className="w-full flex items-center gap-3 px-3 sm:px-4 py-2 sm:py-3 hover:bg-red-50 rounded-lg transition-colors text-left group text-sm sm:text-base"
+                >
+                  <svg
+                    className="w-5 h-5 text-gray-500 group-hover:text-red-600 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                  <span className="text-sm text-gray-700 group-hover:text-red-600">
+                    Ngắt kết nối ví
+                  </span>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Hero Section */}
       <div className="min-h-screen bg-white relative overflow-hidden">
-        {/* Animated background elements */}
+        {/* Background Effects */}
         <motion.div
           className="absolute top-0 left-0 w-full h-full pointer-events-none"
           initial={{ opacity: 0 }}
@@ -431,7 +763,7 @@ export default function UserHome() {
           transition={{ duration: 1 }}
         >
           <motion.div
-            className="absolute top-20 left-10 w-72 h-72 bg-[#4BADD1]/5 rounded-full blur-3xl"
+            className="absolute top-20 left-10 w-48 sm:w-72 h-48 sm:h-72 bg-[#4BADD1]/5 rounded-full blur-3xl"
             animate={{
               x: [0, 50, 0],
               y: [0, 30, 0],
@@ -444,7 +776,7 @@ export default function UserHome() {
             }}
           />
           <motion.div
-            className="absolute bottom-20 right-10 w-96 h-96 bg-[#4BADD1]/5 rounded-full blur-3xl"
+            className="absolute bottom-20 right-10 w-64 sm:w-96 h-64 sm:h-96 bg-[#4BADD1]/5 rounded-full blur-3xl"
             animate={{
               x: [0, -50, 0],
               y: [0, -30, 0],
@@ -458,16 +790,16 @@ export default function UserHome() {
           />
         </motion.div>
 
-        <section className="pt-32 pb-20 px-4 w-full flex flex-col items-center justify-center relative z-10">
+        <section className="pt-16 sm:pt-24 md:pt-32 pb-12 sm:pb-20 px-4 w-full flex flex-col items-center justify-center relative z-10">
           <div className="max-w-5xl mx-auto w-full">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-center mb-12"
+              className="text-center mb-8 sm:mb-12"
             >
               <motion.h1
-                className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-[#2176FF] mb-6 leading-tight tracking-tight"
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-[#2176FF] mb-4 sm:mb-6 leading-tight tracking-tight"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
@@ -476,14 +808,14 @@ export default function UserHome() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
-                  className="bg-linear-to-r from-[#054f67] font-bold to-[#4298b7] bg-clip-text text-transparent"
+                  className="bg-linear-to-r from-[#054f67] font-bold to-[#4298b7] bg-clip-text text-transparent block"
                 >
                   Hệ Thống Truy Xuất Nguồn Gốc Thuốc
                 </motion.span>
               </motion.h1>
 
               <motion.p
-                className="text-lg md:text-xl text-slate-600 max-w-3xl mx-auto font-medium leading-relaxed"
+                className="text-base sm:text-lg md:text-xl text-slate-600 max-w-3xl mx-auto font-medium leading-relaxed px-2 sm:px-0"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
@@ -515,38 +847,38 @@ export default function UserHome() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="max-w-4xl mx-auto w-full"
+              className="max-w-4xl mx-auto w-full px-2 sm:px-0"
             >
               {/* Tabs */}
-              <div className="flex gap-2 mb-4 justify-center">
+              <div className="flex gap-2 mb-4 justify-center flex-wrap">
                 <button
                   onClick={() => setSearchMode("nft")}
-                  className={`px-6 py-2 rounded-lg font-semibold transition ${
+                  className={`px-3 sm:px-6 py-2 text-xs sm:text-sm md:text-base rounded-lg font-semibold transition whitespace-nowrap ${
                     searchMode === "nft"
                       ? "bg-white border-b-4 border-1 border-[#077CA3] text-[#4BADD1] shadow-md"
-                      : "text-white/80 hover:text-white"
+                      : "!text-white/80 hover:!text-white"
                   }`}
                 >
                   Tra cứu NFT
                 </button>
                 <button
                   onClick={() => setSearchMode("drug")}
-                  className={`px-6 py-2 rounded-lg font-semibold transition ${
+                  className={`px-3 sm:px-6 py-2 text-xs sm:text-sm md:text-base rounded-lg font-semibold transition whitespace-nowrap ${
                     searchMode === "drug"
                       ? "bg-white text-[#4BADD1] shadow-md border-b-4 border-1 border-[#077CA3]"
-                      : "text-white/80 hover:text-white"
+                      : "!text-white/80 hover:!text-white"
                   }`}
                 >
                   Thông tin thuốc
                 </button>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-lg border-b-8 border-1 border-[#077CA3] p-8 ">
+              <div className="bg-white rounded-2xl shadow-lg border-b-8 border-1 border-[#077CA3] p-3 sm:p-4 md:p-6 lg:p-8">
                 {searchMode === "nft" ? (
                   <>
-                    <p className="text-slate-700 mb-5 text-left text-sm font-semibold flex items-center gap-2">
+                    <p className="text-slate-700 mb-3 sm:mb-5 text-left text-xs sm:text-sm font-semibold flex items-center gap-2">
                       <svg
-                        className="w-4 h-4 text-[#054f67]"
+                        className="w-3 sm:w-4 h-3 sm:h-4 text-[#054f67] flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -561,10 +893,10 @@ export default function UserHome() {
                       Nhập mã lô, mã serial hoặc NFT ID
                     </p>
 
-                    <div className="flex gap-3 items-stretch">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch">
                       <div className="flex-1 relative">
                         <svg
-                          className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400"
+                          className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-slate-400"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -584,31 +916,31 @@ export default function UserHome() {
                             e.key === "Enter" && handleTrackDrug()
                           }
                           placeholder="Nhập mã để tra cứu..."
-                          className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4BADD1]/50 focus:border-[#4BADD1] transition text-base placeholder:text-slate-400"
+                          className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 md:py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4BADD1]/50 focus:border-[#4BADD1] transition text-sm sm:text-base placeholder:text-slate-400"
                         />
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-col sm:flex-row">
                         <button
                           onClick={handleScanQR}
-                          className="px-6 py-3.5 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm hover:border-[#54b1d3] active:scale-95"
+                          className="px-3 sm:px-6 py-2.5 sm:py-3 md:py-3.5 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-xs sm:text-sm hover:border-[#54b1d3] active:scale-95 flex-1 sm:flex-none"
                         >
                           <svg
-                            className="w-5 h-5"
+                            className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0"
                             fill="currentColor"
                             viewBox="0 0 24 24"
                           >
                             <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zM14 13h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 2h3v2h-3v-2z" />
                           </svg>
-                          <span className="font-semibold">Quét QR</span>
+                          <span className="font-semibold hidden sm:inline">Quét QR</span>
                         </button>
                         <button
                           onClick={handleOpenUploadQR}
-                          className="px-6 py-3.5 bg-white border-2 border-[#077CA3] text-slate-700 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm hover:border-[#54b1d3] active:scale-95"
+                          className="px-3 sm:px-6 py-2.5 sm:py-3 md:py-3.5 bg-white border-2 border-[#077CA3] text-slate-700 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-xs sm:text-sm hover:border-[#54b1d3] active:scale-95 flex-1 sm:flex-none"
                           title="Tải ảnh QR lên"
                         >
                           <svg
-                            className="w-5 h-5"
+                            className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -620,10 +952,9 @@ export default function UserHome() {
                               d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                             />
                           </svg>
-                          <span className="font-semibold">Upload QR</span>
+                          <span className="font-semibold hidden sm:inline">Upload</span>
                         </button>
                       </div>
-                      {/* Hidden file input */}
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -634,10 +965,10 @@ export default function UserHome() {
 
                       <button
                         onClick={handleTrackDrug}
-                        className="px-6 bg-[#077CA3] py-3.5 font-semibold rounded-xl transition text-sm flex items-center gap-2 hover:opacity-90 active:scale-95"
+                        className="px-3 sm:px-6 py-2.5 sm:py-3 md:py-3.5 bg-[#077CA3] font-semibold rounded-xl transition text-xs sm:text-sm flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 flex-1 sm:flex-none"
                       >
                         <svg
-                          className="w-5 h-5 text-white"
+                          className="w-4 sm:w-5 h-4 sm:h-5 !text-white flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -649,7 +980,7 @@ export default function UserHome() {
                             d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        <span className="font-semibold text-white">
+                        <span className="font-semibold !text-white hidden sm:inline">
                           Xác thực
                         </span>
                       </button>
@@ -657,9 +988,9 @@ export default function UserHome() {
                   </>
                 ) : (
                   <>
-                    <p className="text-slate-700 mb-5 text-left text-sm font-semibold flex items-center gap-2">
+                    <p className="text-slate-700 mb-3 sm:mb-5 text-left text-xs sm:text-sm font-semibold flex items-center gap-2">
                       <svg
-                        className="w-4 h-4 text-[#4BADD1]"
+                        className="w-3 sm:w-4 h-3 sm:h-4 text-[#4BADD1] flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -674,10 +1005,10 @@ export default function UserHome() {
                       Tìm kiếm thông tin thuốc theo tên hoặc mã ATC
                     </p>
 
-                    <div className="flex gap-3 items-stretch">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch">
                       <div className="flex-1 relative">
                         <svg
-                          className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400"
+                          className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-slate-400"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -697,16 +1028,16 @@ export default function UserHome() {
                             e.key === "Enter" && handleSearchDrug()
                           }
                           placeholder="Nhập tên thuốc hoặc mã ATC..."
-                          className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4BADD1]/50 focus:border-[#4BADD1] transition text-base placeholder:text-slate-400"
+                          className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 md:py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4BADD1]/50 focus:border-[#4BADD1] transition text-sm sm:text-base placeholder:text-slate-400"
                         />
                       </div>
 
                       <button
                         onClick={handleSearchDrug}
-                        className="px-6 py-3.5 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl transition-all text-sm flex items-center gap-2 hover:border-[#54b1d3] active:scale-95"
+                        className="px-3 sm:px-6 py-2.5 sm:py-3 md:py-3.5 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl transition-all text-xs sm:text-sm flex items-center justify-center gap-2 hover:border-[#54b1d3] active:scale-95 flex-1 sm:flex-none"
                       >
                         <svg
-                          className="w-5 h-5"
+                          className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -718,7 +1049,7 @@ export default function UserHome() {
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                           />
                         </svg>
-                        <span className="font-semibold">Tìm kiếm</span>
+                        <span className="font-semibold hidden sm:inline">Tìm kiếm</span>
                       </button>
                     </div>
                   </>
@@ -730,17 +1061,17 @@ export default function UserHome() {
       </div>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-linear-to-b from-white to-slate-50/30">
+      <section className="py-12 sm:py-16 md:py-20 px-4 bg-linear-to-b from-white to-slate-50/30">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
           >
             <motion.span
-              className="inline-block px-4 py-1.5 bg-[#4BADD1]/10 text-[#4BADD1] text-sm font-semibold rounded-full mb-4"
+              className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 bg-[#4BADD1]/10 text-[#4BADD1] text-xs sm:text-sm font-semibold rounded-full mb-3 sm:mb-4"
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
@@ -748,16 +1079,16 @@ export default function UserHome() {
             >
               Tính năng nổi bật
             </motion.span>
-            <h2 className="text-4xl md:text-5xl font-extrabold text-primary font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary font-bold mb-3 sm:mb-4 px-2 sm:px-0">
               Tại sao chọn hệ thống của chúng tôi
             </h2>
-            <p className="text-slate-600 text-lg max-w-2xl mx-auto">
+            <p className="text-slate-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2 sm:px-0">
               Giải pháp toàn diện cho việc quản lý và truy xuất nguồn gốc dược
               phẩm
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-8 items-stretch">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7 md:gap-8 items-stretch">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
@@ -766,17 +1097,17 @@ export default function UserHome() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.15 }}
                 whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                className={`rounded-2xl p-8 text-center transition-all duration-300 bg-white shadow-lg border border-slate-200/50 hover:shadow-2xl relative overflow-hidden
+                className={`rounded-2xl p-6 sm:p-8 text-center transition-all duration-300 bg-white shadow-lg border border-slate-200/50 hover:shadow-2xl relative overflow-hidden
                 ${
                   index === 1
-                    ? "border-2 border-[#4BADD1] lg:scale-105 bg-linear-to-br from-white to-[#4BADD1]/5"
+                    ? "border-2 border-[#4BADD1] sm:col-span-2 lg:col-span-1 bg-linear-to-br from-white to-[#4BADD1]/5"
                     : "hover:border-[#4BADD1]/50"
                 }
               `}
               >
                 {index === 1 && (
                   <motion.div
-                    className="absolute top-0 right-0 w-32 h-32 bg-[#4BADD1]/10 rounded-full blur-2xl -mr-16 -mt-16"
+                    className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-[#4BADD1]/10 rounded-full blur-2xl -mr-16 -mt-16"
                     animate={{
                       scale: [1, 1.2, 1],
                       opacity: [0.3, 0.5, 0.3],
@@ -789,7 +1120,7 @@ export default function UserHome() {
                   />
                 )}
                 <div
-                  className={`flex items-center justify-center w-20 h-20 rounded-2xl mx-auto mb-6 relative
+                  className={`flex items-center justify-center w-16 sm:w-20 h-16 sm:h-20 rounded-2xl mx-auto mb-4 sm:mb-6 relative
                 ${
                   index === 1
                     ? "bg-linear-to-br from-[#4BADD1]/20 to-cyan-100/50"
@@ -797,21 +1128,17 @@ export default function UserHome() {
                 }
               `}
                 >
-                  <motion.span
-                    className={`text-4xl font-bold
-                    ${index === 1 ? "font-text-primary " : "font-text-primary"}
-                  `}
-                    whileHover={{ scale: 1.2, rotate: 360 }}
-                    transition={{ duration: 0.5 }}
+                  <span
+                    className={`text-3xl sm:text-4xl font-bold`}
                   >
                     {feature.number}
-                  </motion.span>
+                  </span>
                 </div>
 
-                <h3 className="text-xl font-bold text-slate-900 mb-3">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2 sm:mb-3">
                   {feature.title}
                 </h3>
-                <p className="text-slate-600 text-base leading-relaxed">
+                <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
                   {feature.description}
                 </p>
               </motion.div>
@@ -820,18 +1147,18 @@ export default function UserHome() {
         </div>
       </section>
 
-      {/* Quy trình hoạt động */}
-      <section className="py-20 px-4 bg-white">
+      {/* Process Steps Section */}
+      <section className="py-12 sm:py-16 md:py-20 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
           >
             <motion.span
-              className="inline-block px-4 py-1.5 bg-[#4BADD1]/10 text-[#4BADD1] text-sm font-semibold rounded-full mb-4"
+              className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 bg-[#4BADD1]/10 text-[#4BADD1] text-xs sm:text-sm font-semibold rounded-full mb-3 sm:mb-4"
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
@@ -839,39 +1166,31 @@ export default function UserHome() {
             >
               Quy trình
             </motion.span>
-            <h2 className="text-4xl md:text-5xl font-extrabold font-text-primary  mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold font-text-primary mb-3 sm:mb-4 px-2 sm:px-0">
               Quy trình hoạt động
             </h2>
-            <p className="text-slate-600 text-lg max-w-2xl mx-auto">
+            <p className="text-slate-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2 sm:px-0">
               Từ nhà sản xuất đến người tiêu dùng, mọi bước đều được ghi lại
               minh bạch
             </p>
           </motion.div>
 
           {/* Container cho các bước */}
-          <div className="relative max-w-4xl mx-auto flex flex-col gap-6 md:gap-5">
+          <div className="relative max-w-4xl mx-auto flex flex-col gap-4 sm:gap-5 md:gap-6">
             {processSteps.map((item, index) => {
-              // Logic căn lề:
-              // - start: Luôn bên trái
-              // - mid-start: Trái, nhưng lùi vào 1 chút trên desktop
-              // - mid-end: Phải, lùi vào 1 chút trên desktop (trên mobile là trái)
-              // - end: Luôn bên phải (trên mobile là trái)
-              let alignmentClass = "justify-start"; // Mặc định trên mobile
+              let alignmentClass = "justify-start";
               if (item.align === "start") alignmentClass = "justify-start";
               if (item.align === "mid-start")
-                alignmentClass = "justify-start md:pl-20 lg:pl-32";
+                alignmentClass = "justify-start md:pl-12 lg:pl-20";
               if (item.align === "mid-end")
                 alignmentClass =
-                  "justify-start md:justify-end md:pr-20 lg:pr-32";
+                  "justify-start md:justify-end md:pr-12 lg:pr-20";
               if (item.align === "end")
                 alignmentClass = "justify-start md:justify-end";
 
-              // Xác định hướng animation:
-              // - Trên mobile: tất cả slide từ trái (-50)
-              // - Trên desktop: bước chẵn (0,2) slide từ trái, bước lẻ (1,3) slide từ phải
               const isRightAligned =
                 item.align === "end" || item.align === "mid-end";
-              const animationX = isRightAligned ? 100 : -100; // Tăng khoảng cách để animation rõ ràng hơn
+              const animationX = isRightAligned ? 100 : -100;
 
               return (
                 <motion.div
@@ -896,11 +1215,11 @@ export default function UserHome() {
         </div>
       </section>
 
-      {/* Công nghệ blockchain */}
-      <section className="py-24 px-4 bg-linear-to-b from-white via-slate-50/30 to-white">
+      {/* Blockchain Section */}
+      <section className="py-12 sm:py-16 md:py-24 px-4 bg-linear-to-b from-white via-slate-50/30 to-white">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* Cột Trái - Công nghệ blockchain */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center">
+            {/* Left Column */}
             <motion.div
               className="w-full"
               initial={{ opacity: 0, x: -30 }}
@@ -908,9 +1227,9 @@ export default function UserHome() {
               viewport={{ once: true }}
               transition={{ duration: 0.7, ease: "easeOut" }}
             >
-              <div className="border-2 border-[#4BADD1] rounded-3xl p-8 h-full flex flex-col justify-between bg-linear-to-br from-white to-[#4BADD1]/5 relative overflow-hidden shadow-xl">
+              <div className="border-2 border-[#4BADD1] rounded-3xl p-6 sm:p-8 h-full flex flex-col justify-between bg-linear-to-br from-white to-[#4BADD1]/5 relative overflow-hidden shadow-xl">
                 <motion.div
-                  className="absolute top-0 right-0 w-40 h-40 bg-[#4BADD1]/10 rounded-full blur-3xl -mr-20 -mt-20"
+                  className="absolute top-0 right-0 w-32 sm:w-40 h-32 sm:h-40 bg-[#4BADD1]/10 rounded-full blur-3xl -mr-16 sm:-mr-20 -mt-16 sm:-mt-20"
                   animate={{
                     scale: [1, 1.2, 1],
                     opacity: [0.3, 0.5, 0.3],
@@ -921,49 +1240,53 @@ export default function UserHome() {
                     ease: "easeInOut",
                   }}
                 />
-                <div>
-                  <h2 className="text-3xl font-bold text-slate-900 mb-4">
+                <div className="relative z-10">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">
                     Công nghệ blockchain
                   </h2>
-                  <p className="text-slate-600 leading-relaxed text-base">
+                  <p className="text-slate-600 leading-relaxed text-sm sm:text-base">
                     Mỗi sản phẩm được gắn với một NFT duy nhất trên blockchain,
                     đảm bảo tính xác thực và không thể thay đổi. Mọi giao dịch
                     đều được ghi lại và minh bạch.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-8">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-6 sm:mt-8 relative z-10">
                   <motion.div
-                    className="bg-[#4BADD1]/10 rounded-2xl p-6 text-center border border-[#4BADD1]/20"
+                    className="bg-[#4BADD1]/10 rounded-2xl p-4 sm:p-6 text-center border border-[#4BADD1]/20"
                     whileHover={{
                       scale: 1.05,
                       backgroundColor: "rgba(75, 173, 209, 0.15)",
                     }}
                     transition={{ duration: 0.3 }}
                   >
-                    <h3 className="text-4xl font-extrabold text-[#4BADD1] mb-1">
+                    <h3 className="text-2xl sm:text-4xl font-extrabold text-[#4BADD1] mb-1">
                       100%
                     </h3>
-                    <p className="text-slate-600 font-medium">Minh bạch</p>
+                    <p className="text-slate-600 font-medium text-xs sm:text-sm">
+                      Minh bạch
+                    </p>
                   </motion.div>
                   <motion.div
-                    className="bg-[#4BADD1]/10 rounded-2xl p-6 text-center border border-[#4BADD1]/20"
+                    className="bg-[#4BADD1]/10 rounded-2xl p-4 sm:p-6 text-center border border-[#4BADD1]/20"
                     whileHover={{
                       scale: 1.05,
                       backgroundColor: "rgba(75, 173, 209, 0.15)",
                     }}
                     transition={{ duration: 0.3 }}
                   >
-                    <h3 className="text-4xl font-extrabold text-[#4BADD1] mb-1">
+                    <h3 className="text-2xl sm:text-4xl font-extrabold text-[#4BADD1] mb-1">
                       0
                     </h3>
-                    <p className="text-slate-600 font-medium">Giả mạo</p>
+                    <p className="text-slate-600 font-medium text-xs sm:text-sm">
+                      Giả mạo
+                    </p>
                   </motion.div>
                 </div>
               </div>
             </motion.div>
 
-            {/* Cột Phải - Lợi ích */}
+            {/* Right Column */}
             <motion.div
               className="w-full lg:pl-10"
               initial={{ opacity: 0, x: 30 }}
@@ -971,15 +1294,15 @@ export default function UserHome() {
               viewport={{ once: true }}
               transition={{ duration: 0.7, ease: "easeOut" }}
             >
-              <h2 className="text-4xl font-extrabold text-slate-900 mb-8">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mb-6 sm:mb-8">
                 Lợi ích Của Hệ Thống
               </h2>
 
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3 sm:gap-4">
                 {benefits.map((benefit, index) => (
                   <motion.div
                     key={index}
-                    className="flex items-start gap-4 p-4 rounded-xl bg-slate-50/50 hover:bg-slate-100/50 transition-colors"
+                    className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-slate-50/50 hover:bg-slate-100/50 transition-colors"
                     initial={{ opacity: 0, x: 20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
@@ -996,9 +1319,9 @@ export default function UserHome() {
                       viewport={{ once: true }}
                       transition={{ delay: index * 0.1 + 0.2, type: "spring" }}
                     >
-                      <BsCheckCircleFill className="text-2xl text-[#4BADD1] flex-shrink-0 mt-0.5" />
+                      <BsCheckCircleFill className="text-xl sm:text-2xl text-[#4BADD1] flex-shrink-0 mt-0.5" />
                     </motion.div>
-                    <span className="text-base font-medium text-slate-700 leading-relaxed">
+                    <span className="text-sm sm:text-base font-medium text-slate-700 leading-relaxed">
                       {benefit}
                     </span>
                   </motion.div>
@@ -1010,7 +1333,7 @@ export default function UserHome() {
       </section>
 
       {/* Footer */}
-      <footer className="py-16 px-4 bg-linear-to-b from-slate-800 to-slate-900 text-white relative overflow-hidden">
+      <footer className="py-12 sm:py-16 px-4 bg-linear-to-b from-slate-800 to-slate-900 !text-white relative overflow-hidden">
         <motion.div
           className="absolute top-0 left-0 w-full h-full opacity-10"
           style={{
@@ -1019,18 +1342,18 @@ export default function UserHome() {
           }}
         />
         <div className="max-w-6xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 mb-8 sm:mb-12">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              <h3 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
-                <span className="w-1 h-6 bg-[#4BADD1] rounded-full"></span>
+              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 !text-white flex items-center gap-2">
+                <span className="w-1 h-5 sm:h-6 bg-[#4BADD1] rounded-full"></span>
                 Về chúng tôi
               </h3>
-              <p className="text-slate-300 leading-relaxed">
+              <p className="text-slate-300 leading-relaxed text-sm sm:text-base">
                 Hệ thống truy xuất nguồn gốc thuốc sử dụng công nghệ Blockchain
                 để đảm bảo tính minh bạch và an toàn.
               </p>
@@ -1042,15 +1365,15 @@ export default function UserHome() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <h3 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
-                <span className="w-1 h-6 bg-[#4BADD1] rounded-full"></span>
+              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 !text-white flex items-center gap-2">
+                <span className="w-1 h-5 sm:h-6 bg-[#4BADD1] rounded-full"></span>
                 Liên kết
               </h3>
-              <ul className="space-y-3 text-slate-300">
+              <ul className="space-y-2 sm:space-y-3 text-slate-300">
                 <li>
                   <Link
                     to="/login"
-                    className="hover:text-[#4BADD1] transition flex items-center gap-2 group"
+                    className="text-sm sm:text-base hover:text-[#4BADD1] transition flex items-center gap-2 group"
                   >
                     <span className="w-1.5 h-1.5 bg-slate-400 rounded-full group-hover:bg-[#4BADD1] transition"></span>
                     Đăng nhập
@@ -1059,7 +1382,7 @@ export default function UserHome() {
                 <li>
                   <Link
                     to="/register-business"
-                    className="hover:text-[#4BADD1] transition flex items-center gap-2 group"
+                    className="text-sm sm:text-base hover:text-[#4BADD1] transition flex items-center gap-2 group"
                   >
                     <span className="w-1.5 h-1.5 bg-slate-400 rounded-full group-hover:bg-[#4BADD1] transition"></span>
                     Doanh nghiệp
@@ -1074,14 +1397,14 @@ export default function UserHome() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <h3 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
-                <span className="w-1 h-6 bg-[#4BADD1] rounded-full"></span>
+              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 !text-white flex items-center gap-2">
+                <span className="w-1 h-5 sm:h-6 bg-[#4BADD1] rounded-full"></span>
                 Liên hệ
               </h3>
-              <ul className="space-y-3 text-slate-300">
-                <li className="flex items-center gap-2">
+              <ul className="space-y-2 sm:space-y-3 text-slate-300">
+                <li className="flex items-center gap-2 text-sm sm:text-base">
                   <svg
-                    className="w-5 h-5 text-[#4BADD1]"
+                    className="w-4 sm:w-5 h-4 sm:h-5 text-[#4BADD1] flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1095,9 +1418,9 @@ export default function UserHome() {
                   </svg>
                   info@drugchain.vn
                 </li>
-                <li className="flex items-center gap-2">
+                <li className="flex items-center gap-2 text-sm sm:text-base">
                   <svg
-                    className="w-5 h-5 text-[#4BADD1]"
+                    className="w-4 sm:w-5 h-4 sm:h-5 text-[#4BADD1] flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1111,9 +1434,9 @@ export default function UserHome() {
                   </svg>
                   1900 xxxx
                 </li>
-                <li className="flex items-center gap-2">
+                <li className="flex items-center gap-2 text-sm sm:text-base">
                   <svg
-                    className="w-5 h-5 text-[#4BADD1]"
+                    className="w-4 sm:w-5 h-4 sm:h-5 text-[#4BADD1] flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1137,8 +1460,8 @@ export default function UserHome() {
             </motion.div>
           </div>
 
-          <div className="border-t border-slate-700/50 pt-8 text-center">
-            <p className="text-slate-400">
+          <div className="border-t border-slate-700/50 pt-6 sm:pt-8 text-center">
+            <p className="text-slate-400 text-xs sm:text-sm">
               &copy; 2025 Drug Traceability System. All rights reserved.
             </p>
           </div>
@@ -1152,7 +1475,7 @@ export default function UserHome() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
             onClick={handleCloseQRScanner}
           >
             <motion.div
@@ -1160,20 +1483,25 @@ export default function UserHome() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4"
+              className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-slate-800">
-                  Quét QR Code
-                </h3>
+              <div className="flex flex-col sm:flex-row items-center justify-between mb-4 p-4 sm:p-6 bg-primary rounded-t-2xl gap-3">
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold !text-white">
+                    Quét QR Code
+                  </h3>
+                  <h3 className="text-xs sm:text-sm font-bold !text-white mt-1">
+                    Đưa mã vào khung hình để quét
+                  </h3>
+                </div>
                 <button
                   onClick={handleCloseQRScanner}
-                  className="text-slate-500 hover:text-slate-700 transition"
+                  className="!text-white hover:text-slate-700 transition flex-shrink-0"
                 >
                   <svg
                     className="w-6 h-6"
                     fill="none"
-                    stroke="currentColor"
+                    stroke="white"
                     viewBox="0 0 24 24"
                   >
                     <path
@@ -1187,7 +1515,7 @@ export default function UserHome() {
               </div>
 
               <div
-                className="relative rounded-xl overflow-hidden bg-slate-100"
+                className="relative rounded-xl overflow-hidden bg-slate-100 p-4 sm:p-6"
                 style={{
                   minHeight: "300px",
                   width: "100%",
@@ -1218,7 +1546,7 @@ export default function UserHome() {
                       }}
                     />
                     {qrError && (
-                      <div className="absolute bottom-2 left-2 right-2 bg-red-500/90 text-white text-xs p-2 rounded z-10">
+                      <div className="absolute bottom-2 left-2 right-2 bg-red-500/90 !text-white text-xs p-2 rounded z-10">
                         {qrError}
                       </div>
                     )}
@@ -1229,25 +1557,43 @@ export default function UserHome() {
                       {uploadingImage ? (
                         <>
                           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4BADD1] mx-auto mb-2"></div>
-                          <p>Đang xử lý ảnh QR...</p>
+                          <p className="text-sm sm:text-base">Đang xử lý ảnh QR...</p>
                         </>
                       ) : (
                         <>
                           <div className="text-4xl mb-2">📷</div>
-                          <p>Nhấn "Quét QR" để bắt đầu</p>
+                          <p className="text-sm sm:text-base">Nhấn "Quét QR" để bắt đầu</p>
                         </>
                       )}
                       {qrError && (
-                        <p className="text-red-500 text-sm mt-2">{qrError}</p>
+                        <p className="text-red-500 text-xs sm:text-sm mt-2">{qrError}</p>
                       )}
                     </div>
                   </div>
                 )}
               </div>
-
-              <p className="text-sm text-slate-600 mt-4 text-center">
-                Đưa camera vào mã QR để quét
-              </p>
+              <div className="bg-secondary/20 p-4 sm:p-6 flex items-start gap-2 sm:gap-3">
+                <div className="p-2 bg-third/20 rounded-lg w-fit flex-shrink-0">
+                  <BsInfoCircle className="w-4 sm:w-5 h-4 sm:h-5 text-slate-600" />
+                </div>
+                <div>
+                  <span className="text-base sm:text-lg text-primary font-bold">
+                    Lưu ý khi quét QR
+                  </span>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li className="text-xs sm:text-sm text-slate-700">
+                      Đảm bảo đủ ánh sáng.
+                    </li>
+                    <li className="text-xs sm:text-sm text-slate-700">
+                      Giữ camera ổn định và cách mã QR khoảng 10-20cm.
+                    </li>
+                    <li className="text-xs sm:text-sm text-slate-700">
+                      Đảm bảo mã QR được rõ ràng và không bị mờ hoặc bị che
+                      khuất.
+                    </li>
+                  </ul>
+                </div>
+              </div>
               {qrError && !isScanning && (
                 <p className="text-xs text-red-500 mt-2 text-center">
                   {qrError}

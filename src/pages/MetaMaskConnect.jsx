@@ -22,7 +22,8 @@ export default function MetaMaskConnect() {
         if (accs.length) setAccount(getAddress(accs[0]));
       });
 
-      window.ethereum.request({ method: "eth_chainId" })
+      window.ethereum
+        .request({ method: "eth_chainId" })
         .then((id) => setChainId(id));
 
       const handleAccountsChanged = (accounts) => {
@@ -41,7 +42,10 @@ export default function MetaMaskConnect() {
       window.ethereum.on("chainChanged", handleChainChanged);
 
       return () => {
-        window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+        window.ethereum.removeListener(
+          "accountsChanged",
+          handleAccountsChanged
+        );
         window.ethereum.removeListener("chainChanged", handleChainChanged);
       };
     } else {
@@ -56,7 +60,9 @@ export default function MetaMaskConnect() {
       return;
     }
     try {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
       if (accounts.length) setAccount(getAddress(accounts[0]));
       const cid = await window.ethereum.request({ method: "eth_chainId" });
       setChainId(cid);
@@ -96,8 +102,14 @@ export default function MetaMaskConnect() {
             <span>🦊</span>
             Kết nối MetaMask
           </h3>
-          <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${account ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-            {account ? 'Đã kết nối' : 'Chưa kết nối'}
+          <span
+            className={`px-3 py-1 text-xs font-semibold rounded-full border ${
+              account
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : "bg-amber-50 text-amber-700 border-amber-200"
+            }`}
+          >
+            {account ? "Đã kết nối" : "Chưa kết nối"}
           </span>
         </div>
 
@@ -112,14 +124,18 @@ export default function MetaMaskConnect() {
             <span className="text-gray-600">Tài khoản</span>
             <div className="flex items-center gap-2">
               <span className="font-mono font-semibold text-gray-800">
-                {account ? shortAddress(account) : 'Chưa kết nối'}
+                {account ? shortAddress(account) : "Chưa kết nối"}
               </span>
               {account && (
                 <button
                   onClick={copyAddress}
-                  className={`px-3 py-1.5 text-sm rounded-md border transition ${copied ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                  className={`px-3 py-1.5 text-sm rounded-md border transition ${
+                    copied
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                  }`}
                 >
-                  {copied ? 'Đã sao chép' : 'Sao chép'}
+                  {copied ? "Đã sao chép" : "Sao chép"}
                 </button>
               )}
             </div>
@@ -128,14 +144,20 @@ export default function MetaMaskConnect() {
           <div className="flex items-center justify-between">
             <span className="text-gray-600">Mạng</span>
             <span className="font-medium text-gray-800">
-              {chainId ? `${networkNameMap[chainId] || 'Chain'} (${chainId})` : '—'}
+              {chainId
+                ? `${networkNameMap[chainId] || "Chain"} (${chainId})`
+                : "—"}
             </span>
           </div>
 
           <div className="flex items-center justify-between">
             <span className="text-gray-600">Ví</span>
             <span className="font-medium text-gray-800">
-              {window.ethereum?.isMetaMask ? 'MetaMask' : window.ethereum ? 'Wallet' : 'Không phát hiện ví'}
+              {window.ethereum?.isMetaMask
+                ? "MetaMask"
+                : window.ethereum
+                ? "Wallet"
+                : "Không phát hiện ví"}
             </span>
           </div>
         </div>
@@ -144,7 +166,7 @@ export default function MetaMaskConnect() {
           {!account ? (
             <button
               onClick={connectWallet}
-              className="px-5 py-3 rounded-lg text-white bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 shadow-sm text-base"
+              className="px-5 py-3 rounded-lg !text-white bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 shadow-sm text-base"
             >
               Kết nối ví
             </button>

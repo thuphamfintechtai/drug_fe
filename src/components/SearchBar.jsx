@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-export default function SearchBar({ 
-  placeholder = 'Tìm kiếm...', 
+export default function SearchBar({
+  placeholder = "Tìm kiếm...",
   onSearch,
   value: controlledValue,
-  onChange: controlledOnChange 
+  onChange: controlledOnChange,
 }) {
-  const [internalValue, setInternalValue] = useState('');
-  
+  const [internalValue, setInternalValue] = useState("");
+
   const isControlled = controlledValue !== undefined;
   const value = isControlled ? controlledValue : internalValue;
   const setValue = isControlled ? controlledOnChange : setInternalValue;
@@ -30,11 +30,10 @@ export default function SearchBar({
       />
       <button
         type="submit"
-        className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl hover:shadow-lg transition transform hover:scale-105"
+        className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 !text-white font-semibold rounded-xl hover:shadow-lg transition transform hover:scale-105"
       >
         Tìm kiếm
       </button>
     </form>
   );
 }
-

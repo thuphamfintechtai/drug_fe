@@ -175,11 +175,11 @@ export default function Distributions() {
           <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/30 blur-xl animate-float-slow" />
           <div className="absolute top-8 right-6 w-16 h-8 rounded-full bg-white/25 blur-md rotate-6 animate-float-slower" />
         </div>
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+        <div className="relative px-6 py-8 md:px-10 md:py-12 !text-white">
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">
             Đơn hàng nhận từ Nhà sản xuất
           </h1>
-          <p className="mt-2 text-white/90">
+          <p className="mt-2 !text-white/90">
             Quản lý và xác nhận các đơn hàng nhận từ nhà sản xuất dược phẩm.
           </p>
         </div>

@@ -1,9 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { getProofOfPharmacyById, updatePharmacyDeliveryStatus } from '../../services/distributor/proofOfPharmacyService';
-import { Button, Card, Descriptions, Tag, notification, Spin, Form, Select, Input } from 'antd';
-import DashboardLayout from '../../components/DashboardLayout';
-import { getDistributorNavigationItems } from '../../utils/distributorNavigation';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  getProofOfPharmacyById,
+  updatePharmacyDeliveryStatus,
+} from "../../services/distributor/proofOfPharmacyService";
+import {
+  Button,
+  Card,
+  Descriptions,
+  Tag,
+  notification,
+  Spin,
+  Form,
+  Select,
+  Input,
+} from "antd";
+import DashboardLayout from "../../components/DashboardLayout";
+import { getDistributorNavigationItems } from "../../utils/distributorNavigation";
 
 const { TextArea } = Input;
 
@@ -23,23 +36,20 @@ export default function DeliveryDetail() {
     setLoading(true);
     try {
       const res = await getProofOfPharmacyById(id);
-      const detail =
-        res?.data?.data
-          ? res.data.data
-          : res?.data || null;
+      const detail = res?.data?.data ? res.data.data : res?.data || null;
       if (detail) {
         setData(detail);
         form.setFieldsValue({
-          status: detail.status || 'pending',
-          notes: detail.notes || '',
+          status: detail.status || "pending",
+          notes: detail.notes || "",
         });
       } else {
-        notification.error({ message: 'Không tìm thấy đơn giao hàng' });
+        notification.error({ message: "Không tìm thấy đơn giao hàng" });
         navigate(-1);
       }
     } catch (error) {
-      console.error('Load delivery error:', error);
-      notification.error({ message: 'Không tải được chi tiết đơn giao hàng' });
+      console.error("Load delivery error:", error);
+      notification.error({ message: "Không tải được chi tiết đơn giao hàng" });
       navigate(-1);
     } finally {
       setLoading(false);
@@ -51,11 +61,11 @@ export default function DeliveryDetail() {
     setUpdating(true);
     try {
       await updatePharmacyDeliveryStatus(id, values);
-      notification.success({ message: 'Cập nhật thành công!' });
+      notification.success({ message: "Cập nhật thành công!" });
       load();
     } catch (error) {
-      console.error('Update status error:', error);
-      notification.error({ message: 'Cập nhật thất bại!' });
+      console.error("Update status error:", error);
+      notification.error({ message: "Cập nhật thất bại!" });
     } finally {
       setUpdating(false);
     }
@@ -76,9 +86,9 @@ export default function DeliveryDetail() {
   if (!data) return null;
 
   const statusColor = {
-    confirmed: 'green',
-    pending: 'orange',
-    cancelled: 'red',
+    confirmed: "green",
+    pending: "orange",
+    cancelled: "red",
   };
 
   return (
@@ -90,11 +100,11 @@ export default function DeliveryDetail() {
           <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/30 blur-xl animate-float-slow" />
           <div className="absolute top-8 right-6 w-16 h-8 rounded-full bg-white/25 blur-md rotate-6 animate-float-slower" />
         </div>
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+        <div className="relative px-6 py-8 md:px-10 md:py-12 !text-white">
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">
             Chi tiết đơn giao hàng
           </h1>
-          <p className="mt-2 text-white/90">
+          <p className="mt-2 !text-white/90">
             Thông tin chi tiết về đơn giao hàng đến nhà thuốc.
           </p>
         </div>
@@ -109,17 +119,19 @@ export default function DeliveryDetail() {
           <Descriptions column={{ xs: 1, sm: 2 }}>
             <Descriptions.Item label="Mã đơn">
               <span className="font-mono font-semibold">
-                {data.code || data.verificationCode || 'N/A'}
+                {data.code || data.verificationCode || "N/A"}
               </span>
             </Descriptions.Item>
             <Descriptions.Item label="Mã xác minh">
-              <span className="font-mono">{data.verificationCode || 'N/A'}</span>
+              <span className="font-mono">
+                {data.verificationCode || "N/A"}
+              </span>
             </Descriptions.Item>
             <Descriptions.Item label="Nhà thuốc">
               {data.toPharmacy?.name ||
                 data.toPharmacy?.fullName ||
                 data.pharmacyName ||
-                'N/A'}
+                "N/A"}
             </Descriptions.Item>
             <Descriptions.Item label="Thuốc">
               {data.drug?.name ||
@@ -127,7 +139,7 @@ export default function DeliveryDetail() {
                 data.proofOfDistribution?.drug?.name ||
                 data.proofOfDistribution?.drug?.tradeName ||
                 data.drugName ||
-                'N/A'}
+                "N/A"}
             </Descriptions.Item>
             <Descriptions.Item label="Số lượng">
               <span className="font-medium">
@@ -135,23 +147,23 @@ export default function DeliveryDetail() {
               </span>
             </Descriptions.Item>
             <Descriptions.Item label="Trạng thái">
-              <Tag color={statusColor[data.status] || 'default'}>
-                {data.status === 'confirmed'
-                  ? 'Đã xác nhận'
-                  : data.status === 'pending'
-                  ? 'Chờ xác nhận'
-                  : data.status === 'cancelled'
-                  ? 'Đã hủy'
+              <Tag color={statusColor[data.status] || "default"}>
+                {data.status === "confirmed"
+                  ? "Đã xác nhận"
+                  : data.status === "pending"
+                  ? "Chờ xác nhận"
+                  : data.status === "cancelled"
+                  ? "Đã hủy"
                   : data.status}
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Địa chỉ giao hàng">
-              {data.receiptAddress || data.deliveryAddress || 'N/A'}
+              {data.receiptAddress || data.deliveryAddress || "N/A"}
             </Descriptions.Item>
             <Descriptions.Item label="Ngày tạo">
               {data.createdAt
-                ? new Date(data.createdAt).toLocaleString('vi-VN')
-                : 'N/A'}
+                ? new Date(data.createdAt).toLocaleString("vi-VN")
+                : "N/A"}
             </Descriptions.Item>
           </Descriptions>
         </Card>
@@ -165,7 +177,7 @@ export default function DeliveryDetail() {
             <Form.Item
               name="status"
               label="Trạng thái"
-              rules={[{ required: true, message: 'Vui lòng chọn trạng thái' }]}
+              rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
             >
               <Select>
                 <Select.Option value="pending">Chờ xác nhận</Select.Option>

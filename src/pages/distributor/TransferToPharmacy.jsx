@@ -835,7 +835,7 @@ export default function TransferToPharmacy() {
                 <div className="bg-linear-to-r from-secondary to-primary px-8 py-6 rounded-t-3xl">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h2 className="text-2xl font-bold text-white">
+                      <h2 className="text-2xl font-bold !text-white">
                         Chuyển giao NFT cho Pharmacy
                       </h2>
                       <p className="text-cyan-100 text-sm">
@@ -847,7 +847,7 @@ export default function TransferToPharmacy() {
                         setShowDialog(false);
                         setDialogLoading(false);
                       }}
-                      className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition"
+                      className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition"
                     >
                       ✕
                     </button>

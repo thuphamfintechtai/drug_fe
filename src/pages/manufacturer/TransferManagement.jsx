@@ -280,7 +280,7 @@ export default function TransferManagement() {
     }
   };
 
-  // FIX: Prevent double submission
+  // FIX: Prevent double submission + validate quantity properly
   const handleSubmit = async () => {
     if (buttonAnimating) return; // Already processing
 
@@ -289,19 +289,30 @@ export default function TransferManagement() {
       return;
     }
 
+    const requestedQty = parseInt(formData.quantity);
+
+    // FIX: Proper quantity validation
     if (
-      parseInt(formData.quantity) <= 0 ||
-      parseInt(formData.quantity) > selectedProduction.quantity
+      isNaN(requestedQty) ||
+      requestedQty <= 0 ||
+      requestedQty > selectedProduction.quantity
     ) {
       alert("Số lượng không hợp lệ");
       return;
     }
 
-    const requestedQty = parseInt(formData.quantity);
     const tokenIds = (availableTokenIds || []).slice(0, requestedQty);
 
     if (tokenIds.length === 0) {
       alert("Không tìm thấy tokenId phù hợp để chuyển.");
+      return;
+    }
+
+    // FIX: Check if token count matches requested quantity
+    if (tokenIds.length < requestedQty) {
+      alert(
+        `Chỉ có ${tokenIds.length} token khả dụng, nhưng bạn yêu cầu ${requestedQty}`
+      );
       return;
     }
 
@@ -343,7 +354,7 @@ export default function TransferManagement() {
     }
   };
 
-  // FIX: Cleanup interval properly
+  // FIX: Cleanup interval properly + handle close dialog
   const handleBlockchainTransfer = async (
     invoice,
     distributorAddress,
@@ -414,6 +425,14 @@ export default function TransferManagement() {
         setAvailableTokenIds([]);
         setTransferProgress(0);
         setTransferStatus("minting");
+        // FIX: Reset form data
+        setFormData({
+          productionId: "",
+          distributorId: "",
+          quantity: "",
+          notes: "",
+        });
+        setSelectedProduction(null);
         loadData();
       }, 2000);
     } catch (e) {
@@ -428,6 +447,29 @@ export default function TransferManagement() {
       setTransferProgress(0);
       setButtonAnimating(false);
       setButtonDone(false);
+    }
+  };
+
+  // FIX: Handle close dialog button - cleanup all state
+  const handleCloseDialog = () => {
+    setShowDialog(false);
+    setShowBlockchainView(false);
+    setSelectedProduction(null);
+    setFormData({
+      productionId: "",
+      distributorId: "",
+      quantity: "",
+      notes: "",
+    });
+    setAvailableTokenIds([]);
+    setTransferProgress(0);
+    setTransferStatus("minting");
+    setButtonAnimating(false);
+    setButtonDone(false);
+    // FIX: Clear interval if still running
+    if (transferProgressIntervalRef.current) {
+      clearInterval(transferProgressIntervalRef.current);
+      transferProgressIntervalRef.current = null;
     }
   };
 
@@ -628,7 +670,7 @@ export default function TransferManagement() {
                             className={`px-4 py-2 border-2 rounded-full font-semibold transition-all duration-200 ${
                               prod.transferStatus === "transferred"
                                 ? "border-gray-300 text-gray-400 cursor-not-allowed"
-                                : "border-secondary !text-secondary hover:bg-secondary hover:!text-white hover:shadow-md hover:shadow-secondary/40"
+                                : "border-secondary text-secondary hover:bg-secondary hover:!text-white hover:shadow-md hover:shadow-secondary/40"
                             }`}
                           >
                             {prod.transferStatus === "transferred"
@@ -677,9 +719,9 @@ export default function TransferManagement() {
               .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
             `}</style>
 
-            <div className="bg-linear-to-r from-secondary to-primary px-8 py-6 rounded-t-3xl flex justify-between items-center">
+            <div className="bg-gradient-to-r from-secondary to-primary px-8 py-6 rounded-t-3xl flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className="text-2xl font-bold !text-white">
                   Chuyển giao NFT
                 </h2>
                 <p className="text-cyan-100 text-sm">
@@ -687,8 +729,8 @@ export default function TransferManagement() {
                 </p>
               </div>
               <button
-                onClick={() => setShowDialog(false)}
-                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-xl transition"
+                onClick={handleCloseDialog}
+                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition"
               >
                 ✕
               </button>

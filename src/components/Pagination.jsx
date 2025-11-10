@@ -1,8 +1,4 @@
-export default function Pagination({ 
-  currentPage, 
-  totalPages, 
-  onPageChange 
-}) {
+export default function Pagination({ currentPage, totalPages, onPageChange }) {
   const pages = [];
   const maxVisible = 5;
 
@@ -45,8 +41,8 @@ export default function Pagination({
           onClick={() => onPageChange(page)}
           className={`px-4 py-2 rounded-xl font-semibold transition ${
             page === currentPage
-              ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
-              : 'bg-white border-2 border-slate-200 text-slate-700 hover:bg-slate-50'
+              ? "bg-gradient-to-r from-blue-600 to-cyan-600 !text-white shadow-lg"
+              : "bg-white border-2 border-slate-200 text-slate-700 hover:bg-slate-50"
           }`}
         >
           {page}
@@ -55,7 +51,9 @@ export default function Pagination({
 
       {endPage < totalPages && (
         <>
-          {endPage < totalPages - 1 && <span className="text-slate-400">...</span>}
+          {endPage < totalPages - 1 && (
+            <span className="text-slate-400">...</span>
+          )}
           <button
             onClick={() => onPageChange(totalPages)}
             className="px-4 py-2 bg-white border-2 border-slate-200 rounded-xl font-semibold text-slate-700 hover:bg-slate-50 transition"
@@ -75,4 +73,3 @@ export default function Pagination({
     </div>
   );
 }
-

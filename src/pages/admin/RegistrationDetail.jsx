@@ -144,11 +144,11 @@ export default function AdminRegistrationDetail() {
         transition={{ duration: 0.5 }}
       >
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.25),transparent_55%)]" />
-        <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+        <div className="relative px-6 py-8 md:px-10 md:py-12 !text-white">
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm">
             Chi tiết đơn đăng ký
           </h1>
-          <p className="text-white/90 mt-1">
+          <p className="!text-white/90 mt-1">
             Quản trị phê duyệt – minh bạch, chuẩn y tế.
           </p>
         </div>
@@ -280,7 +280,7 @@ export default function AdminRegistrationDetail() {
                   <button
                     disabled={actionLoading}
                     onClick={handleApprove}
-                    className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow hover:shadow-emerald-200/60 disabled:opacity-60"
+                    className="px-4 py-2.5 rounded-xl !text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow hover:shadow-emerald-200/60 disabled:opacity-60"
                   >
                     Duyệt
                   </button>
@@ -294,7 +294,7 @@ export default function AdminRegistrationDetail() {
                     <button
                       disabled={actionLoading}
                       onClick={handleReject}
-                      className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-rose-500 to-red-600 shadow hover:shadow-rose-200/60 disabled:opacity-60"
+                      className="px-4 py-2.5 rounded-xl !text-white bg-gradient-to-r from-rose-500 to-red-600 shadow hover:shadow-rose-200/60 disabled:opacity-60"
                     >
                       Từ chối
                     </button>
@@ -305,7 +305,7 @@ export default function AdminRegistrationDetail() {
                 <button
                   disabled={actionLoading}
                   onClick={handleRetry}
-                  className="px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] disabled:opacity-60"
+                  className="px-4 py-2.5 rounded-xl !text-white bg-gradient-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)] disabled:opacity-60"
                 >
                   Retry blockchain
                 </button>
