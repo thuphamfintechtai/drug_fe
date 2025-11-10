@@ -35,7 +35,13 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('user');
           }
         } catch (error) {
-          console.error('Auth check failed:', error);
+          // Chỉ log lỗi nếu không phải lỗi authentication thông thường (401/403)
+          // 401/403 là expected khi token không hợp lệ hoặc hết hạn
+          const status = error.response?.status;
+          if (status !== 401 && status !== 403) {
+            console.error('Auth check failed:', error);
+          }
+          // Token đã được xóa bởi API interceptor, chỉ cần clear state
           localStorage.removeItem('token');
           localStorage.removeItem('user');
         }
