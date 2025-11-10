@@ -44,3 +44,4 @@ storybook-static/
 # yarn.lock
 # pnpm-lock.yaml
 .vercel
+.test
