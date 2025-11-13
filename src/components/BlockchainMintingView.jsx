@@ -223,7 +223,7 @@ export default function BlockchainMintingView({
             <h2 className="text-center text-2xl font-extrabold !text-white drop-shadow-sm">
               <span className="inline-flex items-center justify-center rounded-xl bg-linear-to-r from-secondary to-primary px-5 py-2">
                 {status === "minting"
-                  ? "Chuyển giao NFT"
+                  ? "Mint NFT"
                   : "Sản xuất & Mint NFT"}
               </span>
             </h2>
@@ -393,7 +393,7 @@ export default function BlockchainMintingView({
                 <>
                   <h3 className="text-2xl font-extrabold">
                     <span className="bg-linear-to-r from-secondary to-primary bg-[length:200%_100%] bg-clip-text text-transparent [animation:shimmer_2.2s_linear_infinite]">
-                      Đang chuyển giao NFT...
+                      Đang mint NFT...
                     </span>
                   </h3>
                   <motion.p
