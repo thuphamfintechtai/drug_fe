@@ -4,6 +4,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import TruckLoader from "../../components/TruckLoader";
 import TruckAnimationButton from "../../components/TruckAnimationButton";
 import BlockchainTransferView from "../../components/BlockchainTransferView";
+import { Card } from "../../components/ui/card";
 import {
   getDistributionHistory,
   getPharmacies,
@@ -265,7 +266,6 @@ export default function TransferToPharmacy() {
   };
 
   const extractTokenIds = (distributionObj) => {
-    // Ưu tiên 1: manufacturerInvoice.tokenIds
     if (
       distributionObj.manufacturerInvoice?.tokenIds &&
       Array.isArray(distributionObj.manufacturerInvoice.tokenIds)
@@ -275,7 +275,6 @@ export default function TransferToPharmacy() {
       );
     }
 
-    // Ưu tiên 2: invoice.tokenIds
     if (
       distributionObj.invoice?.tokenIds &&
       Array.isArray(distributionObj.invoice.tokenIds)
@@ -283,7 +282,6 @@ export default function TransferToPharmacy() {
       return distributionObj.invoice.tokenIds.map((id) => String(id));
     }
 
-    // Ưu tiên 3: nftInfos
     if (distributionObj.nftInfos && Array.isArray(distributionObj.nftInfos)) {
       const tokenIds = distributionObj.nftInfos
         .map((nft) => {
@@ -294,7 +292,6 @@ export default function TransferToPharmacy() {
       if (tokenIds.length > 0) return tokenIds;
     }
 
-    // Ưu tiên 4: tokenIds trực tiếp
     if (distributionObj.tokenIds && Array.isArray(distributionObj.tokenIds)) {
       return distributionObj.tokenIds.map((id) => String(id));
     }
@@ -468,8 +465,6 @@ export default function TransferToPharmacy() {
         setSubmitLoading(false);
         return;
       }
-
-      console.log("✅ Balance check passed");
     } catch (balanceError) {
       console.error("❌ Lỗi khi kiểm tra balance:", balanceError);
       if (
@@ -644,82 +639,33 @@ export default function TransferToPharmacy() {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 mb-6">
-            <h1 className="text-xl font-semibold text-[#007b91]">
-              Chuyển giao cho nhà thuốc
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Chọn NFT và pharmacy để chuyển quyền sở hữu
-            </p>
-          </div>
-
-          <motion.div
-            className="rounded-2xl bg-white border border-card-primary shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-6 mb-5"
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-          >
-            <h2 className="text-xl font-bold text-[#007b91] mb-4">
-              Quy trình chuyển giao
-            </h2>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  1
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Chọn NFT & Pharmacy
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Chọn lô hàng đã nhận từ manufacturer và nhà thuốc nhận hàng
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  2
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Tạo invoice
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Frontend gọi API Backend để tạo invoice với trạng thái
-                    "draft"
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  3
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Chuyển quyền sở hữu NFT
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Frontend gọi Smart Contract để transfer NFT từ Distributor
-                    wallet → Pharmacy wallet
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  4
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Lưu transaction hash
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Frontend gọi API Backend để lưu transaction hash, invoice
-                    status chuyển từ "draft" → "sent"
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+          <Card
+            title="Chuyển giao cho nhà thuốc"
+            subtitle="Chọn NFT và pharmacy để chuyển quyền sở hữu"
+            content={{
+              title: "Quy trình chuyển giao",
+              step1: {
+                title: "Chọn NFT & Pharmacy",
+                description:
+                  "Chọn lô hàng đã nhận từ manufacturer và nhà thuốc nhận hàng",
+              },
+              step2: {
+                title: "Tạo invoice",
+                description:
+                  "Frontend gọi API Backend để tạo invoice với trạng thái 'draft'",
+              },
+              step3: {
+                title: "Chuyển quyền sở hữu NFT",
+                description:
+                  "Frontend gọi Smart Contract để transfer NFT từ Distributor wallet → Pharmacy wallet",
+              },
+              step4: {
+                title: "Lưu transaction hash",
+                description:
+                  "Frontend gọi API Backend để lưu transaction hash, invoice status chuyển từ 'draft' → 'sent'",
+              },
+            }}
+          />
 
           <motion.div
             className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden"

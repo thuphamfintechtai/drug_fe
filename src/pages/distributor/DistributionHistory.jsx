@@ -4,11 +4,14 @@ import { motion } from "framer-motion";
 import DashboardLayout from "../../components/DashboardLayout";
 import TruckLoader from "../../components/TruckLoader";
 import { getDistributionHistory } from "../../services/distributor/distributorService";
+import { Card } from "../../components/ui/card";
+import { Search } from "../../components/ui/search";
 
 export default function DistributionHistory() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -24,9 +27,12 @@ export default function DistributionHistory() {
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
 
-  // Sync searchInput with URL search param on mount/change
+  const prevSearchRef = useRef(search);
   useEffect(() => {
-    setSearchInput(search);
+    if (prevSearchRef.current !== search) {
+      setSearchInput(search);
+      prevSearchRef.current = search;
+    }
   }, [search]);
 
   const navigationItems = [
@@ -204,17 +210,19 @@ export default function DistributionHistory() {
 
   const loadData = async () => {
     try {
-      setLoading(true);
-      setLoadingProgress(0);
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
+      if (isInitialLoad) {
+        setLoading(true);
+        setLoadingProgress(0);
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+        progressIntervalRef.current = setInterval(() => {
+          setLoadingProgress((prev) =>
+            prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
+          );
+        }, 50);
       }
-      progressIntervalRef.current = setInterval(() => {
-        setLoadingProgress((prev) =>
-          prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
-        );
-      }, 50);
 
       const params = { page, limit: 10 };
       if (search) params.search = search;
@@ -222,7 +230,7 @@ export default function DistributionHistory() {
 
       const response = await getDistributionHistory(params);
 
-      if (progressIntervalRef.current) {
+      if (isInitialLoad && progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
@@ -241,39 +249,43 @@ export default function DistributionHistory() {
         setItems([]);
       }
 
-      let currentProgress = 0;
-      setLoadingProgress((prev) => {
-        currentProgress = prev;
-        return prev;
-      });
-      if (currentProgress < 0.9) {
-        await new Promise((resolve) => {
-          const speedUp = setInterval(() => {
-            setLoadingProgress((prev) => {
-              if (prev < 1) {
-                const np = Math.min(prev + 0.15, 1);
-                if (np >= 1) {
-                  clearInterval(speedUp);
-                  resolve();
-                }
-                return np;
-              }
-              clearInterval(speedUp);
-              resolve();
-              return 1;
-            });
-          }, 30);
-          setTimeout(() => {
-            clearInterval(speedUp);
-            setLoadingProgress(1);
-            resolve();
-          }, 500);
+      // Chỉ chạy progress animation khi initial load
+      if (isInitialLoad) {
+        let currentProgress = 0;
+        setLoadingProgress((prev) => {
+          currentProgress = prev;
+          return prev;
         });
-      } else {
-        setLoadingProgress(1);
-        await new Promise((r) => setTimeout(r, 200));
+        if (currentProgress < 0.9) {
+          await new Promise((resolve) => {
+            const speedUp = setInterval(() => {
+              setLoadingProgress((prev) => {
+                if (prev < 1) {
+                  const np = Math.min(prev + 0.15, 1);
+                  if (np >= 1) {
+                    clearInterval(speedUp);
+                    resolve();
+                  }
+                  return np;
+                }
+                clearInterval(speedUp);
+                resolve();
+                return 1;
+              });
+            }, 30);
+            setTimeout(() => {
+              clearInterval(speedUp);
+              setLoadingProgress(1);
+              resolve();
+            }, 500);
+          });
+        } else {
+          setLoadingProgress(1);
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        await new Promise((r) => setTimeout(r, 100));
       }
-      await new Promise((r) => setTimeout(r, 100));
+      setIsInitialLoad(false);
     } catch (error) {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -281,16 +293,31 @@ export default function DistributionHistory() {
       }
       console.error("Lỗi khi tải lịch sử:", error);
       setItems([]);
-      setLoadingProgress(0);
+      if (isInitialLoad) {
+        setLoadingProgress(0);
+      }
+      setIsInitialLoad(false);
     } finally {
-      setLoading(false);
-      setTimeout(() => setLoadingProgress(0), 500);
+      if (isInitialLoad) {
+        setLoading(false);
+        setTimeout(() => setLoadingProgress(0), 500);
+      }
     }
   };
 
   // Handle search - only trigger on Enter or button click
-  const handleSearch = () => {
-    updateFilter({ search: searchInput, page: 1 });
+  const handleSearch = (searchValue = null, resetPage = true) => {
+    const valueToSearch = searchValue !== null ? searchValue : searchInput;
+    // Update searchInput state if a value is provided
+    if (searchValue !== null) {
+      setSearchInput(searchValue);
+    }
+    // Only reset page to 1 when actually searching (not when just changing page)
+    if (resetPage) {
+      updateFilter({ search: valueToSearch, page: 1 });
+    } else {
+      updateFilter({ search: valueToSearch });
+    }
   };
 
   // Clear search button
@@ -338,15 +365,10 @@ export default function DistributionHistory() {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 mb-6">
-            <h1 className="text-xl font-semibold text-[#007b91]">
-              Lịch sử phân phối
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Theo dõi tất cả các lô hàng đã nhận từ nhà sản xuất
-            </p>
-          </div>
-
+          <Card
+            title="Lịch sử phân phối"
+            subtitle="Theo dõi toàn bộ lịch sử nhận hàng và phân phối"
+          />
           <motion.div
             className="rounded-2xl bg-white border border-card-primary shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
             variants={fadeUp}
@@ -354,56 +376,63 @@ export default function DistributionHistory() {
             animate="show"
           >
             <div className="flex flex-col md:flex-row gap-3 md:items-end">
-              <div className="flex-1">
-                <label className="block text-sm text-[#003544]/70 mb-1">
-                  Tìm kiếm
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
-                      />
-                    </svg>
-                  </span>
-                  <input
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleSearch();
-                      }
-                    }}
-                    placeholder="Tìm theo đơn hàng, người gửi..."
-                    className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
-                  />
-                  {/* Clear button */}
-                  {searchInput && (
-                    <button
-                      onClick={handleClearSearch}
-                      className="absolute right-24 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      title="Xóa tìm kiếm"
-                    >
-                      ✕
-                    </button>
-                  )}
-                  <button
-                    onClick={handleSearch}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition"
-                  >
-                    <span className="!text-white">Tìm kiếm</span>
-                  </button>
-                </div>
-              </div>
+              <Search
+                searchInput={searchInput}
+                setSearchInput={setSearchInput}
+                handleSearch={handleSearch}
+                handleClearSearch={handleClearSearch}
+                placeholder="Tìm theo đơn hàng"
+                data={items}
+                getSearchText={(item) => {
+                  const invoiceNumber =
+                    item.manufacturerInvoice?.invoiceNumber || "";
+                  const fromName =
+                    item.fromManufacturer?.fullName ||
+                    item.fromManufacturer?.username ||
+                    "";
+                  return invoiceNumber || fromName;
+                }}
+                matchFunction={(item, searchLower) => {
+                  const invoiceNumber = (
+                    item.manufacturerInvoice?.invoiceNumber || ""
+                  ).toLowerCase();
+                  const fromName = (
+                    item.fromManufacturer?.fullName ||
+                    item.fromManufacturer?.username ||
+                    ""
+                  ).toLowerCase();
+                  return (
+                    invoiceNumber.includes(searchLower) ||
+                    fromName.includes(searchLower)
+                  );
+                }}
+                getDisplayText={(item, searchLower) => {
+                  const invoiceNumber = (
+                    item.manufacturerInvoice?.invoiceNumber || ""
+                  ).toLowerCase();
+                  const fromName = (
+                    item.fromManufacturer?.fullName ||
+                    item.fromManufacturer?.username ||
+                    ""
+                  ).toLowerCase();
+                  if (invoiceNumber.includes(searchLower)) {
+                    return item.manufacturerInvoice?.invoiceNumber || "";
+                  }
+                  if (fromName.includes(searchLower)) {
+                    return (
+                      item.fromManufacturer?.fullName ||
+                      item.fromManufacturer?.username ||
+                      ""
+                    );
+                  }
+                  return (
+                    item.manufacturerInvoice?.invoiceNumber ||
+                    item.fromManufacturer?.fullName ||
+                    item.fromManufacturer?.username ||
+                    ""
+                  );
+                }}
+              />
               <div>
                 <label className="block text-sm text-[#003544]/70 mb-1">
                   Trạng thái
