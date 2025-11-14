@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
 import TruckLoader from "../../components/TruckLoader";
 import { getProfile } from "../../services/manufacturer/manufacturerService";
+import { Profile as ProfileComponent } from "../../components/ui/profile";
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
@@ -212,7 +213,6 @@ export default function Profile() {
         </div>
       ) : !profile ? (
         <div className="space-y-6">
-          {/* Banner */}
           <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5">
             <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
               <svg
@@ -240,195 +240,13 @@ export default function Profile() {
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
-          {/* Banner */}
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5">
-            <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-6 h-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 7h18M5 10h14M4 14h16M6 18h12"
-                />
-              </svg>
-              Thông tin cá nhân
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Xem thông tin tài khoản và công ty (chỉ đọc)
-            </p>
-          </div>
-
-          <div className="space-y-5">
-            {/* User Info */}
-            <div className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden">
-              <div className="px-6 py-4 bg-secondary">
-                <h2 className="text-xl font-bold !text-white">
-                  Thông tin tài khoản
-                </h2>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">
-                      Tên đầy đủ
-                    </div>
-                    <div className="font-semibold text-slate-800">
-                      {profile.user?.fullName || "N/A"}
-                    </div>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">Email</div>
-                    <div className="font-semibold text-slate-800">
-                      {profile.user?.email || "N/A"}
-                    </div>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">Vai trò</div>
-                    <div className="font-semibold text-slate-800">
-                      <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-sm">
-                        Pharma Company (Nhà sản xuất)
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">
-                      Trạng thái
-                    </div>
-                    <div className="font-semibold text-slate-800">
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm ${
-                          profile.user?.status === "active"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-slate-100 text-slate-700"
-                        }`}
-                      >
-                        {profile.user?.status || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
-                  <div className="text-xs text-cyan-700 mb-1">
-                    Wallet Address
-                  </div>
-                  <div className="font-mono text-sm text-cyan-800 break-all">
-                    {profile.user?.walletAddress || "Chưa có"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Company Info */}
-            {profile.company && (
-              <div className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 bg-gradient-to-r from-[#00b4d8] to-[#48cae4]">
-                  <h2 className="text-xl font-bold !text-white">
-                    Thông tin công ty
-                  </h2>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
-                      <div className="text-xs text-cyan-700 mb-1">
-                        Tên công ty
-                      </div>
-                      <div className="font-bold text-cyan-900 text-lg">
-                        {profile.company.name || "N/A"}
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 rounded-xl p-4">
-                      <div className="text-xs text-slate-500 mb-1">
-                        Mã số thuế
-                      </div>
-                      <div className="font-mono font-semibold text-slate-800">
-                        {profile.company.taxCode || "N/A"}
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 rounded-xl p-4">
-                      <div className="text-xs text-slate-500 mb-1">
-                        Giấy phép kinh doanh
-                      </div>
-                      <div className="font-mono font-semibold text-slate-800">
-                        {profile.company.licenseNo || "N/A"}
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 rounded-xl p-4">
-                      <div className="text-xs text-slate-500 mb-1">
-                        Trạng thái
-                      </div>
-                      <div className="font-semibold text-slate-800">
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm ${
-                            profile.company.status === "active"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-slate-100 text-slate-700"
-                          }`}
-                        >
-                          {profile.company.status || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">Địa chỉ</div>
-                    <div className="font-medium text-slate-800">
-                      {profile.company.address || "N/A"}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-slate-50 rounded-xl p-4">
-                      <div className="text-xs text-slate-500 mb-1">
-                        Số điện thoại
-                      </div>
-                      <div className="font-medium text-slate-800">
-                        {profile.company.phone || "N/A"}
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 rounded-xl p-4">
-                      <div className="text-xs text-slate-500 mb-1">Website</div>
-                      <div className="font-medium text-slate-800">
-                        {profile.company.website || "N/A"}
-                      </div>
-                    </div>
-                  </div>
-
-                  {profile.company.contractAddress && (
-                    <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-                      <div className="text-xs text-emerald-700 mb-1">
-                        Contract Address
-                      </div>
-                      <div className="font-mono text-sm text-emerald-800 break-all">
-                        {profile.company.contractAddress}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Notice */}
-            <div className="bg-yellow-50 rounded-2xl border border-yellow-200 p-5">
-              <div className="font-semibold text-yellow-800 mb-1">
-                Lưu ý quan trọng
-              </div>
-              <div className="text-sm text-yellow-700">
-                Thông tin này chỉ được xem và{" "}
-                <strong>không thể chỉnh sửa</strong>. Nếu cần thay đổi thông tin
-                công ty, vui lòng liên hệ với quản trị viên hệ thống.
-              </div>
-            </div>
-          </div>
-        </div>
+        <ProfileComponent
+          title="Thông tin cá nhân"
+          subtitle="Xem thông tin tài khoản và công ty (chỉ đọc)"
+          user={profile.user}
+          company={profile.company}
+          roleLabel="Pharma Company (Nhà sản xuất)"
+        />
       )}
     </DashboardLayout>
   );

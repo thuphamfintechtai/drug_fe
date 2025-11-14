@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import TruckLoader from "../../components/TruckLoader";
 import { getProductionHistory } from "../../services/manufacturer/manufacturerService";
+import { Card } from "../../components/ui/card";
+import { Search } from "../../components/ui/search";
 
 export default function ProductionHistory() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -15,7 +17,6 @@ export default function ProductionHistory() {
 
   const [searchInput, setSearchInput] = useState("");
 
-  const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef(null);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -192,9 +193,8 @@ export default function ProductionHistory() {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [page, search, status]);
+  }, [page, status]);
 
-  // Client-side filtering when search changes
   useEffect(() => {
     if (search && search.trim()) {
       const searchTerm = search.toLowerCase().trim();
@@ -228,31 +228,6 @@ export default function ProductionHistory() {
       }));
     }
   }, [search, allItems]);
-
-  // Debounce search input
-  useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    // Only show searching indicator if input is different from current search
-    if (searchInput !== search) {
-      setIsSearching(true);
-      searchTimeoutRef.current = setTimeout(() => {
-        updateFilter({ search: searchInput, page: 1 });
-        setIsSearching(false);
-      }, 1500);
-    } else {
-      setIsSearching(false);
-    }
-
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchInput]);
 
   // FIX: Simplified loading logic
   const loadData = async () => {
@@ -313,15 +288,19 @@ export default function ProductionHistory() {
     }
   };
 
-  // Handle search - only trigger on Enter or button click
-  const handleSearch = () => {
-    updateFilter({ search: searchInput, page: 1 });
-  };
-
   // Clear search button
   const handleClearSearch = () => {
     setSearchInput("");
     updateFilter({ search: "", page: 1 });
+  };
+
+  // Handle search
+  const handleSearch = (searchTerm = null) => {
+    const term = searchTerm || searchInput;
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    updateFilter({ search: term, page: 1 });
   };
 
   const updateFilter = (next) => {
@@ -403,8 +382,10 @@ export default function ProductionHistory() {
       ) : (
         <div className="space-y-6">
           {/* Banner */}
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5">
-            <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+          <Card
+            title="Lịch sử sản xuất"
+            subtitle="Xem tất cả các lô sản xuất và trạng thái chuyển giao NFT"
+            icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="w-6 h-6"
@@ -419,92 +400,46 @@ export default function ProductionHistory() {
                   d="M3 7h18M5 10h14M4 14h16M6 18h12"
                 />
               </svg>
-              Lịch sử sản xuất
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Xem tất cả các lô sản xuất và trạng thái chuyển giao NFT
-            </p>
-          </div>
+            }
+          />
 
           {/* Filters */}
           <div className="rounded-2xl bg-white border border-card-primary shadow-sm p-4">
             <div className="flex flex-col md:flex-row gap-3 md:items-end">
               <div className="flex-1">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Tìm kiếm
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    {isSearching ? (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-5 h-5 animate-spin text-cyan-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
-                        />
-                      </svg>
-                    )}
-                  </span>
-                  <input
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        if (searchTimeoutRef.current) {
-                          clearTimeout(searchTimeoutRef.current);
-                        }
-                        updateFilter({ search: searchInput, page: 1 });
-                        setIsSearching(false);
-                      }
-                    }}
-                    placeholder="Tìm theo tên thuốc, số lô..."
-                    className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
-                  />
-                  {/* Clear button */}
-                  {searchInput && (
-                    <button
-                      onClick={handleClearSearch}
-                      className="absolute right-16 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      title="Xóa tìm kiếm"
-                    >
-                      ✕
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      if (searchTimeoutRef.current) {
-                        clearTimeout(searchTimeoutRef.current);
-                      }
-                      updateFilter({ search: searchInput, page: 1 });
-                      setIsSearching(false);
-                    }}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary !text-white hover:shadow-lg font-medium transition"
-                  >
-                    Tìm kiếm
-                  </button>
-                </div>
+                <Search
+                  searchInput={searchInput}
+                  setSearchInput={setSearchInput}
+                  handleSearch={handleSearch}
+                  handleClearSearch={handleClearSearch}
+                  placeholder="Tìm theo tên thuốc, số lô..."
+                  enableAutoSearch={true}
+                  debounceMs={300}
+                  data={allItems}
+                  getSearchText={(item) => {
+                    const drug = item.drug || {};
+                    return drug.tradeName || "";
+                  }}
+                  matchFunction={(item, searchLower) => {
+                    const drug = item.drug || {};
+                    const tradeName = (drug.tradeName || "").toLowerCase();
+                    const genericName = (drug.genericName || "").toLowerCase();
+                    const atcCode = (drug.atcCode || "").toLowerCase();
+                    const batchNumber = (item.batchNumber || "").toLowerCase();
+                    return (
+                      tradeName.includes(searchLower) ||
+                      genericName.includes(searchLower) ||
+                      atcCode.includes(searchLower) ||
+                      batchNumber.includes(searchLower)
+                    );
+                  }}
+                  getDisplayText={(item) => {
+                    const drug = item.drug || {};
+                    const drugName = drug.tradeName || "Không có tên";
+                    const batch = item.batchNumber || "N/A";
+                    return `${drugName} - Lô: ${batch}`;
+                  }}
+                />
               </div>
               <div>
                 <label className="block text-sm text-slate-600 mb-1">

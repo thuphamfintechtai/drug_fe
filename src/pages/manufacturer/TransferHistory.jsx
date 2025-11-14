@@ -12,6 +12,8 @@ import {
   getCurrentWalletAddress,
 } from "../../utils/web3Helper";
 import { useAuth } from "../../context/AuthContext";
+import { Card } from "../../components/ui/card";
+import { Search } from "../../components/ui/search";
 
 export default function TransferHistory() {
   const { user } = useAuth();
@@ -24,7 +26,6 @@ export default function TransferHistory() {
   const [retryingId, setRetryingId] = useState(null);
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [searchInput, setSearchInput] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef(null);
   const retryAbortControllerRef = useRef(null); // FIX: Abort controller for retry
 
@@ -203,7 +204,7 @@ export default function TransferHistory() {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [page, search, status]);
+  }, [page, status]);
 
   // Client-side filtering when search changes
   useEffect(() => {
@@ -243,31 +244,6 @@ export default function TransferHistory() {
       }));
     }
   }, [search, allItems]);
-
-  // Debounce search input
-  useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    // Only show searching indicator if input is different from current search
-    if (searchInput !== search) {
-      setIsSearching(true);
-      searchTimeoutRef.current = setTimeout(() => {
-        updateFilter({ search: searchInput, page: 1 });
-        setIsSearching(false);
-      }, 1500);
-    } else {
-      setIsSearching(false);
-    }
-
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchInput]);
 
   // FIX: Simplified loading logic
   const loadData = async () => {
@@ -358,15 +334,19 @@ export default function TransferHistory() {
     }));
   };
 
-  // Handle search - only trigger on Enter or button click
-  const handleSearch = () => {
-    updateFilter({ search: searchInput, page: 1 });
-  };
-
   // Clear search button
   const handleClearSearch = () => {
     setSearchInput("");
     updateFilter({ search: "", page: 1 });
+  };
+
+  // Handle search
+  const handleSearch = (searchTerm = null) => {
+    const term = searchTerm || searchInput;
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    updateFilter({ search: term, page: 1 });
   };
 
   const updateFilter = (next) => {
@@ -549,8 +529,10 @@ export default function TransferHistory() {
       ) : (
         <div className="space-y-6">
           {/* Banner */}
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5">
-            <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+          <Card
+            title="Lịch sử chuyển giao"
+            subtitle="Theo dõi tất cả các đơn chuyển giao NFT cho nhà phân phối"
+            icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="w-6 h-6"
@@ -565,92 +547,72 @@ export default function TransferHistory() {
                   d="M3 7h18M5 10h14M4 14h16M6 18h12"
                 />
               </svg>
-              Lịch sử chuyển giao
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Theo dõi tất cả các đơn chuyển giao NFT cho nhà phân phối
-            </p>
-          </div>
+            }
+          />
 
           {/* Filters */}
           <div className="rounded-2xl bg-white border border-card-primary shadow-sm p-4">
             <div className="flex flex-col md:flex-row gap-3 md:items-end">
               <div className="flex-1">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Tìm kiếm
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    {isSearching ? (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-5 h-5 animate-spin text-cyan-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
-                        />
-                      </svg>
-                    )}
-                  </span>
-                  <input
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        if (searchTimeoutRef.current) {
-                          clearTimeout(searchTimeoutRef.current);
-                        }
-                        updateFilter({ search: searchInput, page: 1 });
-                        setIsSearching(false);
-                      }
-                    }}
-                    placeholder="Tìm theo tên nhà phân phối, số lô..."
-                    className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
-                  />
-                  {/* Clear button */}
-                  {searchInput && (
-                    <button
-                      onClick={handleClearSearch}
-                      className="absolute right-16 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      title="Xóa tìm kiếm"
-                    >
-                      ✕
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      if (searchTimeoutRef.current) {
-                        clearTimeout(searchTimeoutRef.current);
-                      }
-                      updateFilter({ search: searchInput, page: 1 });
-                      setIsSearching(false);
-                    }}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary !text-white hover:shadow-lg font-medium transition"
-                  >
-                    Tìm kiếm
-                  </button>
-                </div>
+                <Search
+                  searchInput={searchInput}
+                  setSearchInput={setSearchInput}
+                  handleSearch={handleSearch}
+                  handleClearSearch={handleClearSearch}
+                  placeholder="Tìm theo tên nhà phân phối, số lô..."
+                  enableAutoSearch={true}
+                  debounceMs={300}
+                  data={allItems}
+                  getSearchText={(item) => {
+                    // Ưu tiên trả về mã hóa đơn nếu có, nếu không thì trả về tên nhà phân phối
+                    return (
+                      item.invoiceNumber ||
+                      item.distributor?.fullName ||
+                      item.distributor?.name ||
+                      ""
+                    );
+                  }}
+                  matchFunction={(item, searchLower) => {
+                    const distributorName = (
+                      item.distributor?.fullName ||
+                      item.distributor?.name ||
+                      ""
+                    ).toLowerCase();
+                    const invoiceNumber = (
+                      item.invoiceNumber || ""
+                    ).toLowerCase();
+                    const batchNumber = (
+                      item.production?.batchNumber || ""
+                    ).toLowerCase();
+                    const email = (item.distributor?.email || "").toLowerCase();
+                    return (
+                      distributorName.includes(searchLower) ||
+                      invoiceNumber.includes(searchLower) ||
+                      batchNumber.includes(searchLower) ||
+                      email.includes(searchLower)
+                    );
+                  }}
+                  getDisplayText={(item, searchTerm = "") => {
+                    const distributorName =
+                      item.distributor?.fullName ||
+                      item.distributor?.name ||
+                      "Không có tên";
+                    const batch = item.production?.batchNumber || "N/A";
+                    const invoiceNumber = item.invoiceNumber || "";
+                    const searchLower = searchTerm.toLowerCase();
+
+                    // Nếu tìm theo mã hóa đơn, hiển thị mã hóa đơn trước
+                    if (
+                      invoiceNumber &&
+                      invoiceNumber.toLowerCase().includes(searchLower)
+                    ) {
+                      return `${invoiceNumber} - ${distributorName} (Lô: ${batch})`;
+                    }
+                    return `${distributorName} - Lô: ${batch}${
+                      invoiceNumber ? ` - HĐ: ${invoiceNumber}` : ""
+                    }`;
+                  }}
+                />
               </div>
               <div>
                 <label className="block text-sm text-slate-600 mb-1">

@@ -20,6 +20,7 @@ import {
   getCurrentWalletAddress,
 } from "../../utils/web3Helper";
 import { ethers } from "ethers";
+import { Card } from "../../components/ui/card";
 
 export default function ProductionManagement() {
   const [searchParams] = useSearchParams();
@@ -238,7 +239,11 @@ export default function ProductionManagement() {
     if (ipfsUrl) {
       const cidMatch = ipfsUrl.match(/\/ipfs\/([^/?#]+)/i);
       const ipfsHash = cidMatch ? cidMatch[1] : "";
-      setIpfsData({ ipfsUrl, ipfsHash, amount: qty ? parseInt(qty) : undefined });
+      setIpfsData({
+        ipfsUrl,
+        ipfsHash,
+        amount: qty ? parseInt(qty) : undefined,
+      });
       if (qty && !isNaN(parseInt(qty))) {
         setFormData((prev) => ({ ...prev, quantity: String(parseInt(qty)) }));
       }
@@ -846,11 +851,14 @@ export default function ProductionManagement() {
       ) : (
         <div className="space-y-5">
           {/* Banner */}
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5">
-            <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+
+          <Card
+            title="Sản xuất thuốc & Mint NFT"
+            subtitle="Tạo lô sản xuất và mint NFT trên blockchain (2 bước: IPFS + Smart Contract)"
+            icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="w-6 h-6"
+                className="w-6 h-6 text-[#007b91]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -862,61 +870,24 @@ export default function ProductionManagement() {
                   d="M3 7h18M5 10h14M4 14h16M6 18h12"
                 />
               </svg>
-              Sản xuất thuốc & Mint NFT
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Tạo lô sản xuất và mint NFT trên blockchain (2 bước: IPFS + Smart
-              Contract)
-            </p>
-          </div>
-
-          {/* Instructions */}
-          <div className="rounded-2xl bg-white border border-card-primary shadow-sm p-6">
-            <h2 className="text-xl font-bold text-[#007b91] mb-4">
-              Quy trình sản xuất
-            </h2>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  1
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Nhập thông tin sản xuất
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Chọn thuốc, số lô, số lượng, ngày sản xuất & hạn sử dụng
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  2
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Upload lên IPFS
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Lưu metadata lên Pinata IPFS
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  3
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Mint NFT trên Blockchain
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Gọi Smart Contract để mint NFT
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+            }
+            content={{
+              title: "Quy trình sản xuất",
+              step1: {
+                title: "Nhập thông tin sản xuất",
+                description:
+                  "Chọn thuốc, số lô, số lượng, ngày sản xuất & hạn sử dụng",
+              },
+              step2: {
+                title: "Upload lên IPFS",
+                description: "Lưu metadata lên Pinata IPFS",
+              },
+              step3: {
+                title: "Mint NFT trên Blockchain",
+                description: "Gọi Smart Contract để mint NFT",
+              },
+            }}
+          />
 
           {/* Action Button */}
           <div className="flex justify-end">
@@ -968,7 +939,7 @@ export default function ProductionManagement() {
 
             {/* Step 1: Form */}
             {step === 1 && (
-              <div className="p-8 space-y-4">
+              <div className="p-8 space-y-4 max-h-[500px] overflow-auto hide-scrollbar">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Chọn thuốc *
@@ -1411,7 +1382,7 @@ export default function ProductionManagement() {
 
             {/* Step 2: IPFS Success */}
             {step === 2 && ipfsData && (
-              <div className="p-8 space-y-4">
+              <div className="p-8 space-y-4 max-h-[500px] overflow-auto hide-scrollbar">
                 {/* Box: Bước 1 hoàn thành */}
                 <div className="rounded-xl p-5 border border-cyan-200 bg-cyan-50">
                   <div className="flex items-start gap-3 mb-3">
@@ -1525,7 +1496,7 @@ export default function ProductionManagement() {
 
             {/* Step 3: Minting */}
             {step === 3 && (
-              <div className="p-6">
+              <div className="p-6 max-h-[500px] overflow-auto hide-scrollbar">
                 <BlockchainMintingView
                   status={
                     mintButtonState === "completed" ? "completed" : "minting"
@@ -1536,7 +1507,7 @@ export default function ProductionManagement() {
 
             {/* Step 4: Success */}
             {step === 4 && mintResult && (
-              <div className="p-8">
+              <div className="p-8 max-h-[500px] overflow-auto hide-scrollbar">
                 <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-8 text-center">
                   <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-white border border-cyan-200 text-cyan-600 flex items-center justify-center">
                     <svg

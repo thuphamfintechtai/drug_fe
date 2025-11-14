@@ -32,58 +32,32 @@ export function Card({ title, subtitle, content, icon }) {
             {content.title}
           </h2>
           <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center shrink-0">
-                1
-              </div>
-              <div>
-                <div className="font-semibold text-slate-800">
-                  {content.step1?.title}
-                </div>
-                <div className="text-sm text-slate-600">
-                  {content.step1?.description}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center shrink-0">
-                2
-              </div>
-              <div>
-                <div className="font-semibold text-slate-800">
-                  {content.step2?.title}
-                </div>
-                <div className="text-sm text-slate-600">
-                  {content.step2?.description}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center shrink-0">
-                3
-              </div>
-              <div>
-                <div className="font-semibold text-slate-800">
-                  {content.step3?.title}
-                </div>
-                <div className="text-sm text-slate-600">
-                  {content.step3?.description}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center shrink-0">
-                4
-              </div>
-              <div>
-                <div className="font-semibold text-slate-800">
-                  {content.step4?.title}
-                </div>
-                <div className="text-sm text-slate-600">
-                  {content.step4?.description}
-                </div>
-              </div>
-            </div>
+            {Object.keys(content)
+              .filter((key) => key.startsWith("step") && content[key])
+              .sort((a, b) => {
+                const numA = parseInt(a.replace("step", ""));
+                const numB = parseInt(b.replace("step", ""));
+                return numA - numB;
+              })
+              .map((key, index) => {
+                const step = content[key];
+                const stepNumber = index + 1;
+                return (
+                  <div key={key} className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center shrink-0">
+                      {stepNumber}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-slate-800">
+                        {step?.title}
+                      </div>
+                      <div className="text-sm text-slate-600">
+                        {step?.description}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </motion.div>
       )}

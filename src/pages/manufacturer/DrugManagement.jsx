@@ -9,6 +9,8 @@ import {
   deleteDrug,
   searchDrugByATC,
 } from "../../services/manufacturer/manufacturerService";
+import { Card } from "../../components/ui/card";
+import { Search } from "../../components/ui/search";
 
 export default function DrugManagement() {
   const [drugs, setDrugs] = useState([]);
@@ -385,20 +387,16 @@ export default function DrugManagement() {
     }
   };
 
-  const handleSearch = async () => {
-    const term = searchAtc.trim().toLowerCase();
+  const handleSearch = async (searchTerm = null) => {
+    const term = (searchTerm || searchAtc).trim().toLowerCase();
     if (!term) {
       setDrugs(allDrugs);
       return;
     }
-    // Lọc client theo Tên thương mại | Tên hoạt chất | Mã ATC
+    // Lọc client chỉ theo Tên thương mại
     const filtered = (allDrugs || []).filter((d) => {
       const trade = (d.tradeName || "").toLowerCase();
-      const generic = (d.genericName || "").toLowerCase();
-      const atc = (d.atcCode || "").toLowerCase();
-      return (
-        trade.includes(term) || generic.includes(term) || atc.includes(term)
-      );
+      return trade.includes(term);
     });
     setDrugs(filtered);
   };
@@ -542,7 +540,9 @@ export default function DrugManagement() {
       if (isEditMode && selectedDrug) {
         const response = await updateDrug(selectedDrug._id, submitData);
         if (response.data.success) {
-          toast.success("Cập nhật thuốc thành công!", { position: "top-right" });
+          toast.success("Cập nhật thuốc thành công!", {
+            position: "top-right",
+          });
         }
       } else {
         const response = await addDrug(submitData);
@@ -598,8 +598,10 @@ export default function DrugManagement() {
       ) : (
         <div className="space-y-6">
           {/* Banner */}
-          <div className="bg-white rounded-2xl border border-card-primary shadow-sm p-6">
-            <h1 className="text-xl md:text-2xl font-semibold text-[#007b91] flex items-center gap-2">
+          <Card
+            title="Quản lý thuốc"
+            subtitle="Thêm, sửa, xóa và tìm kiếm thuốc trong hệ thống"
+            icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="w-6 h-6 text-[#00a3c4]"
@@ -614,66 +616,35 @@ export default function DrugManagement() {
                   d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
                 />
               </svg>
-              Quản lý thuốc
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Thêm, sửa, xóa và tìm kiếm thuốc trong hệ thống
-            </p>
-          </div>
-
+            }
+          />
           {/* Search & Create */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
-                  />
-                </svg>
-              </span>
-
-              <input
-                type="text"
-                value={searchAtc}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setSearchAtc(value);
-                }}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Tìm theo tên thương mại, tên hoạt chất, mã ATC..."
-                className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
-              />
-
-              <button
-                onClick={handleSearch}
-                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary !text-white font-medium transition shadow-md hover:shadow-lg"
-              >
-                Tìm kiếm
-              </button>
-            </div>
-
-            <button
-              onClick={() => {
+          <div className="flex items-end gap-3">
+            <Search
+              searchInput={searchAtc}
+              setSearchInput={setSearchAtc}
+              handleSearch={handleSearch}
+              handleClearSearch={() => {
                 setSearchAtc("");
                 loadDrugs();
               }}
-              className="px-4 py-2.5 rounded-full border border-gray-300 text-slate-700 hover:bg-gray-50 transition"
-            >
-              ↻ Reset
-            </button>
+              placeholder="Tìm theo tên thương mại, tên hoạt chất, mã ATC..."
+              enableAutoSearch={true}
+              debounceMs={300}
+              data={allDrugs}
+              getSearchText={(drug) => drug.tradeName || ""}
+              matchFunction={(drug, searchLower) => {
+                const trade = (drug.tradeName || "").toLowerCase();
+                return trade.includes(searchLower);
+              }}
+              getDisplayText={(drug) =>
+                `${drug.tradeName} - ${drug.genericName} (${drug.atcCode})`
+              }
+            />
 
             <button
               onClick={handleCreate}
-              className="px-4 py-2.5 rounded-full bg-secondary !text-white font-medium transition shadow-md hover:shadow-lg"
+              className="px-4 py-2.5 rounded-full bg-secondary !text-white font-medium transition shadow-md hover:shadow-lg h-12"
             >
               Tạo thuốc mới
             </button>
@@ -700,7 +671,7 @@ export default function DrugManagement() {
                 <p className="text-gray-500 text-sm">Không có dữ liệu</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto ">
                 <table className="w-full border-collapse">
                   <thead className="bg-gray-50 border-b border-gray-100">
                     <tr>
@@ -753,7 +724,7 @@ export default function DrugManagement() {
                         </td>
                         <td className="px-6 py-4">
                           <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            className={`inline-flex items-center px-2.5 py-1 w-24 justify-center rounded-full text-xs font-semibold ${
                               drug.status === "active"
                                 ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
                                 : "bg-rose-50 text-rose-600 border border-rose-100"
@@ -825,9 +796,8 @@ export default function DrugManagement() {
             </div>
 
             {/* Body */}
-            <div className="p-8 space-y-4">
+            <div className="p-8 space-y-4 max-h-[500px] overflow-auto hide-scrollbar">
               <div className="grid grid-cols-2 gap-6">
-                {/* Row 1: Tên thương mại, Tên hoạt chất */}
                 <InputField
                   label="Tên thương mại"
                   placeholder="VD: Vitamin A, ..."

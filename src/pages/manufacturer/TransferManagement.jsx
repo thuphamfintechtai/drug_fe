@@ -16,6 +16,7 @@ import {
   getCurrentWalletAddress,
 } from "../../utils/web3Helper";
 import { useAuth } from "../../context/AuthContext";
+import { Card } from "../../components/ui/card";
 
 export default function TransferManagement() {
   const { user } = useAuth();
@@ -513,8 +514,11 @@ export default function TransferManagement() {
       ) : (
         <div className="space-y-6">
           {/* Banner */}
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 mb-6">
-            <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+          {/* Instructions */}
+          <Card
+            title="Chuyển giao cho nhà phân phối"
+            subtitle="Chọn lô sản xuất và distributor để chuyển quyền sở hữu NFT"
+            icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="w-6 h-6"
@@ -529,60 +533,23 @@ export default function TransferManagement() {
                   d="M3 7h18M5 10h14M4 14h16M6 18h12"
                 />
               </svg>
-              Chuyển giao cho nhà phân phối
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Chọn lô sản xuất và distributor để chuyển quyền sở hữu NFT
-            </p>
-          </div>
-
-          {/* Instructions */}
-          <div className="rounded-2xl bg-white border border-card-primary shadow-sm p-6 mb-5">
-            <h2 className="text-xl font-bold text-[#007b91] mb-4">
-              Quy trình chuyển giao
-            </h2>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  1
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Chọn lô sản xuất & Distributor
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Chọn NFT cần chuyển và nhà phân phối nhận hàng
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  2
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Xác nhận trên hệ thống
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Lưu vào database với trạng thái "pending"
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  3
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Chuyển quyền sở hữu NFT
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Transfer NFT qua Smart Contract
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+            }
+            content={{
+              title: "Quy trình chuyển giao",
+              step1: {
+                title: "Chọn lô sản xuất & Distributor",
+                description: "Chọn NFT cần chuyển và nhà phân phối nhận hàng",
+              },
+              step2: {
+                title: "Xác nhận trên hệ thống",
+                description: "Lưu vào database với trạng thái 'pending'",
+              },
+              step3: {
+                title: "Chuyển quyền sở hữu NFT",
+                description: "Transfer NFT qua Smart Contract",
+              },
+            }}
+          />
 
           {/* Productions Table */}
           <div className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden">
@@ -669,7 +636,7 @@ export default function TransferManagement() {
                               Đã chuyển
                             </span>
                           ) : prod.transferStatus === "pending" ? (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
+                            <span className="inline-flex items-center px-2.5 py-1 w-26 justify-center rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
                               Chưa chuyển
                             </span>
                           ) : (
@@ -678,11 +645,11 @@ export default function TransferManagement() {
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-center">
+                        <td className="px-6  py-4 text-center">
                           <button
                             onClick={() => handleSelectProduction(prod)}
                             disabled={prod.transferStatus === "transferred"}
-                            className={`px-4 py-2 border-2 rounded-full font-semibold transition-all duration-200 ${
+                            className={`px-4 py-2 text-sm whitespace-nowrap justify-center border-2 rounded-full font-semibold transition-all duration-200 ${
                               prod.transferStatus === "transferred"
                                 ? "border-gray-300 text-gray-400 cursor-not-allowed"
                                 : "border-secondary text-secondary hover:bg-secondary hover:!text-white hover:shadow-md hover:shadow-secondary/40"

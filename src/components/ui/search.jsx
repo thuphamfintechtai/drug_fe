@@ -134,10 +134,10 @@ export function Search({
       clearTimeout(debounceTimerRef.current);
     }
 
+    setSearchInput(searchText);
+
     if (handleSearch) {
       handleSearch(searchText);
-    } else {
-      setSearchInput(searchText);
     }
   };
 
