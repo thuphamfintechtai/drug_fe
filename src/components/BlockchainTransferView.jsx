@@ -7,6 +7,7 @@ export default function BlockchainTransferView({
   progress = 0, // 0-1: progress từ parent
   onProgressUpdate, // callback để parent có thể update progress
   onClose, // callback để đóng cửa sổ
+  transferType = "manufacturer-to-distributor", // 'manufacturer-to-distributor' | 'distributor-to-pharmacy'
 }) {
   const mapBarRef = useRef(null);
   const truckRef = useRef(null);
@@ -31,6 +32,11 @@ export default function BlockchainTransferView({
   const activeBlock = getActiveBlock();
   const isCompleted = status === "completed";
   const isError = status === "error";
+
+  // Xác định labels dựa trên transferType
+  const isManufacturerToDistributor = transferType === "manufacturer-to-distributor";
+  const fromLabel = isManufacturerToDistributor ? "Manufacturer" : "Distributor";
+  const toLabel = isManufacturerToDistributor ? "Distributor" : "Pharmacy";
 
   // Colors
   const cyan = "#00b4d8";
@@ -502,7 +508,7 @@ export default function BlockchainTransferView({
             {isError
               ? "Giao dịch blockchain thất bại"
               : isCompleted
-              ? "NFT đã đến Distributor & được xác nhận trên blockchain"
+              ? `NFT đã đến ${toLabel} & được xác nhận trên blockchain`
               : "Đang vận chuyển NFT và xác minh trên blockchain..."}
           </div>
           {isError && onClose && (
@@ -545,7 +551,7 @@ export default function BlockchainTransferView({
                     : ""
                 }`}
               >
-                <span className="node__label">Manufacturer</span>
+                <span className="node__label">{fromLabel}</span>
               </div>
 
               {/* SVG truck */}
@@ -565,7 +571,7 @@ export default function BlockchainTransferView({
                     : ""
                 }`}
               >
-                <span className="node__label">Distributor</span>
+                <span className="node__label">{toLabel}</span>
               </div>
             </div>
           </div>

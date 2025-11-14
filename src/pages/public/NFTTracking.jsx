@@ -70,7 +70,7 @@ export default function PublicNFTTracking() {
         <motion.section
           className="relative overflow-hidden rounded-2xl mb-8 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
           style={{
-            background: "linear-gradient(135deg, #4BADD1 0%, #2176FF 100%)",
+            backgroundColor: "#077ca3",
           }}
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -103,14 +103,33 @@ export default function PublicNFTTracking() {
             <button
               onClick={handleSearch}
               disabled={loading}
-              className="px-8 py-3 rounded-xl !text-white font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 transition"
+              className="px-8 py-3 rounded-xl !text-white font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 transition flex items-center justify-center gap-2"
               style={{ backgroundColor: "#4BADD1" }}
             >
-              {loading ? "⏳ Đang tìm..." : "🔍 Tra cứu"}
+              {loading ? (
+                "Đang tìm..."
+              ) : (
+                <>
+                  <svg
+                    className="w-4 sm:w-5 h-4 sm:h-5 !text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  Tra cứu
+                </>
+              )}
             </button>
           </div>
           <div className="mt-3 text-sm text-slate-600">
-            💡 <strong>Mẹo:</strong> NFT ID thường được in trên bao bì thuốc
+            <strong>Mẹo:</strong> NFT ID thường được in trên bao bì thuốc
             hoặc trong hóa đơn mua hàng
           </div>
         </motion.div>
@@ -128,7 +147,21 @@ export default function PublicNFTTracking() {
             initial="hidden"
             animate="show"
           >
-            <div className="text-6xl mb-4">🔍</div>
+            <div className="flex justify-center mb-4">
+              <svg
+                className="w-16 h-16 sm:w-20 sm:h-20 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
             <h3 className="text-2xl font-bold text-slate-800 mb-2">
               Bắt đầu tra cứu
             </h3>
@@ -144,7 +177,6 @@ export default function PublicNFTTracking() {
             initial="hidden"
             animate="show"
           >
-            <div className="text-6xl mb-4">❌</div>
             <h3 className="text-2xl font-bold text-red-600 mb-2">
               Không tìm thấy NFT
             </h3>
@@ -161,42 +193,42 @@ export default function PublicNFTTracking() {
             animate="show"
           >
             {/* Thông tin NFT */}
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border border-purple-200 p-6">
-              <h2 className="text-xl font-bold text-purple-900 mb-4 flex items-center gap-2">
+            <div className="bg-gradient-to-br from-[#4BADD1]/10 to-[#3aaad8]/10 rounded-2xl border border-[#4BADD1]/30 p-6">
+              <h2 className="text-xl font-bold text-[#077ca3] mb-4 flex items-center gap-2">
                 Thông tin thuốc
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white rounded-xl p-4 border border-purple-200">
-                  <div className="text-sm text-purple-700 mb-1">Token ID</div>
-                  <div className="text-lg font-bold text-purple-900">
+                <div className="bg-white rounded-xl p-4 border border-[#4BADD1]/50">
+                  <div className="text-sm text-[#4BADD1] mb-1">Token ID</div>
+                  <div className="text-lg font-bold text-[#077ca3]">
                     {journey.nft?.tokenId || tokenId}
                   </div>
                 </div>
-                <div className="bg-white rounded-xl p-4 border border-purple-200">
-                  <div className="text-sm text-purple-700 mb-1">Số Serial</div>
-                  <div className="text-lg font-bold text-purple-900">
+                <div className="bg-white rounded-xl p-4 border border-[#4BADD1]/50">
+                  <div className="text-sm text-[#4BADD1] mb-1">Số Serial</div>
+                  <div className="text-lg font-bold text-[#077ca3]">
                     {journey.nft?.serialNumber || "N/A"}
                   </div>
                 </div>
-                <div className="bg-white rounded-xl p-4 border border-purple-200">
-                  <div className="text-sm text-purple-700 mb-1">Tên thuốc</div>
-                  <div className="text-lg font-bold text-purple-900">
+                <div className="bg-white rounded-xl p-4 border border-[#4BADD1]/50">
+                  <div className="text-sm text-[#4BADD1] mb-1">Tên thuốc</div>
+                  <div className="text-lg font-bold text-[#077ca3]">
                     {journey.nft?.drug?.tradeName ||
                       journey.nft?.drug?.genericName ||
                       "N/A"}
                   </div>
                 </div>
-                <div className="bg-white rounded-xl p-4 border border-purple-200">
-                  <div className="text-sm text-purple-700 mb-1">Số lô</div>
-                  <div className="text-lg font-bold text-purple-900">
+                <div className="bg-white rounded-xl p-4 border border-[#4BADD1]/50">
+                  <div className="text-sm text-[#4BADD1] mb-1">Số lô</div>
+                  <div className="text-lg font-bold text-[#077ca3]">
                     {journey.nft?.batchNumber || "N/A"}
                   </div>
                 </div>
-                <div className="bg-white rounded-xl p-4 border border-purple-200">
-                  <div className="text-sm text-purple-700 mb-1">
+                <div className="bg-white rounded-xl p-4 border border-[#4BADD1]/50">
+                  <div className="text-sm text-[#4BADD1] mb-1">
                     Chủ sở hữu hiện tại
                   </div>
-                  <div className="text-sm font-mono text-purple-900 truncate">
+                  <div className="text-sm font-mono text-[#077ca3] truncate">
                     {typeof journey.nft?.currentOwner === "object"
                       ? journey.nft.currentOwner.fullName ||
                         journey.nft.currentOwner.username ||
@@ -217,40 +249,33 @@ export default function PublicNFTTracking() {
               {journey.journey &&
               Array.isArray(journey.journey) &&
               journey.journey.length > 0 ? (
-                <div className="relative pl-8 space-y-6">
-                  <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gradient-to-b from-emerald-500 via-cyan-500 to-purple-500"></div>
-
+                <div className="relative space-y-6">
                   {journey.journey.map((step, idx) => (
                     <div key={idx} className="relative">
-                      <div className="absolute -left-6 w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 border-4 border-white shadow-lg flex items-center justify-center !text-white text-xs font-bold">
-                        {idx + 1}
-                      </div>
-                      <div className="bg-gradient-to-br from-slate-50 to-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
+                      <div className="rounded-xl border border-[#4BADD1]/30 bg-gradient-to-br from-[#4BADD1] via-[#3aaad8] to-[#2f9ac4] p-5 shadow-sm hover:shadow-md transition">
                         <div className="flex items-start justify-between mb-3">
                           <div>
-                            <h3 className="text-lg font-bold text-slate-800">
+                            <h3 className="text-lg font-bold text-white">
                               {step.description || step.stage || "N/A"}
                             </h3>
-                            <div className="text-sm text-slate-600 mt-1">
+                            <div className="text-sm text-white/80 mt-1">
                               {step.date
                                 ? new Date(step.date).toLocaleString("vi-VN")
                                 : "N/A"}
                             </div>
                           </div>
                           {step.stage && (
-                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200 capitalize">
+                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white border border-white/30 capitalize">
                               {step.stage}
                             </span>
                           )}
                         </div>
 
-                        <div className="space-y-2 text-sm">
+                        <div className="space-y-2 text-sm text-white/85">
                           {step.manufacturer && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">
-                                Nhà sản xuất:
-                              </span>
-                              <span className="font-medium text-slate-800">
+                              <span className="text-white/70">Nhà sản xuất:</span>
+                              <span className="font-medium text-white">
                                 {typeof step.manufacturer === "object"
                                   ? step.manufacturer.fullName ||
                                     step.manufacturer.username ||
@@ -264,20 +289,16 @@ export default function PublicNFTTracking() {
                             <>
                               {step.details.quantity && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-slate-500">
-                                    Số lượng:
-                                  </span>
-                                  <span className="font-bold text-emerald-600">
+                                  <span className="text-white/70">Số lượng:</span>
+                                  <span className="font-bold text-white">
                                     {step.details.quantity}
                                   </span>
                                 </div>
                               )}
                               {step.details.mfgDate && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-slate-500">
-                                    Ngày sản xuất:
-                                  </span>
-                                  <span className="font-medium text-slate-800">
+                                  <span className="text-white/70">Ngày sản xuất:</span>
+                                  <span className="font-medium text-white">
                                     {new Date(
                                       step.details.mfgDate
                                     ).toLocaleDateString("vi-VN")}
@@ -288,16 +309,16 @@ export default function PublicNFTTracking() {
                           )}
                           {step.quantity && !step.details?.quantity && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">Số lượng:</span>
-                              <span className="font-bold text-emerald-600">
+                              <span className="text-white/70">Số lượng:</span>
+                              <span className="font-bold text-white">
                                 {step.quantity}
                               </span>
                             </div>
                           )}
                           {step.from && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">Từ:</span>
-                              <span className="font-medium text-slate-800">
+                              <span className="text-white/70">Từ:</span>
+                              <span className="font-medium text-white">
                                 {typeof step.from === "object"
                                   ? step.from.fullName ||
                                     step.from.username ||
@@ -309,8 +330,8 @@ export default function PublicNFTTracking() {
                           )}
                           {step.to && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">Đến:</span>
-                              <span className="font-medium text-slate-800">
+                              <span className="text-white/70">Đến:</span>
+                              <span className="font-medium text-white">
                                 {typeof step.to === "object"
                                   ? step.to.fullName ||
                                     step.to.username ||
@@ -322,17 +343,15 @@ export default function PublicNFTTracking() {
                           )}
                           {step.transactionHash && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500">
-                                Mã giao dịch
-                              </span>
-                              <span className="font-mono text-xs text-blue-600 truncate">
+                              <span className="text-white/70">Mã giao dịch</span>
+                              <span className="font-mono text-xs text-white truncate">
                                 {step.transactionHash}
                               </span>
                             </div>
                           )}
                           {step.notes && (
-                            <div className="mt-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                              <span className="text-amber-800 text-xs">
+                            <div className="mt-2 p-3 bg-white/15 rounded-lg border border-white/20">
+                              <span className="text-white text-xs">
                                 {step.notes}
                               </span>
                             </div>
@@ -351,57 +370,57 @@ export default function PublicNFTTracking() {
 
             {/* Thông tin thuốc chi tiết */}
             {journey.nft?.drug && (
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border border-blue-200 p-6">
-                <h2 className="text-xl font-bold text-blue-900 mb-4 flex items-center gap-2">
+              <div className="bg-gradient-to-br from-[#4BADD1]/10 to-[#3aaad8]/10 rounded-2xl border border-[#4BADD1]/30 p-6">
+                <h2 className="text-xl font-bold text-[#077ca3] mb-4 flex items-center gap-2">
                   Thông tin chi tiết
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {journey.nft.drug.genericName && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Tên hoạt chất</div>
-                      <div className="font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Tên hoạt chất</div>
+                      <div className="font-semibold text-[#077ca3]">
                         {journey.nft.drug.genericName}
                       </div>
                     </div>
                   )}
                   {journey.nft.drug.atcCode && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Mã ATC</div>
-                      <div className="font-mono font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Mã ATC</div>
+                      <div className="font-mono font-semibold text-[#077ca3]">
                         {journey.nft.drug.atcCode}
                       </div>
                     </div>
                   )}
                   {journey.nft.drug.dosageForm && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Dạng bào chế</div>
-                      <div className="font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Dạng bào chế</div>
+                      <div className="font-semibold text-[#077ca3]">
                         {journey.nft.drug.dosageForm}
                       </div>
                     </div>
                   )}
                   {journey.nft.drug.strength && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Hàm lượng</div>
-                      <div className="font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Hàm lượng</div>
+                      <div className="font-semibold text-[#077ca3]">
                         {journey.nft.drug.strength}
                       </div>
                     </div>
                   )}
                   {journey.nft.drug.packaging && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">
                         Quy cách đóng gói
                       </div>
-                      <div className="font-semibold text-blue-900">
+                      <div className="font-semibold text-[#077ca3]">
                         {journey.nft.drug.packaging}
                       </div>
                     </div>
                   )}
                   {journey.nft.mfgDate && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Ngày sản xuất</div>
-                      <div className="font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Ngày sản xuất</div>
+                      <div className="font-semibold text-[#077ca3]">
                         {new Date(journey.nft.mfgDate).toLocaleDateString(
                           "vi-VN"
                         )}
@@ -409,9 +428,9 @@ export default function PublicNFTTracking() {
                     </div>
                   )}
                   {journey.nft.expDate && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Hạn sử dụng</div>
-                      <div className="font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Hạn sử dụng</div>
+                      <div className="font-semibold text-[#077ca3]">
                         {new Date(journey.nft.expDate).toLocaleDateString(
                           "vi-VN"
                         )}
@@ -419,9 +438,9 @@ export default function PublicNFTTracking() {
                     </div>
                   )}
                   {journey.nft.drug.manufacturer && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-700">Nhà sản xuất</div>
-                      <div className="font-semibold text-blue-900">
+                    <div className="bg-white rounded-lg p-3 border border-[#4BADD1]/50">
+                      <div className="text-sm text-[#4BADD1]">Nhà sản xuất</div>
+                      <div className="font-semibold text-[#077ca3]">
                         {typeof journey.nft.drug.manufacturer === "object"
                           ? journey.nft.drug.manufacturer.name ||
                             journey.nft.drug.manufacturer.fullName ||

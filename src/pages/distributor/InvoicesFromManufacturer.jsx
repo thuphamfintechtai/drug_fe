@@ -1,18 +1,23 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import DashboardLayout from "../../components/DashboardLayout";
 import TruckLoader from "../../components/TruckLoader";
 import {
   getInvoicesFromManufacturer,
   confirmReceipt,
 } from "../../services/distributor/distributorService";
+import { Search } from "../../components/ui/search";
+import { InvoiceComponent } from "../../components/invoice/invoice";
+import { Card } from "../../components/ui/card";
 
 export default function InvoicesFromManufacturer() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isConfirming, setIsConfirming] = useState(false); // FIX: Prevent double submission
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -51,10 +56,14 @@ export default function InvoicesFromManufacturer() {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
-
-  // Sync searchInput with URL search param on mount/change
+  // Sync searchInput với URL search param, nhưng không trigger auto search khi chỉ page thay đổi
+  const prevSearchRef = useRef(search);
   useEffect(() => {
-    setSearchInput(search);
+    // Chỉ update searchInput khi search thực sự thay đổi (không phải do page change)
+    if (prevSearchRef.current !== search) {
+      setSearchInput(search);
+      prevSearchRef.current = search;
+    }
   }, [search]);
 
   const navigationItems = [
@@ -232,17 +241,19 @@ export default function InvoicesFromManufacturer() {
 
   const loadData = async () => {
     try {
-      setLoading(true);
-      setLoadingProgress(0);
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
+      if (isInitialLoad) {
+        setLoading(true);
+        setLoadingProgress(0);
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+        progressIntervalRef.current = setInterval(() => {
+          setLoadingProgress((prev) =>
+            prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
+          );
+        }, 50);
       }
-      progressIntervalRef.current = setInterval(() => {
-        setLoadingProgress((prev) =>
-          prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
-        );
-      }, 50);
 
       const params = { page, limit: 10 };
       if (search) params.search = search;
@@ -250,7 +261,7 @@ export default function InvoicesFromManufacturer() {
 
       const response = await getInvoicesFromManufacturer(params);
 
-      if (progressIntervalRef.current) {
+      if (isInitialLoad && progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
@@ -269,40 +280,43 @@ export default function InvoicesFromManufacturer() {
         setItems([]);
       }
 
-      let currentProgress = 0;
-      setLoadingProgress((prev) => {
-        currentProgress = prev;
-        return prev;
-      });
-
-      if (currentProgress < 0.9) {
-        await new Promise((resolve) => {
-          const speedUp = setInterval(() => {
-            setLoadingProgress((prev) => {
-              if (prev < 1) {
-                const np = Math.min(prev + 0.15, 1);
-                if (np >= 1) {
-                  clearInterval(speedUp);
-                  resolve();
-                }
-                return np;
-              }
-              clearInterval(speedUp);
-              resolve();
-              return 1;
-            });
-          }, 30);
-          setTimeout(() => {
-            clearInterval(speedUp);
-            setLoadingProgress(1);
-            resolve();
-          }, 500);
+      if (isInitialLoad) {
+        let currentProgress = 0;
+        setLoadingProgress((prev) => {
+          currentProgress = prev;
+          return prev;
         });
-      } else {
-        setLoadingProgress(1);
-        await new Promise((r) => setTimeout(r, 200));
+
+        if (currentProgress < 0.9) {
+          await new Promise((resolve) => {
+            const speedUp = setInterval(() => {
+              setLoadingProgress((prev) => {
+                if (prev < 1) {
+                  const np = Math.min(prev + 0.15, 1);
+                  if (np >= 1) {
+                    clearInterval(speedUp);
+                    resolve();
+                  }
+                  return np;
+                }
+                clearInterval(speedUp);
+                resolve();
+                return 1;
+              });
+            }, 30);
+            setTimeout(() => {
+              clearInterval(speedUp);
+              setLoadingProgress(1);
+              resolve();
+            }, 500);
+          });
+        } else {
+          setLoadingProgress(1);
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        await new Promise((r) => setTimeout(r, 100));
       }
-      await new Promise((r) => setTimeout(r, 100));
+      setIsInitialLoad(false);
     } catch (error) {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -310,16 +324,28 @@ export default function InvoicesFromManufacturer() {
       }
       console.error("Lỗi khi tải danh sách đơn hàng:", error);
       setItems([]);
-      setLoadingProgress(0);
+      if (isInitialLoad) {
+        setLoadingProgress(0);
+      }
+      setIsInitialLoad(false);
     } finally {
-      setLoading(false);
-      setTimeout(() => setLoadingProgress(0), 500);
+      if (isInitialLoad) {
+        setLoading(false);
+        setTimeout(() => setLoadingProgress(0), 500);
+      }
     }
   };
 
-  // Handle search - only trigger on Enter or button click
-  const handleSearch = () => {
-    updateFilter({ search: searchInput, page: 1 });
+  const handleSearch = (searchValue = null, resetPage = true) => {
+    const valueToSearch = searchValue !== null ? searchValue : searchInput;
+    if (searchValue !== null) {
+      setSearchInput(searchValue);
+    }
+    if (resetPage) {
+      updateFilter({ search: valueToSearch, page: 1 });
+    } else {
+      updateFilter({ search: valueToSearch });
+    }
   };
 
   // Clear search button
@@ -331,8 +357,20 @@ export default function InvoicesFromManufacturer() {
   const updateFilter = (next) => {
     const nextParams = new URLSearchParams(searchParams);
     Object.entries(next).forEach(([k, v]) => {
-      if (v === "" || v === undefined || v === null) nextParams.delete(k);
-      else nextParams.set(k, String(v));
+      if (v === "" || v === undefined || v === null) {
+        nextParams.delete(k);
+      } else {
+        if (k === "page") {
+          const pageNum = parseInt(v, 10);
+          if (pageNum > 0) {
+            nextParams.set(k, String(pageNum));
+          } else {
+            nextParams.delete(k);
+          }
+        } else {
+          nextParams.set(k, String(v));
+        }
+      }
     });
     setSearchParams(nextParams);
   };
@@ -468,14 +506,16 @@ export default function InvoicesFromManufacturer() {
   const handleConfirmReceipt = async () => {
     if (isConfirming || !selectedInvoice) return;
 
-    // Validate form
     if (!validateConfirmForm()) {
+      toast.error("Vui lòng kiểm tra và sửa các lỗi trong form", {
+        position: "top-right",
+        duration: 4000,
+      });
       return;
     }
 
     setIsConfirming(true);
     setLoading(true);
-    // Bắt đầu progress cho TruckLoader
     setLoadingProgress(0);
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
@@ -488,7 +528,6 @@ export default function InvoicesFromManufacturer() {
     }, 50);
 
     try {
-      // Tính số lượng đã được gửi đến
       const sentQuantity =
         selectedInvoice?.totalQuantity ??
         selectedInvoice?.quantity ??
@@ -552,8 +591,9 @@ export default function InvoicesFromManufacturer() {
       const response = await confirmReceipt(payload);
 
       if (response.data.success) {
-        alert(
-          "Xác nhận nhận hàng thành công!\n\nTrạng thái: Đang chờ Manufacturer xác nhận chuyển quyền sở hữu NFT."
+        toast.success(
+          "Xác nhận nhận hàng thành công! Trạng thái: Đang chờ Manufacturer xác nhận chuyển quyền sở hữu NFT.",
+          { position: "top-right", duration: 5000 }
         );
 
         // FIX: Reset form after successful submission
@@ -622,9 +662,10 @@ export default function InvoicesFromManufacturer() {
       }
     } catch (error) {
       console.error("Lỗi khi xác nhận:", error);
-      alert(
+      toast.error(
         "Không thể xác nhận nhận hàng: " +
-          (error.response?.data?.message || error.message)
+          (error.response?.data?.message || error.message),
+        { position: "top-right", duration: 4000 }
       );
     } finally {
       if (progressIntervalRef.current) {
@@ -681,14 +722,10 @@ export default function InvoicesFromManufacturer() {
       ) : (
         <div className="space-y-6">
           {/* Banner kiểu Manufacturer */}
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 mb-6">
-            <h1 className="text-xl font-semibold text-[#007b91]">
-              Đơn hàng từ nhà sản xuất
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Xem và xác nhận nhận hàng từ pharma company
-            </p>
-          </div>
+          <Card
+            title="Đơn hàng từ nhà sản xuất"
+            subtitle="Xem và xác nhận nhận hàng từ pharma company"
+          />
 
           {/* Filters */}
           <motion.div
@@ -697,58 +734,34 @@ export default function InvoicesFromManufacturer() {
             initial="hidden"
             animate="show"
           >
-            <div className="flex flex-col md:flex-row gap-3 md:items-end">
-              <div className="flex-1">
-                <label className="block text-sm text-[#003544]/70 mb-1">
-                  Tìm kiếm
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
-                      />
-                    </svg>
-                  </span>
-                  <input
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleSearch();
-                      }
-                    }}
-                    placeholder="Tìm theo số đơn, ghi chú..."
-                    className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
-                    maxLength={200}
-                  />
-                  {/* FIX: Clear button */}
-                  {searchInput && (
-                    <button
-                      onClick={handleClearSearch}
-                      className="absolute right-24 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      title="Xóa tìm kiếm"
-                    >
-                      ✕
-                    </button>
-                  )}
-                  <button
-                    onClick={handleSearch}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition"
-                  >
-                    Tìm Kiếm
-                  </button>
-                </div>
-              </div>
+            <div className="flex flex-col md:flex-row gap-3 md:items-end relative">
+              <Search
+                searchInput={searchInput}
+                setSearchInput={setSearchInput}
+                handleSearch={handleSearch}
+                handleClearSearch={handleClearSearch}
+                placeholder="Tìm theo số đơn"
+                data={items}
+                getSearchText={(item) => {
+                  const invoiceNumber = item.invoiceNumber || "";
+                  return `${invoiceNumber}`.trim();
+                }}
+                matchFunction={(item, searchLower) => {
+                  const invoiceNumber = (
+                    item.invoiceNumber || ""
+                  ).toLowerCase();
+                  return invoiceNumber.includes(searchLower);
+                }}
+                getDisplayText={(item, searchLower) => {
+                  const invoiceNumber = (
+                    item.invoiceNumber || ""
+                  ).toLowerCase();
+                  if (invoiceNumber.includes(searchLower)) {
+                    return item.invoiceNumber || "";
+                  }
+                  return item.invoiceNumber || "";
+                }}
+              />
               <div>
                 <label className="block text-sm text-[#003544]/70 mb-1">
                   Trạng thái
@@ -772,160 +785,16 @@ export default function InvoicesFromManufacturer() {
           </motion.div>
 
           {/* List */}
-          <motion.div
-            className="space-y-4"
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-          >
-            {items.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
-                <h3 className="text-xl font-bold text-slate-800 mb-2">
-                  Chưa có đơn hàng nào
-                </h3>
-                <p className="text-slate-600">
-                  Đơn hàng từ nhà sản xuất sẽ hiển thị ở đây
-                </p>
-              </div>
-            ) : (
-              items.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden hover:shadow-lg transition"
-                >
-                  <div className="p-5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-[#003544]">
-                            Đơn: {item.invoiceNumber || "N/A"}
-                          </h3>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                              item.status
-                            )}`}
-                          >
-                            {getStatusLabel(item.status)}
-                          </span>
-                        </div>
-                        <div className="space-y-1 text-sm text-slate-600">
-                          <div>
-                            Từ:{" "}
-                            <span className="font-medium text-slate-800">
-                              {item.fromManufacturer?.fullName ||
-                                item.fromManufacturer?.username ||
-                                "N/A"}
-                            </span>
-                          </div>
-                          <div>
-                            Số lượng:{" "}
-                            <span className="font-bold text-blue-700">
-                              {(() => {
-                                const quantity =
-                                  item.totalQuantity ??
-                                  item.quantity ??
-                                  item.nftQuantity ??
-                                  (Array.isArray(item.nfts)
-                                    ? item.nfts.length
-                                    : Array.isArray(item.items)
-                                    ? item.items.length
-                                    : null);
-                                return quantity !== null &&
-                                  quantity !== undefined
-                                  ? `${quantity} NFT`
-                                  : "N/A";
-                              })()}
-                            </span>
-                          </div>
-                          <div>
-                            Ngày tạo:{" "}
-                            <span className="font-medium">
-                              {new Date(item.createdAt).toLocaleString("vi-VN")}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {item.status === "sent" && (
-                        <button
-                          onClick={() => handleOpenConfirm(item)}
-                          disabled={isConfirming}
-                          className="px-6 py-3 rounded-full bg-secondary hover:bg-primary !text-white font-semibold shadow-md hover:shadow-lg transition disabled:opacity-50"
-                        >
-                          Xác nhận nhận hàng
-                        </button>
-                      )}
-                    </div>
-
-                    {item.notes && (
-                      <div className="bg-slate-50 rounded-xl p-3 text-sm mb-3">
-                        <div className="font-semibold text-slate-700 mb-1">
-                          Ghi chú:
-                        </div>
-                        <div className="text-slate-600">{item.notes}</div>
-                      </div>
-                    )}
-
-                    {item.proofOfProduction && (
-                      <div className="bg-purple-50 rounded-xl p-3 border border-purple-200 text-sm">
-                        <div className="font-semibold text-purple-800 mb-2">
-                          Thông tin sản xuất:
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            Số lô:{" "}
-                            <span className="font-mono">
-                              {item.proofOfProduction.batchNumber}
-                            </span>
-                          </div>
-                          <div>
-                            NSX:{" "}
-                            {new Date(
-                              item.proofOfProduction.manufacturingDate
-                            ).toLocaleDateString("vi-VN")}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </motion.div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between mt-5">
-            <div className="text-sm text-slate-600">
-              Hiển thị {items.length} / {pagination.total} đơn hàng
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={page <= 1}
-                onClick={() => updateFilter({ page: page - 1 })}
-                className={`px-3 py-2 rounded-xl ${
-                  page <= 1
-                    ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "bg-white/90 border border-[#90e0ef55] hover:bg-[#f5fcff]"
-                }`}
-              >
-                Trước
-              </button>
-              <span className="text-sm text-slate-700">
-                Trang {page} / {pagination.pages || 1}
-              </span>
-              <button
-                disabled={page >= pagination.pages}
-                onClick={() => updateFilter({ page: page + 1 })}
-                className={`px-3 py-2 rounded-xl ${
-                  page >= pagination.pages
-                    ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "!text-white bg-linear-to-r from-[#00b4d8] via-[#48cae4] to-[#90e0ef] shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
-                }`}
-              >
-                Sau
-              </button>
-            </div>
-          </div>
+          <InvoiceComponent
+            items={items || []}
+            page={page}
+            pagination={pagination}
+            updateFilter={updateFilter}
+            getStatusColor={getStatusColor}
+            getStatusLabel={getStatusLabel}
+            handleOpenConfirm={handleOpenConfirm}
+            isConfirming={isConfirming}
+          />
 
           {/* Confirm Receipt Dialog */}
           {showConfirmDialog && selectedInvoice && (
@@ -960,7 +829,6 @@ export default function InvoicesFromManufacturer() {
                   </button>
                 </div>
 
-                {/* Body */}
                 <div className="p-8 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -970,7 +838,6 @@ export default function InvoicesFromManufacturer() {
                       <input
                         value={confirmForm.receivedBy.fullName}
                         onChange={(e) => {
-                          // FIX: Only allow letters with proper length validation
                           const value = e.target.value.replace(
                             /[^a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]/g,
                             ""
@@ -1007,7 +874,6 @@ export default function InvoicesFromManufacturer() {
                       <input
                         value={confirmForm.receivedBy.position}
                         onChange={(e) => {
-                          // FIX: Only allow letters with proper length validation
                           const value = e.target.value.replace(
                             /[^a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]/g,
                             ""
@@ -1120,7 +986,6 @@ export default function InvoicesFromManufacturer() {
                         max={new Date().toISOString().split("T")[0]}
                         onChange={(e) => {
                           const selectedValue = e.target.value;
-                          // Validate ngay khi onChange
                           if (selectedValue) {
                             const selectedDate = new Date(selectedValue);
                             selectedDate.setHours(0, 0, 0, 0);
@@ -1130,7 +995,6 @@ export default function InvoicesFromManufacturer() {
                             threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
                             threeDaysAgo.setHours(0, 0, 0, 0);
 
-                            // Nếu ngày hợp lệ, cập nhật form và xóa lỗi
                             if (
                               selectedDate <= today &&
                               selectedDate >= threeDaysAgo
@@ -1146,7 +1010,6 @@ export default function InvoicesFromManufacturer() {
                                 });
                               }
                             } else {
-                              // Nếu ngày không hợp lệ, vẫn cập nhật nhưng sẽ validate lại khi submit
                               setConfirmForm({
                                 ...confirmForm,
                                 distributionDate: selectedValue,
@@ -1166,7 +1029,6 @@ export default function InvoicesFromManufacturer() {
                           }
                         }}
                         onBlur={(e) => {
-                          // Validate khi blur để hiển thị lỗi ngay
                           const selectedValue = e.target.value;
                           if (selectedValue) {
                             const selectedDate = new Date(selectedValue);
@@ -1212,7 +1074,6 @@ export default function InvoicesFromManufacturer() {
                         type="number"
                         min="1"
                         max={(() => {
-                          // Tính số lượng đã được gửi đến
                           const sentQuantity =
                             selectedInvoice?.totalQuantity ??
                             selectedInvoice?.quantity ??
@@ -1240,13 +1101,10 @@ export default function InvoicesFromManufacturer() {
                             }
                             return;
                           }
-                          // Chuyển sang number để kiểm tra
                           const numValue = parseInt(value);
-                          // Nếu là NaN hoặc <= 0, tự động set về 1
                           if (isNaN(numValue) || numValue <= 0) {
                             value = "1";
                           } else {
-                            // Tính số lượng đã được gửi đến
                             const sentQuantity =
                               selectedInvoice?.totalQuantity ??
                               selectedInvoice?.quantity ??
@@ -1256,7 +1114,6 @@ export default function InvoicesFromManufacturer() {
                                 : Array.isArray(selectedInvoice?.items)
                                 ? selectedInvoice.items.length
                                 : 0);
-                            // Đảm bảo không vượt quá số lượng đã được gửi đến
                             if (sentQuantity > 0 && numValue > sentQuantity) {
                               value = sentQuantity.toString();
                             } else {
@@ -1275,7 +1132,6 @@ export default function InvoicesFromManufacturer() {
                           }
                         }}
                         onBlur={(e) => {
-                          // Khi blur (rời khỏi field), nếu rỗng hoặc <= 0, tự động set về 1
                           const value = e.target.value;
                           if (
                             !value ||
@@ -1302,7 +1158,6 @@ export default function InvoicesFromManufacturer() {
                         }`}
                       />
                       {(() => {
-                        // Tính số lượng đã được gửi đến
                         const sentQuantity =
                           selectedInvoice?.totalQuantity ??
                           selectedInvoice?.quantity ??

@@ -219,26 +219,61 @@ export default function UserHome() {
 
     console.log("QR Code scanned (original):", trimmedText);
 
+    // FIX: Chuyển đổi localhost:9000 sang production URL hoặc extract tokenId từ scanQR endpoint
+    let processedText = trimmedText;
+    
+    // Nếu QR code chứa localhost:9000, thay thế bằng production domain
+    if (trimmedText.includes("localhost:9000")) {
+      const productionDomain = "https://ailusion.io.vn";
+      processedText = trimmedText.replace(
+        /https?:\/\/localhost:9000/g,
+        productionDomain
+      );
+      processedText = processedText.replace(
+        /localhost:9000/g,
+        productionDomain
+      );
+      console.log("Converted localhost:9000 to production URL:", processedText);
+    }
+
+    // Nếu QR code là API endpoint scanQR, extract tokenId và navigate
+    if (processedText.includes("/api/publicRoute/scanQR/") || processedText.includes("/publicRoute/scanQR/")) {
+      const tokenIdMatch = processedText.match(/\/scanQR\/(\d+)/);
+      if (tokenIdMatch && tokenIdMatch[1]) {
+        const tokenId = tokenIdMatch[1];
+        console.log("Extracted tokenId from QR URL:", tokenId);
+        setTokenId(tokenId);
+        setShowQRScanner(false);
+        setIsScanning(false);
+        setShowUploadQR(false);
+        toast.success("Đã quét QR thành công!");
+        setTimeout(() => {
+          navigate(`/track?tokenId=${encodeURIComponent(tokenId)}`);
+        }, 800);
+        return;
+      }
+    }
+
     const isUrl =
-      /^(https?:\/\/|localhost|http:\/\/localhost|https:\/\/localhost)/i.test(
-        trimmedText
+      /^(https?:\/\/|drug-be.vercel.app|ailusion.io.vn|http:\/\/drug-be.vercel.app|https:\/\/drug-be.vercel.app|http:\/\/ailusion.io.vn|https:\/\/ailusion.io.vn)/i.test(
+        processedText
       ) ||
       /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}/.test(
-        trimmedText
+        processedText
       );
 
     if (isUrl) {
       try {
-        let urlToNavigate = trimmedText;
+        let urlToNavigate = processedText;
 
         if (
-          !trimmedText.startsWith("http://") &&
-          !trimmedText.startsWith("https://")
+          !processedText.startsWith("http://") &&
+          !processedText.startsWith("https://")
         ) {
-          if (trimmedText.startsWith("localhost")) {
-            urlToNavigate = `http://${trimmedText}`;
+          if (processedText.startsWith("drug-be.vercel.app")) {
+            urlToNavigate = `https://${processedText}`;
           } else {
-            urlToNavigate = `http://${trimmedText}`;
+            urlToNavigate = `https://${processedText}`;
           }
         }
 
@@ -252,9 +287,9 @@ export default function UserHome() {
 
         setTimeout(() => {
           const finalUrl =
-            trimmedText.startsWith("http://") ||
-            trimmedText.startsWith("https://")
-              ? trimmedText
+            processedText.startsWith("http://") ||
+            processedText.startsWith("https://")
+              ? processedText
               : url.href;
           console.log("Final redirect URL:", finalUrl);
           window.location.href = finalUrl;
@@ -266,12 +301,12 @@ export default function UserHome() {
         setShowUploadQR(false);
         toast.success("Đã quét QR thành công! Đang chuyển hướng...");
         setTimeout(() => {
-          let urlToRedirect = trimmedText;
+          let urlToRedirect = processedText;
           if (
-            !trimmedText.startsWith("http://") &&
-            !trimmedText.startsWith("https://")
+            !processedText.startsWith("http://") &&
+            !processedText.startsWith("https://")
           ) {
-            urlToRedirect = `http://${trimmedText}`;
+            urlToRedirect = `https://${processedText}`;
           }
           console.log("Direct redirect to:", urlToRedirect);
           window.location.href = urlToRedirect;
@@ -279,13 +314,13 @@ export default function UserHome() {
       }
     } else {
       console.log("QR does not contain URL, treating as tokenId");
-      setTokenId(trimmedText);
+      setTokenId(processedText);
       setShowQRScanner(false);
       setIsScanning(false);
       setShowUploadQR(false);
       toast.success("Đã quét QR thành công!");
       setTimeout(() => {
-        navigate(`/track?tokenId=${encodeURIComponent(trimmedText)}`);
+        navigate(`/track?tokenId=${encodeURIComponent(processedText)}`);
       }, 800);
     }
   };
@@ -1416,7 +1451,7 @@ export default function UserHome() {
                       d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                     />
                   </svg>
-                  info@drugchain.vn
+                  phamthianhthu30092004@gmail.com
                 </li>
                 <li className="flex items-center gap-2 text-sm sm:text-base">
                   <svg
@@ -1432,7 +1467,7 @@ export default function UserHome() {
                       d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                     />
                   </svg>
-                  1900 xxxx
+                  0868322170
                 </li>
                 <li className="flex items-center gap-2 text-sm sm:text-base">
                   <svg
@@ -1454,7 +1489,7 @@ export default function UserHome() {
                       d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                     />
                   </svg>
-                  Hà Nội, Việt Nam
+                  TPHCM, Việt Nam
                 </li>
               </ul>
             </motion.div>
@@ -1561,7 +1596,6 @@ export default function UserHome() {
                         </>
                       ) : (
                         <>
-                          <div className="text-4xl mb-2">📷</div>
                           <p className="text-sm sm:text-base">Nhấn "Quét QR" để bắt đầu</p>
                         </>
                       )}

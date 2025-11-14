@@ -5,6 +5,14 @@ import DashboardLayout from "../../components/DashboardLayout";
 import { getDistributionHistory } from "../../services/admin/adminService";
 import TruckLoader from "../../components/TruckLoader";
 
+// Validate ObjectId format (24 hex characters)
+const isValidObjectId = (id) => {
+  if (!id || id.trim() === "") return true; // Empty is valid (means no filter)
+  // MongoDB ObjectId: 24 hex characters
+  const objectIdPattern = /^[0-9a-fA-F]{24}$/;
+  return objectIdPattern.test(id.trim());
+};
+
 export default function DistributionHistory() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
@@ -22,6 +30,7 @@ export default function DistributionHistory() {
   const [distributorIdInput, setDistributorIdInput] = useState("");
   const [pharmacyIdInput, setPharmacyIdInput] = useState("");
   const [drugIdInput, setDrugIdInput] = useState("");
+  const [validationErrors, setValidationErrors] = useState({});
 
   const page = parseInt(searchParams.get("page") || "1", 10);
   const distributorId = searchParams.get("distributorId") || "";
@@ -29,11 +38,54 @@ export default function DistributionHistory() {
   const drugId = searchParams.get("drugId") || "";
   const status = searchParams.get("status") || "";
 
+  const updateFilter = (next) => {
+    const nextParams = new URLSearchParams(searchParams);
+    Object.entries(next).forEach(([k, v]) => {
+      if (v === "" || v === undefined || v === null) nextParams.delete(k);
+      else nextParams.set(k, String(v));
+    });
+    setSearchParams(nextParams);
+  };
+
   // Sync search inputs with URL params on mount/change (only from URL changes, not user input)
+  // Also validate and clear invalid ObjectIds from URL
   useEffect(() => {
-    setDistributorIdInput(distributorId);
-    setPharmacyIdInput(pharmacyId);
-    setDrugIdInput(drugId);
+    const invalidParams = {};
+    
+    // Validate and set inputs
+    if (distributorId && isValidObjectId(distributorId)) {
+      setDistributorIdInput(distributorId);
+    } else if (distributorId) {
+      // Invalid ObjectId in URL - clear it
+      invalidParams.distributorId = "";
+      setDistributorIdInput("");
+    } else {
+      setDistributorIdInput("");
+    }
+    
+    if (pharmacyId && isValidObjectId(pharmacyId)) {
+      setPharmacyIdInput(pharmacyId);
+    } else if (pharmacyId) {
+      invalidParams.pharmacyId = "";
+      setPharmacyIdInput("");
+    } else {
+      setPharmacyIdInput("");
+    }
+    
+    if (drugId && isValidObjectId(drugId)) {
+      setDrugIdInput(drugId);
+    } else if (drugId) {
+      invalidParams.drugId = "";
+      setDrugIdInput("");
+    } else {
+      setDrugIdInput("");
+    }
+    
+    // Clear invalid params from URL if any
+    if (Object.keys(invalidParams).length > 0) {
+      updateFilter(invalidParams);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [distributorId, pharmacyId, drugId]);
 
   const navigationItems = useMemo(
@@ -64,9 +116,16 @@ export default function DistributionHistory() {
     }, 50);
     try {
       const params = { page, limit: 20 };
-      if (distributorId) params.distributorId = distributorId;
-      if (pharmacyId) params.pharmacyId = pharmacyId;
-      if (drugId) params.drugId = drugId;
+      // Only add params if they are valid ObjectIds
+      if (distributorId && isValidObjectId(distributorId)) {
+        params.distributorId = distributorId;
+      }
+      if (pharmacyId && isValidObjectId(pharmacyId)) {
+        params.pharmacyId = pharmacyId;
+      }
+      if (drugId && isValidObjectId(drugId)) {
+        params.drugId = drugId;
+      }
       if (status) params.status = status;
 
       const response = await getDistributionHistory(params);
@@ -83,7 +142,30 @@ export default function DistributionHistory() {
         );
       }
     } catch (e) {
-      setError(e?.response?.data?.message || "Không thể tải dữ liệu");
+      const errorMessage = e?.response?.data?.message || e?.message || "Không thể tải dữ liệu";
+      // Check if error is related to ObjectId validation
+      if (errorMessage.includes("ObjectId") || errorMessage.includes("Cast to ObjectId")) {
+        setError("Mã ID không hợp lệ. Vui lòng kiểm tra lại định dạng ObjectId (24 ký tự hex).");
+        // Clear invalid params from URL
+        const invalidParams = {};
+        if (distributorId && !isValidObjectId(distributorId)) {
+          invalidParams.distributorId = "";
+          setDistributorIdInput("");
+        }
+        if (pharmacyId && !isValidObjectId(pharmacyId)) {
+          invalidParams.pharmacyId = "";
+          setPharmacyIdInput("");
+        }
+        if (drugId && !isValidObjectId(drugId)) {
+          invalidParams.drugId = "";
+          setDrugIdInput("");
+        }
+        if (Object.keys(invalidParams).length > 0) {
+          updateFilter(invalidParams);
+        }
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -139,12 +221,30 @@ export default function DistributionHistory() {
 
   // Handle search - only trigger on Enter or button click
   const handleSearch = () => {
-    updateFilter({
-      distributorId: distributorIdInput,
-      pharmacyId: pharmacyIdInput,
-      drugId: drugIdInput,
-      page: 1,
-    });
+    const errors = {};
+    
+    // Validate ObjectId formats
+    if (distributorIdInput && !isValidObjectId(distributorIdInput)) {
+      errors.distributorId = "Mã NPP không hợp lệ. Vui lòng nhập ObjectId 24 ký tự (ví dụ: 507f1f77bcf86cd799439011)";
+    }
+    if (pharmacyIdInput && !isValidObjectId(pharmacyIdInput)) {
+      errors.pharmacyId = "Mã nhà thuốc không hợp lệ. Vui lòng nhập ObjectId 24 ký tự (ví dụ: 507f1f77bcf86cd799439011)";
+    }
+    if (drugIdInput && !isValidObjectId(drugIdInput)) {
+      errors.drugId = "Mã thuốc không hợp lệ. Vui lòng nhập ObjectId 24 ký tự (ví dụ: 507f1f77bcf86cd799439011)";
+    }
+
+    setValidationErrors(errors);
+
+    // Only proceed if no validation errors
+    if (Object.keys(errors).length === 0) {
+      updateFilter({
+        distributorId: distributorIdInput.trim(),
+        pharmacyId: pharmacyIdInput.trim(),
+        drugId: drugIdInput.trim(),
+        page: 1,
+      });
+    }
   };
 
   // Clear search button
@@ -152,21 +252,13 @@ export default function DistributionHistory() {
     setDistributorIdInput("");
     setPharmacyIdInput("");
     setDrugIdInput("");
+    setValidationErrors({});
     updateFilter({
       distributorId: "",
       pharmacyId: "",
       drugId: "",
       page: 1,
     });
-  };
-
-  const updateFilter = (next) => {
-    const nextParams = new URLSearchParams(searchParams);
-    Object.entries(next).forEach(([k, v]) => {
-      if (v === "" || v === undefined || v === null) nextParams.delete(k);
-      else nextParams.set(k, String(v));
-    });
-    setSearchParams(nextParams);
   };
 
   const fadeUp = {
@@ -218,6 +310,10 @@ export default function DistributionHistory() {
                   onChange={(e) => {
                     // Chỉ cập nhật state, không trigger search
                     setDistributorIdInput(e.target.value);
+                    // Clear validation error when user types
+                    if (validationErrors.distributorId) {
+                      setValidationErrors({ ...validationErrors, distributorId: undefined });
+                    }
                   }}
                   onKeyDown={(e) => {
                     // Chỉ search khi nhấn Enter
@@ -226,9 +322,16 @@ export default function DistributionHistory() {
                       handleSearch();
                     }
                   }}
-                  placeholder="Lọc theo NPP"
-                  className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+                  placeholder="Lọc theo NPP (ObjectId)"
+                  className={`w-full h-12 rounded-full border bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 transition ${
+                    validationErrors.distributorId
+                      ? "border-red-300 focus:ring-red-400"
+                      : "border-gray-200 focus:ring-[#48cae4]"
+                  }`}
                 />
+                {validationErrors.distributorId && (
+                  <p className="text-xs text-red-600 mt-1">{validationErrors.distributorId}</p>
+                )}
               </div>
 
               <div>
@@ -241,6 +344,10 @@ export default function DistributionHistory() {
                   onChange={(e) => {
                     // Chỉ cập nhật state, không trigger search
                     setPharmacyIdInput(e.target.value);
+                    // Clear validation error when user types
+                    if (validationErrors.pharmacyId) {
+                      setValidationErrors({ ...validationErrors, pharmacyId: undefined });
+                    }
                   }}
                   onKeyDown={(e) => {
                     // Chỉ search khi nhấn Enter
@@ -249,9 +356,16 @@ export default function DistributionHistory() {
                       handleSearch();
                     }
                   }}
-                  placeholder="Lọc theo Nhà thuốc"
-                  className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+                  placeholder="Lọc theo Nhà thuốc (ObjectId)"
+                  className={`w-full h-12 rounded-full border bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 transition ${
+                    validationErrors.pharmacyId
+                      ? "border-red-300 focus:ring-red-400"
+                      : "border-gray-200 focus:ring-[#48cae4]"
+                  }`}
                 />
+                {validationErrors.pharmacyId && (
+                  <p className="text-xs text-red-600 mt-1">{validationErrors.pharmacyId}</p>
+                )}
               </div>
 
               <div>
@@ -264,6 +378,10 @@ export default function DistributionHistory() {
                   onChange={(e) => {
                     // Chỉ cập nhật state, không trigger search
                     setDrugIdInput(e.target.value);
+                    // Clear validation error when user types
+                    if (validationErrors.drugId) {
+                      setValidationErrors({ ...validationErrors, drugId: undefined });
+                    }
                   }}
                   onKeyDown={(e) => {
                     // Chỉ search khi nhấn Enter
@@ -272,9 +390,16 @@ export default function DistributionHistory() {
                       handleSearch();
                     }
                   }}
-                  placeholder="Lọc theo thuốc"
-                  className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+                  placeholder="Lọc theo thuốc (ObjectId)"
+                  className={`w-full h-12 rounded-full border bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 transition ${
+                    validationErrors.drugId
+                      ? "border-red-300 focus:ring-red-400"
+                      : "border-gray-200 focus:ring-[#48cae4]"
+                  }`}
                 />
+                {validationErrors.drugId && (
+                  <p className="text-xs text-red-600 mt-1">{validationErrors.drugId}</p>
+                )}
               </div>
 
               <div>

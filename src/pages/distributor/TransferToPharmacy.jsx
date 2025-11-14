@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import DashboardLayout from "../../components/DashboardLayout";
 import TruckLoader from "../../components/TruckLoader";
 import TruckAnimationButton from "../../components/TruckAnimationButton";
 import BlockchainTransferView from "../../components/BlockchainTransferView";
+import { Card } from "../../components/ui/card";
 import {
   getDistributionHistory,
   getPharmacies,
@@ -258,6 +260,15 @@ export default function TransferToPharmacy() {
       console.error("Lỗi khi tải dữ liệu:", error);
       setDistributions([]);
       setPharmacies([]);
+      toast.error(
+        `Không thể tải dữ liệu: ${
+          error.response?.data?.message || error.message
+        }`,
+        {
+          position: "top-right",
+          duration: 4000,
+        }
+      );
     } finally {
       setLoading(false);
       setLoadingProgress(0);
@@ -265,7 +276,6 @@ export default function TransferToPharmacy() {
   };
 
   const extractTokenIds = (distributionObj) => {
-    // Ưu tiên 1: manufacturerInvoice.tokenIds
     if (
       distributionObj.manufacturerInvoice?.tokenIds &&
       Array.isArray(distributionObj.manufacturerInvoice.tokenIds)
@@ -275,7 +285,6 @@ export default function TransferToPharmacy() {
       );
     }
 
-    // Ưu tiên 2: invoice.tokenIds
     if (
       distributionObj.invoice?.tokenIds &&
       Array.isArray(distributionObj.invoice.tokenIds)
@@ -283,7 +292,6 @@ export default function TransferToPharmacy() {
       return distributionObj.invoice.tokenIds.map((id) => String(id));
     }
 
-    // Ưu tiên 3: nftInfos
     if (distributionObj.nftInfos && Array.isArray(distributionObj.nftInfos)) {
       const tokenIds = distributionObj.nftInfos
         .map((nft) => {
@@ -294,7 +302,6 @@ export default function TransferToPharmacy() {
       if (tokenIds.length > 0) return tokenIds;
     }
 
-    // Ưu tiên 4: tokenIds trực tiếp
     if (distributionObj.tokenIds && Array.isArray(distributionObj.tokenIds)) {
       return distributionObj.tokenIds.map((id) => String(id));
     }
@@ -360,25 +367,27 @@ export default function TransferToPharmacy() {
           "⚠️ Không tìm thấy tokenIds trong distribution:",
           dist._id
         );
-        alert(
-          `⚠️ Cảnh báo: Không tìm thấy token IDs\n\n` +
-            `Distribution ID: ${dist._id}\n` +
-            `Invoice ID: ${
-              dist?.manufacturerInvoice?._id ||
-              dist?.manufacturerInvoice ||
-              "N/A"
-            }\n\n` +
-            `Vui lòng kiểm tra:\n` +
-            `1. Distribution đã có NFT được gán chưa?\n` +
-            `2. Invoice từ manufacturer đã có tokenIds chưa?\n` +
-            `3. Hoặc liên hệ quản trị viên để kiểm tra.\n\n` +
-            `Bạn vẫn có thể tiếp tục, nhưng sẽ không thể tạo chuyển giao nếu không có tokenIds.`
+        toast.error(
+          `⚠️ Cảnh báo: Không tìm thấy token IDs. Distribution này có thể chưa có NFT được gán. Vui lòng kiểm tra invoice từ manufacturer hoặc liên hệ quản trị viên.`,
+          {
+            position: "top-right",
+            duration: 6000,
+          }
         );
       }
 
       setShowDialog(true);
     } catch (error) {
       console.error("Lỗi khi xử lý distribution:", error);
+      toast.error(
+        `Lỗi khi xử lý distribution: ${
+          error.response?.data?.message || error.message
+        }`,
+        {
+          position: "top-right",
+          duration: 5000,
+        }
+      );
       setSelectedDistribution({
         ...dist,
         tokenIds: tokenIds,
@@ -396,7 +405,10 @@ export default function TransferToPharmacy() {
 
   const handleSubmit = async () => {
     if (!formData.pharmacyId || !formData.quantity) {
-      alert("Vui lòng chọn nhà thuốc và nhập số lượng");
+      toast.error("Vui lòng chọn nhà thuốc và nhập số lượng", {
+        position: "top-right",
+        duration: 4000,
+      });
       return;
     }
 
@@ -406,15 +418,22 @@ export default function TransferToPharmacy() {
       requestedQty <= 0 ||
       requestedQty > selectedDistribution.distributedQuantity
     ) {
-      alert("Số lượng không hợp lệ");
+      toast.error("Số lượng không hợp lệ", {
+        position: "top-right",
+        duration: 4000,
+      });
       return;
     }
 
     const tokenIds = selectedDistribution.tokenIds || [];
 
     if (tokenIds.length === 0) {
-      alert(
-        "Không tìm thấy tokenIds!\n\nDistribution này chưa có NFT được gán.\nVui lòng liên hệ quản trị viên."
+      toast.error(
+        "Không tìm thấy tokenIds! Distribution này chưa có NFT được gán. Vui lòng liên hệ quản trị viên.",
+        {
+          position: "top-right",
+          duration: 5000,
+        }
       );
       return;
     }
@@ -422,11 +441,18 @@ export default function TransferToPharmacy() {
     const selectedTokenIds = tokenIds.slice(0, requestedQty);
 
     if (selectedTokenIds.length < requestedQty) {
+      toast.error(
+        `⚠️ Chỉ có ${selectedTokenIds.length} tokenIds khả dụng. Bạn yêu cầu ${requestedQty} nhưng chỉ có thể chuyển ${selectedTokenIds.length}.`,
+        {
+          position: "top-right",
+          duration: 6000,
+        }
+      );
       if (
         !window.confirm(
           `⚠️ Chỉ có ${selectedTokenIds.length} tokenIds khả dụng.\n\n` +
             `Bạn yêu cầu ${requestedQty} nhưng chỉ có thể chuyển ${selectedTokenIds.length}.\n\n` +
-            `Tiếp tục?`
+            `Tiếp tục với ${selectedTokenIds.length} NFT?`
         )
       ) {
         return;
@@ -447,47 +473,39 @@ export default function TransferToPharmacy() {
           .filter((issue) => issue.tokenId)
           .map(
             (issue) =>
-              `  - Token ID ${issue.tokenId}: có ${issue.balance}, cần ${issue.needed}`
+              `Token ID ${issue.tokenId}: có ${issue.balance}, cần ${issue.needed}`
           )
-          .join("\n");
+          .join(", ");
 
-        alert(
-          `❌ Không đủ số lượng NFT để chuyển giao!\n\n` +
-            `📊 Chi tiết:\n${issuesList}\n\n` +
-            `🔍 Nguyên nhân có thể:\n` +
-            `1. NFT chưa được transfer từ Manufacturer → Distributor trên blockchain\n` +
-            `2. Manufacturer chưa hoàn thành bước transfer NFT\n` +
-            `3. Transaction transfer từ Manufacturer bị revert hoặc thất bại\n` +
-            `4. Token ID không đúng hoặc chưa được mint\n\n` +
-            `✅ Giải pháp:\n` +
-            `1. Kiểm tra trong "Lịch sử chuyển giao" (Manufacturer)\n` +
-            `2. Yêu cầu Manufacturer thực hiện transfer NFT trước\n` +
-            `3. Kiểm tra transaction hash trên blockchain explorer\n` +
-            `4. Liên hệ quản trị viên nếu vấn đề vẫn tiếp tục`
+        toast.error(
+          `❌ Không đủ số lượng NFT để chuyển giao! Chi tiết: ${issuesList}. Nguyên nhân: NFT chưa được transfer từ Manufacturer → Distributor trên blockchain. Vui lòng yêu cầu Manufacturer thực hiện transfer NFT trước.`,
+          {
+            position: "top-right",
+            duration: 8000,
+          }
         );
         setSubmitLoading(false);
         return;
       }
-
-      console.log("✅ Balance check passed");
     } catch (balanceError) {
       console.error("❌ Lỗi khi kiểm tra balance:", balanceError);
       if (
         balanceError.message?.includes("Contract not deployed") ||
         balanceError.message?.includes("MetaMask")
       ) {
-        if (
-          !window.confirm(
-            `⚠️ Không thể kiểm tra balance trên blockchain!\n\n` +
-              `Lỗi: ${balanceError.message}\n\n` +
-              `Bạn có muốn tiếp tục không?`
-          )
-        ) {
-          setSubmitLoading(false);
-          return;
-        }
+        toast.error(
+          `⚠️ Không thể kiểm tra balance trên blockchain! Lỗi: ${balanceError.message}. Bạn có thể tiếp tục nhưng hãy đảm bảo NFT đã được transfer.`,
+          {
+            position: "top-right",
+            duration: 6000,
+          }
+        );
+        // Vẫn cho phép tiếp tục trong trường hợp này
       } else {
-        alert(`❌ Lỗi khi kiểm tra balance: ${balanceError.message}`);
+        toast.error(`❌ Lỗi khi kiểm tra balance: ${balanceError.message}`, {
+          position: "top-right",
+          duration: 5000,
+        });
         setSubmitLoading(false);
         return;
       }
@@ -519,6 +537,14 @@ export default function TransferToPharmacy() {
           invoiceNumber: commercialInvoice.invoiceNumber,
           status: commercialInvoice.status,
         });
+
+        toast.success(
+          `Invoice đã được tạo thành công! Đang chuyển NFT trên blockchain...`,
+          {
+            position: "top-right",
+            duration: 4000,
+          }
+        );
 
         try {
           console.log("📤 Đang gọi smart contract để chuyển NFT...");
@@ -566,7 +592,11 @@ export default function TransferToPharmacy() {
               });
 
               if (saveResponse.data.success) {
-                console.log("✅ Transaction hash đã được lưu");
+                console.log("Transaction hash đã được lưu");
+                toast.success("Chuyển giao NFT thành công!", {
+                  position: "top-right",
+                  duration: 5000,
+                });
                 await new Promise((r) => setTimeout(r, 600));
                 setShowChainView(false);
                 setShowDialog(false);
@@ -584,6 +614,15 @@ export default function TransferToPharmacy() {
             } catch (saveError) {
               console.error("❌ Lỗi khi lưu transaction hash:", saveError);
               setChainStatus("error");
+              toast.error(
+                `Lỗi khi lưu transaction hash: ${
+                  saveError.response?.data?.message || saveError.message
+                }`,
+                {
+                  position: "top-right",
+                  duration: 5000,
+                }
+              );
             }
           } else {
             throw new Error("Smart contract transfer không thành công");
@@ -595,11 +634,26 @@ export default function TransferToPharmacy() {
           }
           setChainStatus("error");
           setChainProgress((prev) => (prev < 0.3 ? 0.3 : prev));
+          toast.error(
+            `Lỗi khi chuyển NFT trên blockchain: ${
+              transferError.message || "Unknown error"
+            }`,
+            {
+              position: "top-right",
+              duration: 6000,
+            }
+          );
         }
       }
     } catch (error) {
       console.error("❌ Lỗi:", error);
-      alert("❌ " + (error.response?.data?.message || error.message));
+      toast.error(
+        `❌ ${error.response?.data?.message || error.message}`,
+        {
+          position: "top-right",
+          duration: 5000,
+        }
+      );
     } finally {
       setSubmitLoading(false);
       if (chainIntervalRef.current) {
@@ -631,6 +685,7 @@ export default function TransferToPharmacy() {
             status={chainStatus}
             progress={chainProgress}
             onClose={() => setShowChainView(false)}
+            transferType="distributor-to-pharmacy"
           />
         </div>
       )}
@@ -644,82 +699,33 @@ export default function TransferToPharmacy() {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 mb-6">
-            <h1 className="text-xl font-semibold text-[#007b91]">
-              Chuyển giao cho nhà thuốc
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Chọn NFT và pharmacy để chuyển quyền sở hữu
-            </p>
-          </div>
-
-          <motion.div
-            className="rounded-2xl bg-white border border-card-primary shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-6 mb-5"
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-          >
-            <h2 className="text-xl font-bold text-[#007b91] mb-4">
-              Quy trình chuyển giao
-            </h2>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  1
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Chọn NFT & Pharmacy
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Chọn lô hàng đã nhận từ manufacturer và nhà thuốc nhận hàng
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  2
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Tạo invoice
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Frontend gọi API Backend để tạo invoice với trạng thái
-                    "draft"
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  3
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Chuyển quyền sở hữu NFT
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Frontend gọi Smart Contract để transfer NFT từ Distributor
-                    wallet → Pharmacy wallet
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center flex-shrink-0">
-                  4
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800">
-                    Lưu transaction hash
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Frontend gọi API Backend để lưu transaction hash, invoice
-                    status chuyển từ "draft" → "sent"
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+          <Card
+            title="Chuyển giao cho nhà thuốc"
+            subtitle="Chọn NFT và pharmacy để chuyển quyền sở hữu"
+            content={{
+              title: "Quy trình chuyển giao",
+              step1: {
+                title: "Chọn NFT & Pharmacy",
+                description:
+                  "Chọn lô hàng đã nhận từ manufacturer và nhà thuốc nhận hàng",
+              },
+              step2: {
+                title: "Tạo invoice",
+                description:
+                  "Frontend gọi API Backend để tạo invoice với trạng thái 'draft'",
+              },
+              step3: {
+                title: "Chuyển quyền sở hữu NFT",
+                description:
+                  "Frontend gọi Smart Contract để transfer NFT từ Distributor wallet → Pharmacy wallet",
+              },
+              step4: {
+                title: "Lưu transaction hash",
+                description:
+                  "Frontend gọi API Backend để lưu transaction hash, invoice status chuyển từ 'draft' → 'sent'",
+              },
+            }}
+          />
 
           <motion.div
             className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden"

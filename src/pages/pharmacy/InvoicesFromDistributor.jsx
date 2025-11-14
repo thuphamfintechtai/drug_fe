@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
 import DashboardLayout from "../../components/DashboardLayout";
 import TruckLoader from "../../components/TruckLoader";
 import pharmacyService from "../../services/pharmacy/pharmacyService";
@@ -214,6 +215,10 @@ export default function InvoicesFromDistributor() {
         error.message ||
         "Không thể tải danh sách đơn hàng";
       console.error("Chi tiết lỗi:", errorMessage);
+      toast.error(`Không thể tải danh sách đơn hàng: ${errorMessage}`, {
+        position: "top-right",
+        duration: 4000,
+      });
     } finally {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -328,6 +333,10 @@ export default function InvoicesFromDistributor() {
 
     // Validate form
     if (!validateConfirmForm()) {
+      toast.error("Vui lòng kiểm tra và sửa các lỗi trong form", {
+        position: "top-right",
+        duration: 4000,
+      });
       return;
     }
 
@@ -375,8 +384,12 @@ export default function InvoicesFromDistributor() {
       console.log("Response từ server:", response);
 
       if (response.data && response.data.success) {
-        alert(
-          "✅ Xác nhận nhận hàng thành công!\n\nTrạng thái: Đang chờ Distributor xác nhận chuyển quyền sở hữu NFT."
+        toast.success(
+          "✅ Xác nhận nhận hàng thành công! Trạng thái: Đang chờ Distributor xác nhận chuyển quyền sở hữu NFT.",
+          {
+            position: "top-right",
+            duration: 5000,
+          }
         );
         // Reset form
         setConfirmForm({
@@ -398,7 +411,10 @@ export default function InvoicesFromDistributor() {
         const errorMessage =
           response.data?.message || "Không thể xác nhận nhận hàng";
         console.error("Response không thành công:", response.data);
-        alert("❌ " + errorMessage);
+        toast.error(`❌ ${errorMessage}`, {
+          position: "top-right",
+          duration: 5000,
+        });
       }
     } catch (error) {
       console.error("Lỗi khi xác nhận nhận hàng:", error);
@@ -418,7 +434,10 @@ export default function InvoicesFromDistributor() {
         errorMessage = error.message;
       }
 
-      alert("❌ Lỗi server khi xác nhận nhận hàng: " + errorMessage);
+      toast.error(`❌ Lỗi server khi xác nhận nhận hàng: ${errorMessage}`, {
+        position: "top-right",
+        duration: 5000,
+      });
     } finally {
       setIsConfirming(false);
       setLoading(false);
