@@ -6,6 +6,15 @@
   --color-third: #00c0e8;
 }
 
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 .font-text-primary {
   font-family: "Roboto", sans-serif;
   font-weight: 700;
@@ -17,4 +26,13 @@
   border-color: var(--color-secondary);
   border-bottom-color: var(--color-secondary);
   border-bottom-width: 4px;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
