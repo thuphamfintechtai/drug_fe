@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
 import DashboardLayout from "../../components/DashboardLayout";
 import TruckLoader from "../../components/TruckLoader";
 import { useAuth } from "../../context/AuthContext";
 import { getProfile } from "../../services/distributor/distributorService";
+import { Profile as ProfileComponent } from "../../components/ui/profile";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -221,16 +221,13 @@ export default function Profile() {
         setProfile(response.data.data);
       }
 
-      // Nếu xe chưa chạy hết (progress < 0.9), tăng tốc cùng một chiếc xe để chạy đến 100%
       let currentProgress = 0;
       setLoadingProgress((prev) => {
         currentProgress = prev;
         return prev;
       });
 
-      // Đảm bảo xe chạy đến 100% trước khi hiển thị page
       if (currentProgress < 0.9) {
-        // Tăng tốc độ nhanh để cùng một chiếc xe chạy đến 100%
         await new Promise((resolve) => {
           const speedUpInterval = setInterval(() => {
             setLoadingProgress((prev) => {
@@ -248,7 +245,6 @@ export default function Profile() {
             });
           }, 30);
 
-          // Safety timeout
           setTimeout(() => {
             clearInterval(speedUpInterval);
             setLoadingProgress(1);
@@ -260,10 +256,8 @@ export default function Profile() {
         await new Promise((resolve) => setTimeout(resolve, 200));
       }
 
-      // Đảm bảo progress đã đạt 100% trước khi tiếp tục
       await new Promise((resolve) => setTimeout(resolve, 100));
     } catch (error) {
-      // Clear interval khi có lỗi
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
@@ -273,26 +267,14 @@ export default function Profile() {
       setLoadingProgress(0);
     } finally {
       setLoading(false);
-      // Reset progress sau 0.5s
       setTimeout(() => {
         setLoadingProgress(0);
       }, 500);
     }
   };
 
-  const fadeUp = {
-    hidden: { opacity: 0, y: 16, filter: "blur(6px)" },
-    show: {
-      opacity: 1,
-      y: 0,
-      filter: "blur(0px)",
-      transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
-    },
-  };
-
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      {/* Loading State - chỉ hiển thị khi đang tải, không hiển thị content cho đến khi loading = false */}
       {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
           <div className="w-full max-w-2xl">
@@ -301,7 +283,7 @@ export default function Profile() {
           <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
       ) : !profile ? (
-        <div className="space-y-6 ">
+        <div className="space-y-6">
           <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-5 mb-6">
             <h1 className="text-xl font-semibold text-[#007b91]">
               Thông tin cá nhân
@@ -315,195 +297,13 @@ export default function Profile() {
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 mb-6">
-            <h1 className="text-xl font-semibold text-[#007b91]">
-              Thông tin cá nhân
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Xem thông tin tài khoản và công ty (chỉ đọc)
-            </p>
-          </div>
-          <div className="space-y-5">
-            <motion.div
-              className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden"
-              variants={fadeUp}
-              initial="hidden"
-              animate="show"
-            >
-              <div className="px-6 py-4 bg-secondary ">
-                <h2 className="text-xl font-bold !text-white">
-                  Thông tin tài khoản
-                </h2>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">
-                      Tên đầy đủ
-                    </div>
-                    <div className="font-semibold text-slate-800">
-                      {profile.user?.fullName || "N/A"}
-                    </div>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">Email</div>
-                    <div className="font-semibold text-slate-800">
-                      {profile.user?.email || "N/A"}
-                    </div>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">Vai trò</div>
-                    <div className="font-semibold text-slate-800">
-                      <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm">
-                        Distributor (Nhà phân phối)
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">
-                      Trạng thái
-                    </div>
-                    <div className="font-semibold text-slate-800">
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm ${
-                          profile.user?.status === "active"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-slate-100 text-slate-700"
-                        }`}
-                      >
-                        {profile.user?.status || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
-                  <div className="text-xs text-cyan-700 mb-1">
-                    Wallet Address
-                  </div>
-                  <div className="font-mono text-sm text-cyan-800 break-all">
-                    {profile.user?.walletAddress || "Chưa có"}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {profile.company && (
-              <motion.div
-                className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden"
-                variants={fadeUp}
-                initial="hidden"
-                animate="show"
-              >
-                <div className="px-6 py-4 bg-linear-to-r from-[#00b4d8] to-[#48cae4]">
-                  <h2 className="text-xl font-bold !text-white">
-                    Thông tin công ty
-                  </h2>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
-                      <div className="text-xs text-cyan-700 mb-1">
-                        Tên công ty
-                      </div>
-                      <div className="font-bold text-cyan-900 text-lg">
-                        {profile.company.name || "N/A"}
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 rounded-xl p-4">
-                      <div className="text-xs text-slate-500 mb-1">
-                        Mã số thuế
-                      </div>
-                      <div className="font-mono font-semibold text-slate-800">
-                        {profile.company.taxCode || "N/A"}
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 rounded-xl p-4">
-                      <div className="text-xs text-slate-500 mb-1">
-                        Giấy phép kinh doanh
-                      </div>
-                      <div className="font-mono font-semibold text-slate-800">
-                        {profile.company.licenseNo || "N/A"}
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 rounded-xl p-4">
-                      <div className="text-xs text-slate-500 mb-1">
-                        Trạng thái
-                      </div>
-                      <div className="font-semibold text-slate-800">
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm ${
-                            profile.company.status === "active"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-slate-100 text-slate-700"
-                          }`}
-                        >
-                          {profile.company.status || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">Địa chỉ</div>
-                    <div className="font-medium text-slate-800">
-                      {profile.company.address || "N/A"}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-slate-50 rounded-xl p-4">
-                      <div className="text-xs text-slate-500 mb-1">
-                        Số điện thoại
-                      </div>
-                      <div className="font-medium text-slate-800">
-                        {profile.company.phone || "N/A"}
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 rounded-xl p-4">
-                      <div className="text-xs text-slate-500 mb-1">Website</div>
-                      <div className="font-medium text-slate-800">
-                        {profile.company.website || "N/A"}
-                      </div>
-                    </div>
-                  </div>
-
-                  {profile.company.contractAddress && (
-                    <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-                      <div className="text-xs text-emerald-700 mb-1">
-                        Contract Address
-                      </div>
-                      <div className="font-mono text-sm text-emerald-800 break-all">
-                        {profile.company.contractAddress}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-
-            <motion.div
-              className="bg-yellow-50 rounded-2xl border border-yellow-200 p-5"
-              variants={fadeUp}
-              initial="hidden"
-              animate="show"
-            >
-              <div className="flex items-start gap-3">
-                <div>
-                  <div className="font-semibold text-yellow-800 mb-1">
-                    Lưu ý quan trọng
-                  </div>
-                  <div className="text-sm text-yellow-700">
-                    Thông tin này chỉ được xem và{" "}
-                    <strong>không thể chỉnh sửa</strong>. Nếu cần thay đổi thông
-                    tin công ty, vui lòng liên hệ với quản trị viên hệ thống.
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
+        <ProfileComponent
+          title="Thông tin cá nhân"
+          subtitle="Xem thông tin tài khoản và công ty (chỉ đọc)"
+          user={profile.user}
+          company={profile.company}
+          roleLabel="Distributor (Nhà phân phối)"
+        />
       )}
     </DashboardLayout>
   );

@@ -11,11 +11,14 @@ const fadeUp = {
   },
 };
 
-export function Card({ title, subtitle, content }) {
+export function Card({ title, subtitle, content, icon }) {
   return (
     <div>
       <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 mb-6">
-        <h1 className="text-xl font-semibold text-[#007b91]">{title}</h1>
+        <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
+          {icon}
+          {title}
+        </h1>
         <p className="text-slate-500 text-sm mt-1">{subtitle}</p>
       </div>
       {content && (

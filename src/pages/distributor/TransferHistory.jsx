@@ -3,11 +3,14 @@ import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import TruckLoader from "../../components/TruckLoader";
 import { getTransferToPharmacyHistory } from "../../services/distributor/distributorService";
+import { Card } from "../../components/ui/card";
+import { Search } from "../../components/ui/search";
 
 export default function TransferHistory() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -23,10 +26,12 @@ export default function TransferHistory() {
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
 
-  // Sync searchInput with URL search param on mount/change (only from URL changes, not user input)
+  const prevSearchRef = useRef(search);
   useEffect(() => {
-    // Chỉ đồng bộ khi URL thay đổi từ bên ngoài (không phải từ user input)
-    setSearchInput(search);
+    if (prevSearchRef.current !== search) {
+      setSearchInput(search);
+      prevSearchRef.current = search;
+    }
   }, [search]);
 
   const navigationItems = [
@@ -202,19 +207,21 @@ export default function TransferHistory() {
     };
   }, [page, search, status]);
 
-  // FIX: Simplified loading logic
   const loadData = async () => {
     try {
-      setLoading(true);
-      setLoadingProgress(0);
-
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
+      if (isInitialLoad) {
+        setLoading(true);
+        setLoadingProgress(0);
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+        progressIntervalRef.current = setInterval(() => {
+          setLoadingProgress((prev) =>
+            prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
+          );
+        }, 50);
       }
-
-      progressIntervalRef.current = setInterval(() => {
-        setLoadingProgress((prev) => Math.min(prev + 0.02, 0.9));
-      }, 50);
 
       const params = { page, limit: 10 };
       if (search) params.search = search;
@@ -222,7 +229,7 @@ export default function TransferHistory() {
 
       const response = await getTransferToPharmacyHistory(params);
 
-      if (progressIntervalRef.current) {
+      if (isInitialLoad && progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
@@ -308,8 +315,43 @@ export default function TransferHistory() {
         setItems([]);
       }
 
-      setLoadingProgress(1);
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      // Chỉ chạy progress animation khi initial load
+      if (isInitialLoad) {
+        let currentProgress = 0;
+        setLoadingProgress((prev) => {
+          currentProgress = prev;
+          return prev;
+        });
+        if (currentProgress < 0.9) {
+          await new Promise((resolve) => {
+            const speedUp = setInterval(() => {
+              setLoadingProgress((prev) => {
+                if (prev < 1) {
+                  const np = Math.min(prev + 0.15, 1);
+                  if (np >= 1) {
+                    clearInterval(speedUp);
+                    resolve();
+                  }
+                  return np;
+                }
+                clearInterval(speedUp);
+                resolve();
+                return 1;
+              });
+            }, 30);
+            setTimeout(() => {
+              clearInterval(speedUp);
+              setLoadingProgress(1);
+              resolve();
+            }, 500);
+          });
+        } else {
+          setLoadingProgress(1);
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      setIsInitialLoad(false);
     } catch (error) {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -317,15 +359,28 @@ export default function TransferHistory() {
       }
       console.error("Lỗi khi tải lịch sử:", error);
       setItems([]);
+      if (isInitialLoad) {
+        setLoadingProgress(0);
+      }
+      setIsInitialLoad(false);
     } finally {
-      setLoading(false);
-      setTimeout(() => setLoadingProgress(0), 500);
+      if (isInitialLoad) {
+        setLoading(false);
+        setTimeout(() => setLoadingProgress(0), 500);
+      }
     }
   };
 
-  // Handle search - only trigger on Enter or button click
-  const handleSearch = () => {
-    updateFilter({ search: searchInput, page: 1 });
+  const handleSearch = (searchValue = null, resetPage = true) => {
+    const valueToSearch = searchValue !== null ? searchValue : searchInput;
+    if (searchValue !== null) {
+      setSearchInput(searchValue);
+    }
+    if (resetPage) {
+      updateFilter({ search: valueToSearch, page: 1 });
+    } else {
+      updateFilter({ search: valueToSearch });
+    }
   };
 
   // Clear search button
@@ -375,60 +430,77 @@ export default function TransferHistory() {
       ) : (
         <div className="space-y-6">
           {/* Banner */}
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5">
-            <h1 className="text-xl font-semibold text-[#007b91]">
-              Lịch sử chuyển cho nhà thuốc
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Theo dõi tất cả đơn chuyển giao NFT cho pharmacy
-            </p>
-          </div>
+          <Card
+            title="Lịch sử chuyển cho nhà thuốc"
+            subtitle="Theo dõi tất cả đơn chuyển giao NFT cho pharmacy"
+          />
 
           {/* Filters */}
           <div className="rounded-2xl bg-white border border-card-primary shadow-sm p-4">
             <div className="flex flex-col md:flex-row gap-3 md:items-end">
-              <div className="flex-1">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Tìm kiếm
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchInput}
-                    onChange={(e) => {
-                      // Chỉ cập nhật state, không trigger search
-                      setSearchInput(e.target.value);
-                    }}
-                    onKeyDown={(e) => {
-                      // Chỉ search khi nhấn Enter
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleSearch();
-                      }
-                    }}
-                    placeholder="Tìm theo tên nhà thuốc..."
-                    className="w-full h-12 px-4 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
-                  />
-                  {/* Clear button */}
-                  {searchInput && (
-                    <button
-                      type="button"
-                      onClick={handleClearSearch}
-                      className="absolute right-24 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-                      title="Xóa tìm kiếm"
-                    >
-                      ✕
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleSearch}
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition"
-                  >
-                    Tìm kiếm
-                  </button>
-                </div>
-              </div>
+              <Search
+                searchInput={searchInput}
+                setSearchInput={setSearchInput}
+                handleSearch={handleSearch}
+                handleClearSearch={handleClearSearch}
+                placeholder="Tìm theo tên nhà thuốc, số đơn..."
+                data={items}
+                getSearchText={(item) => {
+                  const invoiceNumber = item.invoiceNumber || "";
+                  const pharmacyName =
+                    item.pharmacy?.name ||
+                    item.pharmacy?.fullName ||
+                    (typeof item.pharmacy === "string" ? item.pharmacy : "");
+                  return invoiceNumber || pharmacyName;
+                }}
+                matchFunction={(item, searchLower) => {
+                  const invoiceNumber = (
+                    item.invoiceNumber || ""
+                  ).toLowerCase();
+                  const pharmacyName = (
+                    item.pharmacy?.name ||
+                    item.pharmacy?.fullName ||
+                    (typeof item.pharmacy === "string" ? item.pharmacy : "")
+                  ).toLowerCase();
+                  return (
+                    invoiceNumber.includes(searchLower) ||
+                    pharmacyName.includes(searchLower)
+                  );
+                }}
+                getDisplayText={(item, searchLower) => {
+                  const invoiceNumber = (
+                    item.invoiceNumber || ""
+                  ).toLowerCase();
+                  const pharmacyName = (
+                    item.pharmacy?.name ||
+                    item.pharmacy?.fullName ||
+                    (typeof item.pharmacy === "string" ? item.pharmacy : "")
+                  ).toLowerCase();
+                  // Ưu tiên hiển thị invoice number nếu match
+                  if (invoiceNumber.includes(searchLower)) {
+                    return item.invoiceNumber || "";
+                  }
+                  // Nếu không match invoice number thì hiển thị tên nhà thuốc nếu match
+                  if (pharmacyName.includes(searchLower)) {
+                    return (
+                      item.pharmacy?.name ||
+                      item.pharmacy?.fullName ||
+                      (typeof item.pharmacy === "string"
+                        ? item.pharmacy
+                        : "") ||
+                      ""
+                    );
+                  }
+                  // Fallback: trả về invoice number hoặc tên nhà thuốc
+                  return (
+                    item.invoiceNumber ||
+                    item.pharmacy?.name ||
+                    item.pharmacy?.fullName ||
+                    (typeof item.pharmacy === "string" ? item.pharmacy : "") ||
+                    ""
+                  );
+                }}
+              />
               <div>
                 <label className="block text-sm text-slate-600 mb-1">
                   Trạng thái

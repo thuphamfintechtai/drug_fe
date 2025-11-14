@@ -5,6 +5,8 @@ import {
   getDrugs,
   searchDrugByATCCode,
 } from "../../services/distributor/distributorService";
+import { Card } from "../../components/ui/card";
+import { Search } from "../../components/ui/search";
 
 export default function Drugs() {
   const [drugs, setDrugs] = useState([]);
@@ -271,8 +273,10 @@ export default function Drugs() {
     }
   };
 
-  const handleSearch = () => {
-    const term = searchAtc.trim().toLowerCase();
+  const handleSearch = (searchValue = null) => {
+    const term = (searchValue !== null ? searchValue : searchAtc)
+      .trim()
+      .toLowerCase();
     if (!term) {
       setDrugs(allDrugs);
       return;
@@ -289,6 +293,11 @@ export default function Drugs() {
     setDrugs(filtered);
   };
 
+  const handleClearSearch = () => {
+    setSearchAtc("");
+    setDrugs(allDrugs);
+  };
+
   const safeDrugs = Array.isArray(drugs) ? drugs : [];
 
   return (
@@ -302,9 +311,10 @@ export default function Drugs() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Banner */}
-          <div className="bg-white rounded-2xl border border-card-primary shadow-sm p-6">
-            <h1 className="text-xl md:text-2xl font-semibold text-[#007b91] flex items-center gap-2">
+          <Card
+            title="Quản lý thuốc"
+            subtitle="Quản lý toàn bộ thuốc trong hệ thống"
+            icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="w-6 h-6 text-[#00a3c4]"
@@ -319,52 +329,57 @@ export default function Drugs() {
                   d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
                 />
               </svg>
-              Quản lý thuốc
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Xem thông tin thuốc và tìm kiếm theo tên thương mại, tên hoạt
-              chất, mã ATC
-            </p>
-          </div>
+            }
+          />
 
           {/* Search */}
           <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
-                  />
-                </svg>
-              </span>
-
-              <input
-                type="text"
-                value={searchAtc}
-                onChange={(e) => setSearchAtc(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            <div className="flex-1">
+              <Search
+                searchInput={searchAtc}
+                setSearchInput={setSearchAtc}
+                handleSearch={handleSearch}
+                handleClearSearch={handleClearSearch}
                 placeholder="Tìm theo tên thương mại, tên hoạt chất, mã ATC..."
-                className="w-full h-12 pl-11 pr-32 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+                data={allDrugs}
+                getSearchText={(item) => {
+                  const tradeName = item.tradeName || "";
+                  const genericName = item.genericName || "";
+                  const atcCode = item.atcCode || "";
+                  return tradeName || genericName || atcCode;
+                }}
+                matchFunction={(item, searchLower) => {
+                  const tradeName = (item.tradeName || "").toLowerCase();
+                  const genericName = (item.genericName || "").toLowerCase();
+                  const atcCode = (item.atcCode || "").toLowerCase();
+                  return (
+                    tradeName.includes(searchLower) ||
+                    genericName.includes(searchLower) ||
+                    atcCode.includes(searchLower)
+                  );
+                }}
+                getDisplayText={(item, searchLower) => {
+                  const tradeName = (item.tradeName || "").toLowerCase();
+                  const genericName = (item.genericName || "").toLowerCase();
+                  const atcCode = (item.atcCode || "").toLowerCase();
+                  if (tradeName.includes(searchLower)) {
+                    return item.tradeName || "";
+                  }
+                  if (genericName.includes(searchLower)) {
+                    return item.genericName || "";
+                  }
+                  if (atcCode.includes(searchLower)) {
+                    return item.atcCode || "";
+                  }
+                  return (
+                    item.tradeName || item.genericName || item.atcCode || ""
+                  );
+                }}
+                enableAutoSearch={false}
               />
-
-              <button
-                onClick={handleSearch}
-                className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition"
-              >
-                <span className="!text-white">Tìm kiếm</span>
-              </button>
             </div>
 
-            <button
+            {/* <button
               onClick={() => {
                 setSearchAtc("");
                 loadDrugs();
@@ -372,7 +387,7 @@ export default function Drugs() {
               className="px-4 py-2.5 rounded-full border border-gray-300 text-slate-700 hover:bg-gray-50 transition"
             >
               ↻ Reset
-            </button>
+            </button> */}
           </div>
 
           {/* Table */}
