@@ -647,13 +647,10 @@ export default function TransferToPharmacy() {
       }
     } catch (error) {
       console.error("❌ Lỗi:", error);
-      toast.error(
-        `❌ ${error.response?.data?.message || error.message}`,
-        {
-          position: "top-right",
-          duration: 5000,
-        }
-      );
+      toast.error(`❌ ${error.response?.data?.message || error.message}`, {
+        position: "top-right",
+        duration: 5000,
+      });
     } finally {
       setSubmitLoading(false);
       if (chainIntervalRef.current) {
@@ -860,7 +857,7 @@ export default function TransferToPharmacy() {
                   </div>
                 </div>
 
-                <div className="p-8 space-y-4 relative">
+                <div className="p-8 space-y-4 relative max-h-[500px] overflow-auto hide-scrollbar">
                   {dialogLoading && (
                     <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-3xl flex items-center justify-center z-10">
                       <div className="text-center">
