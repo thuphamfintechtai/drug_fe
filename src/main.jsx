@@ -4,7 +4,7 @@ import { Toaster } from "sonner";
 import App from "./App.jsx";
 import "./index.css";
 import "antd/dist/reset.css";
-import ReactQueryProvider from "../src/features/public/hooks/ReactQueryProvider.jsx";
+import ReactQueryProvider from "./features/shared/hooks/ReactQueryProvider.jsx";
 
 const rootElement = document.getElementById("root");
 const root = createRoot(rootElement);

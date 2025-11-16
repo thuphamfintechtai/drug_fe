@@ -4,8 +4,8 @@ import {
   Route,
   useLocation,
 } from "react-router-dom";
-import { AuthProvider } from "../src_broken/context/AuthContext";
-import { ThemeProvider } from "../src_broken/context/ThemeContext";
+import { AuthProvider } from "./features/shared/context/AuthContext";
+import { ThemeProvider } from "./features/shared/context/ThemeContext";
 import {
   Register,
   RegisterBusiness,
@@ -71,7 +71,6 @@ function App() {
   );
 }
 
-// Component để ẩn Navbar khi ở dashboard pages
 function AppContent() {
   const location = useLocation();
   const dashboardPrefixes = [
