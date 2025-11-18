@@ -11,10 +11,25 @@ export const removeVietnameseAccents = (str) => {
     .replace(/\s+/g, "");
 };
 
+export const formatDate = (d) => {
+  if (!d) {
+    return "N/A";
+  }
+  const date = new Date(d);
+  return isNaN(date.getTime()) ? "N/A" : date.toLocaleDateString("vi-VN");
+};
+export const short = (s) => {
+  if (!s || typeof s !== "string") {
+    return "N/A";
+  }
+  if (s.length <= 12) {
+    return s;
+  }
+  return `${s.slice(0, 8)}...${s.slice(-4)}`;
+};
 export const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString("vi-VN") : "—";
-export const formatDate = (value) =>
-  value ? new Date(value).toLocaleDateString("vi-VN") : "—";
+
 export const formatNumber = (value) =>
   typeof value === "number" ? value.toLocaleString("vi-VN") : value ?? "—";
 export const shortenTx = (hash) =>

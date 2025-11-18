@@ -47,4 +47,38 @@ export const proofOfPharmacyQueries = {
       },
     });
   },
+
+  getDeliveriesToPharmacy: () => {
+    return useQuery({
+      queryKey: ["getDeliveriesToPharmacy"],
+      queryFn: async () => {
+        const response = await api.get(
+          "/proof-of-pharmacy/pharmacy/distributor/my-deliveries"
+        );
+        return response.data;
+      },
+    });
+  },
+
+  getAllProofOfPharmacies: () => {
+    return useQuery({
+      queryKey: ["getAllProofOfPharmacies"],
+      queryFn: async () => {
+        const response = await api.get(
+          "/proof-of-pharmacy/pharmacy?limit=1000"
+        );
+        return response.data;
+      },
+    });
+  },
+
+  getProofOfPharmacyById: (id) => {
+    return useQuery({
+      queryKey: ["getProofOfPharmacyById", id],
+      queryFn: async () => {
+        const response = await api.get(`/proof-of-pharmacy/pharmacy/${id}`);
+        return response.data;
+      },
+    });
+  },
 };

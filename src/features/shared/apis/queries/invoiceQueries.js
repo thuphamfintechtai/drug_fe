@@ -43,4 +43,14 @@ export const invoiceQueries = {
       },
     });
   },
+
+  getMyInvoices: () => {
+    return useQuery({
+      queryKey: ["getMyInvoices"],
+      queryFn: async () => {
+        const response = await api.get("/invoice/distributor/my-invoices");
+        return response.data;
+      },
+    });
+  },
 };

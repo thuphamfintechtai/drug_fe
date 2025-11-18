@@ -9,7 +9,7 @@ import BlockchainTransferView from "../../components/BlockchainTransferView";
 import { Card } from "../../components/ui/card";
 import {
   useDistributorGetDistributionHistory,
-  useDistributorGetPharmacies,
+  useDistributorGetPharmacies,x
   useDistributorTransferToPharmacy,
   useDistributorSaveTransferTransaction,
   useDistributorGetInvoiceDetail,

@@ -13,4 +13,14 @@ export const nftTrackingQueries = {
       },
     });
   },
+
+  trackNFT: (nftId) => {
+    return useQuery({
+      queryKey: ["trackNFT", nftId],
+      queryFn: async () => {
+        const response = await api.get(`/NFTTracking/${nftId}`);
+        return response.data;
+      },
+    });
+  },
 };

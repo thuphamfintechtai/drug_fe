@@ -1,4 +1,4 @@
-import api from '../../utils/api';
+  import api from '../../utils/api';
 
 export const createProofToPharmacy = (data) =>
   api.post('/proof-of-pharmacy/pharmacy/create-delivery', data);

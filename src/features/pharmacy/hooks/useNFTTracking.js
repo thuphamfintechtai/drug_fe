@@ -1,8 +1,8 @@
 /* eslint-disable no-undef */
-import { useEffect, useMemo, useRef, useState } from "react";
-import { nftTrackingQueries } from "../../shared/apis/queries/nftTrackingQueries";
+import { useEffect, useRef, useState } from "react";
+import { pharmacyQueries } from "../apis/pharmacyQueries";
 
-export default function useNFTTracking() {
+export const useNFTTracking = () => {
   const [nftId, setNftId] = useState("");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -10,19 +10,6 @@ export default function useNFTTracking() {
   const [pageLoading, setPageLoading] = useState(true);
   const [pageProgress, setPageProgress] = useState(0);
   const pageIntervalRef = useRef(null);
-
-  const navigationItems = useMemo(
-    () => [
-      { path: "/admin", label: "Trang chủ", icon: null, active: false },
-      {
-        path: "/admin/nft-tracking",
-        label: "NFT Tracking",
-        icon: null,
-        active: true,
-      },
-    ],
-    []
-  );
 
   useEffect(() => {
     setPageLoading(true);
@@ -95,11 +82,12 @@ export default function useNFTTracking() {
     setError("");
     setData(null);
     try {
-      const response = await nftTrackingQueries.getTrackingByNftId(
-        nftId.trim()
-      );
-      const data = response.data;
-      setData(data?.data || data || null);
+      const response = await pharmacyQueries.trackDrugByNFTId(nftId.trim());
+      if (response.data && response.data.success) {
+        setData(response.data.data || response.data);
+      } else {
+        setError(response.data?.message || "Không tìm thấy NFT này");
+      }
     } catch (e2) {
       setError(e2?.response?.data?.message || "Không thể tra cứu NFT");
     } finally {
@@ -136,6 +124,7 @@ export default function useNFTTracking() {
     handleSearch,
     formatDate,
     short,
-    navigationItems,
+    setError,
+    setData,
   };
-}
+};

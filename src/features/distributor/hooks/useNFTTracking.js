@@ -1,30 +1,21 @@
 /* eslint-disable no-undef */
-import { useEffect, useMemo, useRef, useState } from "react";
-import { nftTrackingQueries } from "../../shared/apis/queries/nftTrackingQueries";
+import { useState, useEffect, useRef } from "react";
+import { distributorQueries } from "../apis/distributor";
 
-export default function useNFTTracking() {
-  const [nftId, setNftId] = useState("");
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
+export const useNFTTracking = () => {
+  const [tokenId, setTokenId] = useState("");
+  const [trackingData, setTrackingData] = useState(null);
   const [error, setError] = useState("");
+  // Loading cho PAGE (khởi động trang)
   const [pageLoading, setPageLoading] = useState(true);
   const [pageProgress, setPageProgress] = useState(0);
   const pageIntervalRef = useRef(null);
-
-  const navigationItems = useMemo(
-    () => [
-      { path: "/admin", label: "Trang chủ", icon: null, active: false },
-      {
-        path: "/admin/nft-tracking",
-        label: "NFT Tracking",
-        icon: null,
-        active: true,
-      },
-    ],
-    []
-  );
+  // Trạng thái tra cứu (không hiển thị TruckLoader)
+  const [isSearching, setIsSearching] = useState(false);
+  const { mutateAsync: trackDrugByNFT } = distributorQueries.trackDrugByNFT();
 
   useEffect(() => {
+    // Mô phỏng loading khi vào trang để xe chạy
     setPageLoading(true);
     setPageProgress(0);
     if (pageIntervalRef.current) {
@@ -86,56 +77,38 @@ export default function useNFTTracking() {
     };
   }, []);
 
-  const handleSearch = async () => {
-    if (!nftId.trim()) {
+  const handleTrack = async () => {
+    if (!tokenId.trim()) {
       setError("Vui lòng nhập NFT ID");
       return;
     }
-    setLoading(true);
+
+    setIsSearching(true);
     setError("");
-    setData(null);
+    setTrackingData(null);
+
     try {
-      const response = await nftTrackingQueries.getTrackingByNftId(
-        nftId.trim()
-      );
-      const data = response.data;
-      setData(data?.data || data || null);
-    } catch (e2) {
-      setError(e2?.response?.data?.message || "Không thể tra cứu NFT");
+      const response = await trackDrugByNFT(tokenId);
+      if (response.data.success) {
+        setTrackingData(response.data.data);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Không thể tra cứu NFT");
     } finally {
-      setLoading(false);
+      setIsSearching(false);
     }
-  };
-
-  const formatDate = (d) => {
-    if (!d) {
-      return "N/A";
-    }
-    const date = new Date(d);
-    return isNaN(date.getTime()) ? "N/A" : date.toLocaleDateString("vi-VN");
-  };
-
-  const short = (s) => {
-    if (!s || typeof s !== "string") {
-      return "N/A";
-    }
-    if (s.length <= 12) {
-      return s;
-    }
-    return `${s.slice(0, 8)}...${s.slice(-4)}`;
   };
 
   return {
-    nftId,
-    setNftId,
-    data,
-    loading,
+    tokenId,
+    setTokenId,
+    trackingData,
+    setTrackingData,
     error,
+    setError,
     pageLoading,
     pageProgress,
-    handleSearch,
-    formatDate,
-    short,
-    navigationItems,
+    isSearching,
+    setIsSearching,
   };
-}
+};
