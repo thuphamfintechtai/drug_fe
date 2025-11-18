@@ -20,8 +20,6 @@ const CreateProofDialog = ({
     drugsLength: drugs?.length || 0,
   });
 
-  if (!open) return null;
-
   const handleInputChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
     // Clear error when user starts typing

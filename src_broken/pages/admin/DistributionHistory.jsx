@@ -1,266 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import DashboardLayout from "../../components/DashboardLayout";
-import { getDistributionHistory } from "../../services/admin/adminService";
-import TruckLoader from "../../components/TruckLoader";
-
-// Validate ObjectId format (24 hex characters)
-const isValidObjectId = (id) => {
-  if (!id || id.trim() === "") return true; // Empty is valid (means no filter)
-  // MongoDB ObjectId: 24 hex characters
-  const objectIdPattern = /^[0-9a-fA-F]{24}$/;
-  return objectIdPattern.test(id.trim());
-};
+import DashboardLayout from "../../shared/components/DashboardLayout";
+import TruckLoader from "../../shared/components/TruckLoader";
+import { useDistributionHistory } from "../../admin/hooks/useDistributionHistory";
 
 export default function DistributionHistory() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 20,
-    total: 0,
-    pages: 0,
-  });
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const progressIntervalRef = useRef(null);
-  // Separate search input states from URL params
-  const [distributorIdInput, setDistributorIdInput] = useState("");
-  const [pharmacyIdInput, setPharmacyIdInput] = useState("");
-  const [drugIdInput, setDrugIdInput] = useState("");
-  const [validationErrors, setValidationErrors] = useState({});
-
-  const page = parseInt(searchParams.get("page") || "1", 10);
-  const distributorId = searchParams.get("distributorId") || "";
-  const pharmacyId = searchParams.get("pharmacyId") || "";
-  const drugId = searchParams.get("drugId") || "";
-  const status = searchParams.get("status") || "";
-
-  const updateFilter = (next) => {
-    const nextParams = new URLSearchParams(searchParams);
-    Object.entries(next).forEach(([k, v]) => {
-      if (v === "" || v === undefined || v === null) nextParams.delete(k);
-      else nextParams.set(k, String(v));
-    });
-    setSearchParams(nextParams);
-  };
-
-  // Sync search inputs with URL params on mount/change (only from URL changes, not user input)
-  // Also validate and clear invalid ObjectIds from URL
-  useEffect(() => {
-    const invalidParams = {};
-    
-    // Validate and set inputs
-    if (distributorId && isValidObjectId(distributorId)) {
-      setDistributorIdInput(distributorId);
-    } else if (distributorId) {
-      // Invalid ObjectId in URL - clear it
-      invalidParams.distributorId = "";
-      setDistributorIdInput("");
-    } else {
-      setDistributorIdInput("");
-    }
-    
-    if (pharmacyId && isValidObjectId(pharmacyId)) {
-      setPharmacyIdInput(pharmacyId);
-    } else if (pharmacyId) {
-      invalidParams.pharmacyId = "";
-      setPharmacyIdInput("");
-    } else {
-      setPharmacyIdInput("");
-    }
-    
-    if (drugId && isValidObjectId(drugId)) {
-      setDrugIdInput(drugId);
-    } else if (drugId) {
-      invalidParams.drugId = "";
-      setDrugIdInput("");
-    } else {
-      setDrugIdInput("");
-    }
-    
-    // Clear invalid params from URL if any
-    if (Object.keys(invalidParams).length > 0) {
-      updateFilter(invalidParams);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [distributorId, pharmacyId, drugId]);
-
-  const navigationItems = useMemo(
-    () => [
-      { path: "/admin", label: "Tổng quan", icon: null, active: false },
-      {
-        path: "/admin/distribution",
-        label: "Lịch sử phân phối",
-        icon: null,
-        active: true,
-      },
-    ],
-    []
-  );
-
-  const load = async () => {
-    setLoading(true);
-    setError("");
-    setLoadingProgress(0);
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
-    progressIntervalRef.current = setInterval(() => {
-      setLoadingProgress((prev) =>
-        prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
-      );
-    }, 50);
-    try {
-      const params = { page, limit: 20 };
-      // Only add params if they are valid ObjectIds
-      if (distributorId && isValidObjectId(distributorId)) {
-        params.distributorId = distributorId;
-      }
-      if (pharmacyId && isValidObjectId(pharmacyId)) {
-        params.pharmacyId = pharmacyId;
-      }
-      if (drugId && isValidObjectId(drugId)) {
-        params.drugId = drugId;
-      }
-      if (status) params.status = status;
-
-      const response = await getDistributionHistory(params);
-
-      if (response.data.success) {
-        setItems(response.data.data.distributionHistory || []);
-        setPagination(
-          response.data.data.pagination || {
-            page: 1,
-            limit: 20,
-            total: 0,
-            pages: 0,
-          }
-        );
-      }
-    } catch (e) {
-      const errorMessage = e?.response?.data?.message || e?.message || "Không thể tải dữ liệu";
-      // Check if error is related to ObjectId validation
-      if (errorMessage.includes("ObjectId") || errorMessage.includes("Cast to ObjectId")) {
-        setError("Mã ID không hợp lệ. Vui lòng kiểm tra lại định dạng ObjectId (24 ký tự hex).");
-        // Clear invalid params from URL
-        const invalidParams = {};
-        if (distributorId && !isValidObjectId(distributorId)) {
-          invalidParams.distributorId = "";
-          setDistributorIdInput("");
-        }
-        if (pharmacyId && !isValidObjectId(pharmacyId)) {
-          invalidParams.pharmacyId = "";
-          setPharmacyIdInput("");
-        }
-        if (drugId && !isValidObjectId(drugId)) {
-          invalidParams.drugId = "";
-          setDrugIdInput("");
-        }
-        if (Object.keys(invalidParams).length > 0) {
-          updateFilter(invalidParams);
-        }
-      } else {
-        setError(errorMessage);
-      }
-    } finally {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-      let current = 0;
-      setLoadingProgress((p) => {
-        current = p;
-        return p;
-      });
-      if (current < 0.9) {
-        await new Promise((resolve) => {
-          const su = setInterval(() => {
-            setLoadingProgress((prev) => {
-              if (prev < 1) {
-                const np = Math.min(prev + 0.15, 1);
-                if (np >= 1) {
-                  clearInterval(su);
-                  resolve();
-                }
-                return np;
-              }
-              clearInterval(su);
-              resolve();
-              return 1;
-            });
-          }, 30);
-          setTimeout(() => {
-            clearInterval(su);
-            setLoadingProgress(1);
-            resolve();
-          }, 500);
-        });
-      } else {
-        setLoadingProgress(1);
-        await new Promise((r) => setTimeout(r, 200));
-      }
-      await new Promise((r) => setTimeout(r, 100));
-      setLoading(false);
-      setTimeout(() => setLoadingProgress(0), 500);
-    }
-  };
-
-  useEffect(() => {
-    load();
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-    };
-  }, [page, distributorId, pharmacyId, drugId, status]);
-
-  // Handle search - only trigger on Enter or button click
-  const handleSearch = () => {
-    const errors = {};
-    
-    // Validate ObjectId formats
-    if (distributorIdInput && !isValidObjectId(distributorIdInput)) {
-      errors.distributorId = "Mã NPP không hợp lệ. Vui lòng nhập ObjectId 24 ký tự (ví dụ: 507f1f77bcf86cd799439011)";
-    }
-    if (pharmacyIdInput && !isValidObjectId(pharmacyIdInput)) {
-      errors.pharmacyId = "Mã nhà thuốc không hợp lệ. Vui lòng nhập ObjectId 24 ký tự (ví dụ: 507f1f77bcf86cd799439011)";
-    }
-    if (drugIdInput && !isValidObjectId(drugIdInput)) {
-      errors.drugId = "Mã thuốc không hợp lệ. Vui lòng nhập ObjectId 24 ký tự (ví dụ: 507f1f77bcf86cd799439011)";
-    }
-
-    setValidationErrors(errors);
-
-    // Only proceed if no validation errors
-    if (Object.keys(errors).length === 0) {
-      updateFilter({
-        distributorId: distributorIdInput.trim(),
-        pharmacyId: pharmacyIdInput.trim(),
-        drugId: drugIdInput.trim(),
-        page: 1,
-      });
-    }
-  };
-
-  // Clear search button
-  const handleClearSearch = () => {
-    setDistributorIdInput("");
-    setPharmacyIdInput("");
-    setDrugIdInput("");
-    setValidationErrors({});
-    updateFilter({
-      distributorId: "",
-      pharmacyId: "",
-      drugId: "",
-      page: 1,
-    });
-  };
-
+  const {
+    items,
+    loading,
+    error,
+    loadingProgress,
+    navigationItems,
+    updateFilter,
+    handleSearch,
+    handleClearSearch,
+    distributorIdInput,
+    pharmacyIdInput,
+    drugIdInput,
+    validationErrors,
+  } = useDistributionHistory();
   const fadeUp = {
     hidden: { opacity: 0, y: 16, filter: "blur(6px)" },
     show: {
@@ -282,7 +39,6 @@ export default function DistributionHistory() {
         </div>
       ) : (
         <>
-          {/* Banner */}
           <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 mb-4">
             <h2 className="text-xl font-semibold text-[#007b91]">
               Lịch sử phân phối thuốc
@@ -292,7 +48,6 @@ export default function DistributionHistory() {
             </p>
           </div>
 
-          {/* Filters */}
           <motion.div
             className="rounded-2xl bg-white border border-card-primary shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-4"
             variants={fadeUp}
@@ -308,15 +63,15 @@ export default function DistributionHistory() {
                   type="text"
                   value={distributorIdInput}
                   onChange={(e) => {
-                    // Chỉ cập nhật state, không trigger search
                     setDistributorIdInput(e.target.value);
-                    // Clear validation error when user types
                     if (validationErrors.distributorId) {
-                      setValidationErrors({ ...validationErrors, distributorId: undefined });
+                      setValidationErrors({
+                        ...validationErrors,
+                        distributorId: undefined,
+                      });
                     }
                   }}
                   onKeyDown={(e) => {
-                    // Chỉ search khi nhấn Enter
                     if (e.key === "Enter") {
                       e.preventDefault();
                       handleSearch();
@@ -330,7 +85,9 @@ export default function DistributionHistory() {
                   }`}
                 />
                 {validationErrors.distributorId && (
-                  <p className="text-xs text-red-600 mt-1">{validationErrors.distributorId}</p>
+                  <p className="text-xs text-red-600 mt-1">
+                    {validationErrors.distributorId}
+                  </p>
                 )}
               </div>
 
@@ -342,15 +99,15 @@ export default function DistributionHistory() {
                   type="text"
                   value={pharmacyIdInput}
                   onChange={(e) => {
-                    // Chỉ cập nhật state, không trigger search
                     setPharmacyIdInput(e.target.value);
-                    // Clear validation error when user types
                     if (validationErrors.pharmacyId) {
-                      setValidationErrors({ ...validationErrors, pharmacyId: undefined });
+                      setValidationErrors({
+                        ...validationErrors,
+                        pharmacyId: undefined,
+                      });
                     }
                   }}
                   onKeyDown={(e) => {
-                    // Chỉ search khi nhấn Enter
                     if (e.key === "Enter") {
                       e.preventDefault();
                       handleSearch();
@@ -364,7 +121,9 @@ export default function DistributionHistory() {
                   }`}
                 />
                 {validationErrors.pharmacyId && (
-                  <p className="text-xs text-red-600 mt-1">{validationErrors.pharmacyId}</p>
+                  <p className="text-xs text-red-600 mt-1">
+                    {validationErrors.pharmacyId}
+                  </p>
                 )}
               </div>
 
@@ -376,15 +135,15 @@ export default function DistributionHistory() {
                   type="text"
                   value={drugIdInput}
                   onChange={(e) => {
-                    // Chỉ cập nhật state, không trigger search
                     setDrugIdInput(e.target.value);
-                    // Clear validation error when user types
                     if (validationErrors.drugId) {
-                      setValidationErrors({ ...validationErrors, drugId: undefined });
+                      setValidationErrors({
+                        ...validationErrors,
+                        drugId: undefined,
+                      });
                     }
                   }}
                   onKeyDown={(e) => {
-                    // Chỉ search khi nhấn Enter
                     if (e.key === "Enter") {
                       e.preventDefault();
                       handleSearch();
@@ -398,7 +157,9 @@ export default function DistributionHistory() {
                   }`}
                 />
                 {validationErrors.drugId && (
-                  <p className="text-xs text-red-600 mt-1">{validationErrors.drugId}</p>
+                  <p className="text-xs text-red-600 mt-1">
+                    {validationErrors.drugId}
+                  </p>
                 )}
               </div>
 
@@ -420,7 +181,6 @@ export default function DistributionHistory() {
                 </select>
               </div>
             </div>
-            {/* Search buttons */}
             <div className="flex items-center gap-3 justify-end">
               {(distributorIdInput || pharmacyIdInput || drugIdInput) && (
                 <button
@@ -441,7 +201,6 @@ export default function DistributionHistory() {
             </div>
           </motion.div>
 
-          {/* List */}
           <motion.div
             className="bg-white rounded-2xl border border-card-primary shadow-sm p-6"
             variants={fadeUp}
@@ -497,7 +256,6 @@ export default function DistributionHistory() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Invoice info */}
                       {item.invoice && (
                         <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                           <h4 className="font-semibold text-slate-800 mb-3">
@@ -576,7 +334,6 @@ export default function DistributionHistory() {
                         </div>
                       )}
 
-                      {/* Proof info */}
                       {item.proof && (
                         <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                           <h4 className="font-semibold text-slate-800 mb-3">
@@ -682,7 +439,6 @@ export default function DistributionHistory() {
             )}
           </motion.div>
 
-          {/* Pagination */}
           <div className="flex items-center justify-end gap-2 mt-4">
             <button
               disabled={page <= 1}

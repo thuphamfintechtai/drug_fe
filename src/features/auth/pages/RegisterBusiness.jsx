@@ -13,6 +13,7 @@ export default function RegisterBusiness() {
     handleChange,
     handleSubmit,
     setBusinessType,
+    setShowPassword,
   } = useRegisterBusiness();
 
   const fadeUp = {

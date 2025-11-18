@@ -58,10 +58,15 @@ export default function CreateProofOfProduction() {
       const num = parseInt(formData.expiryValue);
 
       if (!isNaN(num) && num > 0) {
-        if (formData.expiryUnit === "day") exp.setDate(exp.getDate() + num);
-        if (formData.expiryUnit === "month") exp.setMonth(exp.getMonth() + num);
-        if (formData.expiryUnit === "year")
+        if (formData.expiryUnit === "day") {
+          exp.setDate(exp.getDate() + num);
+        }
+        if (formData.expiryUnit === "month") {
+          exp.setMonth(exp.getMonth() + num);
+        }
+        if (formData.expiryUnit === "year") {
           exp.setFullYear(exp.getFullYear() + num);
+        }
         setFormData((prev) => ({
           ...prev,
           expDate: exp.toISOString().split("T")[0],

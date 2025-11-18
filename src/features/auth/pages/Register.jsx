@@ -4,8 +4,15 @@ import { useRegister } from "../hooks/useRegister";
 import ErrorMessage from "../components/error";
 
 export default function Register() {
-  const { formData, error, loading, showPassword, handleChange, handleSubmit } =
-    useRegister();
+  const {
+    formData,
+    error,
+    loading,
+    showPassword,
+    handleChange,
+    handleSubmit,
+    setShowPassword,
+  } = useRegister();
   const fadeUp = {
     hidden: { opacity: 0, y: 20 },
     show: {
