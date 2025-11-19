@@ -1,0 +1,469 @@
+import DashboardLayout from "../../shared/components/DashboardLayout";
+import TruckLoader from "../../shared/components/TruckLoader";
+import { CardUI } from "../../shared/components/ui/cardUI";
+import { Search } from "../../shared/components/ui/search";
+import { useTransferHistory } from "../hooks/useTransferhistory";
+import { navigationItems } from "../constants/navigationTransferHistory";
+
+export default function TransferHistory() {
+  const {
+    items,
+    loading,
+    loadingProgress,
+    searchInput,
+    setSearchInput,
+    handleSearch,
+    handleClearSearch,
+    updateFilter,
+    getStatusColor,
+    getStatusLabel,
+    pagination,
+    page,
+    status,
+    expandedItems,
+    toggleItem,
+    retryingId,
+    allItems,
+    handleRetry,
+  } = useTransferHistory();
+  return (
+    <DashboardLayout navigationItems={navigationItems}>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={loadingProgress} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Banner */}
+          <CardUI
+            title="Lịch sử chuyển giao"
+            subtitle="Theo dõi tất cả các đơn chuyển giao NFT cho nhà phân phối"
+            icon={
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 7h18M5 10h14M4 14h16M6 18h12"
+                />
+              </svg>
+            }
+          />
+
+          {/* Filters */}
+          <div className="rounded-2xl bg-white border border-card-primary shadow-sm p-4">
+            <div className="flex flex-col md:flex-row gap-3 md:items-end">
+              <div className="flex-1">
+                <Search
+                  searchInput={searchInput}
+                  setSearchInput={setSearchInput}
+                  handleSearch={handleSearch}
+                  handleClearSearch={handleClearSearch}
+                  placeholder="Tìm theo tên nhà phân phối, số lô..."
+                  enableAutoSearch={true}
+                  debounceMs={300}
+                  data={allItems}
+                  getSearchText={(item) => {
+                    // Ưu tiên trả về mã hóa đơn nếu có, nếu không thì trả về tên nhà phân phối
+                    return (
+                      item.invoiceNumber ||
+                      item.distributor?.fullName ||
+                      item.distributor?.name ||
+                      ""
+                    );
+                  }}
+                  matchFunction={(item, searchLower) => {
+                    const distributorName = (
+                      item.distributor?.fullName ||
+                      item.distributor?.name ||
+                      ""
+                    ).toLowerCase();
+                    const invoiceNumber = (
+                      item.invoiceNumber || ""
+                    ).toLowerCase();
+                    const batchNumber = (
+                      item.production?.batchNumber || ""
+                    ).toLowerCase();
+                    const email = (item.distributor?.email || "").toLowerCase();
+                    return (
+                      distributorName.includes(searchLower) ||
+                      invoiceNumber.includes(searchLower) ||
+                      batchNumber.includes(searchLower) ||
+                      email.includes(searchLower)
+                    );
+                  }}
+                  getDisplayText={(item, searchTerm = "") => {
+                    const distributorName =
+                      item.distributor?.fullName ||
+                      item.distributor?.name ||
+                      "Không có tên";
+                    const batch = item.production?.batchNumber || "N/A";
+                    const invoiceNumber = item.invoiceNumber || "";
+                    const searchLower = searchTerm.toLowerCase();
+
+                    // Nếu tìm theo mã hóa đơn, hiển thị mã hóa đơn trước
+                    if (
+                      invoiceNumber &&
+                      invoiceNumber.toLowerCase().includes(searchLower)
+                    ) {
+                      return `${invoiceNumber} - ${distributorName} (Lô: ${batch})`;
+                    }
+                    return `${distributorName} - Lô: ${batch}${
+                      invoiceNumber ? ` - HĐ: ${invoiceNumber}` : ""
+                    }`;
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">
+                  Trạng thái
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) =>
+                    updateFilter({ status: e.target.value, page: 1 })
+                  }
+                  className="h-12 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-12 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
+                >
+                  <option value="">Tất cả</option>
+                  <option value="pending">Pending</option>
+                  <option value="sent">Sent</option>
+                  <option value="received">Received</option>
+                  <option value="paid">Paid</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* List */}
+          <div className="space-y-4">
+            {items.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-cyan-200 p-10 text-center">
+                <h3 className="text-xl font-bold text-slate-800 mb-2">
+                  Chưa có lịch sử chuyển giao
+                </h3>
+                <p className="text-slate-600">
+                  Các đơn chuyển giao của bạn sẽ hiển thị ở đây
+                </p>
+              </div>
+            ) : (
+              items.map((item) => {
+                const itemId = item._id;
+                const isExpanded = expandedItems.has(itemId);
+                return (
+                  <div
+                    key={itemId}
+                    className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden hover:shadow-md transition"
+                  >
+                    {/* Clickable Header */}
+                    <div
+                      className="p-5 cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => toggleItem(itemId)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div
+                            className={`transform transition-transform duration-300 ${
+                              isExpanded ? "rotate-180" : "rotate-0"
+                            }`}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="w-5 h-5 text-slate-500"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-slate-800">
+                              {item.distributor?.fullName ||
+                                item.distributor?.name ||
+                                "N/A"}
+                            </h3>
+                            <div className="text-sm text-slate-600 mt-1">
+                              Số hóa đơn:{" "}
+                              <span className="font-mono font-medium">
+                                {item.invoiceNumber || "N/A"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            item.status
+                          )}`}
+                        >
+                          {getStatusLabel(item.status)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Expandable Content */}
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        isExpanded
+                          ? "max-h-[2000px] opacity-100"
+                          : "max-h-0 opacity-0"
+                      }`}
+                    >
+                      <div className="px-5 pb-5 border-t border-slate-200">
+                        {/* Summary */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm mt-4">
+                          {item.production?.batchNumber && (
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                              <div className="text-slate-600">
+                                Số lô:{" "}
+                                <span className="font-mono font-medium text-slate-800">
+                                  {item.production.batchNumber}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                            <div className="text-slate-600">
+                              Số lượng:{" "}
+                              <span className="font-semibold text-slate-800">
+                                {item.quantity} NFT
+                              </span>
+                            </div>
+                            <div className="mt-1 text-slate-600">
+                              Ngày tạo:{" "}
+                              <span className="font-medium">
+                                {new Date(item.createdAt).toLocaleString(
+                                  "vi-VN"
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Distributor Panel */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                            <div className="text-xs text-slate-500 mb-1">
+                              Nhà phân phối
+                            </div>
+                            <div className="font-semibold text-slate-800">
+                              {item.distributor?.fullName ||
+                                item.distributor?.name ||
+                                "N/A"}
+                            </div>
+                            {item.distributor?.email && (
+                              <div className="text-xs text-slate-500 mt-1">
+                                {item.distributor.email}
+                              </div>
+                            )}
+                            {item.distributor?.address && (
+                              <div className="text-xs text-slate-500 mt-1">
+                                {item.distributor.address}
+                              </div>
+                            )}
+                          </div>
+                          {item.distributor?.walletAddress && (
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                              <div className="text-xs text-slate-500 mb-1">
+                                Wallet Address
+                              </div>
+                              <div className="font-mono text-xs text-slate-800 break-all">
+                                {item.distributor.walletAddress}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {item.transactionHash && (
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
+                            <div className="font-semibold text-slate-800 mb-1">
+                              Transaction Hash (Blockchain)
+                            </div>
+                            <div className="font-mono text-xs text-slate-700 break-all">
+                              {item.transactionHash}
+                            </div>
+                            <a
+                              href={`https://zeroscan.org/tx/${item.transactionHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-slate-600 hover:text-slate-800 underline mt-1 inline-block"
+                            >
+                              Xem trên ZeroScan →
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Retry button */}
+                        {["pending", "sent"].includes(item.status) &&
+                          !item.transactionHash &&
+                          item.distributor?.walletAddress && (
+                            <div className="mt-4 pt-4 border-t border-slate-200">
+                              <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 text-sm text-amber-800 mb-3">
+                                {item.status === "sent"
+                                  ? "Distributor đã xác nhận. Vui lòng chuyển quyền sở hữu NFT on-chain."
+                                  : "Chưa chuyển NFT on-chain. Vui lòng xác nhận chuyển quyền sở hữu NFT."}
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRetry(item);
+                                }}
+                                disabled={retryingId === item._id}
+                                className="w-full px-4 py-2.5 rounded-xl !text-white bg-gradient-to-r from-[#00b4d8] to-[#48cae4] hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all font-semibold"
+                              >
+                                {retryingId === item._id
+                                  ? "Đang xử lý..."
+                                  : item.status === "sent"
+                                  ? "Xác nhận chuyển NFT"
+                                  : "Thử lại chuyển giao"}
+                              </button>
+                            </div>
+                          )}
+
+                        {/* Status Timeline */}
+                        <div className="mt-4 pt-4 border-t border-slate-200">
+                          <div className="flex items-center gap-2 text-xs">
+                            <div
+                              className={`flex items-center gap-1 ${
+                                [
+                                  "pending",
+                                  "sent",
+                                  "received",
+                                  "paid",
+                                ].includes(item.status)
+                                  ? "text-amber-600"
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  [
+                                    "pending",
+                                    "sent",
+                                    "received",
+                                    "paid",
+                                  ].includes(item.status)
+                                    ? "bg-amber-500"
+                                    : "bg-slate-300"
+                                }`}
+                              ></div>
+                              <span>Pending</span>
+                            </div>
+                            <div className="flex-1 h-px bg-slate-200"></div>
+                            <div
+                              className={`flex items-center gap-1 ${
+                                ["sent", "received", "paid"].includes(
+                                  item.status
+                                )
+                                  ? "text-cyan-600"
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  ["sent", "received", "paid"].includes(
+                                    item.status
+                                  )
+                                    ? "bg-cyan-500"
+                                    : "bg-slate-300"
+                                }`}
+                              ></div>
+                              <span>Sent</span>
+                            </div>
+                            <div className="flex-1 h-px bg-slate-200"></div>
+                            <div
+                              className={`flex items-center gap-1 ${
+                                ["received", "paid"].includes(item.status)
+                                  ? "text-blue-600"
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  ["received", "paid"].includes(item.status)
+                                    ? "bg-blue-500"
+                                    : "bg-slate-300"
+                                }`}
+                              ></div>
+                              <span>Received</span>
+                            </div>
+                            <div className="flex-1 h-px bg-slate-200"></div>
+                            <div
+                              className={`flex items-center gap-1 ${
+                                item.status === "paid"
+                                  ? "text-emerald-600"
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  item.status === "paid"
+                                    ? "bg-emerald-500"
+                                    : "bg-slate-300"
+                                }`}
+                              ></div>
+                              <span>Paid</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between mt-5">
+            <div className="text-sm text-slate-600">
+              Hiển thị {items.length} / {pagination.total} đơn chuyển giao
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => updateFilter({ page: page - 1 })}
+                className={`px-3 py-2 rounded-xl ${
+                  page <= 1
+                    ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                    : "bg-white border border-cyan-300 hover:bg-cyan-50"
+                }`}
+              >
+                Trước
+              </button>
+              <span className="text-sm text-slate-700">
+                Trang {page} / {pagination.pages || 1}
+              </span>
+              <button
+                disabled={page >= pagination.pages}
+                onClick={() => updateFilter({ page: page + 1 })}
+                className={`px-3 py-2 rounded-xl ${
+                  page >= pagination.pages
+                    ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                    : "bg-secondary !text-white hover:shadow-lg"
+                }`}
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </DashboardLayout>
+  );
+}

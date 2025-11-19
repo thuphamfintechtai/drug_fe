@@ -1,0 +1,9 @@
+export { default as AdminDashboard } from "./Dashboard";
+export { default as AdminRegistrations } from "./Registrations";
+export { default as AdminRegistrationDetail } from "./RegistrationDetail";
+export { default as AdminDrugs } from "./Drugs";
+export { default as AdminDrugForm } from "./DrugForm";
+export { default as AdminSupplyChainHistory } from "./SupplyChainHistory";
+export { default as AdminDistributionHistory } from "./DistributionHistory";
+export { default as AdminNftTracking } from "./NftTracking";
+export { default as AdminPasswordResetRequests } from "./PasswordResetRequests";

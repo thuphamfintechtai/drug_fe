@@ -1,0 +1,170 @@
+import { useMemo } from "react";
+import { manufacturerAPIs } from "../apis/manufacturerAPIs";
+
+export const useDashboard = () => {
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+    error: statsError,
+    refetch: refetchStats,
+  } = manufacturerAPIs.getStatistics();
+
+  const {
+    data: dashboardStatsData,
+    isLoading: dashboardStatsLoading,
+    error: dashboardStatsError,
+    refetch: refetchDashboardStats,
+  } = manufacturerAPIs.getDashboardStats();
+
+  const {
+    data: oneWeekData,
+    isLoading: oneWeekLoading,
+    error: oneWeekError,
+    refetch: refetchOneWeek,
+  } = manufacturerAPIs.getChartOneWeek();
+
+  const {
+    data: todayYesterdayData,
+    isLoading: todayYesterdayLoading,
+    error: todayYesterdayError,
+    refetch: refetchTodayYesterday,
+  } = manufacturerAPIs.getChartTodayYesterday();
+
+  const {
+    data: monthlyData,
+    isLoading: monthlyLoading,
+    error: monthlyError,
+    refetch: refetchMonthly,
+  } = manufacturerAPIs.getMonthlyTrends(6);
+
+  const loading =
+    statsLoading ||
+    dashboardStatsLoading ||
+    oneWeekLoading ||
+    todayYesterdayLoading ||
+    monthlyLoading;
+
+  const error =
+    statsError ||
+    dashboardStatsError ||
+    oneWeekError ||
+    todayYesterdayError ||
+    monthlyError;
+
+  const stats = useMemo(() => {
+    if (statsData?.success) {
+      return statsData.data;
+    }
+    return null;
+  }, [statsData]);
+
+  const dashboardStats = useMemo(() => {
+    if (dashboardStatsData?.success) {
+      return dashboardStatsData.data;
+    }
+    return null;
+  }, [dashboardStatsData]);
+
+  const chartData = useMemo(() => {
+    const result = {
+      oneWeek: null,
+      todayYesterday: null,
+      monthly: null,
+    };
+
+    if (oneWeekData?.success && oneWeekData.data) {
+      const data = oneWeekData.data;
+      result.oneWeek = Object.entries(data.dailyStats || {})
+        .map(([date, stats]) => ({
+          date: new Date(date).toLocaleDateString("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+          }),
+          count: stats.count || 0,
+          quantity: stats.quantity || 0,
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+    }
+
+    if (todayYesterdayData?.success && todayYesterdayData.data) {
+      const data = todayYesterdayData.data;
+      result.todayYesterday = [
+        { name: "Hôm qua", count: data.yesterdayCount || 0 },
+        { name: "Hôm nay", count: data.todayCount || 0 },
+      ];
+    }
+
+    if (monthlyData?.success && monthlyData.data) {
+      const data = monthlyData.data;
+      result.monthly = (data.trends || []).map((item) => ({
+        month: item.month,
+        productions: item.productions || 0,
+        transfers: item.transfers || 0,
+      }));
+    }
+
+    return result;
+  }, [oneWeekData, todayYesterdayData, monthlyData]);
+
+  const loadAllData = async () => {
+    await Promise.all([
+      refetchStats(),
+      refetchDashboardStats(),
+      refetchOneWeek(),
+      refetchTodayYesterday(),
+      refetchMonthly(),
+    ]);
+  };
+
+  const nftStatusData = dashboardStats?.nfts?.byStatus
+    ? Object.entries(dashboardStats.nfts.byStatus)
+        .map(([name, value]) => ({
+          name:
+            name === "minted"
+              ? "Đã mint"
+              : name === "transferred"
+              ? "Đã chuyển"
+              : name === "sold"
+              ? "Đã bán"
+              : name === "expired"
+              ? "Hết hạn"
+              : name === "recalled"
+              ? "Thu hồi"
+              : name,
+          value: value || 0,
+        }))
+        .filter((item) => item.value > 0)
+    : [];
+
+  const transferStatusData = dashboardStats?.transfers?.byStatus
+    ? Object.entries(dashboardStats.transfers.byStatus)
+        .map(([name, value]) => ({
+          name:
+            name === "pending"
+              ? "Chờ xử lý"
+              : name === "sent"
+              ? "Đã gửi"
+              : name === "paid"
+              ? "Đã thanh toán"
+              : name === "cancelled"
+              ? "Đã hủy"
+              : name,
+          value: value || 0,
+        }))
+        .filter((item) => item.value > 0)
+    : [];
+
+  const displayStats = dashboardStats || stats;
+
+  return {
+    stats,
+    dashboardStats,
+    chartData,
+    loading,
+    error,
+    loadAllData,
+    nftStatusData,
+    transferStatusData,
+    displayStats,
+  };
+};

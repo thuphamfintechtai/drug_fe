@@ -12,44 +12,54 @@ import {
   ForgotPasswordBusiness,
   Login,
 } from "./features/auth/pages";
-import PublicNFTTracking from "../src_broken/pages/public/NFTTracking";
-import PublicDrugInfo from "../src_broken/pages/public/DrugInfo";
-import AdminDashboard from "../src_broken/pages/admin/Dashboard";
-import AdminRegistrations from "../src_broken/pages/admin/Registrations";
-import AdminRegistrationDetail from "../src_broken/pages/admin/RegistrationDetail";
-import AdminDrugs from "../src_broken/pages/admin/Drugs";
-import AdminDrugForm from "../src_broken/pages/admin/DrugForm";
-import AdminSupplyChainHistory from "../src_broken/pages/admin/SupplyChainHistory";
-import AdminDistributionHistory from "../src_broken/pages/admin/DistributionHistory";
-import AdminNftTracking from "../src_broken/pages/admin/NftTracking";
-import AdminPasswordResetRequests from "../src_broken/pages/admin/PasswordResetRequests";
-import ManufacturerDashboard from "../src_broken/pages/manufacturer/Dashboard";
-import ManufacturerDrugManagement from "../src_broken/pages/manufacturer/DrugManagement";
-import ManufacturerProductionManagement from "../src_broken/pages/manufacturer/ProductionManagement";
-import ManufacturerTransferManagement from "../src_broken/pages/manufacturer/TransferManagement";
-import ManufacturerProductionHistory from "../src_broken/pages/manufacturer/ProductionHistory";
-import ManufacturerTransferHistory from "../src_broken/pages/manufacturer/TransferHistory";
-import ManufacturerProfile from "../src_broken/pages/manufacturer/Profile";
-import ManufacturerIPFSStatus from "../src_broken/pages/manufacturer/IPFSStatus";
-import DistributorDashboard from "../src_broken/pages/distributor/Dashboard";
-import DistributorInvoices from "../src_broken/pages/distributor/InvoicesFromManufacturer";
-import DistributorTransferPharmacy from "../src_broken/pages/distributor/TransferToPharmacy";
-import DistributorDistributionHistory from "../src_broken/pages/distributor/DistributionHistory";
-import DistributorTransferHistory from "../src_broken/pages/distributor/TransferHistory";
-import DistributorDrugs from "../src_broken/pages/distributor/Drugs";
-import DistributorNFTTracking from "../src_broken/pages/distributor/NFTTracking";
-import DistributorProfile from "../src_broken/pages/distributor/Profile";
-import PharmacyDashboard from "../src_broken/pages/pharmacy/Dashboard";
-import PharmacyInvoices from "../src_broken/pages/pharmacy/InvoicesFromDistributor";
-import PharmacyDistributionHistory from "../src_broken/pages/pharmacy/DistributionHistory";
-import PharmacyDrugs from "../src_broken/pages/pharmacy/Drugs";
-import PharmacyNftTracking from "../src_broken/pages/pharmacy/NftTracking";
-import PharmacyProfile from "../src_broken/pages/pharmacy/Profile";
-import UserHome from "../src_broken/pages/public/UserHome";
-import MetaMaskConnect from "../src_broken/pages/MetaMaskConnect";
+import {
+  AdminDashboard,
+  AdminRegistrations,
+  AdminRegistrationDetail,
+  AdminDrugs,
+  AdminDrugForm,
+  AdminSupplyChainHistory,
+  AdminDistributionHistory,
+  AdminNftTracking,
+  AdminPasswordResetRequests,
+} from "./features/admin/pages";
+import {
+  ManufacturerDashboard,
+  ManufacturerDrugManagement,
+  ManufacturerProductionManagement,
+  ManufacturerTransferManagement,
+  ManufacturerProductionHistory,
+  ManufacturerTransferHistory,
+  ManufacturerProfile,
+  ManufacturerIPFSStatus,
+} from "./features/manufacturer/pages";
+import {
+  DistributorDashboard,
+  DistributorInvoices,
+  DistributorTransferPharmacy,
+  DistributorDistributionHistory,
+  DistributorTransferHistory,
+  DistributorDrugs,
+  DistributorNFTTracking,
+  DistributorProfile,
+} from "./features/distributor/pages";
+import {
+  PharmacyDashboard,
+  PharmacyInvoices,
+  PharmacyDistributionHistory,
+  PharmacyDrugs,
+  PharmacyNFTTracking,
+  PharmacyProfile,
+} from "./features/pharmacy/pages";
+import {
+  UserHome,
+  MetaMaskConnect,
+  VerifyPage,
+  NFTTracking,
+  DrugInfo,
+} from "./features/shared/page/index";
 import ProtectedRoute from "./features/auth/components/ProtectedRoute";
-import Navbar from "../src_broken/components/Navbar";
-import VerifyPage from "../src_broken/pages/public/VerifyPage";
+import Navbar from "./features/shared/components/Navbar";
 import { useAuthStore } from "./features/auth/store";
 import { useEffect } from "react";
 
@@ -345,7 +355,7 @@ function AppContent() {
           path="/pharmacy/nft-tracking"
           element={
             <ProtectedRoute allowedRoles={["pharmacy"]}>
-              <PharmacyNftTracking />
+              <PharmacyNFTTracking />
             </ProtectedRoute>
           }
         />
@@ -359,9 +369,9 @@ function AppContent() {
         />
 
         {/* Public Routes */}
-        <Route path="/track/:tokenId" element={<PublicNFTTracking />} />
-        <Route path="/track" element={<PublicNFTTracking />} />
-        <Route path="/drug-info" element={<PublicDrugInfo />} />
+        <Route path="/track/:tokenId" element={<NFTTracking />} />
+        <Route path="/track" element={<NFTTracking />} />
+        <Route path="/drug-info" element={<DrugInfo />} />
         <Route path="/metamask" element={<MetaMaskConnect />} />
         <Route path="/verify" element={<VerifyPage />} />
         <Route path="/" element={<UserHome />} />
