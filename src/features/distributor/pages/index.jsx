@@ -6,3 +6,8 @@ export { default as DistributorTransferHistory } from "./TransferHistory";
 export { default as DistributorDrugs } from "./Drugs";
 export { default as DistributorNFTTracking } from "./NFTTracking";
 export { default as DistributorProfile } from "./Profile";
+export { default as DistributorCreateProofToPharmacy } from "./CreateProofToPharmacy";
+export { default as DistributorDeliveriesToPharmacy } from "./DeliveriesToPharmacy";
+export { default as DistributorDeliveryDetail } from "./DeliveryDetail";
+export { default as DistributorDistributions } from "./Distributions";
+export { default as DistributorDistributionDetail } from "./DistributionDetail";

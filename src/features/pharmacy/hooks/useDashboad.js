@@ -1,15 +1,15 @@
 /* eslint-disable no-undef */
 import { useEffect, useState, useRef } from "react";
-import { pharmacyQueries } from "../apis/pharmacyQueries";
+import api from "../../utils/api";
 
 export const useDashboard = () => {
   const [stats, setStats] = useState(null);
   const [dashboardStats, setDashboardStats] = useState(null);
   const [qualityStats, setQualityStats] = useState(null);
   const [chartData, setChartData] = useState({
-    oneWeek: null,
-    todayYesterday: null,
-    monthly: null,
+    oneWeek: [],
+    todayYesterday: [],
+    monthly: [],
   });
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -45,27 +45,109 @@ export const useDashboard = () => {
         });
       }, 50);
 
-      const { data: stats } = pharmacyQueries.getStatistics();
-      const { data: dashboardStats } = pharmacyQueries.getDashboardStats();
-      const { data: qualityStats } = pharmacyQueries.getQualityStats();
-      const { data: oneWeek } = pharmacyQueries.getChartOneWeek();
-      const { data: todayYesterday } = pharmacyQueries.getChartTodayYesterday();
-      const { data: monthly } = pharmacyQueries.getMonthlyTrends(6);
+      // Make parallel API calls
+      const [
+        statsResponse,
+        dashboardStatsResponse,
+        qualityStatsResponse,
+        oneWeekResponse,
+        todayYesterdayResponse,
+        monthlyResponse,
+      ] = await Promise.allSettled([
+        api.get("/pharmacy/statistics"),
+        api.get("/statistics/pharmacy/dashboard"),
+        api.get("/statistics/pharmacy/quality"),
+        api.get("/pharmacy/chart/one-week"),
+        api.get("/pharmacy/chart/today-yesterday"),
+        api.get("/statistics/trends/monthly", { params: { months: 6 } }),
+      ]);
 
-      setStats(stats);
-      setDashboardStats(dashboardStats);
-      setQualityStats(qualityStats);
-      setChartData((prev) => ({ ...prev, oneWeek: oneWeek }));
-      setChartData((prev) => ({ ...prev, todayYesterday: todayYesterday }));
-      setChartData((prev) => ({ ...prev, monthly: monthly }));
+      // Extract data from responses
+      if (
+        statsResponse.status === "fulfilled" &&
+        statsResponse.value.data?.success
+      ) {
+        setStats(statsResponse.value.data.data);
+      }
 
-      if (monthlyRes.status === "fulfilled" && monthlyRes.value.data?.success) {
-        const data = monthlyRes.value.data.data;
-        const formattedData = (data.trends || []).map((item) => ({
-          month: item.month,
-          receipts: item.receipts || 0,
+      if (
+        dashboardStatsResponse.status === "fulfilled" &&
+        dashboardStatsResponse.value.data?.success
+      ) {
+        setDashboardStats(dashboardStatsResponse.value.data.data);
+      }
+
+      if (
+        qualityStatsResponse.status === "fulfilled" &&
+        qualityStatsResponse.value.data?.success
+      ) {
+        setQualityStats(qualityStatsResponse.value.data.data);
+      }
+
+      // Handle oneWeek chart data - ensure it's always an array
+      if (
+        oneWeekResponse.status === "fulfilled" &&
+        oneWeekResponse.value.data?.success
+      ) {
+        const data = oneWeekResponse.value.data.data;
+        let oneWeekData = [];
+        if (Array.isArray(data)) {
+          oneWeekData = data;
+        } else if (data?.data && Array.isArray(data.data)) {
+          oneWeekData = data.data;
+        } else if (data?.chart && Array.isArray(data.chart)) {
+          oneWeekData = data.chart;
+        }
+        setChartData((prev) => ({
+          ...prev,
+          oneWeek: oneWeekData,
         }));
+      } else {
+        setChartData((prev) => ({ ...prev, oneWeek: [] }));
+      }
+
+      // Handle todayYesterday chart data - ensure it's always an array
+      if (
+        todayYesterdayResponse.status === "fulfilled" &&
+        todayYesterdayResponse.value.data?.success
+      ) {
+        const data = todayYesterdayResponse.value.data.data;
+        let todayYesterdayData = [];
+        if (Array.isArray(data)) {
+          todayYesterdayData = data;
+        } else if (data?.data && Array.isArray(data.data)) {
+          todayYesterdayData = data.data;
+        } else if (data?.chart && Array.isArray(data.chart)) {
+          todayYesterdayData = data.chart;
+        }
+        setChartData((prev) => ({
+          ...prev,
+          todayYesterday: todayYesterdayData,
+        }));
+      } else {
+        setChartData((prev) => ({ ...prev, todayYesterday: [] }));
+      }
+
+      // Handle monthly chart data - ensure it's always an array
+      if (
+        monthlyResponse.status === "fulfilled" &&
+        monthlyResponse.value.data?.success
+      ) {
+        const data = monthlyResponse.value.data.data;
+        let formattedData = [];
+        if (Array.isArray(data)) {
+          formattedData = data;
+        } else if (data?.trends && Array.isArray(data.trends)) {
+          formattedData = data.trends.map((item) => ({
+            month: item.month || item.date || "",
+            receipts: item.receipts || item.count || 0,
+          }));
+        } else if (data?.data && Array.isArray(data.data)) {
+          formattedData = data.data;
+        }
         setChartData((prev) => ({ ...prev, monthly: formattedData }));
+      } else {
+        setChartData((prev) => ({ ...prev, monthly: [] }));
       }
 
       setLoadingProgress(1);
@@ -83,6 +165,8 @@ export const useDashboard = () => {
       }, 500);
     }
   };
+
+  const displayStats = dashboardStats || stats;
 
   const invoiceStatusData =
     displayStats?.invoicesReceived?.byStatus || displayStats?.invoices?.byStatus
@@ -155,5 +239,9 @@ export const useDashboard = () => {
     chartData,
     loading,
     loadingProgress,
+    loadAllData,
+    invoiceStatusData,
+    nftStatusData,
+    receiptsStatusData,
   };
 };

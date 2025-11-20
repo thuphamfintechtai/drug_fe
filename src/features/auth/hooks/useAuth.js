@@ -8,6 +8,7 @@ export const useAuth = () => {
     if (store.loading) {
       store.initAuth();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
@@ -20,6 +21,7 @@ export const useAuth = () => {
     setRole: store.setRole,
     clearRole: store.clearRole,
     getRole: store.getRole,
+    logout: store.logout,
   };
 };
 

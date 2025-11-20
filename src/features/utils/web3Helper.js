@@ -944,6 +944,38 @@ export const connectWallet = async () => {
   }
 };
 
+/**
+ * Disconnect wallet (revoke MetaMask permissions)
+ */
+export const disconnectWallet = async () => {
+  try {
+    if (typeof window.ethereum !== "undefined" && window.ethereum.request) {
+      try {
+        const permissions = await window.ethereum.request({
+          method: "wallet_getPermissions",
+        });
+
+        if (permissions && permissions.length > 0) {
+          await window.ethereum.request({
+            method: "wallet_revokePermissions",
+            params: [{ eth_accounts: {} }],
+          });
+          return { success: true };
+        }
+      } catch (err) {
+        console.warn("Could not revoke MetaMask permissions:", err);
+        // Vẫn return success vì có thể wallet đã disconnected
+        return { success: true };
+      }
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("Error disconnecting wallet:", error);
+    // Vẫn return success để không block logout process
+    return { success: true };
+  }
+};
+
 export default {
   getWeb3Provider,
   getCurrentWalletAddress,
@@ -956,4 +988,5 @@ export default {
   isMetaMaskInstalled,
   isWalletConnected,
   connectWallet,
+  disconnectWallet,
 };

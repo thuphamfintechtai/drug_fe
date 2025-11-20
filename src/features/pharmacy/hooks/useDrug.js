@@ -122,6 +122,11 @@ export const useDrug = () => {
     setDrugs(filtered);
   };
 
+  const handleClearSearch = () => {
+    setSearchAtc("");
+    setDrugs(allDrugs);
+  };
+
   const safeDrugs = Array.isArray(drugs) ? drugs : [];
 
   return {

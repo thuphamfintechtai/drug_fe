@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { pharmacyQueries } from "../apis/pharmacyQueries";
+import api from "../../utils/api";
 import { toast } from "sonner";
 
 export const useInvoicesFromDistributor = () => {
@@ -40,15 +40,12 @@ export const useInvoicesFromDistributor = () => {
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
 
-  // Đồng bộ localSearch với search params từ URL (khi component mount hoặc search thay đổi từ bên ngoài)
   useEffect(() => {
     if (search !== localSearch) {
       setLocalSearch(search);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  // Debounce search: đợi 1.5 giây sau khi người dùng dừng nhập
   useEffect(() => {
     // Bỏ qua nếu localSearch trống và search cũng trống
     if (localSearch === search) {
@@ -102,7 +99,7 @@ export const useInvoicesFromDistributor = () => {
         params.status = status;
       }
 
-      const response = await pharmacyQueries.getInvoicesFromDistributor(params);
+      const response = await api.get("/pharmacy/invoices", { params });
       if (response.data && response.data.success) {
         const invoices =
           response.data.data?.invoices || response.data.data || [];
@@ -201,6 +198,15 @@ export const useInvoicesFromDistributor = () => {
       }
     });
     setSearchParams(nextParams);
+  };
+
+  const handleSearch = (value) => {
+    setLocalSearch(value);
+  };
+
+  const handleClearSearch = () => {
+    setLocalSearch("");
+    updateFilter({ search: "", page: 1 });
   };
 
   const toggleExpand = (idx) => {
@@ -346,7 +352,10 @@ export const useInvoicesFromDistributor = () => {
         data: requestData,
       });
 
-      const response = await pharmacyService.confirmReceipt(requestData);
+      const response = await api.post(
+        "/pharmacy/invoices/confirm-receipt",
+        requestData
+      );
 
       console.log("Response từ server:", response);
 
@@ -454,11 +463,15 @@ export const useInvoicesFromDistributor = () => {
     localSearch,
     isSearching,
     confirmForm,
+    setConfirmForm,
     confirmFormErrors,
+    setConfirmFormErrors,
     isConfirming,
     selectedInvoice,
     expandedInvoice,
     setSelectedInvoice,
     setExpandedInvoice,
+    showConfirmDialog,
+    setShowConfirmDialog,
   };
 };

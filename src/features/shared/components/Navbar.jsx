@@ -1,9 +1,12 @@
+/* eslint-disable no-undef */
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMetaMask } from "../hooks/useMetaMask";
+import { useAuthStore } from "../../auth/store";
+import { clearAuthCookies } from "../../auth/utils/cookieUtils";
 import { toast } from "sonner";
 
 export default function Navbar() {
@@ -50,15 +53,17 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     setDropdownOpen(false);
-    // Disconnect MetaMask trước khi logout
     if (isConnected) {
       await disconnect();
-      toast.success("Đã ngắt kết nối MetaMask");
     }
-    // Sau đó logout khỏi hệ thống
-    await logout();
-    // Redirect về trang chủ
-    navigate("/");
+    useAuthStore.getState().clearAuthState();
+    clearAuthCookies();
+    navigate("/", { replace: true });
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout API error:", error);
+    }
   };
 
   const handleConnectMetaMask = async () => {
@@ -86,7 +91,9 @@ export default function Navbar() {
   };
 
   const formatAddress = (addr) => {
-    if (!addr) return "";
+    if (!addr) {
+      return "";
+    }
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
@@ -97,7 +104,9 @@ export default function Navbar() {
   };
 
   const getProfileRoute = () => {
-    if (!user?.role) return "/";
+    if (!user?.role) {
+      return "/";
+    }
     const roleMap = {
       system_admin: "/admin",
       pharma_company: "/manufacturer/profile",

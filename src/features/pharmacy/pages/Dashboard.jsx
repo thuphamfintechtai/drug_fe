@@ -255,7 +255,9 @@ export default function PharmacyDashboard() {
                   <h3 className="text-lg font-semibold text-slate-800 mb-4">
                     Đơn hàng nhận 7 ngày gần nhất
                   </h3>
-                  {chartData.oneWeek && chartData.oneWeek.length > 0 ? (
+                  {chartData.oneWeek &&
+                  Array.isArray(chartData.oneWeek) &&
+                  chartData.oneWeek.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <AreaChart data={chartData.oneWeek}>
                         <defs>
@@ -315,7 +317,9 @@ export default function PharmacyDashboard() {
                   <h3 className="text-lg font-semibold text-slate-800 mb-4">
                     So sánh hôm nay và hôm qua
                   </h3>
-                  {chartData.todayYesterday ? (
+                  {chartData.todayYesterday &&
+                  Array.isArray(chartData.todayYesterday) &&
+                  chartData.todayYesterday.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={chartData.todayYesterday}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -471,41 +475,43 @@ export default function PharmacyDashboard() {
               </div>
 
               {/* Monthly Trends Chart */}
-              {chartData.monthly && chartData.monthly.length > 0 && (
-                <motion.div
-                  variants={fadeUp}
-                  initial="hidden"
-                  animate="show"
-                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
-                >
-                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
-                    Xu hướng 6 tháng gần nhất
-                  </h3>
-                  <ResponsiveContainer width="100%" height={400}>
-                    <LineChart data={chartData.monthly}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="month" stroke="#6b7280" />
-                      <YAxis stroke="#6b7280" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "white",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "8px",
-                        }}
-                      />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="receipts"
-                        stroke={COLORS.third}
-                        strokeWidth={3}
-                        name="Biên nhận"
-                        dot={{ fill: COLORS.third, r: 5 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </motion.div>
-              )}
+              {chartData.monthly &&
+                Array.isArray(chartData.monthly) &&
+                chartData.monthly.length > 0 && (
+                  <motion.div
+                    variants={fadeUp}
+                    initial="hidden"
+                    animate="show"
+                    className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                  >
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                      Xu hướng 6 tháng gần nhất
+                    </h3>
+                    <ResponsiveContainer width="100%" height={400}>
+                      <LineChart data={chartData.monthly}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="month" stroke="#6b7280" />
+                        <YAxis stroke="#6b7280" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "white",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "8px",
+                          }}
+                        />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="receipts"
+                          stroke={COLORS.third}
+                          strokeWidth={3}
+                          name="Biên nhận"
+                          dot={{ fill: COLORS.third, r: 5 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </motion.div>
+                )}
 
               {/* Detailed Statistics Cards */}
               <motion.div variants={fadeUp} initial="hidden" animate="show">

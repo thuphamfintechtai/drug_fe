@@ -3,11 +3,14 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
+import { useAuthStore } from "../../auth/store";
+import { clearAuthCookies } from "../../auth/utils/cookieUtils";
 import {
   connectWallet,
   isWalletConnected,
   getCurrentWalletAddress,
   isMetaMaskInstalled,
+  disconnectWallet,
 } from "../../utils/web3Helper";
 import LogoutButton from "./LogoutButton";
 import { toast } from "sonner";
@@ -278,8 +281,30 @@ export default function DashboardLayout({
   };
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+    // Disconnect wallet trước khi logout
+    try {
+      const connected = await isWalletConnected();
+      if (connected) {
+        await disconnectWallet();
+      }
+    } catch (error) {
+      console.error("Error disconnecting wallet:", error);
+    }
+
+    // Call logout API first (while we still have auth token)
+    try {
+      if (logout) {
+        await logout();
+      }
+    } catch (error) {
+      // Ignore logout API errors, still clear local state
+      console.error("Logout API error:", error);
+    } finally {
+      // Clear local state and cookies after API call
+      useAuthStore.getState().clearAuthState();
+      clearAuthCookies();
+      navigate("/", { replace: true });
+    }
   };
 
   const fadeUp = {

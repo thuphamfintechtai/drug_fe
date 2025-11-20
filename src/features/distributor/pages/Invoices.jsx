@@ -1,15 +1,13 @@
 import { Table, Spin, Button } from "antd";
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import { useNavigate } from "react-router-dom";
-import { getDistributorNavigationItems } from "../components/distributorNavigation";
+import { navigationItems } from "../constants/navigationItems";
 import { useInvoices } from "../hooks/useInvoice";
 import DistributorInvoiceColumns from "../components/columnsInvoice";
 
 export default function Invoices() {
   const { data, loading } = useInvoices();
   const navigate = useNavigate();
-
-  const navigationItems = getDistributorNavigationItems();
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
@@ -40,8 +38,10 @@ export default function Invoices() {
         </h2>
         <Spin spinning={loading}>
           <Table
-            dataSource={data}
-            rowKey="_id"
+            dataSource={data || []}
+            rowKey={(record, index) =>
+              record?._id || record?.id || `invoice-${index}`
+            }
             pagination={{ pageSize: 10, showSizeChanger: true }}
             scroll={{ x: 1000 }}
           >

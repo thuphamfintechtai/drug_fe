@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { distributorQueries } from "../apis/distributor";
+import api from "../../utils/api";
 
 export const useTransferToPharmacy = () => {
   const queryClient = useQueryClient();
@@ -26,15 +27,46 @@ export const useTransferToPharmacy = () => {
   const chainIntervalRef = useRef(null);
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  const { mutateAsync: fetchDistributionHistory } =
-    distributorQueries.getDistributionHistory();
-  const { mutateAsync: fetchPharmacies } = distributorQueries.getPharmacies();
+  const { data: distributionHistoryData, refetch: refetchDistributionHistory } =
+    distributorQueries.getDistributionHistory({ status: "confirmed" });
+  const { data: pharmaciesData, refetch: refetchPharmacies } =
+    distributorQueries.getPharmacies();
   const { mutateAsync: transferToPharmacyMutation } =
     distributorQueries.transferToPharmacy();
   const { mutateAsync: saveTransferTransaction } =
     distributorQueries.saveTransferTransaction();
-  const { mutateAsync: fetchInvoiceDetail } =
-    distributorQueries.getInvoiceDetail();
+
+  useEffect(() => {
+    if (distributionHistoryData?.data) {
+      const data = distributionHistoryData.data;
+      if (data.success) {
+        const nextDistributions = data.data?.distributions || [];
+        setDistributions(nextDistributions);
+        queryClient.setQueryData(TRANSFER_CACHE_KEY, {
+          distributions: nextDistributions,
+          pharmacies: pharmacies || [],
+        });
+      }
+    }
+  }, [distributionHistoryData, queryClient]);
+
+  useEffect(() => {
+    if (pharmaciesData?.data) {
+      const data = pharmaciesData.data;
+      if (data.success && data.data) {
+        const nextPharmacies = Array.isArray(data.data.pharmacies)
+          ? data.data.pharmacies
+          : Array.isArray(data.data)
+          ? data.data
+          : [];
+        setPharmacies(nextPharmacies);
+        queryClient.setQueryData(TRANSFER_CACHE_KEY, {
+          distributions: distributions || [],
+          pharmacies: nextPharmacies,
+        });
+      }
+    }
+  }, [pharmaciesData, queryClient]);
 
   useEffect(() => {
     const cached = queryClient.getQueryData(TRANSFER_CACHE_KEY);
@@ -43,8 +75,9 @@ export const useTransferToPharmacy = () => {
       setPharmacies(cached.pharmacies || []);
       setLoading(false);
       setLoadingProgress(0);
+    } else {
+      loadData(true);
     }
-    loadData(!cached);
     return () => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -75,29 +108,10 @@ export const useTransferToPharmacy = () => {
         }, 50);
       }
 
-      const [distRes, pharmRes] = await Promise.all([
-        fetchDistributionHistory({ status: "confirmed" }),
-        fetchPharmacies(),
-      ]);
+      await Promise.all([refetchDistributionHistory(), refetchPharmacies()]);
 
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
-      }
-
-      let nextDistributions = [];
-      if (distRes.data.success) {
-        nextDistributions = distRes.data.data.distributions || [];
-        setDistributions(nextDistributions);
-      }
-
-      let nextPharmacies = [];
-      if (pharmRes.data.success && pharmRes.data.data) {
-        nextPharmacies = Array.isArray(pharmRes.data.data.pharmacies)
-          ? pharmRes.data.data.pharmacies
-          : [];
-        setPharmacies(nextPharmacies);
-      } else {
-        setPharmacies([]);
       }
 
       queryClient.setQueryData(TRANSFER_CACHE_KEY, {
@@ -186,11 +200,17 @@ export const useTransferToPharmacy = () => {
           typeof manufacturerInvoiceId === "string"
         ) {
           try {
-            const invoiceDetailRes = await fetchInvoiceDetail(
-              manufacturerInvoiceId
-            );
-            if (invoiceDetailRes?.data?.success && invoiceDetailRes.data.data) {
-              const invoiceDetail = invoiceDetailRes.data.data;
+            const invoiceDetailRes = await queryClient.fetchQuery({
+              queryKey: ["getInvoiceDetail", manufacturerInvoiceId],
+              queryFn: async () => {
+                const response = await api.get(
+                  `/distributor/invoices/${manufacturerInvoiceId}/detail`
+                );
+                return response.data;
+              },
+            });
+            if (invoiceDetailRes?.success && invoiceDetailRes.data) {
+              const invoiceDetail = invoiceDetailRes.data;
               if (
                 invoiceDetail.tokenIds &&
                 Array.isArray(invoiceDetail.tokenIds) &&

@@ -21,6 +21,7 @@ export default function InvoicesFromDistributor() {
     setSelectedInvoice,
     setConfirmForm,
     setConfirmFormErrors,
+    showConfirmDialog,
     setShowConfirmDialog,
     handleConfirmReceipt,
     getStatusColor,

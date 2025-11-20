@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store";
 import { useMetaMask } from "../../shared/hooks/useMetaMask";
 import {
@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
+  const location = useLocation();
   const { isAuthenticated, user, loading, initAuth } = useAuthStore();
   const { account, isConnected, isInstalled, connect, isConnecting } =
     useMetaMask();
@@ -23,37 +24,45 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 
   useEffect(() => {
     const checkWalletAddress = async () => {
+      // Không tự động connect wallet nếu không authenticated hoặc đang ở trang public
       if (
-        isAuthenticated &&
-        user?.walletAddress &&
-        user?.role !== "system_admin"
+        !isAuthenticated ||
+        !user?.walletAddress ||
+        user?.role === "system_admin" ||
+        location.pathname === "/" ||
+        location.pathname === "/login" ||
+        location.pathname === "/register"
       ) {
-        setCheckingWallet(true);
+        setCheckingWallet(false);
+        setWalletMismatch(false);
+        return;
+      }
 
-        if (!isConnected || !account) {
-          if (isInstalled) {
-            const connected = await connect();
-            if (!connected) {
-              setWalletMismatch(false);
-              setCheckingWallet(false);
-              return;
-            }
-          } else {
-            toast.error("Vui lòng cài đặt MetaMask để tiếp tục");
+      setCheckingWallet(true);
+
+      if (!isConnected || !account) {
+        if (isInstalled) {
+          const connected = await connect();
+          if (!connected) {
+            setWalletMismatch(false);
             setCheckingWallet(false);
             return;
           }
-        }
-
-        if (account && !compareWalletAddresses(user.walletAddress, account)) {
-          setWalletMismatch(true);
-          toast.error("Địa chỉ ví MetaMask không khớp với tài khoản");
         } else {
-          setWalletMismatch(false);
+          toast.error("Vui lòng cài đặt MetaMask để tiếp tục");
+          setCheckingWallet(false);
+          return;
         }
-
-        setCheckingWallet(false);
       }
+
+      if (account && !compareWalletAddresses(user.walletAddress, account)) {
+        setWalletMismatch(true);
+        toast.error("Địa chỉ ví MetaMask không khớp với tài khoản");
+      } else {
+        setWalletMismatch(false);
+      }
+
+      setCheckingWallet(false);
     };
 
     checkWalletAddress();
@@ -65,6 +74,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     account,
     isInstalled,
     connect,
+    location.pathname,
   ]);
 
   if (loading || checkingWallet || isConnecting) {
@@ -79,7 +89,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (user?.walletAddress && walletMismatch) {

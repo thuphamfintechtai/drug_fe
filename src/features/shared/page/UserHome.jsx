@@ -113,10 +113,22 @@ export default function UserHome() {
     if (isConnected) {
       await disconnect();
     }
-    await logout();
+    // Clear state ngay lập tức trước khi navigate
+    const { useAuthStore } = await import("../../auth/store");
+    const { clearAuthCookies } = await import("../../auth/utils/cookieUtils");
+    useAuthStore.getState().clearAuthState();
+    clearAuthCookies();
     setShowUserDropdown(false);
-    navigate("/");
-    toast.success("Đã đăng xuất thành công!");
+    // Navigate ngay lập tức
+    navigate("/", { replace: true });
+    // Sau đó gọi API logout (không block)
+    try {
+      await logout();
+      toast.success("Đã đăng xuất thành công!");
+    } catch (error) {
+      console.error("Logout API error:", error);
+      toast.success("Đã đăng xuất thành công!");
+    }
   };
 
   const formatAddress = (addr) => {

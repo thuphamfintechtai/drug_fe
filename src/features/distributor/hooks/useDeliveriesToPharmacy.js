@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
 import { distributorQueries } from "../apis/distributor";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+
 export const statusColor = (status) => {
   switch (status) {
     case "confirmed":
@@ -23,35 +23,22 @@ export const statusLabel = (status) => {
 };
 
 export const useDeliveriesToPharmacy = () => {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const { mutateAsync: fetchDeliveries } =
-    distributorQueries.getDeliveriesToPharmacy();
+  const queryClient = useQueryClient();
+  const {
+    data: deliveriesData,
+    isLoading: loading,
+    refetch: fetchData,
+  } = distributorQueries.getDeliveriesToPharmacy();
   const { mutateAsync: updatePharmacyDeliveryStatusMutation } =
     distributorQueries.updatePharmacyDeliveryStatus();
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const res = await fetchDeliveries();
-      const list = Array.isArray(res?.data)
-        ? res.data
-        : Array.isArray(res?.data?.data)
-        ? res.data.data
-        : [];
-      setData(list);
-    } catch (error) {
-      console.error("Fetch deliveries error:", error);
-      toast.error("Không tải được danh sách!");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const data = Array.isArray(deliveriesData?.data)
+    ? deliveriesData.data
+    : Array.isArray(deliveriesData?.data?.data)
+    ? deliveriesData.data.data
+    : deliveriesData?.data
+    ? [deliveriesData.data]
+    : [];
 
   const updateStatus = async (id) => {
     try {
@@ -60,9 +47,9 @@ export const useDeliveriesToPharmacy = () => {
         data: { status: "confirmed" },
       });
       toast.success("Cập nhật thành công!");
+      queryClient.invalidateQueries(["getDeliveriesToPharmacy"]);
       fetchData();
-    } catch (error) {
-      console.error("Update delivery status error:", error);
+    } catch {
       toast.error("Cập nhật lỗi!");
     }
   };

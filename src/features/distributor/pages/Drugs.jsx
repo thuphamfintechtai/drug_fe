@@ -3,7 +3,7 @@ import TruckLoader from "../../shared/components/TruckLoader";
 import { CardUI } from "../../shared/components/ui/cardUI";
 import { Search } from "../../shared/components/ui/search";
 import { useDrugs } from "../hooks/useDrugs";
-import { getDistributorNavigationItems } from "../components/distributorNavigation";
+import { navigationItems } from "../constants/navigationItems";
 
 export default function Drugs() {
   const {
@@ -17,7 +17,6 @@ export default function Drugs() {
     handleClearSearch,
   } = useDrugs();
   const safeDrugs = Array.isArray(drugs) ? drugs : [];
-  const navigationItems = getDistributorNavigationItems();
 
   return (
     <DashboardLayout navigationItems={navigationItems}>

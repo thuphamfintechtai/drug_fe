@@ -42,6 +42,11 @@ import {
   DistributorDrugs,
   DistributorNFTTracking,
   DistributorProfile,
+  DistributorCreateProofToPharmacy,
+  DistributorDeliveriesToPharmacy,
+  DistributorDeliveryDetail,
+  DistributorDistributions,
+  DistributorDistributionDetail,
 } from "./features/distributor/pages";
 import {
   PharmacyDashboard,
@@ -278,6 +283,22 @@ function AppContent() {
           }
         />
         <Route
+          path="/distributor/distributions"
+          element={
+            <ProtectedRoute allowedRoles={["distributor"]}>
+              <DistributorDistributions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/distributions/:id"
+          element={
+            <ProtectedRoute allowedRoles={["distributor"]}>
+              <DistributorDistributionDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/distributor/distribution-history"
           element={
             <ProtectedRoute allowedRoles={["distributor"]}>
@@ -314,6 +335,30 @@ function AppContent() {
           element={
             <ProtectedRoute allowedRoles={["distributor"]}>
               <DistributorProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/create-proof"
+          element={
+            <ProtectedRoute allowedRoles={["distributor"]}>
+              <DistributorCreateProofToPharmacy />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/deliveries"
+          element={
+            <ProtectedRoute allowedRoles={["distributor"]}>
+              <DistributorDeliveriesToPharmacy />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/deliveries/:id"
+          element={
+            <ProtectedRoute allowedRoles={["distributor"]}>
+              <DistributorDeliveryDetail />
             </ProtectedRoute>
           }
         />

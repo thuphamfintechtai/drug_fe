@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 
@@ -143,7 +144,7 @@ export function Search({
 
   return (
     <div className="flex-1 relative">
-      <label className="block text-sm text-[#003544]/70 mb-1">Tìm kiếm</label>
+      {/* <label className="block text-sm text-[#003544]/70 mb-1">Tìm kiếm</label> */}
       <div className="relative" ref={searchRef}>
         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
           <svg

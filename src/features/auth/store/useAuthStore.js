@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authService } from "../../auth/api/index";
+import api from "../../utils/api";
 import {
   getAuthToken,
   getAuthUser,
@@ -102,6 +103,49 @@ const useAuthStore = create(
         const updatedUser = { ...currentUser, ...userData };
         setAuthUser(updatedUser);
         set({ user: updatedUser });
+      },
+
+      // Logout function
+      logout: async () => {
+        try {
+          // Disconnect wallet trước khi logout
+          if (
+            typeof window.ethereum !== "undefined" &&
+            window.ethereum.request
+          ) {
+            try {
+              const permissions = await window.ethereum.request({
+                method: "wallet_getPermissions",
+              });
+
+              if (permissions && permissions.length > 0) {
+                await window.ethereum.request({
+                  method: "wallet_revokePermissions",
+                  params: [{ eth_accounts: {} }],
+                });
+              }
+            } catch (err) {
+              console.warn(
+                "Could not revoke MetaMask permissions on logout:",
+                err
+              );
+            }
+          }
+          // Gọi API logout nếu cần
+          await api.post("/auth/logout");
+        } catch (error) {
+          // Ignore errors, vẫn clear local state
+          console.error("Logout API error:", error);
+        } finally {
+          // Clear cookies và state
+          clearAuthCookies();
+          set({
+            user: null,
+            role: null,
+            isAuthenticated: false,
+            loading: false,
+          });
+        }
       },
     }),
     {

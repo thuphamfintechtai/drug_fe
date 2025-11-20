@@ -354,7 +354,7 @@ export default function TransferHistory() {
           {/* Pagination */}
           <div className="flex items-center justify-between mt-5">
             <div className="text-sm text-slate-600">
-              Hiển thị {items.length} / {pagination.total} đơn chuyển giao
+              Hiển thị {items.length} / {pagination?.total || 0} đơn chuyển giao
             </div>
             <div className="flex items-center gap-2">
               <button

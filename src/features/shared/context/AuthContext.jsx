@@ -12,7 +12,11 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const { user, loading, isAuthenticated, initAuth, logout } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const loading = useAuthStore((state) => state.loading);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const initAuth = useAuthStore((state) => state.initAuth);
+  const logout = useAuthStore((state) => state.logout);
 
   useEffect(() => {
     if (loading) {
@@ -24,7 +28,16 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     isAuthenticated,
-    logout,
+    logout:
+      logout ||
+      (async () => {
+        // Fallback nếu logout chưa có
+        useAuthStore.getState().clearAuthState();
+        const { clearAuthCookies } = await import(
+          "../../auth/utils/cookieUtils"
+        );
+        clearAuthCookies();
+      }),
 
     login: async () => {
       console.warn(
