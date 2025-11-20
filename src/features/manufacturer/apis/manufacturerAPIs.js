@@ -197,7 +197,7 @@ export const manufacturerAPIs = {
       queryKey: ["getStatistics"],
       queryFn: async () => {
         const response = await api.get("/pharma-company/statistics");
-        return response.data;
+        return response;
       },
     });
   },

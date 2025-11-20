@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { manufacturerAPIs } from "../apis/manufacturerAPIs";
+import { isMetaMaskInstalled, getWeb3Provider } from "../../utils/web3Helper";
 
 export const useProductionManagement = () => {
   const [searchParams] = useSearchParams();

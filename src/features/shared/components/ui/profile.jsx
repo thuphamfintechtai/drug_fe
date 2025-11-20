@@ -12,7 +12,7 @@ const fadeUp = {
 };
 
 export function Profile({ title, subtitle, user, company, roleLabel }) {
-  if (!user) return null;
+  if (!user) {return null;}
 
   return (
     <div className="space-y-6">

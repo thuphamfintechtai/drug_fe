@@ -1,4 +1,4 @@
-import truckSVG from "../assets/truck.svg";
+import truckSVG from "../../../assets/trunkLoader.png";
 
 export default function TruckAnimationButton({
   onClick,

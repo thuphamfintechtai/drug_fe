@@ -1,4 +1,4 @@
-import api from "../../../../src_broken/utils/api";
+import api from "../../utils/api";
 import { useMutation } from "@tanstack/react-query";
 import {
   setAuthToken,
@@ -19,22 +19,31 @@ export const authMutations = {
         return response.data;
       },
       onSuccess: (response) => {
-        if (response.success) {
-          const { user, token } = response.data || {};
-          if (token && user) {
-            const role = user?.role;
-            setAuthToken(token);
-            setAuthUser(user);
-            if (role) {
-              setAuthRole(role);
-            }
-            useAuthStore.getState().setAuthState({
-              user,
-              role,
-              isAuthenticated: true,
-            });
-          }
+        if (!response?.success) {
+          return;
         }
+
+        const { user, token, businessProfile } = response.data || {};
+        if (!token || !user) {
+          return;
+        }
+
+        const role = user?.role;
+        const normalizedUser = {
+          ...user,
+          businessProfile: businessProfile || user.businessProfile,
+        };
+
+        setAuthToken(token);
+        setAuthUser(normalizedUser);
+        if (role) {
+          setAuthRole(role);
+        }
+        useAuthStore.getState().setAuthState({
+          user: normalizedUser,
+          role,
+          isAuthenticated: true,
+        });
       },
       onError: (error) => {
         console.error("Login error:", error);

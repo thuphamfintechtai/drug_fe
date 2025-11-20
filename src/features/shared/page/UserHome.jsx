@@ -11,7 +11,7 @@ import {
   BsCheckCircleFill,
 } from "react-icons/bs";
 import { Scanner } from "@yudiel/react-qr-scanner";
-import toast from "sonner";
+import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { useMetaMask } from "../hooks/useMetaMask";
 import { formatWalletAddress } from "../../utils/walletUtils";

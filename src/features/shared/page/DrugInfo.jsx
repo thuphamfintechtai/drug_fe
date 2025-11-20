@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
-import toast from "sonner";
+import { toast } from "sonner";
 import { useDrugInfo } from "../hooks/useDrugInfo";
 
 export default function PublicDrugInfo() {

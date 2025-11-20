@@ -1,6 +1,6 @@
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckLoader from "../../shared/components/TruckLoader";
-import { Card } from "../../shared/components/ui/cardUI";
+import { CardUI } from "../../shared/components/ui/cardUI";
 import { Search } from "../../shared/components/ui/search";
 import { useTransferHistory } from "../hooks/useTransferHistory";
 import { navigationItems } from "../constants/navigationTransferHistory";
@@ -34,7 +34,7 @@ export default function TransferHistory() {
       ) : (
         <div className="space-y-6">
           {/* Banner */}
-          <Card
+          <CardUI
             title="Lịch sử chuyển cho nhà thuốc"
             subtitle="Theo dõi tất cả đơn chuyển giao NFT cho pharmacy"
           />

@@ -3,7 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import api from "../../utils/api";
 import Navbar from "../components/Navbar";
-import toast from "sonner";
+import { toast } from "sonner";
 
 export default function PublicNFTTracking() {
   const [searchParams, setSearchParams] = useSearchParams();

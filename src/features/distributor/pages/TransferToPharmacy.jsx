@@ -3,7 +3,7 @@ import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckLoader from "../../shared/components/TruckLoader";
 import TruckAnimationButton from "../../shared/components/TruckAnimationButton";
 import BlockchainTransferView from "../components/BlockchainTransferView";
-import { Card } from "../../shared/components/ui/cardUI";
+import { CardUI } from "../../shared/components/ui/cardUI";
 import { useTransferToPharmacy } from "../hooks/useTransferToPharmacy";
 import { navigationItems } from "../constants/navigationTransferToPharmacy";
 export default function TransferToPharmacy() {
@@ -65,7 +65,7 @@ export default function TransferToPharmacy() {
         </div>
       ) : (
         <div className="space-y-6">
-          <Card
+          <CardUI
             title="Chuyển giao cho nhà thuốc"
             subtitle="Chọn NFT và pharmacy để chuyển quyền sở hữu"
             content={{

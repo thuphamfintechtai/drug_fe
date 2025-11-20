@@ -1,5 +1,4 @@
-// Navigation items chung cho tất cả trang manufacturer
-// Không cần truyền activePath vì DashboardLayout sẽ tự động detect active state
+
 export const getManufacturerNavigationItems = () => {
   return [
     {

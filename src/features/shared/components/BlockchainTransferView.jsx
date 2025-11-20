@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import truckSvg from "../assets/truck.svg";
+/* eslint-disable no-undef */
+import { useEffect, useRef, useMemo } from "react";
+import { motion } from "framer-motion";
+import truckSvg from "../../../assets/trunkLoader.png";
 
 export default function BlockchainTransferView({
   status = "minting", // 'minting' | 'completed' | 'error'
@@ -23,9 +24,15 @@ export default function BlockchainTransferView({
 
   // Tính toán active block dựa trên progress
   const getActiveBlock = () => {
-    if (progress <= 0.25) return 0;
-    if (progress <= 0.5) return 1;
-    if (progress <= 0.75) return 2;
+    if (progress <= 0.25) {
+      return 0;
+    }
+    if (progress <= 0.5) {
+      return 1;
+    }
+    if (progress <= 0.75) {
+      return 2;
+    }
     return 3;
   };
 
@@ -34,8 +41,11 @@ export default function BlockchainTransferView({
   const isError = status === "error";
 
   // Xác định labels dựa trên transferType
-  const isManufacturerToDistributor = transferType === "manufacturer-to-distributor";
-  const fromLabel = isManufacturerToDistributor ? "Manufacturer" : "Distributor";
+  const isManufacturerToDistributor =
+    transferType === "manufacturer-to-distributor";
+  const fromLabel = isManufacturerToDistributor
+    ? "Manufacturer"
+    : "Distributor";
   const toLabel = isManufacturerToDistributor ? "Distributor" : "Pharmacy";
 
   // Colors

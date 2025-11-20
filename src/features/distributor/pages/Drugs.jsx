@@ -1,6 +1,6 @@
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckLoader from "../../shared/components/TruckLoader";
-import { Card } from "../../shared/components/ui/cardUI";
+import { CardUI } from "../../shared/components/ui/cardUI";
 import { Search } from "../../shared/components/ui/search";
 import { useDrugs } from "../hooks/useDrugs";
 import { getDistributorNavigationItems } from "../components/distributorNavigation";
@@ -30,7 +30,7 @@ export default function Drugs() {
         </div>
       ) : (
         <div className="space-y-6">
-          <Card
+          <CardUI
             title="Quản lý thuốc"
             subtitle="Quản lý toàn bộ thuốc trong hệ thống"
             icon={

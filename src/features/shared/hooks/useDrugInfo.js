@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import toast from "sonner";
+import { toast } from "sonner";
 import { drugQueries } from "../apis/queries/drugQueries";
 
 export const useDrugInfo = () => {

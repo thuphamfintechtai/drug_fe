@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { authService } from "../../../../src_broken/services/authService";
+import { authService } from "../../auth/api/index";
 import {
   getAuthToken,
   getAuthUser,

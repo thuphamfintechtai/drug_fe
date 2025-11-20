@@ -1,18 +1,23 @@
+/* eslint-disable no-undef */
 import { useState } from "react";
 import { motion } from "framer-motion";
-import humanSvg from "../assets/humanrun.svg";
+import humanSvg from "../../../assets/humanrun.svg";
 
 export default function LogoutButton({ onLogout }) {
   const [animating, setAnimating] = useState(false);
   const [done, setDone] = useState(false);
 
   const handleClick = () => {
-    if (animating || done) return;
+    if (animating || done) {
+      return;
+    }
     setAnimating(true);
     setTimeout(() => {
       setDone(true);
       setAnimating(false);
-      if (onLogout) onLogout();
+      if (onLogout) {
+        onLogout();
+      }
       setTimeout(() => setDone(false), 2000);
     }, 1300);
   };

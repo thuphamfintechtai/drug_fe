@@ -2,8 +2,8 @@ import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckAnimationButton from "../../shared/components/TruckAnimationButton";
 import BlockchainTransferView from "../../shared/components/BlockchainTransferView";
 import TruckLoader from "../../shared/components/TruckLoader";
-import { navigationItems } from "../constants/navigationTransferManagement";
-import { Card } from "../../shared/components/ui/cardUI";
+import { navigationItems } from "../constants/navigationProductionManagement";
+import { CardUI } from "../../shared/components/ui/cardUI";
 import { useTransferManagements } from "../hooks/useTransferManagements";
 
 export default function TransferManagement() {
@@ -47,7 +47,7 @@ export default function TransferManagement() {
         <div className="space-y-6">
           {/* Banner */}
           {/* Instructions */}
-          <Card
+          <CardUI
             title="Chuyển giao cho nhà phân phối"
             subtitle="Chọn lô sản xuất và distributor để chuyển quyền sở hữu NFT"
             icon={
