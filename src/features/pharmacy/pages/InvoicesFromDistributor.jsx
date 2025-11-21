@@ -14,6 +14,8 @@ export default function InvoicesFromDistributor() {
     status,
     page,
     localSearch,
+    setLocalSearch,
+    updateFilter,
     confirmForm,
     confirmFormErrors,
     isConfirming,

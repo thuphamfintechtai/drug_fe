@@ -1,10 +1,11 @@
 /* eslint-disable no-undef */
-import React, { useState, useRef, useEffect, useMemo, memo } from "react";
+import React, { useState, useRef, useEffect, memo } from "react";
+import PropTypes from "prop-types";
 import { createPortal } from "react-dom";
 
 export const Search = memo(function Search({
   searchInput,
-  setSearchInput,
+  setSearchInput = () => {},
   handleSearch,
   handleClearSearch,
   placeholder = "Tìm theo tên thuốc, mã...",
@@ -29,25 +30,33 @@ export const Search = memo(function Search({
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (searchInput && data.length > 0 && isInputFocused) {
-      const searchLower = searchInput.toLowerCase().trim();
-      const filtered = data
+    if (!isInputFocused) {
+      setFilteredSuggestions((prev) => (prev.length ? [] : prev));
+      setShowSuggestions(false);
+      return;
+    }
+
+    const lower = (searchInput || "").toLowerCase().trim();
+    if (lower && data.length > 0) {
+      const next = data
         .filter((item) => {
           if (matchFunction) {
-            return matchFunction(item, searchLower);
+            return matchFunction(item, lower);
           }
-          const searchText = getSearchText(item).toLowerCase();
-          return searchText.includes(searchLower);
+          const searchText = (getSearchText(item) || "").toLowerCase().trim();
+          return searchText.includes(lower);
         })
         .slice(0, 5);
-      setFilteredSuggestions(filtered);
-      if (filtered.length > 0) {
-        setShowSuggestions(true);
-      } else {
-        setShowSuggestions(false);
-      }
+
+      setFilteredSuggestions((prev) => {
+        const same =
+          prev.length === next.length &&
+          prev.every((item, idx) => item === next[idx]);
+        return same ? prev : next;
+      });
+      setShowSuggestions(next.length > 0);
     } else {
-      setFilteredSuggestions([]);
+      setFilteredSuggestions((prev) => (prev.length ? [] : prev));
       setShowSuggestions(false);
     }
   }, [searchInput, data, getSearchText, matchFunction, isInputFocused]);
@@ -287,3 +296,17 @@ export const Search = memo(function Search({
     </div>
   );
 });
+
+Search.propTypes = {
+  searchInput: PropTypes.string,
+  setSearchInput: PropTypes.func,
+  handleSearch: PropTypes.func,
+  handleClearSearch: PropTypes.func,
+  placeholder: PropTypes.string,
+  data: PropTypes.array,
+  getSearchText: PropTypes.func,
+  matchFunction: PropTypes.func,
+  getDisplayText: PropTypes.func,
+  enableAutoSearch: PropTypes.bool,
+  debounceMs: PropTypes.number,
+};

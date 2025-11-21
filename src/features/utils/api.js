@@ -2,10 +2,9 @@ import axios from "axios";
 import { getAuthToken, clearAuthCookies } from "../auth/utils/cookieUtils";
 
 const api = axios.create({
-  baseURL: "https://drug-be.vercel.app/api",
+  baseURL: "http://localhost:9000/api",
   headers: {
     "Content-Type": "application/json",
-    "Accept-Encoding": "gzip, deflate, br",
   },
   timeout: 30000, // 30 seconds timeout
   // Enable compression

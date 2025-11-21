@@ -255,8 +255,8 @@ export default function UserHome() {
 
     // Nếu QR code là API endpoint scanQR, extract tokenId và navigate
     if (
-      processedText.includes("/api/publicRoute/scanQR/") ||
-      processedText.includes("/publicRoute/scanQR/")
+      processedText.includes("/api/public/scanQR/") ||
+      processedText.includes("/public/scanQR/")
     ) {
       const tokenIdMatch = processedText.match(/\/scanQR\/(\d+)/);
       if (tokenIdMatch && tokenIdMatch[1]) {

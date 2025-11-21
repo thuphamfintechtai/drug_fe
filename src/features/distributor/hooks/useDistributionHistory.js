@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { distributorQueries } from "../apis/distributor";
 
@@ -18,12 +18,28 @@ export const useDistributionHistory = () => {
   const progressIntervalRef = useRef(null);
   // Separate search input state from URL param
   const [searchInput, setSearchInput] = useState("");
-  const { mutateAsync: fetchDistributionHistory } =
-    distributorQueries.getDistributionHistory();
 
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
+  const filtersRef = useRef({ page, search, status });
+
+  const queryParams = useMemo(() => {
+    const params = { page, limit: 10 };
+    if (search) {
+      params.search = search;
+    }
+    if (status) {
+      params.status = status;
+    }
+    return params;
+  }, [page, search, status]);
+
+  const { refetch: refetchDistributionHistory } =
+    distributorQueries.getDistributionHistory(queryParams, {
+      enabled: false,
+      keepPreviousData: true,
+    });
 
   const prevSearchRef = useRef(search);
   useEffect(() => {
@@ -44,7 +60,12 @@ export const useDistributionHistory = () => {
   }, [page, search, status]);
 
   const loadData = async () => {
-    const shouldShowLoader = items.length === 0 && isInitialLoad;
+    const filtersChanged =
+      filtersRef.current.page !== page ||
+      filtersRef.current.search !== search ||
+      filtersRef.current.status !== status;
+    const shouldShowLoader =
+      filtersChanged || (items.length === 0 && isInitialLoad);
     try {
       if (shouldShowLoader) {
         setLoading(true);
@@ -60,25 +81,17 @@ export const useDistributionHistory = () => {
         }, 50);
       }
 
-      const params = { page, limit: 10 };
-      if (search) {
-        params.search = search;
-      }
-      if (status) {
-        params.status = status;
-      }
-
-      const response = await fetchDistributionHistory(params);
+      const { data: response } = await refetchDistributionHistory();
 
       if (shouldShowLoader && progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
 
-      if (response.data.success) {
-        setItems(response.data.data.distributions || []);
+      if (response?.success) {
+        setItems(response.data?.distributions || []);
         setPagination(
-          response.data.data.pagination || {
+          response.data?.pagination || {
             page: 1,
             limit: 10,
             total: 0,
@@ -142,6 +155,7 @@ export const useDistributionHistory = () => {
         setLoading(false);
         setTimeout(() => setLoadingProgress(0), 500);
       }
+      filtersRef.current = { page, search, status };
     }
   };
 
@@ -193,6 +207,7 @@ export const useDistributionHistory = () => {
     loadingProgress,
     pagination,
     searchInput,
+    setSearchInput,
     handleSearch,
     handleClearSearch,
     updateFilter,

@@ -13,7 +13,7 @@ export const pharmacyQueries = {
     });
   },
 
-  getDistributionHistory: (params = {}) => {
+  getDistributionHistory: (params = {}, options = {}) => {
     return useQuery({
       queryKey: ["getDistributionHistory", params],
       queryFn: async () => {
@@ -22,6 +22,7 @@ export const pharmacyQueries = {
         });
         return response.data;
       },
+      ...options,
     });
   },
 
@@ -153,13 +154,14 @@ export const pharmacyQueries = {
     });
   },
 
-  getDrugs: (params = {}) => {
+  getDrugs: (params = {}, options = {}) => {
     return useQuery({
       queryKey: ["getDrugs", params],
       queryFn: async () => {
         const response = await api.get("/pharmacy/drugs", { params });
         return response.data;
       },
+      ...options,
     });
   },
 
@@ -184,5 +186,4 @@ export const pharmacyQueries = {
       },
     });
   },
-  
 };

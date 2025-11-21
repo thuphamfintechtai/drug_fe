@@ -73,15 +73,21 @@ export const useDrug = () => {
     await new Promise((r) => setTimeout(r, 100));
   };
 
+  const { refetch: refetchDrugs } = pharmacyQueries.getDrugs(
+    {},
+    {
+      enabled: false,
+      keepPreviousData: true,
+    }
+  );
+
   const loadDrugs = async () => {
     try {
       setLoading(true);
       startProgress();
-      const response = await pharmacyQueries.getDrugs();
-      if (response.data.success && response.data.data) {
-        const list = Array.isArray(response.data.data.drugs)
-          ? response.data.data.drugs
-          : [];
+      const { data } = await refetchDrugs();
+      if (data?.success && data?.data) {
+        const list = Array.isArray(data.data.drugs) ? data.data.drugs : [];
         setDrugs(list);
         setAllDrugs(list);
       } else {

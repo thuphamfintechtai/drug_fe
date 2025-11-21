@@ -28,7 +28,7 @@ export default function PublicNFTTracking() {
     setSearched(true);
     try {
       // Gọi endpoint public mới
-      const response = await api.get(`/publicRoute/Tracking/${tokenId.trim()}`);
+      const response = await api.get(`/public/Tracking/${tokenId.trim()}`);
       console.log("Public Tracking response:", response);
       if (response.data.success) {
         setJourney(response.data.data);

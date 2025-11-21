@@ -37,7 +37,7 @@ export const distributorQueries = {
     });
   },
 
-  getDistributionHistory: (params = {}) => {
+  getDistributionHistory: (params = {}, options = {}) => {
     return useQuery({
       queryKey: ["getDistributionHistory", params],
       queryFn: async () => {
@@ -46,6 +46,7 @@ export const distributorQueries = {
         });
         return response.data;
       },
+      ...options,
     });
   },
 
@@ -75,7 +76,7 @@ export const distributorQueries = {
     return useQuery({
       queryKey: ["getDistributions", params],
       queryFn: async () => {
-        const response = await api.get("/distributor/distributions", {
+        const response = await api.get("/distributor/invoices", {
           params,
         });
         return response.data;
@@ -150,7 +151,7 @@ export const distributorQueries = {
     return useQuery({
       queryKey: ["distributorChartOneWeek"],
       queryFn: async () => {
-        const response = await api.get("/distributor/charts/one-week");
+        const response = await api.get("/distributor/chart/one-week");
         return response.data;
       },
     });
@@ -160,7 +161,7 @@ export const distributorQueries = {
     return useQuery({
       queryKey: ["distributorChartTodayYesterday"],
       queryFn: async () => {
-        const response = await api.get("/distributor/charts/today-yesterday");
+        const response = await api.get("/distributor/chart/today-yesterday");
         return response.data;
       },
     });
@@ -170,7 +171,7 @@ export const distributorQueries = {
     return useQuery({
       queryKey: ["distributorMonthlyTrends", months],
       queryFn: async () => {
-        const response = await api.get("/distributor/charts/monthly-trends", {
+        const response = await api.get("/distributor/chart/monthly-trends", {
           params: { months },
         });
         return response.data;

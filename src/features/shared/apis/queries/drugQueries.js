@@ -6,7 +6,7 @@ export const drugQueries = {
     return useQuery({
       queryKey: ["searchDrugByATCCode", atcCode],
       queryFn: async () => {
-        const response = await api.get(`/publicRoute/drugs/search`, {
+        const response = await api.get(`/public/drugs/search`, {
           params: { atcCode },
         });
         return response.data;

@@ -108,16 +108,37 @@ export const useTransferToPharmacy = () => {
         }, 50);
       }
 
-      await Promise.all([refetchDistributionHistory(), refetchPharmacies()]);
+      const [distributionResult, pharmaciesResult] = await Promise.all([
+        refetchDistributionHistory(),
+        refetchPharmacies(),
+      ]);
 
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
+      const distributionResponse = distributionResult?.data;
+      const pharmaciesResponse = pharmaciesResult?.data;
+
+      const nextDistributions = distributionResponse?.success
+        ? distributionResponse.data?.distributions || []
+        : [];
+
+      const nextPharmacies = pharmaciesResponse?.success
+        ? Array.isArray(pharmaciesResponse.data?.pharmacies)
+          ? pharmaciesResponse.data.pharmacies
+          : Array.isArray(pharmaciesResponse.data)
+          ? pharmaciesResponse.data
+          : []
+        : [];
+
+      setDistributions(nextDistributions);
+      setPharmacies(nextPharmacies);
 
       queryClient.setQueryData(TRANSFER_CACHE_KEY, {
         distributions: nextDistributions,
         pharmacies: nextPharmacies,
       });
+
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
 
       setLoadingProgress(1);
       await new Promise((r) => setTimeout(r, 300));
@@ -544,13 +565,14 @@ export const useTransferToPharmacy = () => {
   };
   return {
     distributions,
-    setDistributions,
     pharmacies,
-    setPharmacies,
     loading,
-    setLoading,
     loadingProgress,
-    setLoadingProgress,
+    showDialog,
+    setShowDialog,
+    selectedDistribution,
+    formData,
+    setFormData,
     dialogLoading,
     setDialogLoading,
     showChainView,
@@ -561,5 +583,7 @@ export const useTransferToPharmacy = () => {
     setChainProgress,
     submitLoading,
     setSubmitLoading,
+    handleSelectDistribution,
+    handleSubmit,
   };
 };

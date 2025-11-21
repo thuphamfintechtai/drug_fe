@@ -12,41 +12,63 @@ export const authMutations = {
   login: () => {
     return useMutation({
       mutationFn: async (data) => {
-        const response = await api.post("/auth/login", {
+        const loginResponse = await api.post("/auth/login", {
           email: data.email,
           password: data.password,
         });
-        return response.data;
-      },
-      onSuccess: (response) => {
-        if (!response?.success) {
-          return;
+
+        if (!loginResponse.data?.success || !loginResponse.data?.data?.token) {
+          return loginResponse.data;
         }
 
-        const { user, token, businessProfile } = response.data || {};
-        if (!token || !user) {
-          return;
-        }
-
-        const role = user?.role;
-        const normalizedUser = {
-          ...user,
-          businessProfile: businessProfile || user.businessProfile,
-        };
+        const token = loginResponse.data.data.token;
 
         setAuthToken(token);
-        setAuthUser(normalizedUser);
-        if (role) {
-          setAuthRole(role);
+
+        try {
+          const meResponse = await api.get("/auth/me");
+          if (meResponse.data?.success && meResponse.data?.data?.user) {
+            const { user, role, businessProfile } = meResponse.data.data;
+
+            const normalizedUser = {
+              ...user,
+              businessProfile: businessProfile || user.businessProfile,
+            };
+
+            setAuthUser(normalizedUser);
+            if (role) {
+              setAuthRole(role);
+            }
+
+            useAuthStore.getState().setAuthState({
+              user: normalizedUser,
+              role: role || user?.role,
+              isAuthenticated: true,
+            });
+
+            // Trả về response với đầy đủ thông tin
+            return {
+              success: true,
+              data: {
+                token,
+                user: normalizedUser,
+                role: role || user?.role,
+                businessProfile: businessProfile || user.businessProfile,
+              },
+            };
+          }
+        } catch (meError) {
+          // Nếu /auth/me thất bại, vẫn trả về token từ login
+          console.error("Error fetching user info:", meError);
         }
-        useAuthStore.getState().setAuthState({
-          user: normalizedUser,
-          role,
-          isAuthenticated: true,
-        });
+
+        // Fallback: trả về response từ login nếu /auth/me thất bại
+        return loginResponse.data;
       },
       onError: (error) => {
         console.error("Login error:", error);
+        clearAuthCookies();
+        useAuthStore.getState().clearAuthState();
       },
     });
   },

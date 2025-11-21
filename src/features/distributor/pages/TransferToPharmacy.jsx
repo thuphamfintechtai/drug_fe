@@ -5,7 +5,7 @@ import TruckAnimationButton from "../../shared/components/TruckAnimationButton";
 import BlockchainTransferView from "../components/BlockchainTransferView";
 import { CardUI } from "../../shared/components/ui/cardUI";
 import { useTransferToPharmacy } from "../hooks/useTransferToPharmacy";
-import { navigationItems } from "../constants/navigationTransferToPharmacy";
+import { navigationItems } from "../constants/navigationItems";
 export default function TransferToPharmacy() {
   const {
     distributions,

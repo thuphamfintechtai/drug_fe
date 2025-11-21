@@ -204,6 +204,7 @@ export const useProductionHistory = () => {
     loadingProgress,
     pagination,
     searchInput,
+    setSearchInput,
     handleSearch,
     handleClearSearch,
     updateFilter,

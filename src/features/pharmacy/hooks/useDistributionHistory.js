@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { pharmacyQueries } from "../apis/pharmacyQueries";
 
@@ -21,6 +21,24 @@ export const useDistributionHistory = () => {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
+  const filtersRef = useRef({ page, search, status });
+
+  const queryParams = useMemo(() => {
+    const params = { page, limit: 10 };
+    if (search) {
+      params.search = search;
+    }
+    if (status) {
+      params.status = status;
+    }
+    return params;
+  }, [page, search, status]);
+
+  const { refetch: refetchDistributionHistory } =
+    pharmacyQueries.getDistributionHistory(queryParams, {
+      enabled: false,
+      keepPreviousData: true,
+    });
 
   // Sync searchInput with URL search param on mount/change (only from URL changes, not user input)
   useEffect(() => {
@@ -38,55 +56,42 @@ export const useDistributionHistory = () => {
   }, [page, search, status]);
 
   const loadData = async () => {
+    const filtersChanged =
+      filtersRef.current.page !== page ||
+      filtersRef.current.search !== search ||
+      filtersRef.current.status !== status;
+
+    const shouldShowLoader = filtersChanged || items.length === 0;
+
     try {
-      setLoading(true);
-      setLoadingProgress(0);
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-      // Tăng dần tiến trình đến 90% trong lúc chờ API
-      progressIntervalRef.current = setInterval(() => {
-        setLoadingProgress((prev) =>
-          prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
-        );
-      }, 50);
-
-      const params = { page, limit: 10 };
-      if (search) {
-        params.search = search;
-      }
-      if (status) {
-        params.status = status;
+      if (shouldShowLoader) {
+        setLoading(true);
+        setLoadingProgress(0);
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+        progressIntervalRef.current = setInterval(() => {
+          setLoadingProgress((prev) =>
+            prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
+          );
+        }, 50);
       }
 
-      const response = await pharmacyQueries.getDistributionHistory(params);
+      const { data: response } = await refetchDistributionHistory();
 
-      console.log("Distribution History Response:", response);
-      console.log("Response data:", response.data);
-
-      if (response.data && response.data.success) {
-        const responseData = response.data.data || {};
-
-        // Thử nhiều cách truy cập dữ liệu
+      if (response?.success) {
+        const responseData = response.data || {};
         const history =
           responseData.history ||
           responseData.distributions ||
           responseData.items ||
           (Array.isArray(responseData) ? responseData : []);
-
-        console.log("Extracted history:", history);
-        console.log("First item structure:", history[0]);
-
         setItems(Array.isArray(history) ? history : []);
         setPagination(
           responseData.pagination || { page: 1, limit: 10, total: 0, pages: 0 }
         );
       } else {
-        console.warn(
-          "Response không thành công hoặc không có success field:",
-          response.data
-        );
         setItems([]);
         setPagination({ page: 1, limit: 10, total: 0, pages: 0 });
       }
@@ -96,7 +101,6 @@ export const useDistributionHistory = () => {
       setItems([]);
       setPagination({ page: 1, limit: 10, total: 0, pages: 0 });
     } finally {
-      // Đưa tiến trình tới 100% và dừng interval trước khi hiển thị
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
@@ -136,6 +140,7 @@ export const useDistributionHistory = () => {
       await new Promise((r) => setTimeout(r, 100));
       setLoading(false);
       setTimeout(() => setLoadingProgress(0), 500);
+      filtersRef.current = { page, search, status };
     }
   };
 
