@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { useMetaMask } from "../hooks/useMetaMask";
 import { formatWalletAddress } from "../../utils/walletUtils";
+import TruckTransfer from "../components/TruckTransfer";
 
 export default function UserHome() {
   const navigate = useNavigate();
@@ -1201,6 +1202,38 @@ export default function UserHome() {
                 </p>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Truck Transfer Visualization */}
+      <section className="py-12 sm:py-16 md:py-20 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-8 sm:mb-12"
+          >
+            <motion.span
+              className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 bg-[#4BADD1]/10 text-[#4BADD1] text-xs sm:text-sm font-semibold rounded-full mb-3 sm:mb-4"
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              Trực quan chuỗi cung ứng
+            </motion.span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 mb-3 sm:mb-4 px-2 sm:px-0">
+              Quy trình sản xuất thuốc
+            </h2>
+            <p className="text-slate-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2 sm:px-0">
+              Mô phỏng quy trình sản xuất thuốc từ nhà sản xuất đến nhà thuốc.
+            </p>
+          </motion.div>
+          <div className="flex justify-center">
+            <TruckTransfer duration={10} showTrail animationSpeed={1.1} />
           </div>
         </div>
       </section>
