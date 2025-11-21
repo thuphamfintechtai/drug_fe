@@ -2,8 +2,10 @@
 import { useState, useEffect, useRef } from "react";
 import { manufacturerAPIs } from "../apis/manufacturerAPIs";
 import { toast } from "sonner";
+import useAuthStore from "../../auth/store/useAuthStore";
 
 export const useDrugManagement = () => {
+  const { user } = useAuthStore();
   const [drugs, setDrugs] = useState([]);
   const [allDrugs, setAllDrugs] = useState([]); // lưu toàn bộ để lọc client
   const [showDialog, setShowDialog] = useState(false);
@@ -204,10 +206,12 @@ export const useDrugManagement = () => {
       setDrugs(allDrugs);
       return;
     }
-    // Lọc client chỉ theo Tên thương mại
+    // Lọc client theo Tên thương mại, Tên hoạt chất, Mã ATC
     const filtered = (allDrugs || []).filter((d) => {
-      const trade = (d.tradeName || "").toLowerCase();
-      return trade.includes(term);
+      const tradeName = (d.tradeName || "").toLowerCase();
+      const genericName = (d.genericName || "").toLowerCase();
+      const atc = (d.atcCode || "").toLowerCase();
+      return tradeName.includes(term) || genericName.includes(term) || atc.includes(term);
     });
     setDrugs(filtered);
   };
@@ -271,7 +275,9 @@ export const useDrugManagement = () => {
       // Query sẽ tự động invalidate trong hook
     } catch (error) {
       // Error đã được xử lý trong hook
-      console.error("Lỗi khi xóa thuốc:", error);
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      }
     }
   };
 
@@ -335,15 +341,24 @@ export const useDrugManagement = () => {
       const strength = combineStrength(strengthValue, strengthUnit);
       // Combine packaging vial và pill trước khi submit
       const packaging = combinePackaging(packagingVial, packagingPill);
+      
+      // Submit data với field names đúng với backend
       const submitData = {
-        ...formData,
+        tradeName: formData.tradeName,
+        genericName: formData.genericName,
+        atcCode: formData.atcCode,
+        dosageForm: formData.dosageForm,
         strength: strength,
+        route: formData.route,
         packaging: packaging,
+        storage: formData.storage,
+        warnings: formData.warnings,
+        activeIngredients: formData.activeIngredients || [],
       };
 
       if (isEditMode && selectedDrug) {
         await updateDrugMutation.mutateAsync({
-          drugId: selectedDrug._id,
+          drugId: selectedDrug.id || selectedDrug._id,
           data: submitData,
         });
       } else {
@@ -355,7 +370,9 @@ export const useDrugManagement = () => {
       resetForm();
     } catch (error) {
       // Error đã được xử lý trong hook
-      console.error("Lỗi khi lưu thuốc:", error);
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      }
     }
   };
 

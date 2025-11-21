@@ -75,7 +75,7 @@ export const drugAPIs = {
     return useQuery({
       queryKey: ["searchDrugByCode", code],
       queryFn: async () => {
-        const response = await api.get(`/drugs/code/${code}`);
+        const response = await api.get(`/drugs/search/atc?code=${code}`);
         return response.data;
       },
     });

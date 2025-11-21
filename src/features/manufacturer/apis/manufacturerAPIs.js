@@ -1,5 +1,5 @@
 import api from "../../utils/api";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export const manufacturerAPIs = {
@@ -8,7 +8,7 @@ export const manufacturerAPIs = {
     return useQuery({
       queryKey: ["getDrugs", params],
       queryFn: async () => {
-        const response = await api.get("/pharma-company/drugs", { params });
+        const response = await api.get("/drugs", { params });
         return response.data;
       },
     });
@@ -18,7 +18,7 @@ export const manufacturerAPIs = {
     return useQuery({
       queryKey: ["getDrugById", id],
       queryFn: async () => {
-        const response = await api.get(`/pharma-company/drugs/${id}`);
+        const response = await api.get(`/drugs/${id}`);
         return response.data;
       },
     });
@@ -28,7 +28,7 @@ export const manufacturerAPIs = {
     return useQuery({
       queryKey: ["searchDrugByATC", atcCode],
       queryFn: async () => {
-        const response = await api.get(`/pharma-company/drugs/search`, {
+        const response = await api.get(`/drugs/search/atc`, {
           params: { atcCode },
         });
         return response.data;
@@ -36,14 +36,16 @@ export const manufacturerAPIs = {
     });
   },
 
-  addDrug: (data) => {
+  addDrug: () => {
+    const queryClient = useQueryClient();
     return useMutation({
-      mutationFn: async () => {
-        const response = await api.post("/pharma-company/drugs", data);
+      mutationFn: async (data) => {
+        const response = await api.post("/drugs", data);
         return response.data;
       },
       onSuccess: () => {
         toast.success("Thêm thuốc thành công");
+        queryClient.invalidateQueries({ queryKey: ["getDrugs"] });
       },
       onError: (error) => {
         toast.error(error.response?.data?.message || error.message);
@@ -51,14 +53,16 @@ export const manufacturerAPIs = {
     });
   },
 
-  updateDrug: (id, data) => {
+  updateDrug: () => {
+    const queryClient = useQueryClient();
     return useMutation({
-      mutationFn: async () => {
-        const response = await api.put(`/pharma-company/drugs/${id}`, data);
+      mutationFn: async ({ drugId, data }) => {
+        const response = await api.put(`/drugs/${drugId}`, data);
         return response.data;
       },
       onSuccess: () => {
         toast.success("Cập nhật thuốc thành công");
+        queryClient.invalidateQueries({ queryKey: ["getDrugs"] });
       },
       onError: (error) => {
         toast.error(error.response?.data?.message || error.message);
@@ -66,14 +70,16 @@ export const manufacturerAPIs = {
     });
   },
 
-  deleteDrug: (id) => {
+  deleteDrug: () => {
+    const queryClient = useQueryClient();
     return useMutation({
-      mutationFn: async () => {
-        const response = await api.delete(`/pharma-company/drugs/${id}`);
+      mutationFn: async (drugId) => {
+        const response = await api.delete(`/drugs/${drugId}`);
         return response.data;
       },
       onSuccess: () => {
         toast.success("Xóa thuốc thành công");
+        queryClient.invalidateQueries({ queryKey: ["getDrugs"] });
       },
       onError: (error) => {
         toast.error(error.response?.data?.message || error.message);
@@ -87,7 +93,7 @@ export const manufacturerAPIs = {
     return useMutation({
       mutationFn: async () => {
         const response = await api.post(
-          "/pharma-company/production/upload-ipfs",
+          "/production/upload-ipfs",
           data
         );
         return response.data;
@@ -105,7 +111,7 @@ export const manufacturerAPIs = {
     return useMutation({
       mutationFn: async () => {
         const response = await api.post(
-          "/pharma-company/production/save-minted",
+          "/production/save-minted",
           data
         );
         return response.data;
@@ -123,7 +129,7 @@ export const manufacturerAPIs = {
     return useMutation({
       mutationFn: async () => {
         const response = await api.post(
-          "/pharma-company/production/transfer",
+          "/production/transfer",
           data
         );
         return response.data;
@@ -141,7 +147,7 @@ export const manufacturerAPIs = {
     return useMutation({
       mutationFn: async () => {
         const response = await api.post(
-          "/pharma-company/production/save-transfer",
+          "/production/save-transfer",
           data
         );
         return response.data;
@@ -159,7 +165,7 @@ export const manufacturerAPIs = {
     return useQuery({
       queryKey: ["getProductionHistory", params],
       queryFn: async () => {
-        const response = await api.get("/pharma-company/production/history", {
+        const response = await api.get("/production/history", {
           params,
         });
         return response.data;
@@ -172,7 +178,7 @@ export const manufacturerAPIs = {
       queryKey: ["getAvailableTokensForProduction", productionId],
       queryFn: async () => {
         const response = await api.get(
-          `/pharma-company/production/${productionId}/available-tokens`
+          `/production/${productionId}/available-tokens`
         );
         return response.data;
       },
@@ -183,7 +189,7 @@ export const manufacturerAPIs = {
     return useQuery({
       queryKey: ["getTransferHistory", params],
       queryFn: async () => {
-        const response = await api.get("/pharma-company/transfer/history", {
+        const response = await api.get("/production/transfer/history", {
           params,
         });
         return response.data;
@@ -196,7 +202,7 @@ export const manufacturerAPIs = {
     return useQuery({
       queryKey: ["getStatistics"],
       queryFn: async () => {
-        const response = await api.get("/pharma-company/statistics");
+        const response = await api.get("/production/statistics");
         return response;
       },
     });
@@ -217,7 +223,7 @@ export const manufacturerAPIs = {
     return useQuery({
       queryKey: ["getChartOneWeek"],
       queryFn: async () => {
-        const response = await api.get("/pharma-company/chart/one-week");
+        const response = await api.get("/production/chart/one-week");
         return response.data;
       },
     });
@@ -227,7 +233,7 @@ export const manufacturerAPIs = {
     return useQuery({
       queryKey: ["getChartTodayYesterday"],
       queryFn: async () => {
-        const response = await api.get("/pharma-company/chart/today-yesterday");
+        const response = await api.get("/production/chart/today-yesterday");
         return response.data;
       },
     });
@@ -238,7 +244,7 @@ export const manufacturerAPIs = {
       queryKey: ["getChartProductionsByDateRange", startDate, endDate],
       queryFn: async () => {
         const response = await api.get(
-          "/pharma-company/chart/productions-by-date-range",
+          "/production/chart/productions-by-date-range",
           { params: { startDate, endDate } }
         );
         return response.data;
@@ -251,7 +257,7 @@ export const manufacturerAPIs = {
       queryKey: ["getChartDistributionsByDateRange", startDate, endDate],
       queryFn: async () => {
         const response = await api.get(
-          "/pharma-company/chart/distributions-by-date-range",
+          "/production/chart/distributions-by-date-range",
           { params: { startDate, endDate } }
         );
         return response.data;
@@ -264,7 +270,7 @@ export const manufacturerAPIs = {
       queryKey: ["getChartTransfersByDateRange", startDate, endDate],
       queryFn: async () => {
         const response = await api.get(
-          "/pharma-company/chart/transfers-by-date-range",
+          "/production/chart/transfers-by-date-range",
           { params: { startDate, endDate } }
         );
         return response.data;
@@ -350,7 +356,7 @@ export const manufacturerAPIs = {
     return useQuery({
       queryKey: ["getManufactureIPFSStatus"],
       queryFn: async () => {
-        const response = await api.get("/pharma-company/ipfs-status");
+        const response = await api.get("/production/ipfs-status");
         return response.data;
       },
     });
@@ -360,7 +366,7 @@ export const manufacturerAPIs = {
     return useQuery({
       queryKey: ["getDistributors", params],
       queryFn: async () => {
-        const response = await api.get("/pharma-company/distributors", {
+        const response = await api.get("/production/distributors", {
           params,
         });
         return response.data;

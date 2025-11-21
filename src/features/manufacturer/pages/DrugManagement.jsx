@@ -94,8 +94,10 @@ export default function DrugManagement() {
               data={allDrugs}
               getSearchText={(drug) => drug.tradeName || ""}
               matchFunction={(drug, searchLower) => {
-                const trade = (drug.tradeName || "").toLowerCase();
-                return trade.includes(searchLower);
+                const tradeName = (drug.tradeName || "").toLowerCase();
+                const genericName = (drug.genericName || "").toLowerCase();
+                const atc = (drug.atcCode || "").toLowerCase();
+                return tradeName.includes(searchLower) || genericName.includes(searchLower) || atc.includes(searchLower);
               }}
               getDisplayText={(drug) =>
                 `${drug.tradeName} - ${drug.genericName} (${drug.atcCode})`
@@ -162,7 +164,7 @@ export default function DrugManagement() {
                   <tbody className="divide-y divide-gray-100">
                     {drugs.map((drug, index) => (
                       <tr
-                        key={drug._id || index}
+                        key={drug.id || drug._id || index}
                         className="hover:bg-gray-50 transition-colors"
                       >
                         <td className="px-6 py-4 font-medium text-gray-800">
@@ -177,10 +179,10 @@ export default function DrugManagement() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-gray-600">
-                          {drug.dosageForm}
+                          {drug.dosageForm || "-"}
                         </td>
                         <td className="px-6 py-4 text-gray-600">
-                          {drug.strength}
+                          {drug.strength || "-"}
                         </td>
                         <td className="px-6 py-4">
                           <span
@@ -205,7 +207,7 @@ export default function DrugManagement() {
                             </button>
 
                             <button
-                              onClick={() => handleDelete(drug._id)}
+                              onClick={() => handleDelete(drug.id || drug._id)}
                               className="px-4 py-2 border-2 border-red-500 rounded-full font-semibold !text-white bg-red-500 hover:bg-red-600 hover:!text-white transition-all duration-200"
                             >
                               Xóa
