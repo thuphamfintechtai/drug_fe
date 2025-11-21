@@ -6,7 +6,7 @@ export const drugQueries = {
     return useQuery({
       queryKey: ["listDrugs"],
       queryFn: async () => {
-        const response = await api.get("/drugs", { params });
+        const response = await api.get("/admin/drugs", { params });
         return response.data;
       },
     });
@@ -16,7 +16,7 @@ export const drugQueries = {
     return useQuery({
       queryKey: ["drugById", id],
       queryFn: async () => {
-        const response = await api.get(`/drugs/${id}`);
+        const response = await api.get(`/admin/drugs/${id}`);
         return response.data;
       },
     });
