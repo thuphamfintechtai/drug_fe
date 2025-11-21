@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, memo } from "react";
 
 /**
  * BlockchainMintingView
@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useState } from "react";
  *  - status: 'minting' | 'completed'
  *  - onComplete?: () => void
  */
-export default function BlockchainMintingView({
+const BlockchainMintingView = memo(function BlockchainMintingView({
   status = "minting",
   onComplete,
 }) {
@@ -439,4 +439,6 @@ export default function BlockchainMintingView({
       `}</style>
     </div>
   );
-}
+});
+
+export default BlockchainMintingView;

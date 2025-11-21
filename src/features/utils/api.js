@@ -5,7 +5,11 @@ const api = axios.create({
   baseURL: "https://drug-be.vercel.app/api",
   headers: {
     "Content-Type": "application/json",
+    "Accept-Encoding": "gzip, deflate, br",
   },
+  timeout: 30000, // 30 seconds timeout
+  // Enable compression
+  decompress: true,
 });
 
 api.interceptors.request.use(

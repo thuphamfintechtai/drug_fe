@@ -4,69 +4,76 @@ import {
   Route,
   useLocation,
 } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
 import { AuthProvider } from "./features/shared/context/AuthContext";
 import { ThemeProvider } from "./features/shared/context/ThemeContext";
-import {
-  Register,
-  RegisterBusiness,
-  ForgotPasswordBusiness,
-  Login,
-} from "./features/auth/pages";
-import {
-  AdminDashboard,
-  AdminRegistrations,
-  AdminRegistrationDetail,
-  AdminDrugs,
-  AdminDrugForm,
-  AdminSupplyChainHistory,
-  AdminDistributionHistory,
-  AdminNftTracking,
-  AdminPasswordResetRequests,
-} from "./features/admin/pages";
-import {
-  ManufacturerDashboard,
-  ManufacturerDrugManagement,
-  ManufacturerProductionManagement,
-  ManufacturerTransferManagement,
-  ManufacturerProductionHistory,
-  ManufacturerTransferHistory,
-  ManufacturerProfile,
-  ManufacturerIPFSStatus,
-} from "./features/manufacturer/pages";
-import {
-  DistributorDashboard,
-  DistributorInvoices,
-  DistributorTransferPharmacy,
-  DistributorDistributionHistory,
-  DistributorTransferHistory,
-  DistributorDrugs,
-  DistributorNFTTracking,
-  DistributorProfile,
-  DistributorCreateProofToPharmacy,
-  DistributorDeliveriesToPharmacy,
-  DistributorDeliveryDetail,
-  DistributorDistributions,
-  DistributorDistributionDetail,
-} from "./features/distributor/pages";
-import {
-  PharmacyDashboard,
-  PharmacyInvoices,
-  PharmacyDistributionHistory,
-  PharmacyDrugs,
-  PharmacyNFTTracking,
-  PharmacyProfile,
-} from "./features/pharmacy/pages";
-import {
-  UserHome,
-  MetaMaskConnect,
-  VerifyPage,
-  NFTTracking,
-  DrugInfo,
-} from "./features/shared/page/index";
 import ProtectedRoute from "./features/auth/components/ProtectedRoute";
 import Navbar from "./features/shared/components/Navbar";
 import { useAuthStore } from "./features/auth/store";
-import { useEffect } from "react";
+
+// Loading component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+  </div>
+);
+
+// Lazy load Auth pages
+const Login = lazy(() => import("./features/auth/pages").then(m => ({ default: m.Login })));
+const Register = lazy(() => import("./features/auth/pages").then(m => ({ default: m.Register })));
+const RegisterBusiness = lazy(() => import("./features/auth/pages").then(m => ({ default: m.RegisterBusiness })));
+const ForgotPasswordBusiness = lazy(() => import("./features/auth/pages").then(m => ({ default: m.ForgotPasswordBusiness })));
+
+// Lazy load Admin pages
+const AdminDashboard = lazy(() => import("./features/admin/pages").then(m => ({ default: m.AdminDashboard })));
+const AdminRegistrations = lazy(() => import("./features/admin/pages").then(m => ({ default: m.AdminRegistrations })));
+const AdminRegistrationDetail = lazy(() => import("./features/admin/pages").then(m => ({ default: m.AdminRegistrationDetail })));
+const AdminDrugs = lazy(() => import("./features/admin/pages").then(m => ({ default: m.AdminDrugs })));
+const AdminDrugForm = lazy(() => import("./features/admin/pages").then(m => ({ default: m.AdminDrugForm })));
+const AdminSupplyChainHistory = lazy(() => import("./features/admin/pages").then(m => ({ default: m.AdminSupplyChainHistory })));
+const AdminDistributionHistory = lazy(() => import("./features/admin/pages").then(m => ({ default: m.AdminDistributionHistory })));
+const AdminNftTracking = lazy(() => import("./features/admin/pages").then(m => ({ default: m.AdminNftTracking })));
+const AdminPasswordResetRequests = lazy(() => import("./features/admin/pages").then(m => ({ default: m.AdminPasswordResetRequests })));
+
+// Lazy load Manufacturer pages
+const ManufacturerDashboard = lazy(() => import("./features/manufacturer/pages").then(m => ({ default: m.ManufacturerDashboard })));
+const ManufacturerDrugManagement = lazy(() => import("./features/manufacturer/pages").then(m => ({ default: m.ManufacturerDrugManagement })));
+const ManufacturerProductionManagement = lazy(() => import("./features/manufacturer/pages").then(m => ({ default: m.ManufacturerProductionManagement })));
+const ManufacturerTransferManagement = lazy(() => import("./features/manufacturer/pages").then(m => ({ default: m.ManufacturerTransferManagement })));
+const ManufacturerProductionHistory = lazy(() => import("./features/manufacturer/pages").then(m => ({ default: m.ManufacturerProductionHistory })));
+const ManufacturerTransferHistory = lazy(() => import("./features/manufacturer/pages").then(m => ({ default: m.ManufacturerTransferHistory })));
+const ManufacturerProfile = lazy(() => import("./features/manufacturer/pages").then(m => ({ default: m.ManufacturerProfile })));
+const ManufacturerIPFSStatus = lazy(() => import("./features/manufacturer/pages").then(m => ({ default: m.ManufacturerIPFSStatus })));
+
+// Lazy load Distributor pages
+const DistributorDashboard = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorDashboard })));
+const DistributorInvoices = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorInvoices })));
+const DistributorTransferPharmacy = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorTransferPharmacy })));
+const DistributorDistributionHistory = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorDistributionHistory })));
+const DistributorTransferHistory = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorTransferHistory })));
+const DistributorDrugs = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorDrugs })));
+const DistributorNFTTracking = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorNFTTracking })));
+const DistributorProfile = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorProfile })));
+const DistributorCreateProofToPharmacy = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorCreateProofToPharmacy })));
+const DistributorDeliveriesToPharmacy = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorDeliveriesToPharmacy })));
+const DistributorDeliveryDetail = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorDeliveryDetail })));
+const DistributorDistributions = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorDistributions })));
+const DistributorDistributionDetail = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorDistributionDetail })));
+
+// Lazy load Pharmacy pages
+const PharmacyDashboard = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyDashboard })));
+const PharmacyInvoices = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyInvoices })));
+const PharmacyDistributionHistory = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyDistributionHistory })));
+const PharmacyDrugs = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyDrugs })));
+const PharmacyNFTTracking = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyNFTTracking })));
+const PharmacyProfile = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyProfile })));
+
+// Lazy load Shared pages
+const UserHome = lazy(() => import("./features/shared/page/index").then(m => ({ default: m.UserHome })));
+const MetaMaskConnect = lazy(() => import("./features/shared/page/index").then(m => ({ default: m.MetaMaskConnect })));
+const VerifyPage = lazy(() => import("./features/shared/page/index").then(m => ({ default: m.VerifyPage })));
+const NFTTracking = lazy(() => import("./features/shared/page/index").then(m => ({ default: m.NFTTracking })));
+const DrugInfo = lazy(() => import("./features/shared/page/index").then(m => ({ default: m.DrugInfo })));
 
 function App() {
   const initAuth = useAuthStore((state) => state.initAuth);
@@ -102,23 +109,24 @@ function AppContent() {
   return (
     <>
       {showNavbar && <Navbar />}
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/register-business" element={<RegisterBusiness />} />
-        <Route
-          path="/forgot-password-business"
-          element={<ForgotPasswordBusiness />}
-        />
-        {/* Role-based routes */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowedRoles={["system_admin"]}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/register-business" element={<RegisterBusiness />} />
+          <Route
+            path="/forgot-password-business"
+            element={<ForgotPasswordBusiness />}
+          />
+          {/* Role-based routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={["system_admin"]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
         <Route
           path="/admin/registrations"
           element={
@@ -414,13 +422,14 @@ function AppContent() {
         />
 
         {/* Public Routes */}
-        <Route path="/track/:tokenId" element={<NFTTracking />} />
-        <Route path="/track" element={<NFTTracking />} />
-        <Route path="/drug-info" element={<DrugInfo />} />
-        <Route path="/metamask" element={<MetaMaskConnect />} />
-        <Route path="/verify" element={<VerifyPage />} />
-        <Route path="/" element={<UserHome />} />
-      </Routes>
+          <Route path="/track/:tokenId" element={<NFTTracking />} />
+          <Route path="/track" element={<NFTTracking />} />
+          <Route path="/drug-info" element={<DrugInfo />} />
+          <Route path="/metamask" element={<MetaMaskConnect />} />
+          <Route path="/verify" element={<VerifyPage />} />
+          <Route path="/" element={<UserHome />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }

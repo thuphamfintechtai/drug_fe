@@ -1,6 +1,8 @@
 /* eslint-disable no-undef */
-import { useEffect, useRef } from "react";
-import truckSvg from "../../../assets/trunkLoader.png";
+import { useEffect, useRef, memo } from "react";
+
+// Lazy load image using URL
+const truckSvg = new URL("../../../assets/trunkLoader.png", import.meta.url).href;
 
 /**
  * TruckLoader
@@ -12,7 +14,7 @@ import truckSvg from "../../../assets/trunkLoader.png";
  *  - showTrack: hiển thị đường ray
  *  - progress: tiến trình (0-1), nếu có thì xe sẽ chạy theo progress này thay vì loop
  */
-export default function TruckLoader({
+const TruckLoader = memo(function TruckLoader({
   height = 64,
   duration = 4000,
   className = "",
@@ -125,7 +127,11 @@ export default function TruckLoader({
         src={truckSvg}
         alt="truck"
         className="truck-loader_truck"
+        loading="lazy"
+        decoding="async"
       />
     </div>
   );
-}
+});
+
+export default TruckLoader;

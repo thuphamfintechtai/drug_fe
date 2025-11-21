@@ -1,8 +1,8 @@
 /* eslint-disable no-undef */
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo, memo } from "react";
 import { createPortal } from "react-dom";
 
-export function Search({
+export const Search = memo(function Search({
   searchInput,
   setSearchInput,
   handleSearch,
@@ -286,4 +286,4 @@ export function Search({
       </div>
     </div>
   );
-}
+});

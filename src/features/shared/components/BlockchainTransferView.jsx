@@ -1,9 +1,11 @@
 /* eslint-disable no-undef */
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, memo } from "react";
 import { motion } from "framer-motion";
-import truckSvg from "../../../assets/trunkLoader.png";
 
-export default function BlockchainTransferView({
+// Lazy load image
+const truckSvg = new URL("../../../assets/trunkLoader.png", import.meta.url).href;
+
+const BlockchainTransferView = memo(function BlockchainTransferView({
   status = "minting", // 'minting' | 'completed' | 'error'
   progress = 0, // 0-1: progress từ parent
   onProgressUpdate, // callback để parent có thể update progress
@@ -685,4 +687,6 @@ export default function BlockchainTransferView({
       </main>
     </>
   );
-}
+});
+
+export default BlockchainTransferView;

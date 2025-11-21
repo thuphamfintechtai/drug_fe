@@ -1,8 +1,9 @@
+import { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import EmptyState from './EmptyState';
 import LoadingSpinner from './LoadingSpinner';
 
-export default function DataTable({ 
+const DataTable = memo(function DataTable({ 
   columns = [], 
   data = [], 
   loading = false,
@@ -17,6 +18,12 @@ export default function DataTable({
     return <EmptyState title={emptyMessage} />;
   }
 
+  // Memoize row class name to avoid recalculation
+  const rowClassName = useMemo(() => 
+    `border-b border-slate-100 ${onRowClick ? 'cursor-pointer hover:bg-blue-50' : ''} transition`,
+    [onRowClick]
+  );
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
@@ -24,7 +31,7 @@ export default function DataTable({
           <tr className="border-b-2 border-slate-200">
             {columns.map((column, index) => (
               <th
-                key={index}
+                key={column.accessor || index}
                 className="px-4 py-3 text-left text-sm font-semibold text-slate-700 bg-slate-50"
               >
                 {column.header}
@@ -35,18 +42,16 @@ export default function DataTable({
         <tbody>
           {data.map((row, rowIndex) => (
             <motion.tr
-              key={rowIndex}
+              key={row.id || row._id || rowIndex}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: rowIndex * 0.05 }}
+              transition={{ delay: Math.min(rowIndex * 0.05, 0.5) }}
               onClick={() => onRowClick && onRowClick(row)}
-              className={`border-b border-slate-100 ${
-                onRowClick ? 'cursor-pointer hover:bg-blue-50' : ''
-              } transition`}
+              className={rowClassName}
             >
               {columns.map((column, colIndex) => (
                 <td
-                  key={colIndex}
+                  key={column.accessor || colIndex}
                   className="px-4 py-4 text-sm text-slate-700"
                 >
                   {column.render ? column.render(row) : row[column.accessor]}
@@ -58,5 +63,7 @@ export default function DataTable({
       </table>
     </div>
   );
-}
+});
+
+export default DataTable;
 
