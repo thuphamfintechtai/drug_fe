@@ -31,19 +31,21 @@ export const useRegisterBusiness = () => {
 
   const registerMutation = useMutation({
     mutationFn: async (data) => {
-      const { role = "user" } = data;
-      let endpoint = "/auth/register/user";
-
+      const { role } = data;
+      let endpoint = "";
       switch (role) {
         case "pharma_company":
-          endpoint = "/auth/register/pharma-company";
+        case "pharma-company":
+          endpoint = "/registration/pharma-company";
           break;
         case "distributor":
-          endpoint = "/auth/register/distributor";
+          endpoint = "/registration/distributor";
           break;
         case "pharmacy":
-          endpoint = "/auth/register/pharmacy";
+          endpoint = "/registration/pharmacy";
           break;
+        default:
+          endpoint = `/registration/${role}`;
       }
 
       const response = await api.post(endpoint, data);
@@ -91,7 +93,7 @@ export const useRegisterBusiness = () => {
           email: companyEmail,
           phone: companyPhone,
           website: registerData.website,
-          licenseNumber: registerData.licenseNumber,
+          LicenseNo: registerData.LicenseNo,
           description: registerData.description,
         },
       };
@@ -100,19 +102,13 @@ export const useRegisterBusiness = () => {
       delete payload.taxCode;
       delete payload.address;
       delete payload.website;
-      delete payload.licenseNumber;
+      delete payload.LicenseNo;
       delete payload.description;
 
-      const routeMap = {
-        pharma_company: "pharma-company",
-        distributor: "distributor",
-        pharmacy: "pharmacy",
-      };
-      const route = routeMap[businessType] || businessType;
-
+      // Pass businessType directly - mutation will handle endpoint mapping
       const response = await registerMutation.mutateAsync({
         ...payload,
-        role: route,
+        role: businessType, // Pass businessType directly: "pharma_company", "distributor", or "pharmacy"
       });
       if (response.success) {
         toast.success("Đăng ký thành công! Vui lòng chờ admin phê duyệt.");
