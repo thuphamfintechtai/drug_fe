@@ -39,15 +39,11 @@ export const useDashboard = () => {
     refetch: refetchMonthlyTrends,
   } = distributorQueries.getMonthlyTrends(6);
 
-  const stats = statsResponse?.data?.data || statsResponse?.data;
-  const dashboardStats = dashboardResponse?.data?.overview || dashboardResponse?.data?.data;
-
-  // Debug logs
-  console.log("Dashboard Response:", dashboardResponse);
-  console.log("Processed Dashboard Stats:", dashboardStats);
+  const stats = statsResponse?.data;
+  const dashboardStats = dashboardResponse?.data;
 
   const chartOneWeekData = useMemo(() => {
-    const data = chartOneWeekResponse?.data?.data || chartOneWeekResponse?.data;
+    const data = chartOneWeekResponse?.data;
     if (!data?.dailyStats) {
       return null;
     }
@@ -69,7 +65,7 @@ export const useDashboard = () => {
   }, [chartOneWeekResponse]);
 
   const chartTodayYesterdayData = useMemo(() => {
-    const data = chartTodayYesterdayResponse?.data?.data || chartTodayYesterdayResponse?.data;
+    const data = chartTodayYesterdayResponse?.data;
     if (!data) {
       return null;
     }
@@ -81,12 +77,10 @@ export const useDashboard = () => {
 
   const chartMonthlyData = useMemo(() => {
     const data = monthlyTrendsResponse?.data;
-    console.log("📈 Monthly Trends Response:", monthlyTrendsResponse);
-    console.log("📈 Monthly Trends Data:", data);
     if (!data?.trends) {
       return null;
     }
-    const processed = (data.trends || []).map((item) => ({
+    return (data.trends || []).map((item) => ({
       month: item.month,
       invoicesReceived: item.invoicesReceived || 0,
       invoicesReceivedQuantity: item.invoicesReceivedQuantity || 0,
@@ -95,8 +89,6 @@ export const useDashboard = () => {
       transfersToPharmacy: item.transfersToPharmacy || 0,
       transfersToPharmacyQuantity: item.transfersToPharmacyQuantity || 0,
     }));
-    console.log("📈 Processed Monthly Data:", processed);
-    return processed;
   }, [monthlyTrendsResponse]);
 
   const isLoading =
@@ -199,7 +191,6 @@ export const useDashboard = () => {
     isFetching,
     stats,
     dashboardStats,
-    displayStats,
     chartOneWeekData,
     chartTodayYesterdayData,
     chartMonthlyData,

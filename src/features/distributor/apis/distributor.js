@@ -142,7 +142,6 @@ export const distributorQueries = {
       queryKey: ["distributorDashboardStats"],
       queryFn: async () => {
         const response = await api.get("/distributor/dashboard/stats");
-        console.log("Dashboard Stats API Response:", response.data);
         return response.data;
       },
     });
@@ -175,7 +174,6 @@ export const distributorQueries = {
         const response = await api.get("/distributor/chart/monthly-trends", {
           params: { months },
         });
-        console.log("Monthly Trends API Response:", response.data);
         return response.data;
       },
     });
