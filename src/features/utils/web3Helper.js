@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 import { ethers } from "ethers";
 import deployedAddresses from "../../../deployed_addresses.json";
-import nftABI from "../../../DeployModuleMyNFT.json";
+import nftABI from "../../../DeployModule_MyNFT.json";
 
 // Contract addresses
 const NFT_CONTRACT_ADDRESS = deployedAddresses["DeployModule#MyNFT"];
@@ -996,7 +996,8 @@ export const signMessageWithMetaMask = async (message) => {
 
     // Get private key from localStorage (stored during login/registration)
     // In production, this should be encrypted or retrieved from secure backend
-    let privateKey = localStorage.getItem(`privateKey_${address}`);
+    const storageKey = "privateKey_" + address;
+    let privateKey = localStorage.getItem(storageKey);
 
     // If not found in localStorage, ask user to input (for backward compatibility)
     if (!privateKey) {
@@ -1010,7 +1011,7 @@ export const signMessageWithMetaMask = async (message) => {
       }
 
       // Save to localStorage for future use (should be encrypted in production)
-      localStorage.setItem(`privateKey_${address}`, privateKey.trim());
+      localStorage.setItem(storageKey, privateKey.trim());
     }
 
     return {
