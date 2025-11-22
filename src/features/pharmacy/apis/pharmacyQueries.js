@@ -70,10 +70,9 @@ export const usePharmacyChartInvoicesByDateRange = (params = {}) => {
   return useQuery({
     queryKey: ["getChartInvoicesByDateRange", params],
     queryFn: async () => {
-      const response = await api.get(
-        "/pharmacy/chart/invoices-by-date-range",
-        { params }
-      );
+      const response = await api.get("/pharmacy/chart/invoices-by-date-range", {
+        params,
+      });
       return response.data;
     },
     enabled: !!(params.startDate && params.endDate),
@@ -84,10 +83,9 @@ export const usePharmacyChartReceiptsByDateRange = (params = {}) => {
   return useQuery({
     queryKey: ["getChartReceiptsByDateRange", params],
     queryFn: async () => {
-      const response = await api.get(
-        "/pharmacy/chart/receipts-by-date-range",
-        { params }
-      );
+      const response = await api.get("/pharmacy/chart/receipts-by-date-range", {
+        params,
+      });
       return response.data;
     },
     enabled: !!(params.startDate && params.endDate),
@@ -98,7 +96,7 @@ export const usePharmacyMonthlyTrends = (params = {}) => {
   return useQuery({
     queryKey: ["getMonthlyTrends", params],
     queryFn: async () => {
-      const response = await api.get("/statistics/trends/monthly", {
+      const response = await api.get("/statistics/monthly-trends", {
         params,
       });
       return response.data;

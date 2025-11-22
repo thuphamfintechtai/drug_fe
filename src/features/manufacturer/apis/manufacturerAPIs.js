@@ -229,7 +229,10 @@ export const useManufacturerChartTodayYesterday = () => {
   });
 };
 
-export const useManufacturerChartProductionsByDateRange = (startDate, endDate) => {
+export const useManufacturerChartProductionsByDateRange = (
+  startDate,
+  endDate
+) => {
   return useQuery({
     queryKey: ["getChartProductionsByDateRange", startDate, endDate],
     queryFn: async () => {
@@ -243,7 +246,10 @@ export const useManufacturerChartProductionsByDateRange = (startDate, endDate) =
   });
 };
 
-export const useManufacturerChartDistributionsByDateRange = (startDate, endDate) => {
+export const useManufacturerChartDistributionsByDateRange = (
+  startDate,
+  endDate
+) => {
   return useQuery({
     queryKey: ["getChartDistributionsByDateRange", startDate, endDate],
     queryFn: async () => {
@@ -257,7 +263,10 @@ export const useManufacturerChartDistributionsByDateRange = (startDate, endDate)
   });
 };
 
-export const useManufacturerChartTransfersByDateRange = (startDate, endDate) => {
+export const useManufacturerChartTransfersByDateRange = (
+  startDate,
+  endDate
+) => {
   return useQuery({
     queryKey: ["getChartTransfersByDateRange", startDate, endDate],
     queryFn: async () => {
@@ -275,7 +284,7 @@ export const useManufacturerMonthlyTrends = (months = 6) => {
   return useQuery({
     queryKey: ["getMonthlyTrends", months],
     queryFn: async () => {
-      const response = await api.get("/statistics/trends/monthly", {
+      const response = await api.get("/statistics/monthly-trends", {
         params: { months },
       });
       return response.data;
@@ -388,7 +397,8 @@ export const manufacturerAPIs = {
   getChartOneWeek: useManufacturerChartOneWeek,
   getChartTodayYesterday: useManufacturerChartTodayYesterday,
   getChartProductionsByDateRange: useManufacturerChartProductionsByDateRange,
-  getChartDistributionsByDateRange: useManufacturerChartDistributionsByDateRange,
+  getChartDistributionsByDateRange:
+    useManufacturerChartDistributionsByDateRange,
   getChartTransfersByDateRange: useManufacturerChartTransfersByDateRange,
   getMonthlyTrends: useManufacturerMonthlyTrends,
   getPerformanceMetrics: useManufacturerPerformanceMetrics,

@@ -45,6 +45,12 @@ export const useDashboard = () => {
         });
       }, 50);
 
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+      const startDateStr = startDate.toISOString().split("T")[0];
+      const endDateStr = endDate.toISOString().split("T")[0];
+
       // Make parallel API calls
       const [
         statsResponse,
@@ -56,10 +62,12 @@ export const useDashboard = () => {
       ] = await Promise.allSettled([
         api.get("/pharmacy/statistics"),
         api.get("/statistics/pharmacy/dashboard"),
-        api.get("/statistics/pharmacy/quality"),
+        api.get("/statistics/performance", {
+          params: { startDate: startDateStr, endDate: endDateStr },
+        }),
         api.get("/pharmacy/chart/one-week"),
         api.get("/pharmacy/chart/today-yesterday"),
-        api.get("/statistics/trends/monthly", { params: { months: 6 } }),
+        api.get("/statistics/monthly-trends", { params: { months: 6 } }),
       ]);
 
       // Extract data from responses

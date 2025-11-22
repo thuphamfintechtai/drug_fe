@@ -83,7 +83,7 @@ export const useDrug = () => {
     try {
       setLoading(true);
       startProgress();
-      const response = await api.get("/drugs");
+      const response = await api.get("/pharmacy/drugs");
       const data = response.data?.data || response.data;
       if (data?.success && data?.data) {
         const list = Array.isArray(data.data.drugs) ? data.data.drugs : [];

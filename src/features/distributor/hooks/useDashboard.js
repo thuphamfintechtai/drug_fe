@@ -47,16 +47,16 @@ export const useDashboard = () => {
 
   const stats = statsResponse?.data?.data;
   const dashboardStats = dashboardResponse?.data?.data;
-  
-  console.log('Dashboard Stats Response:', dashboardResponse);
-  console.log('Dashboard Stats Data:', dashboardStats);
+
+  console.log("Dashboard Stats Response:", dashboardResponse);
+  console.log("Dashboard Stats Data:", dashboardStats);
 
   const chartOneWeekData = useMemo(() => {
     const data = chartOneWeekResponse?.data?.data;
-    console.log('One Week Response:', chartOneWeekResponse);
-    console.log('One Week Data:', data);
+    console.log("One Week Response:", chartOneWeekResponse);
+    console.log("One Week Data:", data);
     if (!data?.dailyStats) {
-      console.log('No dailyStats found');
+      console.log("No dailyStats found");
       return null;
     }
     const formatted = Object.entries(data.dailyStats).map(([date, stat]) => {
@@ -78,10 +78,10 @@ export const useDashboard = () => {
 
   const chartTodayYesterdayData = useMemo(() => {
     const data = chartTodayYesterdayResponse?.data?.data;
-    console.log('Today/Yesterday Response:', chartTodayYesterdayResponse);
-    console.log('Today/Yesterday Data:', data);
+    console.log("Today/Yesterday Response:", chartTodayYesterdayResponse);
+    console.log("Today/Yesterday Data:", data);
     if (!data) {
-      console.log('No today/yesterday data');
+      console.log("No today/yesterday data");
       return null;
     }
     return [
@@ -92,10 +92,10 @@ export const useDashboard = () => {
 
   const chartMonthlyData = useMemo(() => {
     const data = monthlyTrendsResponse?.data?.data;
-    console.log('Monthly Trends Response:', monthlyTrendsResponse);
-    console.log('Monthly Trends Data:', data);
+    console.log("Monthly Trends Response:", monthlyTrendsResponse);
+    console.log("Monthly Trends Data:", data);
     if (!data?.trends) {
-      console.log('No trends data found');
+      console.log("No trends data found");
       return null;
     }
     const mapped = (data.trends || []).map((item) => ({
@@ -107,7 +107,7 @@ export const useDashboard = () => {
       transfersToPharmacy: item.transfersToPharmacy || 0,
       transfersToPharmacyQuantity: item.transfersToPharmacyQuantity || 0,
     }));
-    console.log(' Mapped Monthly Data:', mapped);
+    console.log(" Mapped Monthly Data:", mapped);
     return mapped;
   }, [monthlyTrendsResponse]);
 
@@ -152,25 +152,23 @@ export const useDashboard = () => {
       ? Object.entries(
           displayStats.invoicesReceived?.byStatus ||
             displayStats.invoices?.byStatus
-        )
-          .map(([name, value]) => ({
-            name:
-              name === "pending"
-                ? "Chờ nhận"
-                : name === "sent"
-                ? "Đã nhận"
-                : name === "paid"
-                ? "Đã thanh toán"
-                : name,
-            value: value || 0,
-          }))
-          .filter((item) => item.value > 0)
+        ).map(([name, value]) => ({
+          name:
+            name === "pending"
+              ? "Chờ nhận"
+              : name === "sent"
+              ? "Đã nhận"
+              : name === "paid"
+              ? "Đã thanh toán"
+              : name,
+          value: value || 0,
+        }))
       : [];
 
   // Prepare transfer to pharmacy status data
   const transferStatusData = displayStats?.transfersToPharmacy?.byStatus
-    ? Object.entries(displayStats.transfersToPharmacy.byStatus)
-        .map(([name, value]) => ({
+    ? Object.entries(displayStats.transfersToPharmacy.byStatus).map(
+        ([name, value]) => ({
           name:
             name === "draft"
               ? "Nháp"
@@ -180,14 +178,15 @@ export const useDashboard = () => {
               ? "Đã thanh toán"
               : name,
           value: value || 0,
-        }))
-        .filter((item) => item.value > 0)
-    : [];
+        })
+      )
+    : // Keep all items, even if value is 0
+      [];
 
   // Prepare distribution status data
   const distributionStatusData = displayStats?.distributions?.byStatus
-    ? Object.entries(displayStats.distributions.byStatus)
-        .map(([name, value]) => ({
+    ? Object.entries(displayStats.distributions.byStatus).map(
+        ([name, value]) => ({
           name:
             name === "pending"
               ? "Chờ xử lý"
@@ -201,9 +200,10 @@ export const useDashboard = () => {
               ? "Từ chối"
               : name,
           value: value || 0,
-        }))
-        .filter((item) => item.value > 0)
-    : [];
+        })
+      )
+    : // Keep all items, even if value is 0
+      [];
   return {
     isRefreshing,
     handleRefresh,

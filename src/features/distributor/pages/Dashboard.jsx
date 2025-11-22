@@ -93,7 +93,7 @@ export default function DistributorDashboard() {
             </button>
           </div>
 
-          {displayStats && (
+          {displayStats !== null && displayStats !== undefined && (
             <div className="space-y-8">
               {/* Overview Cards */}
               <motion.div variants={fadeUp} initial="hidden" animate="show">
@@ -212,7 +212,7 @@ export default function DistributorDashboard() {
                   <h3 className="text-lg font-semibold text-slate-800 mb-4">
                     Đơn hàng nhận 7 ngày gần nhất
                   </h3>
-                  {chartOneWeekData && chartOneWeekData.length > 0 ? (
+                  {chartOneWeekData ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <AreaChart data={chartOneWeekData}>
                         <defs>
@@ -312,7 +312,7 @@ export default function DistributorDashboard() {
                   <h3 className="text-lg font-semibold text-slate-800 mb-4">
                     Phân bố đơn hàng
                   </h3>
-                  {invoiceStatusData.length > 0 ? (
+                  {invoiceStatusData && invoiceStatusData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
@@ -353,7 +353,7 @@ export default function DistributorDashboard() {
                   <h3 className="text-lg font-semibold text-slate-800 mb-4">
                     Phân bố chuyển giao cho NT
                   </h3>
-                  {transferStatusData.length > 0 ? (
+                  {transferStatusData && transferStatusData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
@@ -394,7 +394,8 @@ export default function DistributorDashboard() {
                   <h3 className="text-lg font-semibold text-slate-800 mb-4">
                     Phân bố phân phối
                   </h3>
-                  {distributionStatusData.length > 0 ? (
+                  {distributionStatusData &&
+                  distributionStatusData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
