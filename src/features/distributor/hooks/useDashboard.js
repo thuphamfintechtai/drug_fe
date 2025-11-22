@@ -39,11 +39,11 @@ export const useDashboard = () => {
     refetch: refetchMonthlyTrends,
   } = distributorQueries.getMonthlyTrends(6);
 
-  const stats = statsResponse?.data?.data;
-  const dashboardStats = dashboardResponse?.data?.data;
+  const stats = statsResponse?.data?.data || statsResponse?.data;
+  const dashboardStats = dashboardResponse?.data?.overview || dashboardResponse?.data?.data;
 
   const chartOneWeekData = useMemo(() => {
-    const data = chartOneWeekResponse?.data?.data;
+    const data = chartOneWeekResponse?.data?.data || chartOneWeekResponse?.data;
     if (!data?.dailyStats) {
       return null;
     }
@@ -65,7 +65,7 @@ export const useDashboard = () => {
   }, [chartOneWeekResponse]);
 
   const chartTodayYesterdayData = useMemo(() => {
-    const data = chartTodayYesterdayResponse?.data?.data;
+    const data = chartTodayYesterdayResponse?.data?.data || chartTodayYesterdayResponse?.data;
     if (!data) {
       return null;
     }
@@ -76,13 +76,18 @@ export const useDashboard = () => {
   }, [chartTodayYesterdayResponse]);
 
   const chartMonthlyData = useMemo(() => {
-    const data = monthlyTrendsResponse?.data?.data;
+    const data = monthlyTrendsResponse?.data;
     if (!data?.trends) {
       return null;
     }
     return (data.trends || []).map((item) => ({
       month: item.month,
-      transfers: item.transfers || 0,
+      invoicesReceived: item.invoicesReceived || 0,
+      invoicesReceivedQuantity: item.invoicesReceivedQuantity || 0,
+      distributions: item.distributions || 0,
+      distributionsQuantity: item.distributionsQuantity || 0,
+      transfersToPharmacy: item.transfersToPharmacy || 0,
+      transfersToPharmacyQuantity: item.transfersToPharmacyQuantity || 0,
     }));
   }, [monthlyTrendsResponse]);
 
@@ -186,6 +191,7 @@ export const useDashboard = () => {
     isFetching,
     stats,
     dashboardStats,
+    displayStats,
     chartOneWeekData,
     chartTodayYesterdayData,
     chartMonthlyData,
