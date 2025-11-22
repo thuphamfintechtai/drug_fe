@@ -31,11 +31,19 @@ export const useLogin = () => {
   };
 
   const handleConnectMetaMask = async () => {
-    const connected = await connect();
-    if (connected) {
-      toast.success("Đã kết nối MetaMask thành công!");
-    } else {
-      toast.error("Không thể kết nối MetaMask. Vui lòng thử lại.");
+    try {
+      const connected = await connect();
+      if (connected) {
+        toast.success("Đã kết nối MetaMask thành công!");
+        return true;
+      } else {
+        toast.error("Không thể kết nối MetaMask. Vui lòng thử lại.");
+        return false;
+      }
+    } catch (error) {
+      console.error("MetaMask connection error:", error);
+      toast.error("Lỗi kết nối MetaMask. Vui lòng thử lại.");
+      return false;
     }
   };
 
@@ -68,12 +76,9 @@ export const useLogin = () => {
       if (user.walletAddress && userRole !== "system_admin") {
         if (!isConnected || !account) {
           setError(
-            "Tài khoản này yêu cầu kết nối MetaMask. Vui lòng kết nối MetaMask trước khi đăng nhập."
+            "Tài khoản này yêu cầu kết nối MetaMask. Vui lòng nhấn nút 'Kết nối MetaMask' bên dưới."
           );
           setLoading(false);
-          setTimeout(() => {
-            handleConnectMetaMask();
-          }, 100);
           return;
         }
 
@@ -125,5 +130,7 @@ export const useLogin = () => {
     handleConnectMetaMask,
     handleSubmit,
     setShowPassword,
+    isConnected,
+    account,
   };
 };

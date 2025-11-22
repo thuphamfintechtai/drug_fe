@@ -63,12 +63,15 @@ Hệ thống hỗ trợ các role sau:
 
 ## Cấu hình API
 
-Mặc định API base URL được đặt trong `src/utils/api.js`:
-```javascript
-baseURL: 'https://drug-be.vercel.app/api'
-```
+API base URL được cấu hình tự động dựa trên môi trường:
 
-Để thay đổi, sửa file `src/utils/api.js` hoặc sử dụng biến môi trường.
+- **Development**: Sử dụng proxy `/api` (cấu hình trong `vite.config.js`)
+- **Production**: Sử dụng `https://drug-be.vercel.app/api`
+
+Để thay đổi URL production, tạo file `.env` với nội dung:
+```bash
+VITE_API_BASE_URL=https://your-api-url.com/api
+```
 
 ## Authentication Flow
 
@@ -78,8 +81,23 @@ baseURL: 'https://drug-be.vercel.app/api'
 4. Protected routes kiểm tra authentication và role
 5. Khi token hết hạn hoặc không hợp lệ, user được redirect về `/login`
 
+## MetaMask Integration
+
+Ứng dụng yêu cầu kết nối MetaMask cho các tài khoản doanh nghiệp:
+
+1. **Cài đặt MetaMask**: Người dùng cần cài đặt MetaMask extension
+2. **Kết nối ví**: Nhấn nút "Kết nối MetaMask" trên trang đăng nhập
+3. **Xác thực địa chỉ**: Địa chỉ ví phải khớp với địa chỉ đã đăng ký
+
+### Xử lý lỗi MetaMask
+
+Nếu gặp lỗi "User rejected the request":
+- Người dùng đã từ chối kết nối MetaMask
+- Cần nhấn lại nút "Kết nối MetaMask" và chấp nhận yêu cầu
+
 ## Lưu ý
 
 - Tài khoản doanh nghiệp (pharma_company, distributor, pharmacy) sau khi đăng ký sẽ ở trạng thái `pending` và cần admin duyệt
-- Token được lưu trong `localStorage`, xóa khi logout hoặc hết hạn
+- Token được lưu trong cookies với httpOnly flag để bảo mật
 - Protected routes tự động kiểm tra role và hiển thị thông báo nếu không có quyền truy cập
+- Tài khoản system_admin không yêu cầu MetaMask
