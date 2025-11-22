@@ -9,7 +9,7 @@ export const useAdminApproveRegistration = () => {
   return useMutation({
     mutationFn: async (id) => {
       const response = await api.post(
-        `/auth/registration-requests/${id}/approve`
+        `/registration/requests/${id}/approve`
       );
       return response.data;
     },
@@ -35,7 +35,7 @@ export const useAdminRejectRegistration = () => {
   return useMutation({
     mutationFn: async ({ id, rejectionReason }) => {
       const response = await api.post(
-        `/auth/registration-requests/${id}/reject`,
+        `/registration/requests/${id}/reject`,
         { rejectionReason }
       );
       return response.data;

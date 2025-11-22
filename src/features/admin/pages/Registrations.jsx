@@ -181,11 +181,21 @@ export default function AdminRegistrations() {
                     >
                       <td className="px-4 py-3">
                         <div className="font-medium text-[#003544]">
-                          {r?.user?.fullName || r?.user?.username}
+                          {r?.user?.fullName || 
+                           r?.user?.username || 
+                           r?.companyInfo?.name || 
+                           "N/A"}
                         </div>
                         <div className="text-sm text-[#003544]/70">
-                          {r?.user?.email}
+                          {r?.user?.email || 
+                           r?.companyInfo?.contactEmail || 
+                           "N/A"}
                         </div>
+                        {r?.user?.walletAddress && (
+                          <div className="text-xs text-[#003544]/50 mt-1">
+                            {r.user.walletAddress.slice(0, 6)}...{r.user.walletAddress.slice(-4)}
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-[#003544]/80">
                         {translateRole(r.role)}
