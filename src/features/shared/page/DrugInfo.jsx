@@ -128,7 +128,7 @@ export default function PublicDrugInfo() {
 
           {isAuthenticated && (
             <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm flex items-center gap-2">
-              <span>✅</span>
+              <span></span>
               <span>
                 Bạn đã đăng nhập với tư cách{" "}
                 <strong>
@@ -316,7 +316,7 @@ export default function PublicDrugInfo() {
                       {drug.indications && (
                         <div className="bg-green-50 rounded-lg p-3 border border-green-200 md:col-span-2">
                           <div className="text-sm text-green-700 mb-1">
-                            📋 Chỉ định
+                             Chỉ định
                           </div>
                           <div className="text-sm text-green-900">
                             {drug.indications}

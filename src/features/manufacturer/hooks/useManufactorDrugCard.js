@@ -22,7 +22,7 @@ export const useManufactorDrugCard = () => {
       painkiller: "🩹",
       vitamin: "💊",
       supplement: "🌿",
-      prescription: "📋",
+      prescription: "",
       otc: "🏪",
       default: "💊",
     };

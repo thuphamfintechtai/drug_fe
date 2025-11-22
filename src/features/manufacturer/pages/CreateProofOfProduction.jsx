@@ -87,7 +87,7 @@ export default function CreateProofOfProduction() {
         {step === 1 && (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
             <h2 className="text-xl font-bold text-gray-800 mb-6">
-              📋 Thông tin sản xuất
+               Thông tin sản xuất
             </h2>
 
             <div className="space-y-4">
@@ -299,7 +299,7 @@ export default function CreateProofOfProduction() {
             ) : (
               <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-6">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">✅</span>
+                  <span className="text-xl"></span>
                   <div>
                     <div className="font-semibold text-green-900">
                       Đã kết nối ví

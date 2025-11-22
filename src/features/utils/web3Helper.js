@@ -206,8 +206,8 @@ const ensureDeployed = async (provider, address) => {
       `- Network: ${network.name}\n` +
       `- Chain ID: ${currentChainIdHex} (${network.chainId})\n` +
       `- Contract Address: ${address}\n\n` +
-      `✅ Contract ĐÃ TỒN TẠI trên PIONE/Zero network (đã verify trên Zero Scan với 15+ transactions)\n` +
-      `❌ Nhưng MetaMask đang kết nối với network khác!\n\n` +
+      ` Contract ĐÃ TỒN TẠI trên PIONE/Zero network (đã verify trên Zero Scan với 15+ transactions)\n` +
+      `Nhưng MetaMask đang kết nối với network khác!\n\n` +
       `🔧 Giải pháp:\n` +
       `1. Mở MetaMask (click vào icon 🦊)\n` +
       `2. Click vào network dropdown (top của MetaMask, hiện tại: "${network.name}")\n` +
@@ -282,7 +282,7 @@ export const mintNFT = async (amountOrURI) => {
     // Wait for transaction to be mined
     const receipt = await tx.wait();
 
-    console.log("✅ Transaction confirmed:", receipt);
+    console.log(" Transaction confirmed:", receipt);
 
     // Extract token ID from events (ERC1155)
     // Tìm event mintNFTEvent hoặc TransferSingle
@@ -335,7 +335,7 @@ export const mintNFT = async (amountOrURI) => {
       contractAddress: NFT_CONTRACT_ADDRESS,
     };
   } catch (error) {
-    console.error("❌ Error minting NFT:", error);
+    console.error("Error minting NFT:", error);
 
     // Parse error message
     let errorMessage = "Failed to mint NFT";
@@ -483,7 +483,7 @@ export const transferNFTToDistributor = async (
       blockNumber: receipt.blockNumber,
     };
   } catch (error) {
-    console.error("❌ Error transferring NFT:", error);
+    console.error("Error transferring NFT:", error);
     // Friendly error messages
     if (error?.code === "ACTION_REJECTED" || error?.code === 4001) {
       throw new Error("User rejected the transaction");
@@ -754,14 +754,14 @@ export const transferNFTToPharmacy = async (
         .join("\n");
 
       const errorMessage =
-        `❌ Không đủ số lượng NFT để chuyển giao!\n\n` +
+        `Không đủ số lượng NFT để chuyển giao!\n\n` +
         `Chi tiết:\n${issuesList}\n\n` +
         `Nguyên nhân có thể:\n` +
         `1. NFT chưa được transfer từ Manufacturer → Distributor trên blockchain\n` +
         `2. Manufacturer chưa hoàn thành bước transfer NFT (chưa gọi smart contract)\n` +
         `3. Transaction transfer từ Manufacturer bị revert hoặc thất bại\n` +
         `4. Token ID không đúng hoặc chưa được mint\n\n` +
-        `✅ Giải pháp:\n` +
+        ` Giải pháp:\n` +
         `1. Kiểm tra trong "Lịch sử chuyển giao" (Manufacturer) xem NFT đã được transfer chưa\n` +
         `2. Nếu chưa, yêu cầu Manufacturer thực hiện transfer NFT trước\n` +
         `3. Nếu đã transfer, kiểm tra transaction hash trên blockchain explorer\n` +
@@ -793,7 +793,7 @@ export const transferNFTToPharmacy = async (
       blockNumber: receipt.blockNumber,
     };
   } catch (error) {
-    console.error("❌ Error transferring NFT to pharmacy:", error);
+    console.error("Error transferring NFT to pharmacy:", error);
     // Friendly error messages
     if (error?.code === "ACTION_REJECTED" || error?.code === 4001) {
       throw new Error("User rejected the transaction");
@@ -976,6 +976,55 @@ export const disconnectWallet = async () => {
   }
 };
 
+/**
+ * Sign a message with MetaMask and get private key from secure storage
+ * @param {string} message - Message to sign
+ * @returns {Promise<Object>} - Signature and private key
+ */
+export const signMessageWithMetaMask = async (message) => {
+  try {
+    if (!window.ethereum) {
+      throw new Error("MetaMask chưa được cài đặt");
+    }
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const address = await signer.getAddress();
+
+    // Sign the message with MetaMask
+    const signature = await signer.signMessage(message);
+
+    // Get private key from localStorage (stored during login/registration)
+    // In production, this should be encrypted or retrieved from secure backend
+    let privateKey = localStorage.getItem(`privateKey_${address}`);
+
+    // If not found in localStorage, ask user to input (for backward compatibility)
+    if (!privateKey) {
+      privateKey = prompt(
+        "Để ký hợp đồng trên blockchain, vui lòng nhập private key của bạn:\n\n" +
+        "Private key sẽ được lưu an toàn cho các giao dịch tiếp theo."
+      );
+
+      if (!privateKey) {
+        throw new Error("Private key là bắt buộc để ký hợp đồng");
+      }
+
+      // Save to localStorage for future use (should be encrypted in production)
+      localStorage.setItem(`privateKey_${address}`, privateKey.trim());
+    }
+
+    return {
+      signature,
+      address,
+      privateKey: privateKey.trim(),
+      message,
+    };
+  } catch (error) {
+    console.error("Error signing message:", error);
+    throw error;
+  }
+};
+
 export default {
   getWeb3Provider,
   getCurrentWalletAddress,
@@ -989,4 +1038,5 @@ export default {
   isWalletConnected,
   connectWallet,
   disconnectWallet,
+  signMessageWithMetaMask,
 };

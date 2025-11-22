@@ -46,11 +46,11 @@ export const uploadMetadataToIPFS = async (metadata) => {
     const ipfsHash = data.IpfsHash;
     const ipfsUrl = `ipfs://${ipfsHash}`;
 
-    console.log('✅ Metadata uploaded to IPFS:', ipfsUrl);
+    console.log(' Metadata uploaded to IPFS:', ipfsUrl);
 
     return ipfsUrl;
   } catch (error) {
-    console.error('❌ Error uploading to IPFS:', error);
+    console.error('Error uploading to IPFS:', error);
     throw new Error('Failed to upload metadata to IPFS');
   }
 };
@@ -90,11 +90,11 @@ export const uploadFileToIPFS = async (file) => {
     const ipfsHash = data.IpfsHash;
     const ipfsUrl = `ipfs://${ipfsHash}`;
 
-    console.log('✅ File uploaded to IPFS:', ipfsUrl);
+    console.log(' File uploaded to IPFS:', ipfsUrl);
 
     return ipfsUrl;
   } catch (error) {
-    console.error('❌ Error uploading file to IPFS:', error);
+    console.error('Error uploading file to IPFS:', error);
     throw new Error('Failed to upload file to IPFS');
   }
 };

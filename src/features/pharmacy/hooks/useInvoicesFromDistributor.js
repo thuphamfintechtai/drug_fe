@@ -361,7 +361,7 @@ export const useInvoicesFromDistributor = () => {
 
       if (response.data && response.data.success) {
         toast.success(
-          "✅ Xác nhận nhận hàng thành công! Trạng thái: Đang chờ Distributor xác nhận chuyển quyền sở hữu NFT.",
+          " Xác nhận nhận hàng thành công! Trạng thái: Đang chờ Distributor xác nhận chuyển quyền sở hữu NFT.",
           {
             position: "top-right",
             duration: 5000,
@@ -387,7 +387,7 @@ export const useInvoicesFromDistributor = () => {
         const errorMessage =
           response.data?.message || "Không thể xác nhận nhận hàng";
         console.error("Response không thành công:", response.data);
-        toast.error(`❌ ${errorMessage}`, {
+        toast.error(`${errorMessage}`, {
           position: "top-right",
           duration: 5000,
         });
@@ -410,7 +410,7 @@ export const useInvoicesFromDistributor = () => {
         errorMessage = error.message;
       }
 
-      toast.error(`❌ Lỗi server khi xác nhận nhận hàng: ${errorMessage}`, {
+      toast.error(`Lỗi server khi xác nhận nhận hàng: ${errorMessage}`, {
         position: "top-right",
         duration: 5000,
       });

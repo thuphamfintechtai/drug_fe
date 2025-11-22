@@ -11,3 +11,6 @@ export { default as DistributorDeliveriesToPharmacy } from "./DeliveriesToPharma
 export { default as DistributorDeliveryDetail } from "./DeliveryDetail";
 export { default as DistributorDistributions } from "./Distributions";
 export { default as DistributorDistributionDetail } from "./DistributionDetail";
+export { default as DistributorContracts } from "./Contracts";
+export { default as DistributorCreateContract } from "./CreateContract";
+export { default as DistributorFinalizeContract } from "./FinalizeContract";

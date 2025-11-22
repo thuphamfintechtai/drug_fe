@@ -20,7 +20,7 @@ export const useCreateProofDialog = (
       console.log("🏭 Form validation passed, calling onSubmit");
       onSubmit();
     } else {
-      console.log("❌ Form validation failed");
+      console.log("Form validation failed");
     }
   };
 

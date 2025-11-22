@@ -147,7 +147,7 @@ export const useCreateProofOfProduction = () => {
 
       if (metadataResponse.success) {
         setNftMetadata(metadataResponse.data);
-        console.log("✅ Metadata generated:", metadataResponse.data);
+        console.log(" Metadata generated:", metadataResponse.data);
       } else {
         throw new Error("Không thể tạo metadata");
       }
@@ -178,14 +178,14 @@ export const useCreateProofOfProduction = () => {
       const tokenURI = await manufacturerAPIs.uploadMetadataToIPFS(
         nftMetadata.metadata
       );
-      console.log("✅ Token URI:", tokenURI);
+      console.log(" Token URI:", tokenURI);
 
       // Mint NFT on blockchain
       // Lưu ý: contract.mintNFT nhận số lượng (uint256[]), không phải tokenURI
       console.log("🎨 Minting NFT on blockchain...");
       const quantity = parseInt(formData.quantity) || 1;
       const mintResult = await mintNFT(quantity);
-      console.log("✅ NFT Minted:", mintResult);
+      console.log(" NFT Minted:", mintResult);
 
       setMintedNFT({
         tokenId: mintResult.tokenId,
@@ -226,8 +226,8 @@ export const useCreateProofOfProduction = () => {
       const response = await createProofMutation.mutateAsync(proofData);
 
       if (response.success) {
-        console.log("✅ Proof created successfully:", response.data);
-        toast.success("✅ Tạo Proof of Production thành công!");
+        console.log(" Proof created successfully:", response.data);
+        toast.success(" Tạo Proof of Production thành công!");
         navigate("/manufacturer/proofs");
       } else {
         throw new Error("Backend verification failed");

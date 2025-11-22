@@ -334,7 +334,7 @@ export const useTransferHistory = () => {
         tokenIds,
       });
 
-      toast.success("✅ Đã chuyển NFT on-chain và lưu transaction thành công!");
+      toast.success(" Đã chuyển NFT on-chain và lưu transaction thành công!");
       refetchTransferHistory();
     } catch (error) {
       // FIX: Handle abort gracefully

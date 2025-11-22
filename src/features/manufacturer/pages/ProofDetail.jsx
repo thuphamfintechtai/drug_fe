@@ -40,7 +40,7 @@ export default function ProofDetail() {
           <div className="flex justify-between items-start">
             <div className="flex items-center gap-3">
               <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-3xl">📋</span>
+                <span className="text-3xl"></span>
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">

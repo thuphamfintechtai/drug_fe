@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import { useState, useEffect } from "react";
 import { distributorQueries } from "../apis/distributor";
 import { useSearchParams } from "react-router-dom";

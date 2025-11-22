@@ -383,7 +383,7 @@ export const useTransferToPharmacy = () => {
           .join(", ");
 
         toast.error(
-          `❌ Không đủ số lượng NFT để chuyển giao! Chi tiết: ${issuesList}. Nguyên nhân: NFT chưa được transfer từ Manufacturer → Distributor trên blockchain. Vui lòng yêu cầu Manufacturer thực hiện transfer NFT trước.`,
+          `Không đủ số lượng NFT để chuyển giao! Chi tiết: ${issuesList}. Nguyên nhân: NFT chưa được transfer từ Manufacturer → Distributor trên blockchain. Vui lòng yêu cầu Manufacturer thực hiện transfer NFT trước.`,
           {
             position: "top-right",
             duration: 8000,
@@ -393,7 +393,7 @@ export const useTransferToPharmacy = () => {
         return;
       }
     } catch (balanceError) {
-      console.error("❌ Lỗi khi kiểm tra balance:", balanceError);
+      console.error("Lỗi khi kiểm tra balance:", balanceError);
       if (
         balanceError.message?.includes("Contract not deployed") ||
         balanceError.message?.includes("MetaMask")
@@ -407,7 +407,7 @@ export const useTransferToPharmacy = () => {
         );
         // Vẫn cho phép tiếp tục trong trường hợp này
       } else {
-        toast.error(`❌ Lỗi khi kiểm tra balance: ${balanceError.message}`, {
+        toast.error(`Lỗi khi kiểm tra balance: ${balanceError.message}`, {
           position: "top-right",
           duration: 5000,
         });
@@ -437,7 +437,7 @@ export const useTransferToPharmacy = () => {
           amounts: responseAmounts,
         } = response.data.data;
 
-        console.log("✅ Invoice đã được tạo:", {
+        console.log(" Invoice đã được tạo:", {
           invoiceId: commercialInvoice._id,
           invoiceNumber: commercialInvoice.invoiceNumber,
           status: commercialInvoice.status,
@@ -475,7 +475,7 @@ export const useTransferToPharmacy = () => {
           );
 
           if (transferResult.success) {
-            console.log("✅ Smart contract thành công:", {
+            console.log(" Smart contract thành công:", {
               transactionHash: transferResult.transactionHash,
               blockNumber: transferResult.blockNumber,
             });
@@ -517,7 +517,7 @@ export const useTransferToPharmacy = () => {
                 );
               }
             } catch (saveError) {
-              console.error("❌ Lỗi khi lưu transaction hash:", saveError);
+              console.error("Lỗi khi lưu transaction hash:", saveError);
               setChainStatus("error");
               toast.error(
                 `Lỗi khi lưu transaction hash: ${
@@ -533,7 +533,7 @@ export const useTransferToPharmacy = () => {
             throw new Error("Smart contract transfer không thành công");
           }
         } catch (transferError) {
-          console.error("❌ Lỗi khi gọi smart contract:", transferError);
+          console.error("Lỗi khi gọi smart contract:", transferError);
           if (chainIntervalRef.current) {
             clearInterval(chainIntervalRef.current);
           }
@@ -551,8 +551,8 @@ export const useTransferToPharmacy = () => {
         }
       }
     } catch (error) {
-      console.error("❌ Lỗi:", error);
-      toast.error(`❌ ${error.response?.data?.message || error.message}`, {
+      console.error("Lỗi:", error);
+      toast.error(`${error.response?.data?.message || error.message}`, {
         position: "top-right",
         duration: 5000,
       });

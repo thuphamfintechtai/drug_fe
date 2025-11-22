@@ -13,7 +13,7 @@ export const statsQueries = {
         console.log("Registration stats:", data);
       },
       onError: (error) => {
-        console.error("❌ Error fetching registration stats:", error);
+        console.error("Error fetching registration stats:", error);
       },
     });
   },
@@ -29,7 +29,7 @@ export const statsQueries = {
         console.log("User stats:", data);
       },
       onError: (error) => {
-        console.error("❌ Error fetching user stats:", error);
+        console.error("Error fetching user stats:", error);
       },
     });
   },
@@ -45,7 +45,7 @@ export const statsQueries = {
         console.log("Drug stats:", data);
       },
       onError: (error) => {
-        console.error("❌ Error fetching drug stats:", error);
+        console.error("Error fetching drug stats:", error);
       },
     });
   },
@@ -61,7 +61,7 @@ export const statsQueries = {
         console.log("System stats:", data);
       },
       onError: (error) => {
-        console.error("❌ Error fetching system stats:", error);
+        console.error("Error fetching system stats:", error);
       },
     });
   },
@@ -79,7 +79,7 @@ export const statsQueries = {
         console.log("Monthly trends:", data);
       },
       onError: (error) => {
-        console.error("❌ Error fetching monthly trends:", error);
+        console.error("Error fetching monthly trends:", error);
       },
     });
   },
@@ -95,7 +95,7 @@ export const statsQueries = {
         console.log("Blockchain stats:", data);
       },
       onError: (error) => {
-        console.error("❌ Error fetching blockchain stats:", error);
+        console.error("Error fetching blockchain stats:", error);
       },
     });
   },
@@ -111,7 +111,7 @@ export const statsQueries = {
         console.log("Alerts stats:", data);
       },
       onError: (error) => {
-        console.error("❌ Error fetching alerts stats:", error);
+        console.error("Error fetching alerts stats:", error);
       },
     });
   },

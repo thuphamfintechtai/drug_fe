@@ -134,7 +134,7 @@ function VerifyPage() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
         <div className="px-6 py-4 text-sm font-semibold text-red-700 bg-white rounded-md shadow-sm ring-1 ring-red-200">
-          ❌ {error}
+          {error}
         </div>
       </div>
     );

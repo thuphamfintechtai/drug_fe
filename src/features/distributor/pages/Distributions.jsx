@@ -1,6 +1,6 @@
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import { navigationItems } from "../constants/navigationItems";
-import { useDistributions } from "../hooks/useDistributions";
+import { useDistributions } from "../hooks/useDistributions.jsx";
 import { Spin, Table } from "antd";
 import { Search } from "../../shared/components/ui/search";
 import { CardUI } from "../../shared/components/ui/cardUI";

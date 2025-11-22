@@ -46,7 +46,7 @@ const CreateProofDialog = ({
           {/* Chọn thuốc */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-800">
-              <span className="text-cyan-600 mr-1">📋</span>
+              <span className="text-cyan-600 mr-1"></span>
               Chọn thuốc <span className="text-red-500">*</span>
             </label>
             <select
@@ -152,7 +152,7 @@ const CreateProofDialog = ({
               </div>
             ) : (
               <span className="flex items-center gap-2">
-                <span>✅</span> Tạo chứng nhận
+                <span></span> Tạo chứng nhận
               </span>
             )}
           </button>

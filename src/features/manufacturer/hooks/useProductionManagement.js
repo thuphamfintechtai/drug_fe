@@ -447,7 +447,7 @@ export const useProductionManagement = () => {
 
       // FIX: Use improved parsing function
       const tokenIds = parseTokenIdsFromReceipt(receipt, contract, quantity);
-      console.log("📋 Final token IDs:", tokenIds);
+      console.log(" Final token IDs:", tokenIds);
 
       if (tokenIds.length === 0) {
         throw new Error(
@@ -492,7 +492,7 @@ export const useProductionManagement = () => {
         throw new Error(response.message || "Backend failed");
       }
     } catch (error) {
-      console.error("❌ Mint error:", error);
+      console.error("Mint error:", error);
 
       let errorMsg = "Không thể mint NFT";
 

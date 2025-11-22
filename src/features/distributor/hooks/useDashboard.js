@@ -41,10 +41,16 @@ export const useDashboard = () => {
 
   const stats = statsResponse?.data?.data;
   const dashboardStats = dashboardResponse?.data?.data;
+  
+  console.log('Dashboard Stats Response:', dashboardResponse);
+  console.log('Dashboard Stats Data:', dashboardStats);
 
   const chartOneWeekData = useMemo(() => {
     const data = chartOneWeekResponse?.data?.data;
+    console.log('One Week Response:', chartOneWeekResponse);
+    console.log('One Week Data:', data);
     if (!data?.dailyStats) {
+      console.log('No dailyStats found');
       return null;
     }
     const formatted = Object.entries(data.dailyStats).map(([date, stat]) => {
@@ -66,7 +72,10 @@ export const useDashboard = () => {
 
   const chartTodayYesterdayData = useMemo(() => {
     const data = chartTodayYesterdayResponse?.data?.data;
+    console.log('Today/Yesterday Response:', chartTodayYesterdayResponse);
+    console.log('Today/Yesterday Data:', data);
     if (!data) {
+      console.log('No today/yesterday data');
       return null;
     }
     return [
@@ -77,10 +86,13 @@ export const useDashboard = () => {
 
   const chartMonthlyData = useMemo(() => {
     const data = monthlyTrendsResponse?.data?.data;
+    console.log('Monthly Trends Response:', monthlyTrendsResponse);
+    console.log('Monthly Trends Data:', data);
     if (!data?.trends) {
+      console.log('No trends data found');
       return null;
     }
-    return (data.trends || []).map((item) => ({
+    const mapped = (data.trends || []).map((item) => ({
       month: item.month,
       invoicesReceived: item.invoicesReceived || 0,
       invoicesReceivedQuantity: item.invoicesReceivedQuantity || 0,
@@ -89,6 +101,8 @@ export const useDashboard = () => {
       transfersToPharmacy: item.transfersToPharmacy || 0,
       transfersToPharmacyQuantity: item.transfersToPharmacyQuantity || 0,
     }));
+    console.log(' Mapped Monthly Data:', mapped);
+    return mapped;
   }, [monthlyTrendsResponse]);
 
   const isLoading =

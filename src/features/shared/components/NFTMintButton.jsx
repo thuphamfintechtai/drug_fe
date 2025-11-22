@@ -116,7 +116,7 @@ export default function NFTMintButton({
   buttonState = 'idle', // 'idle' | 'minting' | 'completed'
   defaultText = 'Bước 2: Mint NFT',
   mintingText = 'Minting...',
-  successText = '✅ Mint thành công!',
+  successText = ' Mint thành công!',
   loading = false,
   className = '',
   onAnimationComplete,

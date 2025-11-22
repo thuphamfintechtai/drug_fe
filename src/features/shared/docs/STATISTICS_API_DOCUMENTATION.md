@@ -1,6 +1,6 @@
 # TÀI LIỆU API THỐNG KÊ (STATISTICS API)
 
-## 📋 TỔNG QUAN
+##  TỔNG QUAN
 
 Tài liệu này liệt kê **TẤT CẢ** các API thống kê trong hệ thống, bao gồm:
 
@@ -31,11 +31,11 @@ Tài liệu này liệt kê **TẤT CẢ** các API thống kê trong hệ thố
 
 ---
 
-## 🔐 AUTHENTICATION & AUTHORIZATION
+## AUTHENTICATION & AUTHORIZATION
 
 **Lưu ý:** Tất cả các API đều yêu cầu:
-- ✅ **Authentication:** Header `Authorization: Bearer <token>`
-- ✅ **Authorization:** Một số API yêu cầu role cụ thể:
+-  **Authentication:** Header `Authorization: Bearer <token>`
+-  **Authorization:** Một số API yêu cầu role cụ thể:
   - `pharma_company` - Nhà sản xuất
   - `distributor` - Nhà phân phối
   - `pharmacy` - Nhà thuốc
@@ -283,7 +283,7 @@ Tài liệu này liệt kê **TẤT CẢ** các API thống kê trong hệ thố
 
 ---
 
-## ✅ 3. QUALITY STATISTICS
+##  3. QUALITY STATISTICS
 
 ### 3.1. Quality Stats - Pharmacy
 **Endpoint:** `GET /api/statistics/pharmacy/quality`  
@@ -517,7 +517,7 @@ Tài liệu này liệt kê **TẤT CẢ** các API thống kê trong hệ thố
 
 ---
 
-## 📋 9. COMPLIANCE STATISTICS
+##  9. COMPLIANCE STATISTICS
 
 ### 9.1. Compliance Stats
 **Endpoint:** `GET /api/statistics/compliance`  
@@ -585,7 +585,7 @@ Tài liệu này liệt kê **TẤT CẢ** các API thống kê trong hệ thố
 
 ---
 
-## 🔐 10. ADMIN STATISTICS (Admin Only)
+## 10. ADMIN STATISTICS (Admin Only)
 
 ### 10.1. System Statistics
 **Endpoint:** `GET /api/admin/statistics`  

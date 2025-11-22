@@ -413,7 +413,7 @@ const BlockchainMintingView = memo(function BlockchainMintingView({
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.35 }}
                   >
-                    ✅ Chuyển giao thành công!
+                     Chuyển giao thành công!
                   </motion.h3>
                   <motion.p
                     className="text-sm text-slate-600"

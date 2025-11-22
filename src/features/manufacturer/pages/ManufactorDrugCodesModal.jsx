@@ -28,7 +28,7 @@ const ManufactorDrugCodesModal = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-cyan-500/10 to-teal-600/10">
           <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-            📋 Danh sách mã ATC
+             Danh sách mã ATC
           </h2>
           <div className="flex gap-3">
             <button
@@ -82,7 +82,7 @@ const ManufactorDrugCodesModal = ({ isOpen, onClose }) => {
           {/* Error */}
           {error && (
             <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-lg text-sm">
-              ❌ {error}
+              {error}
             </div>
           )}
 

@@ -453,11 +453,27 @@ export default function DistributorDashboard() {
                       <Legend />
                       <Line
                         type="monotone"
-                        dataKey="transfers"
+                        dataKey="invoicesReceived"
+                        stroke={COLORS.primary}
+                        strokeWidth={2}
+                        name="Đơn hàng nhận"
+                        dot={{ fill: COLORS.primary, r: 4 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="distributions"
+                        stroke={COLORS.secondary}
+                        strokeWidth={2}
+                        name="Phân phối"
+                        dot={{ fill: COLORS.secondary, r: 4 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="transfersToPharmacy"
                         stroke={COLORS.third}
-                        strokeWidth={3}
-                        name="Chuyển giao"
-                        dot={{ fill: COLORS.third, r: 5 }}
+                        strokeWidth={2}
+                        name="Chuyển giao cho nhà thuốc"
+                        dot={{ fill: COLORS.third, r: 4 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>

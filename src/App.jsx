@@ -59,6 +59,9 @@ const DistributorDeliveriesToPharmacy = lazy(() => import("./features/distributo
 const DistributorDeliveryDetail = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorDeliveryDetail })));
 const DistributorDistributions = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorDistributions })));
 const DistributorDistributionDetail = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorDistributionDetail })));
+const DistributorContracts = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorContracts })));
+const DistributorCreateContract = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorCreateContract })));
+const DistributorFinalizeContract = lazy(() => import("./features/distributor/pages").then(m => ({ default: m.DistributorFinalizeContract })));
 
 // Lazy load Pharmacy pages
 const PharmacyDashboard = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyDashboard })));
@@ -67,6 +70,8 @@ const PharmacyDistributionHistory = lazy(() => import("./features/pharmacy/pages
 const PharmacyDrugs = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyDrugs })));
 const PharmacyNFTTracking = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyNFTTracking })));
 const PharmacyProfile = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyProfile })));
+const PharmacyContracts = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyContracts })));
+const PharmacyConfirmContract = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyConfirmContract })));
 
 // Lazy load Shared pages
 const UserHome = lazy(() => import("./features/shared/page/index").then(m => ({ default: m.UserHome })));
@@ -370,6 +375,30 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/distributor/contracts"
+          element={
+            <ProtectedRoute allowedRoles={["distributor"]}>
+              <DistributorContracts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/contracts/create"
+          element={
+            <ProtectedRoute allowedRoles={["distributor"]}>
+              <DistributorCreateContract />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/distributor/contracts/:contractId/finalize"
+          element={
+            <ProtectedRoute allowedRoles={["distributor"]}>
+              <DistributorFinalizeContract />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Pharmacy Routes */}
         <Route
@@ -417,6 +446,22 @@ function AppContent() {
           element={
             <ProtectedRoute allowedRoles={["pharmacy"]}>
               <PharmacyProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pharmacy/contracts"
+          element={
+            <ProtectedRoute allowedRoles={["pharmacy"]}>
+              <PharmacyContracts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pharmacy/contracts/:contractId/confirm"
+          element={
+            <ProtectedRoute allowedRoles={["pharmacy"]}>
+              <PharmacyConfirmContract />
             </ProtectedRoute>
           }
         />

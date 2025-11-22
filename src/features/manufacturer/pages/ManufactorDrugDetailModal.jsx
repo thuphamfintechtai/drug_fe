@@ -40,7 +40,7 @@ const ManufactorDrugDetailModal = ({ isOpen, onClose, drugId }) => {
 
           {error && (
             <div className="mb-4 p-3 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-sm">
-              ❌ {error}
+              {error}
             </div>
           )}
 
@@ -49,7 +49,7 @@ const ManufactorDrugDetailModal = ({ isOpen, onClose, drugId }) => {
               {/* Thông tin cơ bản */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  📋 Thông tin cơ bản
+                   Thông tin cơ bản
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>

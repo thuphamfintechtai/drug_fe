@@ -37,10 +37,10 @@ npm run build
 ## Tính năng
 
 ### Authentication
-- ✅ Đăng nhập
-- ✅ Đăng ký user thông thường
-- ✅ Đăng ký doanh nghiệp (Nhà sản xuất, Nhà phân phối, Nhà thuốc)
-- ✅ Protected routes với role-based access
+-  Đăng nhập
+-  Đăng ký user thông thường
+-  Đăng ký doanh nghiệp (Nhà sản xuất, Nhà phân phối, Nhà thuốc)
+-  Protected routes với role-based access
 
 ### Phân quyền
 Hệ thống hỗ trợ các role sau:
