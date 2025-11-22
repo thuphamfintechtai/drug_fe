@@ -26,12 +26,11 @@ const TruckTransfer = ({
   onComplete = null,
 }) => {
   const carRef = useRef(null);
-  const trailRef = useRef(null);
   const animationRef = useRef(null);
   const smokeContainerRef = useRef(null);
 
   // Điều chỉnh đường ray lên cao hơn và nằm giữa
-  const pathData = `M 62 245
+  const pathData = `M 70 220
           C 95 64, 154 65, 318 62
           C 640 113, 341 222, 675 276
           C 873 294, 945 246, 948 97`;
@@ -154,18 +153,7 @@ const TruckTransfer = ({
         },
       });
 
-      if (showTrail && trailRef.current) {
-        gsap.fromTo(
-          trailRef.current,
-          { strokeDashoffset: 1000 },
-          {
-            strokeDashoffset: 0,
-            duration: duration / animationSpeed,
-            repeat: -1,
-            ease: "none",
-          }
-        );
-      }
+      // Không cần animation cho đường - chỉ xe di chuyển
 
       const smokeInterval = setInterval(() => {
         createSmokeCluster();
@@ -178,7 +166,7 @@ const TruckTransfer = ({
         }
       };
     }
-  }, [duration, showTrail, animationSpeed, onComplete]);
+  }, [duration, animationSpeed, onComplete]);
 
   return (
     <div
@@ -221,34 +209,45 @@ const TruckTransfer = ({
           zIndex: 1,
         }}
       >
-        {/* Glow effect for path */}
+        {/* Shadow for road */}
         <defs>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+          <filter id="roadShadow">
+            <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.2" />
           </filter>
-          <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#0A7BA8" stopOpacity="0.75" />
-            <stop offset="45%" stopColor="#1F8AC0" stopOpacity="0.75" />
-            <stop offset="100%" stopColor="#3C4EB7" stopOpacity="0.75" />
-          </linearGradient>
         </defs>
 
-        {/* Motion Path with gradient */}
+        {/* Motion Path - Ẩn (chỉ dùng cho xe chạy) */}
         <path
-          ref={trailRef}
           id="motion-path-horizontal"
           d={pathData}
           fill="none"
-          stroke={showTrail ? "url(#pathGradient)" : "none"}
+          stroke="none"
           strokeWidth="10"
-          strokeDasharray="15"
-          strokeLinecap="round"
-          filter="url(#glow)"
         />
+
+        {/* Nền đường màu xám (nét liền) */}
+        {showTrail && (
+          <path
+            d={pathData}
+            fill="none"
+            stroke="#808080"
+            strokeWidth="22"
+            strokeLinecap="round"
+            filter="url(#roadShadow)"
+          />
+        )}
+
+        {/* Nét đứt màu trắng ở giữa */}
+        {showTrail && (
+          <path
+            d={pathData}
+            fill="none"
+            stroke="white"
+            strokeWidth="4"
+            strokeDasharray="20 15"
+            strokeLinecap="round"
+          />
+        )}
 
         {/* Station markers with animations */}
         {stations.map((station, index) => {
@@ -324,24 +323,6 @@ const TruckTransfer = ({
               </text>
             </g>
 
-            {/* Step number */}
-            <circle
-              cx={station.x + 45}
-              cy={station.y + 8}
-              r="12"
-              fill={station.color}
-              filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))"
-            />
-            <text
-              x={station.x + 45}
-              y={station.y + 13}
-              textAnchor="middle"
-              fill="white"
-              fontSize="12"
-              fontWeight="700"
-            >
-              {index + 1}
-            </text>
           </g>
           );
         })}
