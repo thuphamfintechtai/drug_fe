@@ -6,7 +6,7 @@ import { Form, Select, Button, Upload, message, Spin } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { CardUI } from "../../shared/components/ui/cardUI";
 import { useNavigate } from "react-router-dom";
-import { contractQueries } from "../apis/contract";
+import { useCreateContractRequest } from "../apis/contract";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../utils/api";
 import { signMessageWithMetaMask } from "../../utils/web3Helper";
@@ -30,7 +30,7 @@ export default function CreateContract() {
     },
   };
 
-  const { mutateAsync: createContract } = contractQueries.createContractRequest();
+  const { mutateAsync: createContract } = useCreateContractRequest();
 
   // Get list of pharmacies
   const { data: pharmaciesResponse, isLoading: loadingPharmacies } = useQuery({

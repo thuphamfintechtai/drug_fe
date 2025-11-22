@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { contractQueries } from "../apis/contract";
+import { useDistributorContracts } from "../apis/contract";
 import { useNavigate } from "react-router-dom";
 import { Tag, Button } from "antd";
 
@@ -37,7 +37,7 @@ export const useContracts = () => {
     data: contractsResponse,
     isLoading: loading,
     refetch: fetchData,
-  } = contractQueries.getContracts();
+  } = useDistributorContracts();
 
   const contracts = useMemo(() => {
     const data = contractsResponse?.data?.data;

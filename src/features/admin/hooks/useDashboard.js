@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 import { useState, useEffect, useRef } from "react";
-import { statsQueries } from "../apis/queries/statsQueries";
+import api from "../../../utils/api";
 
 export const useDashboard = () => {
   const [systemStats, setSystemStats] = useState(null);
@@ -53,13 +53,13 @@ export const useDashboard = () => {
         complianceRes,
         alertsRes,
       ] = await Promise.allSettled([
-        statsQueries.getSystemStats(),
-        statsQueries.getRegistrationStats(),
-        statsQueries.getDrugStats(),
-        statsQueries.getMonthlyTrends(6),
-        statsQueries.getBlockchainStats(),
-        statsQueries.getComplianceStats(),
-        statsQueries.getAlertsStats(),
+        api.get("/admin/statistics"),
+        api.get("/admin/registration/statistics"),
+        api.get("/admin/drugs/statistics"),
+        api.get("/statistics/trends/monthly", { params: { months: 6 } }),
+        api.get("/statistics/compliance"),
+        api.get("/statistics/compliance"),
+        api.get("/statistics/alerts"),
       ]);
 
       if (progressIntervalRef.current) {
@@ -67,17 +67,17 @@ export const useDashboard = () => {
         progressIntervalRef.current = null;
       }
 
-      if (sysRes.status === "fulfilled" && sysRes.value.success) {
-        setSystemStats(sysRes.value.data);
+      if (sysRes.status === "fulfilled" && sysRes.value?.data?.success) {
+        setSystemStats(sysRes.value.data.data);
       }
-      if (regRes.status === "fulfilled" && regRes.value.success) {
-        setRegistrationStats(regRes.value.data);
+      if (regRes.status === "fulfilled" && regRes.value?.data?.success) {
+        setRegistrationStats(regRes.value.data.data);
       }
-      if (drugRes.status === "fulfilled" && drugRes.value.success) {
-        setDrugStats(drugRes.value.data);
+      if (drugRes.status === "fulfilled" && drugRes.value?.data?.success) {
+        setDrugStats(drugRes.value.data.data);
       }
-      if (monthlyRes.status === "fulfilled" && monthlyRes.value.success) {
-        const data = monthlyRes.value.data;
+      if (monthlyRes.status === "fulfilled" && monthlyRes.value?.data?.success) {
+        const data = monthlyRes.value.data.data;
         const formattedData = (data.trends || []).map((item) => ({
           month: item.month,
           productions: item.productions || 0,
@@ -86,14 +86,14 @@ export const useDashboard = () => {
         }));
         setMonthlyTrends(formattedData);
       }
-      if (blockchainRes.status === "fulfilled" && blockchainRes.value.success) {
-        setBlockchainStats(blockchainRes.value.data);
+      if (blockchainRes.status === "fulfilled" && blockchainRes.value?.data?.success) {
+        setBlockchainStats(blockchainRes.value.data.data);
       }
-      if (complianceRes.status === "fulfilled" && complianceRes.value.success) {
-        setComplianceStats(complianceRes.value.data);
+      if (complianceRes.status === "fulfilled" && complianceRes.value?.data?.success) {
+        setComplianceStats(complianceRes.value.data.data);
       }
-      if (alertsRes.status === "fulfilled" && alertsRes.value.success) {
-        setAlertsStats(alertsRes.value.data);
+      if (alertsRes.status === "fulfilled" && alertsRes.value?.data?.success) {
+        setAlertsStats(alertsRes.value.data.data);
       }
 
       setLoadingProgress(1);

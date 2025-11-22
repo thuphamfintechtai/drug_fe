@@ -5,7 +5,7 @@ import DashboardLayout from "../../shared/components/DashboardLayout";
 import { navigationItems } from "../constants/navigationItems";
 import { Button, Spin, Descriptions, Tag, Alert } from "antd";
 import { CardUI } from "../../shared/components/ui/cardUI";
-import { contractQueries } from "../apis/contract";
+import { useDistributorContractDetail, useFinalizeContractAndMint } from "../apis/contract";
 import { signMessageWithMetaMask } from "../../utils/web3Helper";
 import { toast } from "sonner";
 import { contractStatusColor, contractStatusLabel } from "../hooks/useContracts";
@@ -26,10 +26,10 @@ export default function FinalizeContract() {
   };
 
   const { data: contractResponse, isLoading: loadingContract } =
-    contractQueries.getContractDetail(contractId);
+    useDistributorContractDetail(contractId);
 
   const { mutateAsync: finalizeContract } =
-    contractQueries.finalizeContractAndMint();
+    useFinalizeContractAndMint();
 
   const contract = contractResponse?.data?.data;
 

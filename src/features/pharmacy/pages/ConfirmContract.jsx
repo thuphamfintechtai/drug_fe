@@ -5,7 +5,7 @@ import DashboardLayout from "../../shared/components/DashboardLayout";
 import { navigationItems } from "../constants/navigationItems";
 import { Button, Spin, Descriptions, Tag, Alert } from "antd";
 import { CardUI } from "../../shared/components/ui/cardUI";
-import { pharmacyContractQueries } from "../../distributor/apis/contract";
+import { usePharmacyContractDetail, useConfirmContract } from "../../distributor/apis/contract";
 import { signMessageWithMetaMask } from "../../utils/web3Helper";
 import { toast } from "sonner";
 import { contractStatusColor, contractStatusLabel } from "../hooks/useContracts";
@@ -26,10 +26,10 @@ export default function ConfirmContract() {
   };
 
   const { data: contractResponse, isLoading: loadingContract } =
-    pharmacyContractQueries.getContractDetail(contractId);
+    usePharmacyContractDetail(contractId);
 
   const { mutateAsync: confirmContract } =
-    pharmacyContractQueries.confirmContract();
+    useConfirmContract();
 
   const contract = contractResponse?.data?.data;
 

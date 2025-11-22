@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { pharmacyContractQueries } from "../../distributor/apis/contract";
+import { usePharmacyContracts } from "../../distributor/apis/contract";
 import { useNavigate } from "react-router-dom";
 import { Tag, Button } from "antd";
 
@@ -37,7 +37,7 @@ export const usePharmacyContracts = () => {
     data: contractsResponse,
     isLoading: loading,
     refetch: fetchData,
-  } = pharmacyContractQueries.getContracts();
+  } = usePharmacyContracts();
 
   const contracts = useMemo(() => {
     const data = contractsResponse?.data?.data;
