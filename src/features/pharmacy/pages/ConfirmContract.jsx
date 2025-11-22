@@ -2,13 +2,19 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import DashboardLayout from "../../shared/components/DashboardLayout";
-import { navigationItems } from "../constants/navigationItems";
+import { navigationItems } from "../constants/constant";
 import { Button, Spin, Descriptions, Tag, Alert } from "antd";
 import { CardUI } from "../../shared/components/ui/cardUI";
-import { usePharmacyContractDetail, useConfirmContract } from "../../distributor/apis/contract";
+import {
+  usePharmacyContractDetail,
+  useConfirmContract,
+} from "../../distributor/apis/contract";
 import { signMessageWithMetaMask } from "../../utils/web3Helper";
 import { toast } from "sonner";
-import { contractStatusColor, contractStatusLabel } from "../hooks/useContracts";
+import {
+  contractStatusColor,
+  contractStatusLabel,
+} from "../hooks/useContracts";
 
 export default function ConfirmContract() {
   const { contractId } = useParams();
@@ -28,8 +34,7 @@ export default function ConfirmContract() {
   const { data: contractResponse, isLoading: loadingContract } =
     usePharmacyContractDetail(contractId);
 
-  const { mutateAsync: confirmContract } =
-    useConfirmContract();
+  const { mutateAsync: confirmContract } = useConfirmContract();
 
   const contract = contractResponse?.data?.data;
 
@@ -76,11 +81,7 @@ export default function ConfirmContract() {
   if (!contract) {
     return (
       <DashboardLayout navigationItems={navigationItems}>
-        <Alert
-          message="Không tìm thấy hợp đồng"
-          type="error"
-          showIcon
-        />
+        <Alert message="Không tìm thấy hợp đồng" type="error" showIcon />
       </DashboardLayout>
     );
   }
@@ -138,7 +139,7 @@ export default function ConfirmContract() {
           <Descriptions.Item label="Mã hợp đồng">
             <span className="font-mono text-sm">{contract._id}</span>
           </Descriptions.Item>
-          
+
           <Descriptions.Item label="Tên file">
             {contract.contractFileName || "N/A"}
           </Descriptions.Item>
@@ -159,7 +160,9 @@ export default function ConfirmContract() {
           </Descriptions.Item>
 
           <Descriptions.Item label="Nhà phân phối">
-            {contract.distributor?.businessName || contract.distributor?.name || "N/A"}
+            {contract.distributor?.businessName ||
+              contract.distributor?.name ||
+              "N/A"}
           </Descriptions.Item>
 
           <Descriptions.Item label="Trạng thái">
@@ -216,7 +219,8 @@ export default function ConfirmContract() {
               Vui lòng xem xét kỹ nội dung hợp đồng trước khi xác nhận.
             </p>
             <p className="text-sm text-cyan-800">
-              Sau khi bạn xác nhận, Distributor sẽ ký lần cuối và mint NFT hợp đồng trên blockchain.
+              Sau khi bạn xác nhận, Distributor sẽ ký lần cuối và mint NFT hợp
+              đồng trên blockchain.
             </p>
           </div>
         )}
@@ -247,4 +251,3 @@ export default function ConfirmContract() {
     </DashboardLayout>
   );
 }
-

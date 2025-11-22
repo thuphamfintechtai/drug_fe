@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { usePharmacyContracts } from "../../distributor/apis/contract";
+import { usePharmacyContracts as usePharmacyContractsQuery } from "../../distributor/apis/contract";
 import { useNavigate } from "react-router-dom";
 import { Tag, Button } from "antd";
 
@@ -32,12 +32,12 @@ export const contractStatusLabel = (status) => {
 export const usePharmacyContracts = () => {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
-  
+
   const {
     data: contractsResponse,
     isLoading: loading,
     refetch: fetchData,
-  } = usePharmacyContracts();
+  } = usePharmacyContractsQuery();
 
   const contracts = useMemo(() => {
     const data = contractsResponse?.data?.data;
@@ -48,7 +48,7 @@ export const usePharmacyContracts = () => {
     if (!searchText.trim()) {
       return contracts;
     }
-    
+
     return contracts.filter((contract) => {
       const searchLower = searchText.toLowerCase();
       return (
@@ -84,7 +84,11 @@ export const usePharmacyContracts = () => {
         key: "distributorName",
         ellipsis: true,
         render: (text, record) => {
-          return record.distributor?.businessName || record.distributor?.name || "N/A";
+          return (
+            record.distributor?.businessName ||
+            record.distributor?.name ||
+            "N/A"
+          );
         },
       },
       {
@@ -121,9 +125,7 @@ export const usePharmacyContracts = () => {
           <div className="flex gap-2">
             <Button
               size="small"
-              onClick={() =>
-                navigate(`/pharmacy/contracts/${record._id}`)
-              }
+              onClick={() => navigate(`/pharmacy/contracts/${record._id}`)}
             >
               Chi tiết
             </Button>
@@ -155,4 +157,3 @@ export const usePharmacyContracts = () => {
     fetchData,
   };
 };
-

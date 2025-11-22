@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import DashboardLayout from "../../shared/components/DashboardLayout";
-import { navigationItems } from "../constants/navigationItems";
+import { navigationItems } from "../constants/constant";
 import { usePharmacyContracts } from "../hooks/useContracts";
 import { Spin, Table } from "antd";
 import { Search } from "../../shared/components/ui/search";
@@ -103,4 +103,3 @@ export default function PharmacyContracts() {
     </DashboardLayout>
   );
 }
-

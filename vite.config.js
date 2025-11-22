@@ -29,18 +29,10 @@ export default defineConfig(({ mode }) => ({
 
   // Build optimizations
   build: {
-    // Target modern browsers for smaller bundles
-    target: "es2015",
+    // Target ES2020 to support BigInt literals and modern JavaScript features
+    target: "es2020",
 
-    // Enable minification
-    minify: "terser",
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.logs in production
-        drop_debugger: true,
-        pure_funcs: ["console.log", "console.info", "console.debug"],
-      },
-    },
+    minify: "esbuild",
 
     // Chunk splitting strategy
     rollupOptions: {
@@ -71,7 +63,7 @@ export default defineConfig(({ mode }) => ({
           ],
           "pharmacy-pages": [
             "./src/features/pharmacy/pages/Dashboard.jsx",
-            "./src/features/pharmacy/pages/Invoices.jsx",
+            "./src/features/pharmacy/pages/InvoicesFromDistributor.jsx",
             "./src/features/pharmacy/pages/Drugs.jsx",
           ],
         },
@@ -146,5 +138,6 @@ export default defineConfig(({ mode }) => ({
   esbuild: {
     logOverride: { "this-is-undefined-in-esm": "silent" },
     legalComments: "none",
+    drop: ["console", "debugger"], // Remove console.logs and debugger statements in production
   },
 }));
