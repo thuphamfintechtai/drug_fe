@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { authMutations } from "../api/mutations";
+import { useMutation } from "@tanstack/react-query";
+import api from "../../../utils/api";
 import { toast } from "sonner";
 import { removeVietnameseAccents } from "../../utils/helper";
 import { useNavigate } from "react-router-dom";
@@ -25,10 +26,33 @@ export const useRegisterBusiness = () => {
     description: "",
   });
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const registerMutation = authMutations.register();
+  
+  const registerMutation = useMutation({
+    mutationFn: async (data) => {
+      const { role = "user" } = data;
+      let endpoint = "/auth/register/user";
+
+      switch (role) {
+        case "pharma_company":
+          endpoint = "/auth/register/pharma-company";
+          break;
+        case "distributor":
+          endpoint = "/auth/register/distributor";
+          break;
+        case "pharmacy":
+          endpoint = "/auth/register/pharmacy";
+          break;
+      }
+
+      const response = await api.post(endpoint, data);
+      return response.data;
+    },
+    onError: (error) => {
+      console.error("Register error:", error);
+    },
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -53,8 +77,6 @@ export const useRegisterBusiness = () => {
       setError("Mật khẩu phải có ít nhất 6 ký tự");
       return;
     }
-
-    setLoading(true);
 
     try {
       const { confirmPassword, companyEmail, companyPhone, ...registerData } =
@@ -104,8 +126,6 @@ export const useRegisterBusiness = () => {
           err.message ||
           "Đăng ký thất bại. Vui lòng thử lại."
       );
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -113,7 +133,7 @@ export const useRegisterBusiness = () => {
     businessType,
     formData,
     error,
-    loading,
+    loading: registerMutation.isPending,
     showPassword,
     setShowPassword,
     handleChange,
