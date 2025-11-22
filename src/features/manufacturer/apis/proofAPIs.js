@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import api from "../../utils/api";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";

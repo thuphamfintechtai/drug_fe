@@ -116,7 +116,7 @@ export const useDistributionHistory = () => {
         params.status = status;
       }
 
-      const response = await api.get("/proof-of-distribution", { params });
+      const response = await api.get("/admin/distribution/history", { params });
       const data = response.data?.data || response.data;
 
       if (data.success || data.distributions) {
@@ -260,8 +260,14 @@ export const useDistributionHistory = () => {
     searchParams,
     setSearchParams,
     distributorIdInput,
+    setDistributorIdInput,
     pharmacyIdInput,
+    setPharmacyIdInput,
     drugIdInput,
+    setDrugIdInput,
     validationErrors,
+    setValidationErrors,
+    status,
+    page,
   };
 };

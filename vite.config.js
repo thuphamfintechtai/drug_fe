@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => ({
     // Target ES2020 to support BigInt literals and modern JavaScript features
     target: "es2020",
 
+    // Enable minification using esbuild (built into Vite, no extra dependency needed)
     minify: "esbuild",
 
     // Chunk splitting strategy

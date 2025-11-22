@@ -330,7 +330,7 @@ export default function AdminDrugs() {
           {/* Pagination */}
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-slate-600">
-              Hiển thị {items.length} / {pagination.total} thuốc
+              Hiển thị {items.length} / {pagination?.total || 0} thuốc
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -345,10 +345,10 @@ export default function AdminDrugs() {
                 Trước
               </button>
               <span className="text-sm text-slate-700">
-                Trang {page} / {pagination.pages || 1}
+                Trang {page} / {pagination?.pages || 1}
               </span>
               <button
-                disabled={page >= pagination.pages}
+                disabled={page >= (pagination?.pages || 1)}
                 onClick={() => updateFilter({ page: page + 1 })}
                 className={`px-3 py-2 rounded-xl ${
                   page >= pagination.pages

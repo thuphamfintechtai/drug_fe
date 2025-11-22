@@ -1,11 +1,10 @@
 import axios from "axios";
-import { getAuthToken, clearAuthCookies } from "../auth/utils/cookieUtils";
+import { getAuthToken } from "../auth/utils/cookieUtils";
 
 const getApiBaseUrl = () => {
   if (import.meta.env.DEV) {
-    return "/api";
+    return "http://localhost:9000/api";
   }
-  return "https://drug-be.vercel.app/api";
 };
 
 const api = axios.create({
@@ -13,7 +12,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 30000, 
+  timeout: 30000,
   decompress: true,
 });
 
@@ -22,6 +21,20 @@ api.interceptors.request.use(
     const token = getAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      // Debug in development
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.log("✅ Token attached:", config.url, {
+          hasToken: !!token,
+          tokenLength: token.length,
+        });
+      }
+    } else {
+      // Debug: Log when token is missing
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.warn("⚠️ No token for:", config.url);
+      }
     }
     return config;
   },
@@ -33,9 +46,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      clearAuthCookies();
-    }
     return Promise.reject(error);
   }
 );

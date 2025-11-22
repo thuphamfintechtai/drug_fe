@@ -6,7 +6,7 @@ export const useAdminListDistributions = (params = {}) => {
   return useQuery({
     queryKey: ["listDistributions", params],
     queryFn: async () => {
-      const response = await api.get("/proof-of-distribution", { params });
+      const response = await api.get("/distribution/history", { params });
       return response.data;
     },
   });
@@ -16,7 +16,7 @@ export const useAdminGetDistributionById = (id) => {
   return useQuery({
     queryKey: ["getDistributionById", id],
     queryFn: async () => {
-      const response = await api.get(`/proof-of-distribution/${id}`);
+      const response = await api.get(`/distribution/history/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -28,7 +28,7 @@ export const useAdminSearchByVerificationCode = (code) => {
     queryKey: ["searchByVerificationCode", code],
     queryFn: async () => {
       const response = await api.get(
-        `/proof-of-distribution/search/code/${encodeURIComponent(code)}`
+        `/distribution/search/code/${encodeURIComponent(code)}`
       );
       return response.data;
     },
@@ -40,7 +40,7 @@ export const useAdminGetDistributionStats = () => {
   return useQuery({
     queryKey: ["getDistributionStats"],
     queryFn: async () => {
-      const response = await api.get("/proof-of-distribution/stats/overview");
+      const response = await api.get("/distribution/stats/overview");
       return response.data;
     },
   });

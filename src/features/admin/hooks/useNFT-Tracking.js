@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../../utils/api";
 

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "../../../utils/api";
 
-const ADMIN_BT_PREFIX = "/admin/batch-tracking";
+const ADMIN_BT_PREFIX = "/admin";
 
 // Individual hooks - must be called at top level of component/hook
 // ============ QUẢN LÝ ĐƠN ĐĂNG KÝ ============
@@ -99,7 +99,7 @@ export const useAdminSystemStatistics = () => {
   return useQuery({
     queryKey: ["systemStatistics"],
     queryFn: async () => {
-      const response = await api.get("/admin/statistics");
+      const response = await api.get("/admin/system/statistics");
       return response.data;
     },
   });
@@ -123,9 +123,7 @@ export const useAdminBatchJourney = (batchNumber, params = {}) => {
     queryKey: ["batchJourney", batchNumber, params],
     queryFn: async () => {
       const response = await api.get(
-        `${ADMIN_BT_PREFIX}/batches/${encodeURIComponent(
-          batchNumber
-        )}/journey`,
+        `${ADMIN_BT_PREFIX}/batches/${encodeURIComponent(batchNumber)}/journey`,
         { params }
       );
       return response.data;

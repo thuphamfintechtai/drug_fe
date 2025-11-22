@@ -46,7 +46,7 @@ export const useAdminMonthlyTrends = (months = 6) => {
   return useQuery({
     queryKey: ["getMonthlyTrends", months],
     queryFn: async () => {
-      const response = await api.get("/statistics/trends/monthly", {
+      const response = await api.get("/statistics/monthly-trends/", {
         params: { months },
       });
       return response.data;

@@ -53,11 +53,11 @@ export const useDashboard = () => {
         complianceRes,
         alertsRes,
       ] = await Promise.allSettled([
-        api.get("/admin/statistics"),
+        api.get("admin/system/statistics"),
         api.get("/admin/registration/statistics"),
         api.get("/admin/drugs/statistics"),
-        api.get("/statistics/trends/monthly", { params: { months: 6 } }),
-        api.get("/statistics/compliance"),
+        api.get("/statistics/monthly-trends", { params: { months: 6 } }),
+        api.get("/statistics/blockchain"),
         api.get("/statistics/compliance"),
         api.get("/statistics/alerts"),
       ]);
@@ -67,16 +67,16 @@ export const useDashboard = () => {
         progressIntervalRef.current = null;
       }
 
-      if (sysRes.status === "fulfilled" && sysRes.value?.data?.success) {
+      if (sysRes.status === "fulfilled" && sysRes.value.data?.success) {
         setSystemStats(sysRes.value.data.data);
       }
-      if (regRes.status === "fulfilled" && regRes.value?.data?.success) {
+      if (regRes.status === "fulfilled" && regRes.value.data?.success) {
         setRegistrationStats(regRes.value.data.data);
       }
-      if (drugRes.status === "fulfilled" && drugRes.value?.data?.success) {
+      if (drugRes.status === "fulfilled" && drugRes.value.data?.success) {
         setDrugStats(drugRes.value.data.data);
       }
-      if (monthlyRes.status === "fulfilled" && monthlyRes.value?.data?.success) {
+      if (monthlyRes.status === "fulfilled" && monthlyRes.value.data?.success) {
         const data = monthlyRes.value.data.data;
         const formattedData = (data.trends || []).map((item) => ({
           month: item.month,
@@ -86,13 +86,19 @@ export const useDashboard = () => {
         }));
         setMonthlyTrends(formattedData);
       }
-      if (blockchainRes.status === "fulfilled" && blockchainRes.value?.data?.success) {
+      if (
+        blockchainRes.status === "fulfilled" &&
+        blockchainRes.value.data?.success
+      ) {
         setBlockchainStats(blockchainRes.value.data.data);
       }
-      if (complianceRes.status === "fulfilled" && complianceRes.value?.data?.success) {
+      if (
+        complianceRes.status === "fulfilled" &&
+        complianceRes.value.data?.success
+      ) {
         setComplianceStats(complianceRes.value.data.data);
       }
-      if (alertsRes.status === "fulfilled" && alertsRes.value?.data?.success) {
+      if (alertsRes.status === "fulfilled" && alertsRes.value.data?.success) {
         setAlertsStats(alertsRes.value.data.data);
       }
 

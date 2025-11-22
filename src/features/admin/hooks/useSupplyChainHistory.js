@@ -5,7 +5,7 @@ import { useSearchParams } from "react-router-dom";
 import api from "../../utils/api";
 
 const LIMIT = 10;
-const ADMIN_BT_PREFIX = "/admin/batch-tracking";
+const ADMIN_BT_PREFIX = "/admin";
 
 export const useSupplyChainHistory = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -95,25 +95,43 @@ export const useSupplyChainHistory = () => {
       const response = await api.get(`${ADMIN_BT_PREFIX}/batches`, {
         params,
       });
-      const data = response.data?.data || response.data;
 
-      if (!data?.success) {
-        throw new Error(data?.message || "Không thể tải danh sách lô hàng");
+      // Handle different response structures
+      const responseData = response.data;
+      let data, batches, paginationData;
+
+      if (responseData?.success) {
+        // Standard format: { success: true, data: [...], pagination: {...} }
+        data = responseData.data;
+        batches = Array.isArray(data)
+          ? data
+          : data?.batches || data?.data || [];
+        paginationData = responseData.pagination || data?.pagination;
+      } else if (Array.isArray(responseData)) {
+        // Direct array response
+        batches = responseData;
+        paginationData = null;
+      } else if (responseData?.data) {
+        // Nested data structure
+        data = responseData.data;
+        batches = Array.isArray(data) ? data : data?.batches || [];
+        paginationData = responseData.pagination || data?.pagination;
+      } else {
+        // Fallback: try to extract from responseData directly
+        batches = responseData?.batches || [];
+        paginationData = responseData?.pagination;
       }
 
-      setBatches(data.data || data.batches || []);
+      setBatches(batches);
       setPagination({
-        page: data.pagination?.page ?? page,
-        limit: data.pagination?.limit ?? LIMIT,
-        total: data.pagination?.total ?? data.data?.length ?? 0,
+        page: paginationData?.page ?? page,
+        limit: paginationData?.limit ?? LIMIT,
+        total: paginationData?.total ?? batches.length,
         totalPages:
-          data.pagination?.totalPages ??
+          paginationData?.totalPages ??
           Math.max(
             1,
-            Math.ceil(
-              (data.pagination?.total ?? data.data?.length ?? 0) /
-                (data.pagination?.limit ?? LIMIT)
-            )
+            Math.ceil((paginationData?.total ?? batches.length) / LIMIT)
           ),
       });
     } catch (err) {

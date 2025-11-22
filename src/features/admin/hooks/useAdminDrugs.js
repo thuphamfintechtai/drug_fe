@@ -73,7 +73,12 @@ export const useAdminDrugs = () => {
 
       const drugsData = drugsRes.data?.data || drugsRes.data;
       const items = Array.isArray(drugsData.drugs) ? drugsData.drugs : [];
-      const paginationData = drugsData.pagination;
+      const paginationData = drugsData.pagination || {
+        page: page,
+        limit: 10,
+        total: items.length,
+        pages: Math.ceil(items.length / 10),
+      };
 
       setItems(items);
       setPagination(paginationData);
