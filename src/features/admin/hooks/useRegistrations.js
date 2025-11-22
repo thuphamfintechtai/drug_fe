@@ -49,13 +49,22 @@ export const useRegistrations = () => {
           api.get("/admin/registration/statistics"),
         ]);
 
-        const listRes = listResponse?.data?.data || listResponse?.data;
-        const items =
-          listRes?.data?.registrations ||
-          listRes?.registrations ||
-          (Array.isArray(listRes?.data) ? listRes.data : []) ||
-          (Array.isArray(listRes) ? listRes : []) ||
-          [];
+        // Xử lý response: { success: true, data: [...] }
+        const listData = listResponse?.data;
+        let items = [];
+        
+        if (listData?.success && Array.isArray(listData?.data)) {
+          // Response có format: { success: true, data: [...] }
+          items = listData.data;
+        } else if (Array.isArray(listData?.data)) {
+          items = listData.data;
+        } else if (listData?.data?.registrations) {
+          items = listData.data.registrations;
+        } else if (listData?.registrations) {
+          items = listData.registrations;
+        } else if (Array.isArray(listData)) {
+          items = listData;
+        }
 
         setItems(items);
 
