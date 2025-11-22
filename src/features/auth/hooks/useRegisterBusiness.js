@@ -115,6 +115,7 @@ export const useRegisterBusiness = () => {
     error,
     loading,
     showPassword,
+    setShowPassword,
     handleChange,
     handleSubmit,
     setBusinessType,
