@@ -202,7 +202,7 @@ const ensureDeployed = async (provider, address) => {
 
     const errorMessage =
       `Contract không tồn tại trên network hiện tại!\n\n` +
-      `📊 Thông tin hiện tại:\n` +
+      `Thông tin hiện tại:\n` +
       `- Network: ${network.name}\n` +
       `- Chain ID: ${currentChainIdHex} (${network.chainId})\n` +
       `- Contract Address: ${address}\n\n` +
@@ -451,7 +451,7 @@ export const transferNFTToDistributor = async (
       })
     );
 
-    console.log("📊 Token balances:", balanceChecks);
+    console.log("Token balances:", balanceChecks);
 
     // Validate balances
     for (let i = 0; i < normalizedTokenIds.length; i++) {
@@ -595,7 +595,7 @@ export const transferBatchNFTToDistributor = async (
       })
     );
 
-    console.log("📊 Token balances:", balanceChecks);
+    console.log("Token balances:", balanceChecks);
 
     // Validate balances
     for (let i = 0; i < normalizedTokenIds.length; i++) {
@@ -755,8 +755,8 @@ export const transferNFTToPharmacy = async (
 
       const errorMessage =
         `❌ Không đủ số lượng NFT để chuyển giao!\n\n` +
-        `📊 Chi tiết:\n${issuesList}\n\n` +
-        `🔍 Nguyên nhân có thể:\n` +
+        `Chi tiết:\n${issuesList}\n\n` +
+        `Nguyên nhân có thể:\n` +
         `1. NFT chưa được transfer từ Manufacturer → Distributor trên blockchain\n` +
         `2. Manufacturer chưa hoàn thành bước transfer NFT (chưa gọi smart contract)\n` +
         `3. Transaction transfer từ Manufacturer bị revert hoặc thất bại\n` +

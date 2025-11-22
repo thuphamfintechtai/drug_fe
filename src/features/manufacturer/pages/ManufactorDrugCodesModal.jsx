@@ -54,7 +54,7 @@ const ManufactorDrugCodesModal = ({ isOpen, onClose }) => {
             <div className="relative">
               <input
                 type="text"
-                placeholder="🔍 Tìm kiếm theo mã ATC, tên thương mại hoặc tên gốc..."
+                placeholder="Tìm kiếm theo mã ATC, tên thương mại hoặc tên gốc..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 disabled={loading}

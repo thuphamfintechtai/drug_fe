@@ -1,4 +1,4 @@
-# 📊 TÀI LIỆU API THỐNG KÊ (STATISTICS API)
+# TÀI LIỆU API THỐNG KÊ (STATISTICS API)
 
 ## 📋 TỔNG QUAN
 
@@ -738,7 +738,7 @@ Tài liệu này liệt kê **TẤT CẢ** các API thống kê trong hệ thố
 
 ---
 
-## 📊 11. ROLE-SPECIFIC STATISTICS (Statistics riêng cho từng role)
+## 11. ROLE-SPECIFIC STATISTICS (Statistics riêng cho từng role)
 
 ### 11.1. Statistics - Manufacturer
 **Endpoint:** `GET /api/pharma-company/statistics`  
@@ -1362,7 +1362,7 @@ Tài liệu này liệt kê **TẤT CẢ** các API thống kê trong hệ thố
 
 ---
 
-## 🔍 13. ADMIN TRACKING & MONITORING (Admin Only)
+## 13. ADMIN TRACKING & MONITORING (Admin Only)
 
 ### 13.1. Supply Chain History
 **Endpoint:** `GET /api/admin/supply-chain/history`  

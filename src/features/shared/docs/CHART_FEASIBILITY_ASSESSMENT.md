@@ -1,4 +1,4 @@
-# 📊 ĐÁNH GIÁ KHẢ NĂNG LÀM CHART TỪ API THỐNG KÊ
+# ĐÁNH GIÁ KHẢ NĂNG LÀM CHART TỪ API THỐNG KÊ
 
 ## ✅ ĐÃ ĐỦ ĐỂ LÀM CÁC LOẠI CHART SAU:
 
@@ -21,7 +21,7 @@
 
 ---
 
-### 2. 📊 BAR CHART (Biểu đồ cột) - ✅ ĐỦ
+### 2. BAR CHART (Biểu đồ cột) - ✅ ĐỦ
 **Dữ liệu có sẵn:**
 - `byStatus` từ dashboard/statistics APIs
 - `byRole` từ admin statistics
@@ -61,7 +61,7 @@
 
 ---
 
-### 4. 📊 AREA CHART (Biểu đồ vùng) - ✅ ĐỦ
+### 4. AREA CHART (Biểu đồ vùng) - ✅ ĐỦ
 **Dữ liệu có sẵn:**
 - `dailyStats` từ chart APIs
 - `trends` từ monthly trends
@@ -94,7 +94,7 @@
 
 ---
 
-### 6. 📊 STACKED BAR CHART (Biểu đồ cột xếp chồng) - ✅ ĐỦ
+### 6. STACKED BAR CHART (Biểu đồ cột xếp chồng) - ✅ ĐỦ
 **Dữ liệu có sẵn:**
 - `dailyStats` với nhiều metrics
 - `byStatus` theo thời gian
@@ -129,7 +129,7 @@
 
 ---
 
-### 8. 📊 KPI CARDS / METRICS CARDS - ✅ ĐỦ
+### 8. KPI CARDS / METRICS CARDS - ✅ ĐỦ
 **Dữ liệu có sẵn:**
 - `overview` từ dashboard APIs
 - `summary` từ chart APIs
@@ -164,7 +164,7 @@
 
 ---
 
-### 10. 📊 HEATMAP CHART (Biểu đồ nhiệt) - ⚠️ CẦN XỬ LÝ
+### 10. HEATMAP CHART (Biểu đồ nhiệt) - ⚠️ CẦN XỬ LÝ
 **Dữ liệu có sẵn:**
 - `dailyStats` có thể convert thành heatmap
 - Cần xử lý frontend để group theo tuần/tháng

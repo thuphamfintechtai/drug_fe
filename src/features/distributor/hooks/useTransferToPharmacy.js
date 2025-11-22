@@ -370,7 +370,7 @@ export const useTransferToPharmacy = () => {
     setSubmitLoading(true);
 
     try {
-      console.log("🔍 Đang kiểm tra balance trên blockchain...");
+      console.log("Đang kiểm tra balance trên blockchain...");
       const balanceCheck = await checkDistributorNFTBalances(selectedTokenIds);
 
       if (!balanceCheck.canTransfer) {

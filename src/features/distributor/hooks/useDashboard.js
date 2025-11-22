@@ -42,6 +42,10 @@ export const useDashboard = () => {
   const stats = statsResponse?.data?.data || statsResponse?.data;
   const dashboardStats = dashboardResponse?.data?.overview || dashboardResponse?.data?.data;
 
+  // Debug logs
+  console.log("Dashboard Response:", dashboardResponse);
+  console.log("Processed Dashboard Stats:", dashboardStats);
+
   const chartOneWeekData = useMemo(() => {
     const data = chartOneWeekResponse?.data?.data || chartOneWeekResponse?.data;
     if (!data?.dailyStats) {
@@ -77,10 +81,12 @@ export const useDashboard = () => {
 
   const chartMonthlyData = useMemo(() => {
     const data = monthlyTrendsResponse?.data;
+    console.log("📈 Monthly Trends Response:", monthlyTrendsResponse);
+    console.log("📈 Monthly Trends Data:", data);
     if (!data?.trends) {
       return null;
     }
-    return (data.trends || []).map((item) => ({
+    const processed = (data.trends || []).map((item) => ({
       month: item.month,
       invoicesReceived: item.invoicesReceived || 0,
       invoicesReceivedQuantity: item.invoicesReceivedQuantity || 0,
@@ -89,6 +95,8 @@ export const useDashboard = () => {
       transfersToPharmacy: item.transfersToPharmacy || 0,
       transfersToPharmacyQuantity: item.transfersToPharmacyQuantity || 0,
     }));
+    console.log("📈 Processed Monthly Data:", processed);
+    return processed;
   }, [monthlyTrendsResponse]);
 
   const isLoading =

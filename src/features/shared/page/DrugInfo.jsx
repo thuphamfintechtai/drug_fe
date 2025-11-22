@@ -76,7 +76,7 @@ export default function PublicDrugInfo() {
               className="px-8 py-3 rounded-xl !text-white font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 transition"
               style={{ backgroundColor: "#4BADD1" }}
             >
-              {loading ? "⏳ Đang tìm..." : "🔍 Tìm kiếm"}
+              {loading ? "⏳ Đang tìm..." : "Tìm kiếm"}
             </button>
           </div>
 
