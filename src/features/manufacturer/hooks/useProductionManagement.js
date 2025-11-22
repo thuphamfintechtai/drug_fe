@@ -2,7 +2,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { manufacturerAPIs } from "../apis/manufacturerAPIs";
+import {
+  useManufacturerDrugs,
+  useUploadToIPFS,
+  useSaveMintedNFTs,
+} from "../apis/manufacturerAPIs";
 import { isMetaMaskInstalled, getWeb3Provider } from "../../utils/web3Helper";
 
 export const useProductionManagement = () => {
@@ -16,10 +20,10 @@ export const useProductionManagement = () => {
     data: drugsData,
     isLoading: loading,
     error: drugsError,
-  } = manufacturerAPIs.getDrugs();
+  } = useManufacturerDrugs();
 
-  const uploadToIPFSMutation = manufacturerAPIs.uploadToIPFS();
-  const saveMintedNFTsMutation = manufacturerAPIs.saveMintedNFTs();
+  const uploadToIPFSMutation = useUploadToIPFS();
+  const saveMintedNFTsMutation = useSaveMintedNFTs();
 
   const drugs = drugsData?.success
     ? drugsData.data?.drugs || drugsData.data || []

@@ -1,7 +1,7 @@
 import { useAuth } from "../../shared/context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { proofAPIs } from "../apis/proofAPIs";
+import api from "../../utils/api";
 import { toast } from "sonner";
 
 export const useProofList = () => {
@@ -17,9 +17,12 @@ export const useProofList = () => {
   const loadProofs = async (page = 1) => {
     setLoading(true);
     try {
-      const response = await proofAPIs.getMyProofs(page, 10);
-      setProofs(response.data.proofs || []);
-      setPagination(response.data.pagination || null);
+      const response = await api.get(
+        `/proof-of-production/manufacturer/my-proofs?page=${page}&limit=10`
+      );
+      const data = response.data;
+      setProofs(data.data?.proofs || data.proofs || []);
+      setPagination(data.data?.pagination || data.pagination || null);
       setCurrentPage(page);
     } catch (error) {
       console.error("Error loading proofs:", error);

@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { adminQueries } from "../apis/queries/adminQueries";
+import api from "../../utils/api";
 
 export const useDrugFrom = () => {
   const { id } = useParams();
@@ -45,8 +45,9 @@ export const useDrugFrom = () => {
         );
       }, 50);
       try {
-        const response = await adminQueries.getDrugById(id);
-        setDrugData(response.data);
+        const response = await api.get(`/admin/drugs/${id}`);
+        const data = response.data?.data || response.data;
+        setDrugData(data);
         setLoadingProgress(1);
       } catch (e) {
         setError(e?.response?.data?.message || "Không tải được chi tiết thuốc");

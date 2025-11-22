@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { manufacturerAPIs } from "../apis/manufacturerAPIs";
+import { useManufacturerProductionHistory } from "../apis/manufacturerAPIs";
 
 export const useProductionHistory = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -37,7 +37,7 @@ export const useProductionHistory = () => {
     data: productionHistoryData,
     isLoading: loading,
     error: productionHistoryError,
-  } = manufacturerAPIs.getProductionHistory(params);
+  } = useManufacturerProductionHistory(params);
 
   useEffect(() => {
     setSearchInput(search);

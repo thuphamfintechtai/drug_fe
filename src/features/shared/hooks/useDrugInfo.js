@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { drugQueries } from "../apis/queries/drugQueries";
+import api from "../../utils/api";
 
 export const useDrugInfo = () => {
   const { isAuthenticated, user } = useAuth();
@@ -39,12 +39,15 @@ export const useDrugInfo = () => {
 
     try {
       let response;
-      response = await drugQueries.searchDrugByATCCode(searchTerm.trim());
+      response = await api.get(`/public/drugs/search`, {
+        params: { atcCode: searchTerm.trim() },
+      });
 
-      console.log("Drug search response:", response);
+      const data = response.data?.data || response.data;
+      console.log("Drug search response:", data);
 
-      if (response.data.success) {
-        let drugsData = response.data.data;
+      if (data.success || data.drug || data.drugs) {
+        let drugsData = data.data || data.drug || data.drugs || data;
 
         // Xử lý nhiều trường hợp response
         if (Array.isArray(drugsData)) {
@@ -74,7 +77,7 @@ export const useDrugInfo = () => {
         setSearchParams({ search: searchTerm.trim(), type: searchType });
       } else {
         setDrugs([]);
-        setError(response.data.message || "Không tìm thấy thông tin thuốc");
+        setError(data.message || response.data?.message || "Không tìm thấy thông tin thuốc");
       }
     } catch (error) {
       console.error("Lỗi khi tìm kiếm thuốc:", error);

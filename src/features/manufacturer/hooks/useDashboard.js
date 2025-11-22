@@ -1,5 +1,11 @@
 import { useMemo } from "react";
-import { manufacturerAPIs } from "../apis/manufacturerAPIs";
+import {
+  useManufacturerStatistics,
+  useManufacturerDashboardStats,
+  useManufacturerChartOneWeek,
+  useManufacturerChartTodayYesterday,
+  useManufacturerMonthlyTrends,
+} from "../apis/manufacturerAPIs";
 
 export const useDashboard = () => {
   const {
@@ -7,35 +13,35 @@ export const useDashboard = () => {
     isLoading: statsLoading,
     error: statsError,
     refetch: refetchStats,
-  } = manufacturerAPIs.getStatistics();
+  } = useManufacturerStatistics();
 
   const {
     data: dashboardStatsData,
     isLoading: dashboardStatsLoading,
     error: dashboardStatsError,
     refetch: refetchDashboardStats,
-  } = manufacturerAPIs.getDashboardStats();
+  } = useManufacturerDashboardStats();
 
   const {
     data: oneWeekData,
     isLoading: oneWeekLoading,
     error: oneWeekError,
     refetch: refetchOneWeek,
-  } = manufacturerAPIs.getChartOneWeek();
+  } = useManufacturerChartOneWeek();
 
   const {
     data: todayYesterdayData,
     isLoading: todayYesterdayLoading,
     error: todayYesterdayError,
     refetch: refetchTodayYesterday,
-  } = manufacturerAPIs.getChartTodayYesterday();
+  } = useManufacturerChartTodayYesterday();
 
   const {
     data: monthlyData,
     isLoading: monthlyLoading,
     error: monthlyError,
     refetch: refetchMonthly,
-  } = manufacturerAPIs.getMonthlyTrends(6);
+  } = useManufacturerMonthlyTrends(6);
 
   const loading =
     statsLoading ||

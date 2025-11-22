@@ -1,4 +1,7 @@
-import { distributorQueries } from "../apis/distributor";
+import {
+  useDistributorDeliveriesToPharmacy,
+  useUpdatePharmacyDeliveryStatus,
+} from "../apis/distributor";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -28,9 +31,8 @@ export const useDeliveriesToPharmacy = () => {
     data: deliveriesData,
     isLoading: loading,
     refetch: fetchData,
-  } = distributorQueries.getDeliveriesToPharmacy();
-  const { mutateAsync: updatePharmacyDeliveryStatusMutation } =
-    distributorQueries.updatePharmacyDeliveryStatus();
+  } = useDistributorDeliveriesToPharmacy();
+  const updatePharmacyDeliveryStatusMutation = useUpdatePharmacyDeliveryStatus();
 
   const data = Array.isArray(deliveriesData?.data)
     ? deliveriesData.data
@@ -42,7 +44,7 @@ export const useDeliveriesToPharmacy = () => {
 
   const updateStatus = async (id) => {
     try {
-      await updatePharmacyDeliveryStatusMutation({
+      await updatePharmacyDeliveryStatusMutation.mutateAsync({
         id,
         data: { status: "confirmed" },
       });

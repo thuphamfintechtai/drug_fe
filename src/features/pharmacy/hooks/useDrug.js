@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 import { useState, useEffect, useRef } from "react";
-import { pharmacyQueries } from "../apis/pharmacyQueries";
+import api from "../../utils/api";
 
 export const useDrug = () => {
   const [drugs, setDrugs] = useState([]);
@@ -73,23 +73,28 @@ export const useDrug = () => {
     await new Promise((r) => setTimeout(r, 100));
   };
 
-  const { refetch: refetchDrugs } = pharmacyQueries.getDrugs(
-    {},
-    {
-      enabled: false,
-      keepPreviousData: true,
-    }
-  );
+  // Note: getDrugs is not defined in pharmacyQueries, use API directly
+  // const { refetch: refetchDrugs } = usePharmacyDrugs({}, {
+  //   enabled: false,
+  //   keepPreviousData: true,
+  // });
 
   const loadDrugs = async () => {
     try {
       setLoading(true);
       startProgress();
-      const { data } = await refetchDrugs();
+      const response = await api.get("/drugs");
+      const data = response.data?.data || response.data;
       if (data?.success && data?.data) {
         const list = Array.isArray(data.data.drugs) ? data.data.drugs : [];
         setDrugs(list);
         setAllDrugs(list);
+      } else if (Array.isArray(data?.drugs)) {
+        setDrugs(data.drugs);
+        setAllDrugs(data.drugs);
+      } else if (Array.isArray(data?.data)) {
+        setDrugs(data.data);
+        setAllDrugs(data.data);
       } else {
         setDrugs([]);
         setAllDrugs([]);

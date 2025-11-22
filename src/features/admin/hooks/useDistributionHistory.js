@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { isValidObjectId } from "../../auth/utils/isValidObjectId";
-import { proofOfDistributionQueries } from "../apis/queries/proofOfDistributionQueries";
+import api from "../../utils/api";
 
 export const useDistributionHistory = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -116,12 +116,11 @@ export const useDistributionHistory = () => {
         params.status = status;
       }
 
-      const response = await proofOfDistributionQueries.listDistributions(
-        params
-      );
+      const response = await api.get("/proof-of-distribution", { params });
+      const data = response.data?.data || response.data;
 
-      if (response.success) {
-        setItems(response.data.distributions || []);
+      if (data.success || data.distributions) {
+        setItems(data.data?.distributions || data.distributions || []);
         setPagination(response.data.pagination);
       }
     } catch (e) {

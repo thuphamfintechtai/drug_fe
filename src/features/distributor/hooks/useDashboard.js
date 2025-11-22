@@ -1,5 +1,11 @@
 import { useMemo, useState } from "react";
-import { distributorQueries } from "../apis/distributor";
+import {
+  useDistributorStatistics,
+  useDistributorDashboardStats,
+  useDistributorChartOneWeek,
+  useDistributorChartTodayYesterday,
+  useDistributorMonthlyTrends,
+} from "../apis/distributor";
 
 export const useDashboard = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -9,35 +15,35 @@ export const useDashboard = () => {
     isLoading: statsLoading,
     isFetching: statsFetching,
     refetch: refetchStats,
-  } = distributorQueries.getStatistics();
+  } = useDistributorStatistics();
 
   const {
     data: dashboardResponse,
     isLoading: dashboardLoading,
     isFetching: dashboardFetching,
     refetch: refetchDashboard,
-  } = distributorQueries.getDashboardStats();
+  } = useDistributorDashboardStats();
 
   const {
     data: chartOneWeekResponse,
     isLoading: chartOneWeekLoading,
     isFetching: chartOneWeekFetching,
     refetch: refetchChartOneWeek,
-  } = distributorQueries.getChartOneWeek();
+  } = useDistributorChartOneWeek();
 
   const {
     data: chartTodayYesterdayResponse,
     isLoading: chartTodayYesterdayLoading,
     isFetching: chartTodayYesterdayFetching,
     refetch: refetchChartTodayYesterday,
-  } = distributorQueries.getChartTodayYesterday();
+  } = useDistributorChartTodayYesterday();
 
   const {
     data: monthlyTrendsResponse,
     isLoading: monthlyTrendsLoading,
     isFetching: monthlyTrendsFetching,
     refetch: refetchMonthlyTrends,
-  } = distributorQueries.getMonthlyTrends(6);
+  } = useDistributorMonthlyTrends(6);
 
   const stats = statsResponse?.data?.data;
   const dashboardStats = dashboardResponse?.data?.data;

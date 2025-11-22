@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { distributorQueries } from "../apis/distributor";
+import { useUpdatePharmacyDeliveryStatus } from "../apis/distributor";
 import { Form } from "antd";
 import { toast } from "sonner";
+import api from "../../utils/api";
 
 export const useDeliveryDetail = () => {
   const { id } = useParams();
@@ -11,10 +12,7 @@ export const useDeliveryDetail = () => {
   const [updating, setUpdating] = useState(false);
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const { mutateAsync: fetchProofOfPharmacy } =
-    distributorQueries.getProofOfPharmacyById();
-  const { mutateAsync: updatePharmacyDeliveryStatusMutation } =
-    distributorQueries.updatePharmacyDeliveryStatus();
+  const updatePharmacyDeliveryStatusMutation = useUpdatePharmacyDeliveryStatus();
 
   useEffect(() => {
     load();
@@ -23,8 +21,9 @@ export const useDeliveryDetail = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetchProofOfPharmacy(id);
-      const detail = res?.data?.data ? res.data.data : res?.data || null;
+      const response = await api.get(`/proof-of-pharmacy/pharmacy/${id}`);
+      const res = response.data?.data || response.data;
+      const detail = res?.data?.data ? res.data.data : res?.data || res || null;
       if (detail) {
         setData(detail);
         form.setFieldsValue({
@@ -51,7 +50,10 @@ export const useDeliveryDetail = () => {
     }
     setUpdating(true);
     try {
-      await updatePharmacyDeliveryStatusMutation({ id, data: values });
+      await updatePharmacyDeliveryStatusMutation.mutateAsync({
+        id,
+        data: values,
+      });
       toast.success("Cập nhật thành công!");
       load();
     } catch (error) {

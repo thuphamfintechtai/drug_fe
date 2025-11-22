@@ -1,6 +1,5 @@
-/* eslint-disable no-undef */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { nftTrackingQueries } from "../../shared/apis/queries/nftTrackingQueries";
+import api from "../../../utils/api";
 
 export default function useNFTTracking() {
   const [nftId, setNftId] = useState("");
@@ -95,11 +94,11 @@ export default function useNFTTracking() {
     setError("");
     setData(null);
     try {
-      const response = await nftTrackingQueries.getTrackingByNftId(
-        nftId.trim()
+      const response = await api.get(
+        `/NFTTracking/NFTTracking/${encodeURIComponent(nftId.trim())}`
       );
-      const data = response.data;
-      setData(data?.data || data || null);
+      const data = response.data?.data || response.data;
+      setData(data || null);
     } catch (e2) {
       setError(e2?.response?.data?.message || "Không thể tra cứu NFT");
     } finally {

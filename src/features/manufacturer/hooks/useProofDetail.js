@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { proofAPIs } from "../apis/proofAPIs";
+import api from "../../utils/api";
 import { toast } from "sonner";
 
 export const useProofDetail = () => {
@@ -19,11 +19,12 @@ export const useProofDetail = () => {
   const loadProofDetail = async () => {
     try {
       setLoading(true);
-      const response = await proofAPIs.getProofById(id);
+      const response = await api.get(`/proof-of-production/${id}`);
+      const data = response.data;
 
-      if (response.success) {
-        setProof(response.data.proof);
-        setNftInfo(response.data.nftInfo);
+      if (data.success) {
+        setProof(data.data?.proof || data.proof);
+        setNftInfo(data.data?.nftInfo || data.nftInfo);
       }
     } catch (error) {
       console.error("Error loading proof detail:", error);

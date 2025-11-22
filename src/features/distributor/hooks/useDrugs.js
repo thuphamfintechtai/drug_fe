@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 import { useState, useEffect, useRef } from "react";
-import { distributorQueries } from "../apis/distributor";
+import { useDistributorDrugs } from "../apis/distributor";
 import { useQueryClient } from "@tanstack/react-query";
 
 const DRUGS_CACHE_KEY = ["distributor", "drugs", "list"];
@@ -12,8 +12,7 @@ export const useDrugs = () => {
   const [searchAtc, setSearchAtc] = useState("");
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressIntervalRef = useRef(null);
-  const { data: drugsResponse, isLoading: queryLoading } =
-    distributorQueries.getDrugs();
+  const { data: drugsResponse, isLoading: queryLoading } = useDistributorDrugs();
 
   useEffect(() => {
     const cached = queryClient.getQueryData(DRUGS_CACHE_KEY);

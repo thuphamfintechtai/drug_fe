@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { distributorQueries } from "../apis/distributor";
+import {
+  useDistributorDistributionDetail,
+  useConfirmDistribution,
+  useUpdateDistributionStatus,
+} from "../apis/distributor";
 import { Form } from "antd";
 import { toast } from "sonner";
+import api from "../../utils/api";
 
 export const useDistributionDetail = () => {
   const { id } = useParams();
@@ -11,18 +16,15 @@ export const useDistributionDetail = () => {
   const [updating, setUpdating] = useState(false);
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const { mutateAsync: fetchDistributionDetail } =
-    distributorQueries.getDistributionDetail();
-  const { mutateAsync: confirmDistributionMutation } =
-    distributorQueries.confirmDistribution();
-  const { mutateAsync: updateDistributionStatusMutation } =
-    distributorQueries.updateDistributionStatus();
+  const confirmDistributionMutation = useConfirmDistribution();
+  const updateDistributionStatusMutation = useUpdateDistributionStatus();
 
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetchDistributionDetail(id);
-      const detail = res?.data?.data ? res.data.data : res?.data || null;
+      const response = await api.get(`/distributor/distributions/${id}`);
+      const res = response.data?.data || response.data;
+      const detail = res?.data?.data ? res.data.data : res?.data || res || null;
       setData(detail);
       if (detail) {
         form.setFieldsValue({
@@ -45,7 +47,7 @@ export const useDistributionDetail = () => {
 
   const onConfirm = async () => {
     try {
-      await confirmDistributionMutation(id);
+      await confirmDistributionMutation.mutateAsync(id);
       toast.success("Đã xác nhận nhận hàng!");
       load();
     } catch {
@@ -60,7 +62,7 @@ export const useDistributionDetail = () => {
     }
     setUpdating(true);
     try {
-      await updateDistributionStatusMutation({ id, data: values });
+      await updateDistributionStatusMutation.mutateAsync({ id, data: values });
       toast.success("Cập nhật trạng thái thành công!");
       load();
     } catch (error) {

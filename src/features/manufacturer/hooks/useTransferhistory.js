@@ -2,7 +2,10 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../shared/context/AuthContext";
-import { manufacturerAPIs } from "../apis/manufacturerAPIs";
+import {
+  useManufacturerTransferHistory,
+  useSaveTransferTransaction,
+} from "../apis/manufacturerAPIs";
 import { toast } from "sonner";
 import {
   transferNFTToDistributor,
@@ -47,10 +50,9 @@ export const useTransferHistory = () => {
     isLoading: loading,
     error: transferHistoryError,
     refetch: refetchTransferHistory,
-  } = manufacturerAPIs.getTransferHistory(params);
+  } = useManufacturerTransferHistory(params);
 
-  const saveTransferTransactionMutation =
-    manufacturerAPIs.saveTransferTransaction();
+  const saveTransferTransactionMutation = useSaveTransferTransaction();
 
   // FIX: Sync searchInput with URL search param on mount/change
   useEffect(() => {

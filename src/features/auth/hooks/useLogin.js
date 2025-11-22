@@ -8,7 +8,7 @@ import {
   compareWalletAddresses,
   formatWalletAddress,
 } from "../../utils/walletUtils";
-import { authMutations } from "../api/mutations";
+import { useLoginMutation } from "../api/mutations";
 
 export const useLogin = () => {
   const [email, setEmail] = useState("");
@@ -18,7 +18,7 @@ export const useLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { account, isConnected, connect } = useMetaMask();
-  const loginMutation = authMutations.login();
+  const loginMutation = useLoginMutation();
 
   const handleEmailChange = (e) => {
     const value = removeVietnameseAccents(e.target.value);

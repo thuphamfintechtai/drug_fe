@@ -1,30 +1,31 @@
 import { useEffect, useState } from "react";
-import { distributorQueries } from "../apis/distributor";
+import { useDistributorDistributionStats, useDistributorMyInvoices } from "../apis/distributor";
 import { toast } from "sonner";
+import api from "../../utils/api";
 
 export const useStats = () => {
   const [distributionStats, setDistributionStats] = useState({});
   const [invoiceStats, setInvoiceStats] = useState({});
   const [loading, setLoading] = useState(true);
-  const { mutateAsync: fetchDistributionStats } =
-    distributorQueries.getDistributionStats();
-  const { mutateAsync: fetchInvoiceStats } =
-    distributorQueries.getInvoiceStats();
+  
+  const { data: distributionStatsData, isLoading: distLoading } = useDistributorDistributionStats();
+  const { data: invoiceStatsData, isLoading: invLoading } = useDistributorMyInvoices({ limit: 1 });
 
   useEffect(() => {
-    loadStats();
-  }, []);
+    if (!distLoading && !invLoading) {
+      loadStats();
+    }
+  }, [distLoading, invLoading, distributionStatsData, invoiceStatsData]);
 
   const loadStats = async () => {
     setLoading(true);
     try {
-      const [distRes, invRes] = await Promise.all([
-        fetchDistributionStats(),
-        fetchInvoiceStats(),
-      ]);
-
-      const distData = distRes?.data?.data || distRes?.data || {};
-      const invData = invRes?.data?.data || invRes?.data || {};
+      // Get distribution stats from query or API directly
+      const distData = distributionStatsData?.data || {};
+      
+      // Get invoice stats from API directly
+      const invoiceResponse = await api.get("/distributor/invoices", { params: { limit: 1 } });
+      const invData = invoiceResponse?.data?.data || {};
 
       setDistributionStats({
         totalDistributions: distData.totalDistributions || distData.total || 0,

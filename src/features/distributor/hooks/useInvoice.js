@@ -1,11 +1,11 @@
-import { distributorQueries } from "../apis/distributor";
+import { useDistributorMyInvoices } from "../apis/distributor";
 
 export const useInvoices = () => {
   const {
     data: invoicesData,
     isLoading: loading,
     refetch: fetchData,
-  } = distributorQueries.getMyInvoices();
+  } = useDistributorMyInvoices();
 
   const data = Array.isArray(invoicesData?.data)
     ? invoicesData.data

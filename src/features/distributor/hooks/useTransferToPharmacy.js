@@ -2,7 +2,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { distributorQueries } from "../apis/distributor";
+import {
+  useDistributorDistributionHistory,
+  useDistributorPharmacies,
+  useTransferToPharmacy as useTransferToPharmacyMutation,
+  useSaveTransferTransaction,
+} from "../apis/distributor";
 import api from "../../utils/api";
 
 export const useTransferToPharmacy = () => {
@@ -28,13 +33,12 @@ export const useTransferToPharmacy = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
 
   const { data: distributionHistoryData, refetch: refetchDistributionHistory } =
-    distributorQueries.getDistributionHistory({ status: "confirmed" });
+    useDistributorDistributionHistory({ status: "confirmed" });
   const { data: pharmaciesData, refetch: refetchPharmacies } =
-    distributorQueries.getPharmacies();
+    useDistributorPharmacies();
   const { mutateAsync: transferToPharmacyMutation } =
-    distributorQueries.transferToPharmacy();
-  const { mutateAsync: saveTransferTransaction } =
-    distributorQueries.saveTransferTransaction();
+    useTransferToPharmacyMutation();
+  const { mutateAsync: saveTransferTransaction } = useSaveTransferTransaction();
 
   useEffect(() => {
     if (distributionHistoryData?.data) {

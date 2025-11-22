@@ -1,12 +1,12 @@
 /* eslint-disable no-undef */
 import { useEffect, useState } from "react";
-import { proofAPIs } from "../apis/proofAPIs";
+import { useMyProofs } from "../apis/proofAPIs";
 
 export const useManufactorProofList = ({ manufactorId }) => {
   const [proofs, setProofs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { data } = proofAPIs.getMyProofs();
+  const { data } = useMyProofs();
 
   const loadProofs = async () => {
     setLoading(true);

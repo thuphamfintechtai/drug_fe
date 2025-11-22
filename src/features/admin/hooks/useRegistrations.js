@@ -1,8 +1,8 @@
 /* eslint-disable no-undef */
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { adminQueries } from "../apis/queries/adminQueries";
-import { adminMutations } from "../apis/mutations/adminMutation";
+import { useAdminRetryRegistrationBlockchain } from "../apis/mutations/adminMutation";
+import api from "../../utils/api";
 import { toast } from "sonner";
 
 export const useRegistrations = () => {
@@ -15,6 +15,7 @@ export const useRegistrations = () => {
   const [retryingIds, setRetryingIds] = useState(new Set());
   const progressIntervalRef = useRef(null);
   const loadFunctionRef = useRef(null);
+  const retryMutation = useAdminRetryRegistrationBlockchain();
 
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = 10;
@@ -37,16 +38,18 @@ export const useRegistrations = () => {
       }, 50);
       try {
         const [listResponse, statsResponse] = await Promise.all([
-          adminQueries.getPendingRegistrations({
-            page,
-            limit,
-            role: role || undefined,
-            status,
+          api.get("/registration/requests", {
+            params: {
+              page,
+              limit,
+              role: role || undefined,
+              status,
+            },
           }),
-          adminQueries.getRegistrationStatistics(),
+          api.get("/admin/registration/statistics"),
         ]);
 
-        const listRes = listResponse?.data;
+        const listRes = listResponse?.data?.data || listResponse?.data;
         const items =
           listRes?.data?.registrations ||
           listRes?.registrations ||
@@ -56,7 +59,7 @@ export const useRegistrations = () => {
 
         setItems(items);
 
-        const statsRes = statsResponse?.data;
+        const statsRes = statsResponse?.data?.data || statsResponse?.data;
         let statsData = null;
         if (statsRes?.success && statsRes?.data) {
           statsData = statsRes.data;
@@ -159,7 +162,7 @@ export const useRegistrations = () => {
       setRetryingIds((prev) => new Set(prev).add(requestId));
       toast.loading("Đang retry blockchain...", { id: `retry-${requestId}` });
 
-      await adminMutations.retryRegistrationBlockchain(requestId);
+      await retryMutation.mutateAsync(requestId);
 
       toast.success("Retry blockchain thành công!", {
         id: `retry-${requestId}`,

@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { adminQueries } from "../apis/queries/adminQueries";
-import { adminMutations } from "../apis/mutations/adminMutation";
+import {
+  useAdminApproveRegistration,
+  useAdminRejectRegistration,
+  useAdminRetryRegistrationBlockchain,
+} from "../apis/mutations/adminMutation";
+import api from "../../utils/api";
 
 export const useRegistrationDetail = () => {
   const { id } = useParams();
@@ -11,14 +15,19 @@ export const useRegistrationDetail = () => {
   const [error, setError] = useState("");
   const [rejectReason, setRejectReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  
+  const approveMutation = useAdminApproveRegistration();
+  const rejectMutation = useAdminRejectRegistration();
+  const retryMutation = useAdminRetryRegistrationBlockchain();
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       setError("");
       try {
-        const { data } = await adminQueries.getRegistrationById(id);
-        setItem(data?.data);
+        const response = await api.get(`/registration/requests/${id}`);
+        const data = response.data?.data || response.data;
+        setItem(data?.data || data);
       } catch (e) {
         setError(e?.response?.data?.message || "Không thể tải dữ liệu");
       } finally {
@@ -32,7 +41,7 @@ export const useRegistrationDetail = () => {
     setActionLoading(true);
     setError("");
     try {
-      await adminMutations.approveRegistration(id);
+      await approveMutation.mutateAsync(id);
       navigate("/admin/registrations");
     } catch (e) {
       setError(e?.response?.data?.message || "Không thể duyệt đơn");
@@ -49,7 +58,7 @@ export const useRegistrationDetail = () => {
     setActionLoading(true);
     setError("");
     try {
-      await adminMutations.rejectRegistration({
+      await rejectMutation.mutateAsync({
         id,
         rejectionReason: rejectReason,
       });
@@ -65,9 +74,10 @@ export const useRegistrationDetail = () => {
     setActionLoading(true);
     setError("");
     try {
-      await adminMutations.retryRegistrationBlockchain(id);
-      const { data } = await adminQueries.getRegistrationById(id);
-      setItem(data?.data);
+      await retryMutation.mutateAsync(id);
+      const response = await api.get(`/registration/requests/${id}`);
+      const data = response.data?.data || response.data;
+      setItem(data?.data || data);
     } catch (e) {
       setError(e?.response?.data?.message || "Retry blockchain thất bại");
     } finally {

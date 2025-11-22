@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { manufacturerAPIs } from "../apis/manufacturerAPIs";
+import api from "../../utils/api";
 
 export const useIPFStatus = () => {
   const [items, setItems] = useState([]);
@@ -38,7 +38,8 @@ export const useIPFStatus = () => {
         );
       }, 50);
 
-      const res = await manufacturerAPIs.getManufactureIPFSStatus();
+      const response = await api.get("/production/ipfs-status");
+      const res = response.data;
 
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);

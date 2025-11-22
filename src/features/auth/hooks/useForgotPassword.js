@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { authMutations } from "../api/mutations";
+import { useForgotPasswordMutation } from "../api/mutations";
 import { toast } from "sonner";
 import { removeVietnameseAccents } from "../../utils/helper";
 
@@ -14,7 +14,7 @@ export const useForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-  const forgotPasswordMutation = authMutations.forgotPassword();
+  const forgotPasswordMutation = useForgotPasswordMutation();
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (

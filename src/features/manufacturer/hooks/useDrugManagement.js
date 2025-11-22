@@ -1,6 +1,11 @@
 /* eslint-disable no-undef */
 import { useState, useEffect, useRef } from "react";
-import { manufacturerAPIs } from "../apis/manufacturerAPIs";
+import {
+  useManufacturerDrugs,
+  useManufacturerAddDrug,
+  useManufacturerUpdateDrug,
+  useManufacturerDeleteDrug,
+} from "../apis/manufacturerAPIs";
 import { toast } from "sonner";
 import useAuthStore from "../../auth/store/useAuthStore";
 
@@ -27,11 +32,11 @@ export const useDrugManagement = () => {
     data: drugsData,
     isLoading: loading,
     error: drugsError,
-  } = manufacturerAPIs.getDrugs();
+  } = useManufacturerDrugs();
 
-  const addDrugMutation = manufacturerAPIs.addDrug();
-  const updateDrugMutation = manufacturerAPIs.updateDrug();
-  const deleteDrugMutation = manufacturerAPIs.deleteDrug();
+  const addDrugMutation = useManufacturerAddDrug();
+  const updateDrugMutation = useManufacturerUpdateDrug();
+  const deleteDrugMutation = useManufacturerDeleteDrug();
 
   const [formData, setFormData] = useState({
     tradeName: "",

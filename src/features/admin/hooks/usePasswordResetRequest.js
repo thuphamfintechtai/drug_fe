@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { adminQueries } from "../apis/queries/adminQueries";
+import api from "../../utils/api";
 
 export default function usePasswordResetRequest() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -52,9 +52,11 @@ export default function usePasswordResetRequest() {
     try {
       const params = { page, limit: 10, status };
 
-      const response = await adminQueries.getPasswordResetRequests(params);
-
-      const items = response.data.data.requests || [];
+      const response = await api.get("/auth/password-reset-requests", {
+        params,
+      });
+      const data = response.data?.data || response.data;
+      const items = data.requests || data.data?.requests || [];
       setItems(items);
       setPagination(pagination);
     } catch (e) {

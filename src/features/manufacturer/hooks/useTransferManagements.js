@@ -1,7 +1,13 @@
 /* eslint-disable no-undef */
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../shared/context/AuthContext";
-import { manufacturerAPIs } from "../apis/manufacturerAPIs";
+import {
+  useManufacturerProductionHistory,
+  useManufacturerDistributors,
+  useCreateTransferToDistributor,
+  useSaveTransferTransaction,
+} from "../apis/manufacturerAPIs";
+import api from "../../utils/api";
 import { toast } from "sonner";
 import {
   transferNFTToDistributor,
@@ -20,17 +26,16 @@ export const useTransferManagements = () => {
     isLoading: productionsLoading,
     error: productionsError,
     refetch: refetchProductions,
-  } = manufacturerAPIs.getProductionHistory({ status: "minted" });
+  } = useManufacturerProductionHistory({ status: "minted" });
 
   const {
     data: distributorsData,
     isLoading: distributorsLoading,
     error: distributorsError,
-  } = manufacturerAPIs.getDistributors({ page: 1, limit: 100 });
+  } = useManufacturerDistributors({ page: 1, limit: 100 });
 
-  const createTransferMutation = manufacturerAPIs.createTransferToDistributor();
-  const saveTransferTransactionMutation =
-    manufacturerAPIs.saveTransferTransaction();
+  const createTransferMutation = useCreateTransferToDistributor();
+  const saveTransferTransactionMutation = useSaveTransferTransaction();
 
   const loading = productionsLoading || distributorsLoading;
 
@@ -90,9 +95,10 @@ export const useTransferManagements = () => {
     setLoadingTokens(true); // Use separate loading state
 
     try {
-      const res = await manufacturerAPIs.getAvailableTokensForProduction(
-        production._id
+      const response = await api.get(
+        `/production/${production._id}/available-tokens`
       );
+      const res = response.data;
       const ids =
         res?.data?.data?.availableTokenIds ||
         res?.data?.availableTokenIds ||

@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
-import { distributorQueries } from "../apis/distributor";
+import { useState, useEffect, useRef } from "react";
+import {
+  useDistributorInvoicesFromManufacturer,
+  useConfirmReceipt,
+} from "../apis/distributor";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -56,9 +59,8 @@ export const useInvoicesFromManufacturer = () => {
     isLoading: queryLoading,
     isFetching,
     refetch,
-  } = distributorQueries.getInvoicesFromManufacturer(params);
-  const { mutateAsync: confirmReceiptMutation } =
-    distributorQueries.confirmReceipt();
+  } = useDistributorInvoicesFromManufacturer(params);
+  const confirmReceiptMutation = useConfirmReceipt();
 
   useEffect(() => {
     if (prevSearchRef.current !== search) {
@@ -322,7 +324,7 @@ export const useInvoicesFromManufacturer = () => {
         };
       }
 
-      const response = await confirmReceiptMutation(payload);
+      const response = await confirmReceiptMutation.mutateAsync(payload);
 
       if (response.data.success) {
         // FIX: Reset form after successful submission

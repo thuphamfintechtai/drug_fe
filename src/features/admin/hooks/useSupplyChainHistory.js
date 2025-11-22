@@ -2,11 +2,10 @@
 /* eslint-env browser */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { adminQueries } from "../apis/queries/adminQueries";
+import api from "../../utils/api";
 
 const LIMIT = 10;
-
-const { getBatchList, getBatchJourney } = adminQueries;
+const ADMIN_BT_PREFIX = "/admin/batch-tracking";
 
 export const useSupplyChainHistory = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -93,13 +92,16 @@ export const useSupplyChainHistory = () => {
         params.toDate = toDate;
       }
 
-      const { data } = await getBatchList(params);
+      const response = await api.get(`${ADMIN_BT_PREFIX}/batches`, {
+        params,
+      });
+      const data = response.data?.data || response.data;
 
       if (!data?.success) {
         throw new Error(data?.message || "Không thể tải danh sách lô hàng");
       }
 
-      setBatches(data.data || []);
+      setBatches(data.data || data.batches || []);
       setPagination({
         page: data.pagination?.page ?? page,
         limit: data.pagination?.limit ?? LIMIT,
@@ -143,7 +145,12 @@ export const useSupplyChainHistory = () => {
 
       setJourneyLoading((prev) => ({ ...prev, [batch.batchNumber]: true }));
       try {
-        const { data } = await getBatchJourney(batch.batchNumber);
+        const response = await api.get(
+          `${ADMIN_BT_PREFIX}/batches/${encodeURIComponent(
+            batch.batchNumber
+          )}/journey`
+        );
+        const data = response.data?.data || response.data;
         if (!data?.success) {
           throw new Error(
             data?.message || "Không thể lấy thông tin hành trình"

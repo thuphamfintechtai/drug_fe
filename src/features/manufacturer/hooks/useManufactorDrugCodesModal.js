@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { drugAPIs } from "../apis/drugAPIs";
+import api from "../../utils/api";
 
 export const useManufactorDrugCodesModal = ({ isOpen, onClose }) => {
   const [codes, setCodes] = useState([]);
@@ -22,11 +22,12 @@ export const useManufactorDrugCodesModal = ({ isOpen, onClose }) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await drugAPIs.getDrugCodes();
-      if (response.success) {
-        setCodes(response.data || []);
+      const response = await api.get("/drugs/codes/list");
+      const data = response.data;
+      if (data.success) {
+        setCodes(data.data || []);
       } else {
-        setError(response.message || "Không thể tải danh sách mã ATC");
+        setError(data.message || "Không thể tải danh sách mã ATC");
       }
     } catch (err) {
       setError(err.message || "Lỗi kết nối server");

@@ -2,12 +2,19 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../shared/context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { manufacturerAPIs } from "../apis/manufacturerAPIs";
+import {
+  useGetDrugsByManufacturerId,
+} from "../apis/drugAPIs";
+import {
+  useGenerateNFTMetadata,
+  useCreateProofOfProduction,
+} from "../apis/proofAPIs";
 import {
   mintNFT,
   isMetaMaskInstalled,
   connectWallet,
 } from "../../utils/web3Helper";
+import { uploadMetadataToIPFS } from "../../utils/ipfsHelper";
 
 export const useCreateProofOfProduction = () => {
   const { user } = useAuth();
@@ -37,10 +44,10 @@ export const useCreateProofOfProduction = () => {
     data: drugsData,
     isLoading: drugsLoading,
     error: drugsError,
-  } = manufacturerAPIs.getDrugsByManufacturerId(user?._id);
+  } = useGetDrugsByManufacturerId(user?._id);
 
-  const generateMetadataMutation = manufacturerAPIs.generateNFTMetadata();
-  const createProofMutation = manufacturerAPIs.createProofOfProduction();
+  const generateMetadataMutation = useGenerateNFTMetadata();
+  const createProofMutation = useCreateProofOfProduction();
 
   const drugs = drugsData?.data?.drugs || drugsData?.data || [];
 
@@ -175,7 +182,7 @@ export const useCreateProofOfProduction = () => {
 
       // Upload metadata to IPFS
       console.log("📤 Uploading metadata to IPFS...");
-      const tokenURI = await manufacturerAPIs.uploadMetadataToIPFS(
+      const tokenURI = await uploadMetadataToIPFS(
         nftMetadata.metadata
       );
       console.log(" Token URI:", tokenURI);

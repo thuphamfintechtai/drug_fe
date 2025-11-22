@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { adminQueries } from "../apis/queries/adminQueries";
+import api from "../../utils/api";
 
 export const useAdminDrugs = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -67,18 +67,18 @@ export const useAdminDrugs = () => {
       }
 
       const [drugsRes, statsRes] = await Promise.all([
-        adminQueries.getAllDrugs(params),
-        adminQueries.getDrugStatistics(),
+        api.get("/admin/drugs", { params }),
+        api.get("/admin/drugs/statistics"),
       ]);
 
-      const drugsData = drugsRes.data;
+      const drugsData = drugsRes.data?.data || drugsRes.data;
       const items = Array.isArray(drugsData.drugs) ? drugsData.drugs : [];
       const paginationData = drugsData.pagination;
 
       setItems(items);
       setPagination(paginationData);
 
-      const statsData = statsRes.data;
+      const statsData = statsRes.data?.data || statsRes.data;
       setStats(statsData);
     } catch (e) {
       setError(e?.response?.data?.message || "Không tải được dữ liệu");

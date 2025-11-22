@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { pharmacyQueries } from "../apis/pharmacyQueries";
+import { usePharmacyDistributionHistory } from "../apis/pharmacyQueries";
 
 export const useDistributionHistory = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -35,7 +35,7 @@ export const useDistributionHistory = () => {
   }, [page, search, status]);
 
   const { refetch: refetchDistributionHistory } =
-    pharmacyQueries.getDistributionHistory(queryParams, {
+    usePharmacyDistributionHistory(queryParams, {
       enabled: false,
       keepPreviousData: true,
     });

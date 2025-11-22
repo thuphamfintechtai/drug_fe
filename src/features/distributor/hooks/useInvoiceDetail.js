@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { distributorQueries } from "../apis/distributor";
+import { useUpdateInvoiceStatus } from "../apis/distributor";
 import { Form } from "antd";
 import { toast } from "sonner";
+import api from "../../utils/api";
 
 export const useInvoiceDetail = () => {
   const { id } = useParams();
@@ -11,10 +12,7 @@ export const useInvoiceDetail = () => {
   const [updating, setUpdating] = useState(false);
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const { mutateAsync: fetchInvoiceById } =
-    distributorQueries.getInvoiceDetail();
-  const { mutateAsync: updateInvoiceStatusMutation } =
-    distributorQueries.updateInvoiceStatus();
+  const updateInvoiceStatusMutation = useUpdateInvoiceStatus();
 
   useEffect(() => {
     load();
@@ -23,8 +21,9 @@ export const useInvoiceDetail = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetchInvoiceById(id);
-      const detail = res?.data?.data ? res.data.data : res?.data || null;
+      const response = await api.get(`/distributor/invoices/${id}/detail`);
+      const res = response.data?.data || response.data;
+      const detail = res?.data?.data ? res.data.data : res?.data || res || null;
       setData(detail);
       if (detail) {
         form.setFieldsValue({
@@ -43,7 +42,7 @@ export const useInvoiceDetail = () => {
   const onStatusUpdate = async (values) => {
     setUpdating(true);
     try {
-      await updateInvoiceStatusMutation({ id, data: values });
+      await updateInvoiceStatusMutation.mutateAsync({ id, data: values });
       toast.success("Cập nhật thành công!");
       load();
     } catch (error) {

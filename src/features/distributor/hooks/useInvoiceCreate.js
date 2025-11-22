@@ -1,9 +1,13 @@
 /* eslint-disable no-undef */
 import { useState, useEffect } from "react";
-import { distributorQueries } from "../apis/distributor";
+import {
+  useCreateInvoice,
+  useDistributorDeliveriesToPharmacy,
+} from "../apis/distributor";
 import { Form } from "antd";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import api from "../../utils/api";
 
 export const useInvoiceCreate = () => {
   const [loading, setLoading] = useState(false);
@@ -12,21 +16,26 @@ export const useInvoiceCreate = () => {
   const [fetchingProofs, setFetchingProofs] = useState(true);
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const { mutateAsync: createInvoiceMutation } =
-    distributorQueries.createInvoice();
-  const { mutateAsync: fetchDeliveriesToPharmacy } =
-    distributorQueries.getDeliveriesToPharmacy();
+  const createInvoiceMutation = useCreateInvoice();
+  const { data: deliveriesData } = useDistributorDeliveriesToPharmacy();
 
   // Lấy danh sách Proof of Pharmacy đã có (chưa có invoice)
   useEffect(() => {
     async function fetchProofs() {
       setFetchingProofs(true);
       try {
-        const res = await fetchDeliveriesToPharmacy();
+        const response = await api.get("/distributor/deliveries");
+        const res = response.data?.data || response.data;
         const list = Array.isArray(res?.data)
           ? res.data
           : Array.isArray(res?.data?.data)
           ? res.data.data
+          : Array.isArray(res)
+          ? res
+          : Array.isArray(deliveriesData?.data)
+          ? deliveriesData.data
+          : Array.isArray(deliveriesData?.data?.data)
+          ? deliveriesData.data.data
           : [];
         // Chỉ lấy những đơn đã confirmed và chưa có commercial invoice
         const available = list.filter(
@@ -43,7 +52,7 @@ export const useInvoiceCreate = () => {
       }
     }
     fetchProofs();
-  }, [fetchDeliveriesToPharmacy]);
+  }, [deliveriesData]);
 
   const onFinish = async (values) => {
     if (!selectedProof) {
@@ -53,7 +62,7 @@ export const useInvoiceCreate = () => {
 
     setLoading(true);
     try {
-      await createInvoiceMutation({
+      await createInvoiceMutation.mutateAsync({
         proofOfPharmacyId: selectedProof._id,
         unitPrice: values.unitPrice,
         paymentMethod: values.paymentMethod || "bank_transfer",

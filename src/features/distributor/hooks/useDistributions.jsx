@@ -1,5 +1,8 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { distributorQueries } from "../apis/distributor";
+import {
+  useDistributorDistributions,
+  useConfirmDistribution,
+} from "../apis/distributor";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button, Tag } from "antd";
@@ -32,9 +35,8 @@ export const useDistributions = () => {
     data: distributionsData,
     isLoading: loading,
     refetch: fetchData,
-  } = distributorQueries.getDistributions();
-  const { mutateAsync: confirmDistributionMutation } =
-    distributorQueries.confirmDistribution();
+  } = useDistributorDistributions();
+  const { mutateAsync: confirmDistributionMutation } = useConfirmDistribution();
 
   const data = Array.isArray(distributionsData?.data)
     ? distributionsData.data

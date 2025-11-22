@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 import { useEffect, useRef, useState } from "react";
-import { pharmacyQueries } from "../apis/pharmacyQueries";
+import api from "../../utils/api";
 
 export const useNFTTracking = () => {
   const [nftId, setNftId] = useState("");
@@ -82,11 +82,12 @@ export const useNFTTracking = () => {
     setError("");
     setData(null);
     try {
-      const response = await pharmacyQueries.trackDrugByNFTId(nftId.trim());
-      if (response.data && response.data.success) {
-        setData(response.data.data || response.data);
+      const response = await api.get(`/NFTTracking/${nftId.trim()}`);
+      const data = response.data?.data || response.data;
+      if (data && (data.success || data.nftId || data.tokenId)) {
+        setData(data.data || data);
       } else {
-        setError(response.data?.message || "Không tìm thấy NFT này");
+        setError(data?.message || response.data?.message || "Không tìm thấy NFT này");
       }
     } catch (e2) {
       setError(e2?.response?.data?.message || "Không thể tra cứu NFT");

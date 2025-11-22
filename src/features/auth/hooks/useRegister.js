@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { removeVietnameseAccents } from "../../utils/helper";
 import { toast } from "sonner";
-import { authMutations } from "../api/mutations";
+import { useRegisterMutation } from "../api/mutations";
 
 export const useRegister = () => {
   const [formData, setFormData] = useState({
@@ -17,7 +17,7 @@ export const useRegister = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const registerMutation = authMutations.register();
+  const registerMutation = useRegisterMutation();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
