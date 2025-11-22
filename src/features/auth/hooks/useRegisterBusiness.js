@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import api from "../../../utils/api";
+import api from "../../utils/api";
 import { toast } from "sonner";
 import { removeVietnameseAccents } from "../../utils/helper";
 import { useNavigate } from "react-router-dom";
@@ -28,7 +28,7 @@ export const useRegisterBusiness = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  
+
   const registerMutation = useMutation({
     mutationFn: async (data) => {
       const { role = "user" } = data;
