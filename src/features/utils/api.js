@@ -1,14 +1,11 @@
 import axios from "axios";
 import { getAuthToken, clearAuthCookies } from "../auth/utils/cookieUtils";
 
-// Get API base URL from environment or use default
 const getApiBaseUrl = () => {
-  // Check if running in production
-  if (import.meta.env.PROD) {
-    return import.meta.env.VITE_API_BASE_URL || "https://drug-be.vercel.app/api";
+  if (import.meta.env.DEV) {
+    return "/api";
   }
-  // In development, use proxy
-  return "/api";
+  return "https://drug-be.vercel.app/api";
 };
 
 const api = axios.create({
@@ -16,8 +13,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 30000, // 30 seconds timeout
-  // Enable compression
+  timeout: 30000, 
   decompress: true,
 });
 
@@ -37,9 +33,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle both 401 (Unauthorized) and 403 (Forbidden) as authentication failures
     if (error.response?.status === 401 || error.response?.status === 403) {
-      // Chỉ xóa token, không redirect vì có thể đang ở trang public
       clearAuthCookies();
     }
     return Promise.reject(error);
