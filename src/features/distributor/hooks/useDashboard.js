@@ -39,11 +39,11 @@ export const useDashboard = () => {
     refetch: refetchMonthlyTrends,
   } = distributorQueries.getMonthlyTrends(6);
 
-  const stats = statsResponse?.data;
-  const dashboardStats = dashboardResponse?.data;
+  const stats = statsResponse?.data?.data;
+  const dashboardStats = dashboardResponse?.data?.data;
 
   const chartOneWeekData = useMemo(() => {
-    const data = chartOneWeekResponse?.data;
+    const data = chartOneWeekResponse?.data?.data;
     if (!data?.dailyStats) {
       return null;
     }
@@ -65,7 +65,7 @@ export const useDashboard = () => {
   }, [chartOneWeekResponse]);
 
   const chartTodayYesterdayData = useMemo(() => {
-    const data = chartTodayYesterdayResponse?.data;
+    const data = chartTodayYesterdayResponse?.data?.data;
     if (!data) {
       return null;
     }
@@ -76,7 +76,7 @@ export const useDashboard = () => {
   }, [chartTodayYesterdayResponse]);
 
   const chartMonthlyData = useMemo(() => {
-    const data = monthlyTrendsResponse?.data;
+    const data = monthlyTrendsResponse?.data?.data;
     if (!data?.trends) {
       return null;
     }
