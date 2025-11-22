@@ -9,7 +9,7 @@ export const adminQueries = {
     return useQuery({
       queryKey: ["pendingRegistrations"],
       queryFn: async () => {
-        const response = await api.get("/auth/registration-requests", {
+        const response = await api.get("/registration/requests", {
           params,
         });
         return response.data;
@@ -21,7 +21,7 @@ export const adminQueries = {
     return useQuery({
       queryKey: ["registrationById", id],
       queryFn: async () => {
-        const response = await api.get(`/auth/registration-requests/${id}`);
+        const response = await api.get(`/registration/requests/${id}`);
         return response.data;
       },
     });
