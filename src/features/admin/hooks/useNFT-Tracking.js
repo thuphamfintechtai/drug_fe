@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import api from "../../../utils/api";
+import api from "../../utils/api";
 
 export default function useNFTTracking() {
   const [nftId, setNftId] = useState("");
