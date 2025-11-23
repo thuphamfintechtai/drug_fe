@@ -148,9 +148,33 @@ export default function ProductionManagement() {
                   <select
                     value={formData.drugId}
                     onChange={(e) => {
-                      setFormData({ ...formData, drugId: e.target.value });
-                      if (errors.drugId) {
-                        setErrors({ ...errors, drugId: "" });
+                      const selectedId = e.target.value;
+                      const selectedOption = e.target.options[e.target.selectedIndex];
+                      
+                      console.log("🔍 Drug selected:", {
+                        selectedId,
+                        selectedIdType: typeof selectedId,
+                        isMongoId: /^[0-9a-fA-F]{24}$/.test(selectedId),
+                        selectedOptionValue: selectedOption?.value,
+                        selectedOptionText: selectedOption?.text,
+                        allOptions: Array.from(e.target.options).map(opt => ({
+                          value: opt.value,
+                          text: opt.text,
+                          isMongoId: /^[0-9a-fA-F]{24}$/.test(opt.value)
+                        }))
+                      });
+                      
+                      // Validate: chỉ set nếu là MongoDB ObjectId hợp lệ hoặc empty string
+                      if (selectedId === "" || /^[0-9a-fA-F]{24}$/.test(selectedId)) {
+                        setFormData({ ...formData, drugId: selectedId });
+                        if (errors.drugId) {
+                          setErrors({ ...errors, drugId: "" });
+                        }
+                      } else {
+                        console.error("❌ Invalid drugId selected:", selectedId);
+                        toast.error("Lỗi: Vui lòng chọn lại thuốc", {
+                          position: "top-right",
+                        });
                       }
                     }}
                     className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
@@ -160,11 +184,19 @@ export default function ProductionManagement() {
                     }`}
                   >
                     <option value="">-- Chọn thuốc --</option>
-                    {drugs.map((drug) => (
-                      <option key={drug._id} value={drug._id}>
-                        {drug.tradeName} ({drug.atcCode})
-                      </option>
-                    ))}
+                    {drugs.map((drug) => {
+                      // Đảm bảo có _id hoặc id hợp lệ
+                      const drugId = drug._id || drug.id;
+                      if (!drugId) {
+                        console.warn("⚠️ Drug missing _id:", drug);
+                        return null;
+                      }
+                      return (
+                        <option key={drugId} value={drugId}>
+                          {drug.tradeName} ({drug.atcCode})
+                        </option>
+                      );
+                    })}
                   </select>
                   {errors.drugId && (
                     <p className="mt-1 text-sm text-red-600">{errors.drugId}</p>
