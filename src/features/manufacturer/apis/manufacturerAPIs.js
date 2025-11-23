@@ -93,7 +93,14 @@ export const useManufacturerDeleteDrug = () => {
 export const useUploadToIPFS = () => {
   return useMutation({
     mutationFn: async (data) => {
+      console.log("🌐 API Call - POST /production/upload-ipfs:", {
+        drugId: data.drugId,
+        quantity: data.quantity,
+        hasMetadata: !!data.metadata,
+        fullPayload: data
+      });
       const response = await api.post("/production/upload-ipfs", data);
+      console.log("✅ API Response:", response.data);
       return response.data;
     },
     onSuccess: () => {

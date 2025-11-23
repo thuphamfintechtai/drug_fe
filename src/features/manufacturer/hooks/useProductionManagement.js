@@ -2,12 +2,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { ethers } from "ethers";
 import {
   useManufacturerDrugs,
   useUploadToIPFS,
   useSaveMintedNFTs,
 } from "../apis/manufacturerAPIs";
-import { isMetaMaskInstalled, getWeb3Provider } from "../../utils/web3Helper";
+import {
+  isMetaMaskInstalled,
+  getWeb3Provider,
+  connectWallet,
+  getNFTContract,
+} from "../../utils/web3Helper";
 
 export const useProductionManagement = () => {
   const [searchParams] = useSearchParams();
@@ -28,6 +34,24 @@ export const useProductionManagement = () => {
   const drugs = drugsData?.success
     ? drugsData.data?.drugs || drugsData.data || []
     : [];
+
+  // Debug: Log drugs structure when loaded
+  useEffect(() => {
+    if (drugs.length > 0) {
+      console.log("📋 Drugs loaded:", {
+        count: drugs.length,
+        sample: drugs[0] ? {
+          _id: drugs[0]._id,
+          id: drugs[0].id,
+          tradeName: drugs[0].tradeName,
+          atcCode: drugs[0].atcCode,
+          has_id: !!drugs[0]._id,
+          has_id_field: !!drugs[0].id
+        } : null,
+        allIds: drugs.map(d => ({ _id: d._id, id: d.id, tradeName: d.tradeName }))
+      });
+    }
+  }, [drugs]);
 
   const [step, setStep] = useState(1);
   const [uploadButtonState, setUploadButtonState] = useState("idle");
@@ -234,7 +258,41 @@ export const useProductionManagement = () => {
         return;
       }
 
-      const selectedDrug = drugs.find((d) => d._id === formData.drugId);
+      // Validate drugId format first - must be MongoDB ObjectId (24 hex chars)
+      const isValidMongoId = /^[0-9a-fA-F]{24}$/.test(formData.drugId);
+      
+      if (!isValidMongoId) {
+        console.error("❌ Invalid drugId format when uploading:", {
+          drugId: formData.drugId,
+          drugIdType: typeof formData.drugId,
+          isValidMongoId,
+          availableDrugs: drugs.map(d => ({ _id: d._id, tradeName: d.tradeName, atcCode: d.atcCode }))
+        });
+        toast.error(
+          `drugId không hợp lệ: "${formData.drugId}". Vui lòng chọn lại thuốc từ dropdown.`,
+          { position: "top-right" }
+        );
+        setUploadButtonState("idle");
+        return;
+      }
+
+      const selectedDrug = drugs.find((d) => (d._id || d.id) === formData.drugId);
+      
+      // Validate selectedDrug exists
+      if (!selectedDrug) {
+        console.error("❌ Selected drug not found:", {
+          drugId: formData.drugId,
+          drugIdType: typeof formData.drugId,
+          isValidMongoId,
+          availableDrugs: drugs.map(d => ({ _id: d._id, tradeName: d.tradeName, atcCode: d.atcCode }))
+        });
+        toast.error("Không tìm thấy thông tin thuốc đã chọn", {
+          position: "top-right",
+        });
+        setUploadButtonState("idle");
+        return;
+      }
+
       const metadata = {
         name: `${selectedDrug?.tradeName || "Unknown"} - Batch ${
           formData.batchNumber
@@ -266,8 +324,52 @@ export const useProductionManagement = () => {
         ],
       };
 
-      const uploadPayload = { quantity, metadata };
-      console.log("Uploading to IPFS:", uploadPayload);
+      // Verify drug exists in available drugs list
+      const drugExists = drugs.some(d => (d._id || d.id) === formData.drugId);
+      if (!drugExists) {
+        console.error("❌ Drug not found in available drugs list:", {
+          drugId: formData.drugId,
+          availableDrugIds: drugs.map(d => ({
+            _id: d._id,
+            id: d.id,
+            tradeName: d.tradeName,
+            atcCode: d.atcCode
+          }))
+        });
+        toast.error(
+          `Thuốc đã chọn không có trong danh sách. Vui lòng chọn lại thuốc.`,
+          { position: "top-right" }
+        );
+        setUploadButtonState("idle");
+        return;
+      }
+
+      // Include drugId in payload - backend may need it
+      const uploadPayload = { 
+        drugId: formData.drugId, 
+        quantity, 
+        metadata 
+      };
+      
+      console.log("📤 Uploading to IPFS:", {
+        drugId: formData.drugId,
+        drugIdType: typeof formData.drugId,
+        selectedDrug: selectedDrug ? { 
+          _id: selectedDrug._id, 
+          id: selectedDrug.id,
+          tradeName: selectedDrug.tradeName,
+          manufacturerId: selectedDrug.manufacturerId || selectedDrug.manufacturer
+        } : null,
+        quantity,
+        metadataKeys: Object.keys(metadata),
+        allAvailableDrugIds: drugs.map(d => ({
+          _id: d._id,
+          id: d.id,
+          tradeName: d.tradeName,
+          matches: (d._id || d.id) === formData.drugId
+        })),
+        payload: uploadPayload
+      });
 
       const response = await uploadToIPFSMutation.mutateAsync(uploadPayload);
 
@@ -460,7 +562,34 @@ export const useProductionManagement = () => {
       }
 
       // Save to backend
-      const selectedDrug = drugs.find((d) => d._id === formData.drugId);
+      // Validate drugId format first - must be MongoDB ObjectId (24 hex chars)
+      const isValidMongoId = /^[0-9a-fA-F]{24}$/.test(formData.drugId);
+      
+      if (!isValidMongoId) {
+        console.error("❌ Invalid drugId format:", {
+          drugId: formData.drugId,
+          drugIdType: typeof formData.drugId,
+          isValidMongoId,
+          availableDrugs: drugs.map(d => ({ _id: d._id, tradeName: d.tradeName, atcCode: d.atcCode }))
+        });
+        throw new Error(
+          `drugId không hợp lệ: "${formData.drugId}". ` +
+          `Vui lòng chọn lại thuốc từ dropdown.`
+        );
+      }
+      
+      const selectedDrug = drugs.find((d) => (d._id || d.id) === formData.drugId);
+      
+      // Validate selectedDrug exists
+      if (!selectedDrug) {
+        console.error("❌ Selected drug not found when saving:", {
+          drugId: formData.drugId,
+          drugIdType: typeof formData.drugId,
+          isValidMongoId,
+          availableDrugs: drugs.map(d => ({ _id: d._id, tradeName: d.tradeName, atcCode: d.atcCode }))
+        });
+        throw new Error("Không tìm thấy thông tin thuốc đã chọn");
+      }
 
       const saveData = {
         drugId: formData.drugId,
@@ -482,7 +611,13 @@ export const useProductionManagement = () => {
         },
       };
 
-      console.log("Saving to backend:", saveData);
+      console.log("💾 Saving to backend:", {
+        drugId: saveData.drugId,
+        drugIdType: typeof saveData.drugId,
+        selectedDrug: { _id: selectedDrug._id, tradeName: selectedDrug.tradeName },
+        tokenIdsCount: saveData.tokenIds.length,
+        quantity: saveData.quantity
+      });
 
       const response = await saveMintedNFTsMutation.mutateAsync(saveData);
 
@@ -537,7 +672,7 @@ export const useProductionManagement = () => {
     setErrors({});
   };
 
-  const selectedDrug = drugs.find((d) => d._id === formData.drugId);
+  const selectedDrug = drugs.find((d) => (d._id || d.id) === formData.drugId);
 
   // Helper function để kiểm tra và sửa ngày sản xuất nếu không hợp lệ
   const validateAndFixManufacturingDate = (dateStr) => {
@@ -681,6 +816,7 @@ export const useProductionManagement = () => {
     loadingProgress,
     setLoadingProgress,
     progressIntervalRef,
+    step,
     setStep,
     uploadButtonState,
     setUploadButtonState,

@@ -16,6 +16,7 @@ import { useAuth } from "../context/AuthContext";
 import { useMetaMask } from "../hooks/useMetaMask";
 import { formatWalletAddress } from "../../utils/walletUtils";
 import TruckTransfer from "../components/TruckTransfer";
+import VietnamDeliveryMapAdvanced from "../components/VietnamDeliveryMapAdvanced";
 
 export default function UserHome() {
   const navigate = useNavigate();
@@ -578,7 +579,7 @@ export default function UserHome() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Wallet Modal */}
+      {/* Wallet Modal - giữ nguyên */}
       <AnimatePresence mode="wait">
         {showWalletModal && account && (
           <>
@@ -808,7 +809,7 @@ export default function UserHome() {
         )}
       </AnimatePresence>
 
-      {/* Hero Section */}
+      {/* Hero Section - HORIZONTAL LAYOUT */}
       <div className="min-h-screen bg-white relative overflow-hidden">
         {/* Background Effects */}
         <motion.div
@@ -845,16 +846,17 @@ export default function UserHome() {
           />
         </motion.div>
 
-        <section className="pt-16 sm:pt-24 md:pt-32 pb-12 sm:pb-20 px-4 w-full flex flex-col items-center justify-center relative z-10">
-          <div className="max-w-5xl mx-auto w-full">
+        <section className="pt-8 sm:pt-12 md:pt-16 pb-12 sm:pb-20 px-4 w-full relative z-10">
+          <div className="max-w-7xl mx-auto w-full">
+            {/* Title - Centered Above Everything */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-center mb-8 sm:mb-12"
+              className="text-center mb-4 sm:mb-6 lg:mb-8"
             >
               <motion.h1
-                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-[#2176FF] mb-4 sm:mb-6 leading-tight tracking-tight"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-[#2176FF] mb-3 sm:mb-4 md:mb-6 leading-tight tracking-tight"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
@@ -870,7 +872,7 @@ export default function UserHome() {
               </motion.h1>
 
               <motion.p
-                className="text-base sm:text-lg md:text-xl text-slate-600 max-w-3xl mx-auto font-medium leading-relaxed px-2 sm:px-0"
+                className="text-sm sm:text-base md:text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto font-medium leading-relaxed px-2 sm:px-0"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
@@ -898,60 +900,45 @@ export default function UserHome() {
               </motion.p>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="max-w-4xl mx-auto w-full px-2 sm:px-0"
-            >
-              {/* Tabs */}
-              <div className="flex gap-2 mb-4 justify-center flex-wrap">
-                <button
-                  onClick={() => setSearchMode("nft")}
-                  className={`px-3 sm:px-6 py-2 text-xs sm:text-sm md:text-base rounded-lg font-semibold transition whitespace-nowrap ${
-                    searchMode === "nft"
-                      ? "bg-white border-b-4 border-1 border-[#077CA3] text-[#4BADD1] shadow-md"
-                      : "bg-white/20 text-white/90 hover:bg-white/30 hover:text-white border border-white/30"
-                  }`}
-                >
-                  Tra cứu NFT
-                </button>
-                <button
-                  onClick={() => setSearchMode("drug")}
-                  className={`px-3 sm:px-6 py-2 text-xs sm:text-sm md:text-base rounded-lg font-semibold transition whitespace-nowrap ${
-                    searchMode === "drug"
-                      ? "bg-white text-[#4BADD1] shadow-md border-b-4 border-1 border-[#077CA3]"
-                      : "bg-white/20 text-white/90 hover:bg-white/30 hover:text-white border border-white/30"
-                  }`}
-                >
-                  Thông tin thuốc
-                </button>
-              </div>
+            {/* HORIZONTAL LAYOUT: Form Left + Map Right */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_0.5fr] gap-8 lg:gap-12 items-center">
+              {/* LEFT COLUMN: Search Form */}
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+                className="w-full px-2 sm:px-0 order-2 lg:order-1 lg:max-w-[750px]"
+              >
+                {/* Tabs */}
+                <div className="flex gap-2 mb-4 justify-center lg:justify-start flex-wrap">
+                  <button
+                    onClick={() => setSearchMode("nft")}
+                    className={`px-3 sm:px-6 py-2 text-xs sm:text-sm md:text-base rounded-lg font-semibold transition whitespace-nowrap ${
+                      searchMode === "nft"
+                        ? "bg-[#077CA3] text-white shadow-lg"
+                        : "bg-white text-slate-700 border-2 border-slate-200 hover:border-[#077CA3]"
+                    }`}
+                  >
+                    Tra cứu NFT
+                  </button>
+                  <button
+                    onClick={() => setSearchMode("drug")}
+                    className={`px-3 sm:px-6 py-2 text-xs sm:text-sm md:text-base rounded-lg font-semibold transition whitespace-nowrap ${
+                      searchMode === "drug"
+                        ? "bg-[#077CA3] text-white shadow-lg"
+                        : "bg-white text-slate-700 border-2 border-slate-200 hover:border-[#077CA3]"
+                    }`}
+                  >
+                    Thông tin thuốc
+                  </button>
+                </div>
 
-              <div className="bg-white rounded-2xl shadow-lg border-b-8 border-1 border-[#077CA3] p-3 sm:p-4 md:p-6 lg:p-8">
-                {searchMode === "nft" ? (
-                  <>
-                    <p className="text-slate-700 mb-3 sm:mb-5 text-left text-xs sm:text-sm font-semibold flex items-center gap-2">
-                      <svg
-                        className="w-3 sm:w-4 h-3 sm:h-4 text-[#054f67] flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      Nhập mã lô, mã serial hoặc NFT ID
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch">
-                      <div className="flex-1 relative">
+                <div className="bg-white rounded-2xl shadow-xl border-2 border-[#077CA3] p-4 sm:p-6 md:p-8">
+                  {searchMode === "nft" ? (
+                    <>
+                      <p className="text-slate-700 mb-4 sm:mb-5 text-left text-xs sm:text-sm font-semibold flex items-center gap-2">
                         <svg
-                          className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-slate-400"
+                          className="w-3 sm:w-4 h-3 sm:h-4 text-[#077CA3] flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -960,44 +947,17 @@ export default function UserHome() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        <input
-                          type="text"
-                          value={tokenId}
-                          onChange={(e) => setTokenId(e.target.value)}
-                          onKeyPress={(e) =>
-                            e.key === "Enter" && handleTrackDrug()
-                          }
-                          placeholder="Nhập mã để tra cứu..."
-                          className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 md:py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4BADD1]/50 focus:border-[#4BADD1] transition text-sm sm:text-base placeholder:text-slate-400"
-                        />
-                      </div>
+                        Nhập mã lô, mã serial hoặc NFT ID
+                      </p>
 
-                      <div className="flex gap-2 flex-col sm:flex-row">
-                        <button
-                          onClick={handleScanQR}
-                          className="px-3 sm:px-6 py-2.5 sm:py-3 md:py-3.5 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-xs sm:text-sm hover:border-[#54b1d3] active:scale-95 flex-1 sm:flex-none"
-                        >
+                      <div className="space-y-3">
+                        {/* Input Field */}
+                        <div className="relative">
                           <svg
-                            className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zM14 13h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 2h3v2h-3v-2z" />
-                          </svg>
-                          <span className="font-semibold hidden sm:inline">
-                            Quét QR
-                          </span>
-                        </button>
-                        <button
-                          onClick={handleOpenUploadQR}
-                          className="px-3 sm:px-6 py-2.5 sm:py-3 md:py-3.5 bg-white border-2 border-[#077CA3] text-slate-700 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-xs sm:text-sm hover:border-[#54b1d3] active:scale-95 flex-1 sm:flex-none"
-                          title="Tải ảnh QR lên"
-                        >
-                          <svg
-                            className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0"
+                            className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-slate-400"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -1006,122 +966,183 @@ export default function UserHome() {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               strokeWidth={2}
-                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                             />
                           </svg>
-                          <span className="font-semibold hidden sm:inline">
-                            Upload
-                          </span>
+                          <input
+                            type="text"
+                            value={tokenId}
+                            onChange={(e) => setTokenId(e.target.value)}
+                            onKeyPress={(e) =>
+                              e.key === "Enter" && handleTrackDrug()
+                            }
+                            placeholder="Nhập mã để tra cứu..."
+                            className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4BADD1]/50 focus:border-[#4BADD1] transition text-sm sm:text-base placeholder:text-slate-400"
+                          />
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                            onClick={handleScanQR}
+                            className="px-3 py-3 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl transition-all flex flex-col items-center justify-center gap-1 text-xs hover:border-[#077CA3] hover:shadow-md active:scale-95"
+                          >
+                            <svg
+                              className="w-5 h-5 flex-shrink-0"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zM14 13h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 2h3v2h-3v-2z" />
+                            </svg>
+                            <span className="font-semibold">Quét QR</span>
+                          </button>
+
+                          <button
+                            onClick={handleOpenUploadQR}
+                            className="px-3 py-3 bg-white border-2 border-[#077CA3] text-slate-700 font-semibold rounded-xl transition-all flex flex-col items-center justify-center gap-1 text-xs hover:border-[#077CA3] hover:shadow-md active:scale-95"
+                          >
+                            <svg
+                              className="w-5 h-5 flex-shrink-0"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                            <span className="font-semibold">Upload</span>
+                          </button>
+
+                          <button
+                            onClick={handleTrackDrug}
+                            className="px-3 py-3 bg-[#077CA3] text-white font-semibold rounded-xl transition-all flex flex-col items-center justify-center gap-1 text-xs hover:opacity-90 hover:shadow-md active:scale-95"
+                          >
+                            <svg
+                              className="w-5 h-5 flex-shrink-0"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            <span className="font-semibold">Xác thực</span>
+                          </button>
+                        </div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleUploadQRImage}
+                          className="hidden"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-slate-700 mb-4 sm:mb-5 text-left text-xs sm:text-sm font-semibold flex items-center gap-2">
+                        <svg
+                          className="w-3 sm:w-4 h-3 sm:h-4 text-[#077CA3] flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        Tìm kiếm thông tin thuốc theo tên hoặc mã ATC
+                      </p>
+
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="flex-1 relative">
+                          <svg
+                            className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-slate-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                            />
+                          </svg>
+                          <input
+                            type="text"
+                            value={drugSearch}
+                            onChange={(e) => setDrugSearch(e.target.value)}
+                            onKeyPress={(e) =>
+                              e.key === "Enter" && handleSearchDrug()
+                            }
+                            placeholder="Nhập tên thuốc hoặc mã ATC..."
+                            className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4BADD1]/50 focus:border-[#4BADD1] transition text-sm sm:text-base placeholder:text-slate-400"
+                          />
+                        </div>
+
+                        <button
+                          onClick={handleSearchDrug}
+                          className="px-6 py-3 sm:py-3.5 bg-[#077CA3] text-white font-semibold rounded-xl transition-all text-sm flex items-center justify-center gap-2 hover:opacity-90 hover:shadow-md active:scale-95"
+                        >
+                          <svg
+                            className="w-5 h-5 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                            />
+                          </svg>
+                          <span className="font-semibold">Tìm kiếm</span>
                         </button>
                       </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleUploadQRImage}
-                        className="hidden"
-                      />
+                    </>
+                  )}
+                </div>
+              </motion.div>
 
-                      <button
-                        onClick={handleTrackDrug}
-                        className="px-3 sm:px-6 py-2.5 sm:py-3 md:py-3.5 bg-[#077CA3] font-semibold rounded-xl transition text-xs sm:text-sm flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 flex-1 sm:flex-none"
-                      >
-                        <svg
-                          className="w-4 sm:w-5 h-4 sm:h-5 !text-white flex-shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <span className="font-semibold !text-white hidden sm:inline">
-                          Xác thực
-                        </span>
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-slate-700 mb-3 sm:mb-5 text-left text-xs sm:text-sm font-semibold flex items-center gap-2">
-                      <svg
-                        className="w-3 sm:w-4 h-3 sm:h-4 text-[#4BADD1] flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      Tìm kiếm thông tin thuốc theo tên hoặc mã ATC
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch">
-                      <div className="flex-1 relative">
-                        <svg
-                          className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-slate-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                          />
-                        </svg>
-                        <input
-                          type="text"
-                          value={drugSearch}
-                          onChange={(e) => setDrugSearch(e.target.value)}
-                          onKeyPress={(e) =>
-                            e.key === "Enter" && handleSearchDrug()
-                          }
-                          placeholder="Nhập tên thuốc hoặc mã ATC..."
-                          className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 md:py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4BADD1]/50 focus:border-[#4BADD1] transition text-sm sm:text-base placeholder:text-slate-400"
-                        />
-                      </div>
-
-                      <button
-                        onClick={handleSearchDrug}
-                        className="px-3 sm:px-6 py-2.5 sm:py-3 md:py-3.5 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl transition-all text-xs sm:text-sm flex items-center justify-center gap-2 hover:border-[#54b1d3] active:scale-95 flex-1 sm:flex-none"
-                      >
-                        <svg
-                          className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                          />
-                        </svg>
-                        <span className="font-semibold hidden sm:inline">
-                          Tìm kiếm
-                        </span>
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </motion.div>
+              {/* RIGHT COLUMN: Vietnam Delivery Map */}
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.8 }}
+                className="w-full flex items-center justify-center lg:justify-end order-1 lg:order-2"
+              >
+                <div className="w-full max-w-[200px] lg:max-w-[250px] lg:ml-6">
+                  <VietnamDeliveryMapAdvanced
+                    duration={12}
+                    showTrail={true}
+                    animationSpeed={1}
+                    maxWidth="100%"
+                    vehicleSize="clamp(20px, 4vw, 30px)"
+                    onComplete={() =>
+                      console.log("Vietnam delivery animation completed!")
+                    }
+                  />
+                </div>
+              </motion.div>
+            </div>
           </div>
         </section>
       </div>
 
-      {/* Features Section */}
+      {/* Features Section - giữ nguyên từ code gốc */}
       <section className="py-12 sm:py-16 md:py-20 px-4 bg-linear-to-b from-white to-slate-50/30">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -1206,7 +1227,7 @@ export default function UserHome() {
         </div>
       </section>
 
-      {/* Truck Transfer Visualization */}
+      {/* Truck Transfer Visualization - giữ nguyên từ code gốc */}
       <section className="py-12 sm:py-16 md:py-20 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -1238,7 +1259,7 @@ export default function UserHome() {
         </div>
       </section>
 
-      {/* Process Steps Section */}
+      {/* Process Steps Section - giữ nguyên từ code gốc */}
       <section className="py-12 sm:py-16 md:py-20 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -1311,7 +1332,7 @@ export default function UserHome() {
         </div>
       </section>
 
-      {/* Blockchain Section */}
+      {/* Blockchain Section - giữ nguyên từ code gốc */}
       <section className="py-12 sm:py-16 md:py-24 px-4 bg-linear-to-b from-white via-slate-50/30 to-white">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center">
@@ -1428,7 +1449,7 @@ export default function UserHome() {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Footer - giữ nguyên từ code gốc */}
       <footer className="py-12 sm:py-16 px-4 bg-linear-to-b from-slate-800 to-slate-900 !text-white relative overflow-hidden">
         <motion.div
           className="absolute top-0 left-0 w-full h-full opacity-10"
@@ -1564,7 +1585,7 @@ export default function UserHome() {
         </div>
       </footer>
 
-      {/* QR Scanner Modal */}
+      {/* QR Scanner Modal - giữ nguyên */}
       <AnimatePresence>
         {showQRScanner && (
           <motion.div
