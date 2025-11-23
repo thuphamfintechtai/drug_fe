@@ -36,7 +36,7 @@ export default function CreateContract() {
   const { data: pharmaciesResponse, isLoading: loadingPharmacies } = useQuery({
     queryKey: ["pharmaciesList"],
     queryFn: async () => {
-      const response = await api.get("/distributor/pharmacies");
+      const response = await api.get("/api/distributor/pharmacies");
       return response.data;
     },
   });
