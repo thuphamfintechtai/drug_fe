@@ -102,8 +102,8 @@ export default function ProductionManagement() {
 
       {/* Production Dialog */}
       {showDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl max-h-[90vh] flex flex-col">
             <style>{`
               /* Ẩn scrollbar trong modal để giao diện sạch hơn */
               .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
@@ -112,8 +112,8 @@ export default function ProductionManagement() {
               .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
             `}</style>
 
-            {/* Header */}
-            <div className="bg-gradient-to-r from-secondary to-primary px-8 py-6 rounded-t-3xl">
+            {/* Header - Fixed */}
+            <div className="bg-gradient-to-r from-secondary to-primary px-8 py-6 rounded-t-3xl flex-shrink-0">
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold !text-white">
@@ -136,9 +136,11 @@ export default function ProductionManagement() {
               </div>
             </div>
 
-            {/* Step 1: Form */}
-            {step === 1 && (
-              <div className="p-8 space-y-4 max-h-[500px] overflow-auto hide-scrollbar">
+            {/* Content Area - Scrollable */}
+            <div className="flex-1 overflow-y-auto custom-scroll bg-white" style={{ minHeight: '400px' }}>
+              {/* Step 1: Form */}
+              {step === 1 ? (
+                <div className="p-8 space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Chọn thuốc *
@@ -579,11 +581,11 @@ export default function ProductionManagement() {
                   />
                 </div>
               </div>
-            )}
+              ) : null}
 
             {/* Step 2: IPFS Success */}
             {step === 2 && ipfsData && (
-              <div className="p-8 space-y-4 max-h-[500px] overflow-auto hide-scrollbar">
+              <div className="p-8 space-y-4">
                 {/* Box: Bước 1 hoàn thành */}
                 <div className="rounded-xl p-5 border border-cyan-200 bg-cyan-50">
                   <div className="flex items-start gap-3 mb-3">
@@ -697,7 +699,7 @@ export default function ProductionManagement() {
 
             {/* Step 3: Minting */}
             {step === 3 && (
-              <div className="p-6 max-h-[500px] overflow-auto hide-scrollbar">
+              <div className="p-6">
                 <BlockchainMintingView
                   status={
                     mintButtonState === "completed" ? "completed" : "minting"
@@ -708,7 +710,7 @@ export default function ProductionManagement() {
 
             {/* Step 4: Success */}
             {step === 4 && mintResult && (
-              <div className="p-8 max-h-[500px] overflow-auto hide-scrollbar">
+              <div className="p-8">
                 <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-8 text-center">
                   <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-white border border-cyan-200 text-cyan-600 flex items-center justify-center">
                     <svg
@@ -756,9 +758,10 @@ export default function ProductionManagement() {
                 </div>
               </div>
             )}
+            </div>
 
-            {/* Footer Actions */}
-            <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end space-x-8">
+            {/* Footer Actions - Fixed */}
+            <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end space-x-8 flex-shrink-0">
               {step === 1 && (
                 <TruckAnimationButton
                   onClick={handleUploadToIPFS}

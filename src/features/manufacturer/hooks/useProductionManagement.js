@@ -2,12 +2,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { ethers } from "ethers";
 import {
   useManufacturerDrugs,
   useUploadToIPFS,
   useSaveMintedNFTs,
 } from "../apis/manufacturerAPIs";
-import { isMetaMaskInstalled, getWeb3Provider } from "../../utils/web3Helper";
+import {
+  isMetaMaskInstalled,
+  getWeb3Provider,
+  connectWallet,
+  getNFTContract,
+} from "../../utils/web3Helper";
 
 export const useProductionManagement = () => {
   const [searchParams] = useSearchParams();
@@ -681,6 +687,7 @@ export const useProductionManagement = () => {
     loadingProgress,
     setLoadingProgress,
     progressIntervalRef,
+    step,
     setStep,
     uploadButtonState,
     setUploadButtonState,
