@@ -5,6 +5,8 @@ const getApiBaseUrl = () => {
   if (import.meta.env.DEV) {
     return "http://localhost:9000/api";
   }
+  // Production: sử dụng biến môi trường hoặc URL mặc định
+  return import.meta.env.VITE_API_BASE_URL || "https://drug-be.vercel.app/api";
 };
 
 const api = axios.create({
