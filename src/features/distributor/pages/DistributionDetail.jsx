@@ -10,7 +10,7 @@ import {
   Input,
 } from "antd";
 import DashboardLayout from "../../shared/components/DashboardLayout";
-import { getDistributorNavigationItems } from "../components/distributorNavigation";
+import { navigationItems } from "../constants/navigationItems";
 import { useDistributionDetail } from "../hooks/useDistributionDetail";
 import { useNavigate } from "react-router-dom";
 
@@ -18,7 +18,6 @@ export default function DistributionDetail() {
   const navigate = useNavigate();
   const { data, loading, updating, form, onConfirm, onStatusUpdate } =
     useDistributionDetail();
-  const navigationItems = getDistributorNavigationItems();
 
   if (loading) {
     return (

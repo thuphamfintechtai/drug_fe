@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckLoader from "../../shared/components/TruckLoader";
-import { navigationItems } from "../constants/navigationItemsNFT";
+import { navigationItems } from "../constants/navigationItems";
 import { useNFTTracking } from "../hooks/useNFTTracking";
 import { formatDate, short } from "../../utils/helper";
 

@@ -1,6 +1,6 @@
 import { Form, Button, Select, InputNumber, Input, Card, Divider } from "antd";
 import DashboardLayout from "../../shared/components/DashboardLayout";
-import { getDistributorNavigationItems } from "../components/distributorNavigation";
+import { navigationItems } from "../constants/navigationItems";
 import { useCreateProofToPharmacy } from "../hooks/useCreateProofToPharmacy";
 import { useNavigate } from "react-router-dom";
 
@@ -17,7 +17,6 @@ export default function CreateProofToPharmacy() {
     onFinish,
   } = useCreateProofToPharmacy();
   const navigate = useNavigate();
-  const navigationItems = getDistributorNavigationItems();
 
   return (
     <DashboardLayout navigationItems={navigationItems}>

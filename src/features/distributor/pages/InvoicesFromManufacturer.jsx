@@ -4,7 +4,7 @@ import TruckLoader from "../../shared/components/TruckLoader";
 import { Search } from "../../shared/components/ui/search";
 import { InvoiceComponent } from "../components/invoice";
 import { Card } from "../../shared/components/ui/cardUI";
-import { navigationItemsInvoices } from "../constants/navigationItemsInvoices";
+import { navigationItems } from "../constants/navigationItems";
 import { useInvoicesFromManufacturer } from "../hooks/useInvoicesFromManufacturer";
 
 export default function InvoicesFromManufacturer() {
@@ -44,7 +44,7 @@ export default function InvoicesFromManufacturer() {
   };
 
   return (
-    <DashboardLayout navigationItems={navigationItemsInvoices}>
+    <DashboardLayout navigationItems={navigationItems}>
       {queryLoading ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
           <div className="w-full max-w-2xl">

@@ -9,13 +9,12 @@ import {
   Input,
 } from "antd";
 import DashboardLayout from "../../shared/components/DashboardLayout";
-import { getDistributorNavigationItems } from "../components/distributorNavigation";
+import { navigationItems } from "../constants/navigationItems";
 import { useInvoiceDetail } from "../hooks/useInvoiceDetail";
 import { useNavigate } from "react-router-dom";
 export default function InvoiceDetail() {
   const { data, loading, updating, form, onStatusUpdate } = useInvoiceDetail();
   const navigate = useNavigate();
-  const navigationItems = getDistributorNavigationItems();
 
   if (loading) {
     return (

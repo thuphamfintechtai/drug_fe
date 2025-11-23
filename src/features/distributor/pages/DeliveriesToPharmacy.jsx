@@ -1,14 +1,12 @@
 import { Button, Table, Spin } from "antd";
 import DashboardLayout from "../../shared/components/DashboardLayout";
-import { getDistributorNavigationItems } from "../components/distributorNavigation";
+import { navigationItems } from "../constants/navigationItems";
 import { useDeliveriesToPharmacy } from "../hooks/useDeliveriesToPharmacy";
 import { useNavigate } from "react-router-dom";
 
 export default function DeliveriesToPharmacy() {
   const navigate = useNavigate();
   const { data, loading, columns } = useDeliveriesToPharmacy();
-
-  const navigationItems = getDistributorNavigationItems();
 
   return (
     <DashboardLayout navigationItems={navigationItems}>

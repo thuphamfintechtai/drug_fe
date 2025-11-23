@@ -1,11 +1,10 @@
 import DashboardLayout from "../../shared/components/DashboardLayout";
-import { getDistributorNavigationItems } from "../components/distributorNavigation";
+import { navigationItems } from "../constants/navigationItems";
 import { Card, Spin } from "antd";
 import { useStats } from "../hooks/useStats";
 
 export default function Stats() {
   const { distributionStats, invoiceStats, loading } = useStats();
-  const navigationItems = getDistributorNavigationItems();
 
   return (
     <DashboardLayout navigationItems={navigationItems}>

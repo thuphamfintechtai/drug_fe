@@ -3,7 +3,7 @@ import TruckLoader from "../../shared/components/TruckLoader";
 import { CardUI } from "../../shared/components/ui/cardUI";
 import { Search } from "../../shared/components/ui/search";
 import { useTransferHistory } from "../hooks/useTransferHistory";
-import { navigationItems } from "../constants/navigationTransferHistory";
+import { navigationItems } from "../constants/navigationItems";
 
 export default function TransferHistory() {
   const {

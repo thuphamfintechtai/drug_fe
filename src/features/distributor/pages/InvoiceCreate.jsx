@@ -1,6 +1,6 @@
 import { Form, Input, Select, InputNumber, Button, Card, Divider } from "antd";
 import DashboardLayout from "../../shared/components/DashboardLayout";
-import { getDistributorNavigationItems } from "../components/distributorNavigation";
+import { navigationItems } from "../constants/navigationItems";
 import { useInvoiceCreate } from "../hooks/useInvoiceCreate";
 import { useNavigate } from "react-router-dom";
 
@@ -17,7 +17,6 @@ export default function InvoiceCreate() {
     form,
     onFinish,
   } = useInvoiceCreate();
-  const navigationItems = getDistributorNavigationItems();
 
   return (
     <DashboardLayout navigationItems={navigationItems}>

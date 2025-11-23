@@ -9,7 +9,7 @@ import {
   Input,
 } from "antd";
 import DashboardLayout from "../../shared/components/DashboardLayout";
-import { getDistributorNavigationItems } from "../components/distributorNavigation";
+import { navigationItems } from "../constants/navigationItems";
 import { useDeliveryDetail } from "../hooks/useDeliveryDetail";
 import { useNavigate } from "react-router-dom";
 
@@ -18,7 +18,6 @@ const { TextArea } = Input;
 export default function DeliveryDetail() {
   const { data, loading, updating, form, onStatusUpdate } = useDeliveryDetail();
   const navigate = useNavigate();
-  const navigationItems = getDistributorNavigationItems();
 
   if (loading) {
     return (
