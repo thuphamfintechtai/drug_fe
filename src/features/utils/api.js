@@ -2,9 +2,17 @@ import axios from "axios";
 import { getAuthToken } from "../auth/utils/cookieUtils";
 
 const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+
+  // Development mode: sử dụng proxy hoặc local API
   if (import.meta.env.DEV) {
     return "https://drug-be.vercel.app";
   }
+
+  // Production mode: sử dụng production API URL
+  return "https://drug-be.vercel.app/api";
 };
 
 const api = axios.create({
