@@ -51,20 +51,58 @@ export const useProductionHistory = () => {
   // Update items when data changes
   useEffect(() => {
     if (productionHistoryData?.success) {
-      const productions = productionHistoryData.data?.productions || [];
-      setAllItems(productions);
-      setPagination(
-        productionHistoryData.data?.pagination || {
-          page: 1,
-          limit: 10,
-          total: productions.length,
-          pages: Math.ceil(productions.length / 10) || 1,
+      // Handle multiple response structures:
+      // 1. data is array directly: { success: true, data: [...] }
+      // 2. data.productions: { success: true, data: { productions: [...] } }
+      let productions = [];
+      if (Array.isArray(productionHistoryData.data)) {
+        productions = productionHistoryData.data;
+        console.log('✅ [useProductionHistory] Data is array directly:', productions.length);
+      } else if (productionHistoryData.data?.productions) {
+        productions = productionHistoryData.data.productions;
+        console.log('✅ [useProductionHistory] Data has productions field:', productions.length);
+      } else if (productionHistoryData.data?.data) {
+        // Nested data.data
+        if (Array.isArray(productionHistoryData.data.data)) {
+          productions = productionHistoryData.data.data;
+          console.log('✅ [useProductionHistory] Data.data is array:', productions.length);
+        } else if (productionHistoryData.data.data?.productions) {
+          productions = productionHistoryData.data.data.productions;
+          console.log('✅ [useProductionHistory] Data.data has productions:', productions.length);
         }
-      );
+      }
+      
+      // Handle pagination from count field or pagination object
+      const total = productionHistoryData.count || 
+                    productionHistoryData.data?.pagination?.total || 
+                    productionHistoryData.data?.total ||
+                    productions.length;
+      const paginationData = productionHistoryData.data?.pagination || {
+        page: 1,
+        limit: 10,
+        total: total,
+        pages: Math.ceil(total / 10) || 1,
+      };
+      
+      console.log('📦 [useProductionHistory] Setting items:', {
+        productionsCount: productions.length,
+        total: total,
+        pagination: paginationData,
+      });
+      
+      setAllItems(productions);
+      setPagination(paginationData);
     } else if (productionHistoryError) {
       setItems([]);
       setAllItems([]);
-      console.error("Lỗi khi tải lịch sử sản xuất:", productionHistoryError);
+      console.error("❌ [useProductionHistory] Lỗi khi tải lịch sử sản xuất:", productionHistoryError);
+    } else {
+      // No data and no error - might be loading or empty
+      console.log('ℹ️ [useProductionHistory] No data yet:', {
+        hasData: !!productionHistoryData,
+        hasError: !!productionHistoryError,
+        data: productionHistoryData,
+      });
     }
   }, [productionHistoryData, productionHistoryError]);
 

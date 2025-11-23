@@ -6,8 +6,22 @@ import { Search } from "../../shared/components/ui/search";
 import { CardUI } from "../../shared/components/ui/cardUI";
 
 export default function Distributions() {
-  const { loading, filteredData, searchText, setSearchText, columns, data } =
-    useDistributions();
+  const {
+    loading,
+    filteredData,
+    searchText,
+    setSearchText,
+    columns,
+    data,
+    showConfirmDialog,
+    selectedRecord,
+    isConfirming,
+    confirmForm,
+    setConfirmForm,
+    confirmFormErrors,
+    handleCloseConfirmDialog,
+    handleSubmitConfirm,
+  } = useDistributions();
 
   const handleSearch = (searchValue = null) => {
     const term = (searchValue !== null ? searchValue : searchText)
@@ -58,7 +72,13 @@ export default function Distributions() {
                 item.drug || item.proofOfProduction?.drug || item.nftInfo?.drug;
               const drugName =
                 drug?.name || drug?.tradeName || item.drugName || "";
-              return item.code || drugName || item.verificationCode || "";
+              return (
+                item.invoiceNumber ||
+                item.code ||
+                drugName ||
+                item.verificationCode ||
+                ""
+              );
             }}
             matchFunction={(item, searchLower) => {
               const drug =
@@ -69,14 +89,18 @@ export default function Distributions() {
                 item.drugName ||
                 ""
               ).toLowerCase();
-              const code = (item.code || "").toLowerCase();
+              const invoiceNumber = (item.invoiceNumber || item.code || "").toLowerCase();
               const verificationCode = (
                 item.verificationCode || ""
               ).toLowerCase();
+              const manufacturerId = (item.manufacturerId || "").toLowerCase();
+              const drugId = (item.drugId || "").toLowerCase();
               return (
-                code.includes(searchLower) ||
+                invoiceNumber.includes(searchLower) ||
                 drugName.includes(searchLower) ||
-                verificationCode.includes(searchLower)
+                verificationCode.includes(searchLower) ||
+                manufacturerId.includes(searchLower) ||
+                drugId.includes(searchLower)
               );
             }}
             getDisplayText={(item, searchLower) => {
@@ -88,12 +112,12 @@ export default function Distributions() {
                 item.drugName ||
                 ""
               ).toLowerCase();
-              const code = (item.code || "").toLowerCase();
+              const invoiceNumber = (item.invoiceNumber || item.code || "").toLowerCase();
               const verificationCode = (
                 item.verificationCode || ""
               ).toLowerCase();
-              if (code.includes(searchLower)) {
-                return item.code || "";
+              if (invoiceNumber.includes(searchLower)) {
+                return item.invoiceNumber || item.code || "";
               }
               if (drugName.includes(searchLower)) {
                 return drug?.name || drug?.tradeName || item.drugName || "";
@@ -102,6 +126,7 @@ export default function Distributions() {
                 return item.verificationCode || "";
               }
               return (
+                item.invoiceNumber ||
                 item.code ||
                 drug?.name ||
                 drug?.tradeName ||
@@ -120,12 +145,380 @@ export default function Distributions() {
           <Table
             columns={columns}
             dataSource={filteredData}
-            rowKey="_id"
+            rowKey={(record) => record._id || record.id}
             pagination={{ pageSize: 10, showSizeChanger: true }}
             scroll={{ x: 1000 }}
           />
         </Spin>
       </div>
+
+      {/* Confirm Receipt Dialog */}
+      {showConfirmDialog && selectedRecord && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={handleCloseConfirmDialog}
+        >
+          <div
+            className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <style>{`
+              .custom-scroll { scrollbar-width: thin; -ms-overflow-style: none; }
+              .custom-scroll::-webkit-scrollbar { width: 6px; }
+              .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+              .custom-scroll::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+              .custom-scroll::-webkit-scrollbar-thumb:hover { background: #555; }
+            `}</style>
+
+            {/* Header */}
+            <div className="bg-gradient-to-r from-primary to-secondary px-8 py-6 rounded-t-3xl flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold !text-white">
+                  Xác nhận nhận hàng
+                </h2>
+                <p className="text-gray-100 text-sm">
+                  Đơn: {selectedRecord.invoiceNumber || selectedRecord.code || "N/A"}
+                </p>
+              </div>
+              <button
+                onClick={handleCloseConfirmDialog}
+                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6">
+              {/* Người nhận */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Người nhận hàng <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={confirmForm.receivedBy}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(
+                      /[^a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]/g,
+                      ""
+                    );
+                    if (value.length <= 100) {
+                      setConfirmForm({
+                        ...confirmForm,
+                        receivedBy: value,
+                      });
+                      if (confirmFormErrors.receivedBy) {
+                        setConfirmFormErrors({
+                          ...confirmFormErrors,
+                          receivedBy: "",
+                        });
+                      }
+                    }
+                  }}
+                  placeholder="Họ và tên người nhận"
+                  maxLength={100}
+                  className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                    confirmFormErrors.receivedBy
+                      ? "border-red-500 focus:ring-red-500"
+                      : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                  }`}
+                />
+                {confirmFormErrors.receivedBy && (
+                  <p className="mt-1 text-xs text-red-600">{confirmFormErrors.receivedBy}</p>
+                )}
+              </div>
+
+              {/* Địa chỉ giao hàng */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Địa chỉ giao hàng</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Đường/Phố <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={confirmForm.deliveryAddress.street}
+                      onChange={(e) => {
+                        setConfirmForm({
+                          ...confirmForm,
+                          deliveryAddress: {
+                            ...confirmForm.deliveryAddress,
+                            street: e.target.value.slice(0, 200),
+                          },
+                        });
+                        if (confirmFormErrors.deliveryAddressStreet) {
+                          setConfirmFormErrors({
+                            ...confirmFormErrors,
+                            deliveryAddressStreet: "",
+                          });
+                        }
+                      }}
+                      placeholder="Số nhà, đường..."
+                      maxLength={200}
+                      className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                        confirmFormErrors.deliveryAddressStreet
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                      }`}
+                    />
+                    {confirmFormErrors.deliveryAddressStreet && (
+                      <p className="mt-1 text-xs text-red-600">{confirmFormErrors.deliveryAddressStreet}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Thành phố <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={confirmForm.deliveryAddress.city}
+                      onChange={(e) => {
+                        setConfirmForm({
+                          ...confirmForm,
+                          deliveryAddress: {
+                            ...confirmForm.deliveryAddress,
+                            city: e.target.value.slice(0, 100),
+                          },
+                        });
+                        if (confirmFormErrors.deliveryAddressCity) {
+                          setConfirmFormErrors({
+                            ...confirmFormErrors,
+                            deliveryAddressCity: "",
+                          });
+                        }
+                      }}
+                      placeholder="TP/Huyện"
+                      maxLength={100}
+                      className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                        confirmFormErrors.deliveryAddressCity
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                      }`}
+                    />
+                    {confirmFormErrors.deliveryAddressCity && (
+                      <p className="mt-1 text-xs text-red-600">{confirmFormErrors.deliveryAddressCity}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Tỉnh/Thành phố
+                    </label>
+                    <input
+                      value={confirmForm.deliveryAddress.state}
+                      onChange={(e) => {
+                        setConfirmForm({
+                          ...confirmForm,
+                          deliveryAddress: {
+                            ...confirmForm.deliveryAddress,
+                            state: e.target.value.slice(0, 100),
+                          },
+                        });
+                      }}
+                      placeholder="Tỉnh/Thành phố"
+                      maxLength={100}
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 focus:ring-gray-400 hover:border-gray-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Mã bưu điện
+                    </label>
+                    <input
+                      value={confirmForm.deliveryAddress.postalCode}
+                      onChange={(e) => {
+                        setConfirmForm({
+                          ...confirmForm,
+                          deliveryAddress: {
+                            ...confirmForm.deliveryAddress,
+                            postalCode: e.target.value.slice(0, 10),
+                          },
+                        });
+                      }}
+                      placeholder="Mã bưu điện"
+                      maxLength={10}
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 focus:ring-gray-400 hover:border-gray-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Quốc gia
+                    </label>
+                    <input
+                      value={confirmForm.deliveryAddress.country}
+                      onChange={(e) => {
+                        setConfirmForm({
+                          ...confirmForm,
+                          deliveryAddress: {
+                            ...confirmForm.deliveryAddress,
+                            country: e.target.value.slice(0, 100),
+                          },
+                        });
+                      }}
+                      placeholder="Quốc gia"
+                      maxLength={100}
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 focus:ring-gray-400 hover:border-gray-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Thông tin vận chuyển */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Thông tin vận chuyển</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Đơn vị vận chuyển
+                    </label>
+                    <input
+                      value={confirmForm.shippingInfo.carrier}
+                      onChange={(e) => {
+                        setConfirmForm({
+                          ...confirmForm,
+                          shippingInfo: {
+                            ...confirmForm.shippingInfo,
+                            carrier: e.target.value.slice(0, 100),
+                          },
+                        });
+                      }}
+                      placeholder="VD: Viettel Post, EMS..."
+                      maxLength={100}
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 focus:ring-gray-400 hover:border-gray-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Mã vận đơn
+                    </label>
+                    <input
+                      value={confirmForm.shippingInfo.trackingNumber}
+                      onChange={(e) => {
+                        setConfirmForm({
+                          ...confirmForm,
+                          shippingInfo: {
+                            ...confirmForm.shippingInfo,
+                            trackingNumber: e.target.value.slice(0, 50),
+                          },
+                        });
+                      }}
+                      placeholder="Mã vận đơn"
+                      maxLength={50}
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 focus:ring-gray-400 hover:border-gray-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Ngày nhận và Số lượng */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Ngày nhận
+                  </label>
+                  <input
+                    type="date"
+                    value={confirmForm.distributionDate}
+                    max={new Date().toISOString().split("T")[0]}
+                    onChange={(e) => {
+                      setConfirmForm({
+                        ...confirmForm,
+                        distributionDate: e.target.value,
+                      });
+                    }}
+                    className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 focus:ring-gray-400 hover:border-gray-400 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Số lượng nhận <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={selectedRecord?.quantity || undefined}
+                    value={confirmForm.distributedQuantity}
+                    onChange={(e) => {
+                      let value = e.target.value;
+                      if (value === "" || value === "-") {
+                        setConfirmForm({
+                          ...confirmForm,
+                          distributedQuantity: value,
+                        });
+                        return;
+                      }
+                      const numValue = parseInt(value);
+                      if (isNaN(numValue) || numValue <= 0) {
+                        value = "1";
+                      } else {
+                        const maxQuantity = selectedRecord?.quantity || 0;
+                        if (maxQuantity > 0 && numValue > maxQuantity) {
+                          value = maxQuantity.toString();
+                        } else {
+                          value = numValue.toString();
+                        }
+                      }
+                      setConfirmForm({
+                        ...confirmForm,
+                        distributedQuantity: value,
+                      });
+                      // Error sẽ được clear trong hook
+                    }}
+                    className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                      confirmFormErrors.distributedQuantity
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
+                    }`}
+                  />
+                  {confirmFormErrors.distributedQuantity && (
+                    <p className="mt-1 text-xs text-red-600">{confirmFormErrors.distributedQuantity}</p>
+                  )}
+                  {selectedRecord?.quantity && (
+                    <p className="mt-2 text-sm text-blue-500">
+                      (Tối đa: {selectedRecord.quantity} - số lượng đã được gửi đến)
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Ghi chú */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Ghi chú
+                </label>
+                <textarea
+                  rows="3"
+                  value={confirmForm.notes}
+                  onChange={(e) =>
+                    setConfirmForm({
+                      ...confirmForm,
+                      notes: e.target.value.slice(0, 500),
+                    })
+                  }
+                  maxLength={500}
+                  className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150 focus:ring-gray-400"
+                  placeholder="Ghi chú thêm..."
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-8 py-6 border-t border-gray-300 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
+              <button
+                onClick={handleCloseConfirmDialog}
+                disabled={isConfirming}
+                className="px-5 py-2.5 rounded-full border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-all duration-200 font-medium disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleSubmitConfirm}
+                disabled={isConfirming}
+                className="px-6 py-2.5 rounded-full bg-primary !text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+              >
+                {isConfirming ? "Đang xử lý..." : "Xác nhận nhận hàng"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

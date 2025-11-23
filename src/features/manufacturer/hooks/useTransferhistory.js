@@ -67,15 +67,26 @@ export const useTransferHistory = () => {
   // Update items when data changes
   useEffect(() => {
     if (transferHistoryData?.success) {
-      const invoices =
-        transferHistoryData.data?.invoices ||
-        transferHistoryData.data?.transfers ||
-        [];
+      // Handle multiple response structures:
+      // 1. data is array directly: { success: true, data: [...] }
+      // 2. data.invoices: { success: true, data: { invoices: [...] } }
+      // 3. data.transfers: { success: true, data: { transfers: [...] } }
+      let invoices = [];
+      if (Array.isArray(transferHistoryData.data)) {
+        invoices = transferHistoryData.data;
+      } else if (transferHistoryData.data?.invoices) {
+        invoices = transferHistoryData.data.invoices;
+      } else if (transferHistoryData.data?.transfers) {
+        invoices = transferHistoryData.data.transfers;
+      }
+
+      // Handle pagination from count field or pagination object
+      const total = transferHistoryData.count || transferHistoryData.data?.pagination?.total || invoices.length;
       const paginationData = transferHistoryData.data?.pagination || {
         page: 1,
         limit: 10,
-        total: 0,
-        pages: 0,
+        total: total,
+        pages: Math.ceil(total / 10) || 1,
       };
 
       const mappedItems = normalizeInvoices(invoices);
@@ -142,25 +153,178 @@ export const useTransferHistory = () => {
     }
   }, [search, allItems]);
 
+  // Helper function to parse JSON string safely
+  const safeParseJSON = (str) => {
+    if (!str || typeof str !== 'string') return null;
+    try {
+      // Handle MongoDB ObjectId string format
+      if (str.includes('ObjectId(') || str.includes('new ObjectId')) {
+        // Step 1: Replace ObjectId patterns with quoted strings
+        let cleaned = str
+          .replace(/ObjectId\(['"]([^'"]+)['"]\)/g, '"$1"')
+          .replace(/new ObjectId\(['"]([^'"]+)['"]\)/g, '"$1"');
+        
+        // Step 2: Replace newlines with spaces
+        cleaned = cleaned.replace(/\n/g, ' ');
+        
+        // Step 3: Replace single quotes with double quotes (but preserve escaped quotes)
+        cleaned = cleaned.replace(/(?<!\\)'/g, '"');
+        
+        // Step 4: Fix unquoted keys (e.g., _id: -> "_id":)
+        cleaned = cleaned.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
+        
+        // Step 5: Fix null values
+        cleaned = cleaned.replace(/:\s*null/g, ': null');
+        
+        // Step 6: Remove extra spaces
+        cleaned = cleaned.replace(/\s+/g, ' ').trim();
+        
+        try {
+          const parsed = JSON.parse(cleaned);
+          console.log('✅ Successfully parsed:', { email: parsed.email, username: parsed.username });
+          return parsed;
+        } catch (parseError) {
+          console.warn('⚠️ Failed to parse after cleaning, trying regex extraction...');
+          // Fallback: Extract fields using regex from original string
+          const extractField = (fieldName) => {
+            const regex = new RegExp(`${fieldName}\\s*:\\s*['"]([^'"]+)['"]`, 'i');
+            const match = str.match(regex);
+            return match ? match[1] : null;
+          };
+          
+          const email = extractField('email');
+          const username = extractField('username');
+          const walletAddress = extractField('walletAddress');
+          const phone = extractField('phone');
+          const fullName = extractField('fullName');
+          
+          if (email || username || walletAddress) {
+            const extracted = {
+              email: email || '',
+              username: username || '',
+              walletAddress: walletAddress || '',
+              phone: phone || '',
+              fullName: fullName || '',
+            };
+            console.log('✅ Extracted fields:', extracted);
+            return extracted;
+          }
+          
+          console.warn('❌ Could not extract any fields from:', str.substring(0, 200));
+          return null;
+        }
+      }
+      // Try direct JSON parse
+      return JSON.parse(str);
+    } catch (e) {
+      console.warn('❌ Failed to parse JSON string:', str.substring(0, 100), e);
+      return null;
+    }
+  };
+
   // FIX: Helper function to normalize invoices
   const normalizeInvoices = (invoices) => {
     if (!Array.isArray(invoices)) {
       return [];
     }
 
-    return invoices.map((invoice) => ({
-      ...invoice,
-      distributor: invoice.toDistributor || invoice.distributor,
-      transactionHash: invoice.chainTxHash || invoice.transactionHash,
-      tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
-      amounts: invoice.amounts || invoice.invoice?.amounts || [],
-      invoice: {
-        _id: invoice._id,
+    console.log('📦 [normalizeInvoices] Processing', invoices.length, 'invoices');
+    
+    return invoices.map((invoice, index) => {
+      console.log(`📄 [normalizeInvoices] Invoice ${index + 1}:`, {
+        id: invoice.id || invoice._id,
         invoiceNumber: invoice.invoiceNumber,
-        invoiceDate: invoice.invoiceDate,
+        distributorId: invoice.distributorId ? (typeof invoice.distributorId === 'string' ? invoice.distributorId.substring(0, 50) + '...' : 'object') : 'null',
+        hasDistributor: !!invoice.distributor,
+        hasToDistributor: !!invoice.toDistributor,
+      });
+      // Parse distributorId and drugId
+      // Priority: toDistributor > distributor > distributorName > distributorId (object) > distributorId (string parse)
+      let distributor = invoice.toDistributor || invoice.distributor;
+      let drug = invoice.drug;
+      
+      // If backend returns distributorName directly (new format)
+      if (!distributor && invoice.distributorName) {
+        distributor = {
+          _id: invoice.distributorId, // Store the ID if available
+          name: invoice.distributorName,
+          fullName: invoice.distributorName,
+          username: invoice.distributorName, // Often distributorName is email/username
+          email: invoice.distributorEmail || invoice.distributorName, // Use distributorName as email if it looks like email
+          ...(invoice.distributorEmail && { email: invoice.distributorEmail }),
+          ...(invoice.distributorWallet && { walletAddress: invoice.distributorWallet }),
+          ...(invoice.distributorPhone && { phone: invoice.distributorPhone }),
+          ...(invoice.distributorAddress && { address: invoice.distributorAddress }),
+        };
+        console.log('✅ Created distributor from distributorName:', distributor);
+      }
+      
+      // Parse distributorId if it's a JSON string (old format)
+      if (!distributor && invoice.distributorId) {
+        if (typeof invoice.distributorId === 'string') {
+          // Check if it's a JSON string (old format) or just an ID (new format)
+          if (invoice.distributorId.trim().startsWith('{') || invoice.distributorId.includes('ObjectId')) {
+            const parsedDistributor = safeParseJSON(invoice.distributorId);
+            if (parsedDistributor) {
+              distributor = parsedDistributor;
+              console.log('✅ Parsed distributor from JSON string:', distributor);
+            } else {
+              console.warn('⚠️ Failed to parse distributorId JSON:', invoice.distributorId?.substring(0, 100));
+            }
+          } else {
+            // It's just an ID string, not JSON - skip parsing
+            console.log('ℹ️ distributorId is just an ID, not JSON:', invoice.distributorId);
+          }
+        } else if (typeof invoice.distributorId === 'object') {
+          // Already an object, use directly
+          distributor = invoice.distributorId;
+          console.log('✅ Using distributorId as object:', distributor);
+        }
+      }
+      
+      // Log final distributor
+      if (distributor) {
+        console.log('✅ Final distributor:', {
+          name: distributor.name || distributor.fullName || distributor.username,
+          email: distributor.email,
+          hasWallet: !!distributor.walletAddress,
+        });
+      } else {
+        console.warn('⚠️ No distributor found for invoice:', invoice.invoiceNumber);
+      }
+      
+      // Parse drugId
+      if (invoice.drugId) {
+        if (typeof invoice.drugId === 'string') {
+          const parsedDrug = safeParseJSON(invoice.drugId);
+          if (parsedDrug) {
+            drug = parsedDrug;
+            console.log('✅ Parsed drug:', drug);
+          } else {
+            console.warn('⚠️ Failed to parse drugId:', invoice.drugId?.substring(0, 100));
+          }
+        } else if (typeof invoice.drugId === 'object') {
+          // Already an object, use directly
+          drug = invoice.drugId;
+        }
+      }
+
+      return {
+        ...invoice,
+        _id: invoice._id || invoice.id,
+        distributor: distributor,
+        drug: drug,
+        transactionHash: invoice.chainTxHash || invoice.transactionHash,
         tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
-      },
-    }));
+        amounts: invoice.amounts || invoice.invoice?.amounts || [],
+        invoice: {
+          _id: invoice._id || invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          invoiceDate: invoice.invoiceDate,
+          tokenIds: invoice.tokenIds || invoice.invoice?.tokenIds || [],
+        },
+      };
+    });
   };
 
   // Clear search button
@@ -197,6 +361,7 @@ export const useTransferHistory = () => {
       received: "bg-blue-100 text-blue-700 border-blue-200",
       paid: "bg-emerald-100 text-emerald-700 border-emerald-200",
       cancelled: "bg-red-100 text-red-700 border-red-200",
+      issued: "bg-amber-100 text-amber-700 border-amber-200", // Map "issued" to pending style
     };
     return colors[status] || "bg-slate-100 text-slate-600 border-slate-200";
   };
@@ -208,6 +373,7 @@ export const useTransferHistory = () => {
       received: "Received",
       paid: "Paid",
       cancelled: "Cancelled",
+      issued: "Đã phát hành", // Map "issued" to Vietnamese
     };
     return labels[status] || status;
   };
@@ -254,9 +420,9 @@ export const useTransferHistory = () => {
       return;
     } // Prevent double-click
 
-    if (!item.invoice?._id || !item.distributor?.walletAddress) {
+    if (!item._id || !item.distributor?.walletAddress) {
       toast.error(
-        "Thiếu thông tin cần thiết để retry. Vui lòng kiểm tra lại invoice và distributor address."
+        "Thiếu thông tin cần thiết để retry. Vui lòng kiểm tra lại invoice ID và distributor address."
       );
       return;
     }
@@ -331,7 +497,7 @@ export const useTransferHistory = () => {
 
       // Save to backend
       await saveTransferTransactionMutation.mutateAsync({
-        invoiceId: item.invoice._id,
+        invoiceId: item._id || item.invoice?._id,
         transactionHash: onchain.transactionHash,
         tokenIds,
       });
@@ -369,5 +535,9 @@ export const useTransferHistory = () => {
     handleSearch,
     handleClearSearch,
     updateFilter,
+    getStatusColor,
+    getStatusLabel,
+    handleRetry,
+    page,
   };
 };

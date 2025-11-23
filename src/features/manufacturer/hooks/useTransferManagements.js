@@ -40,8 +40,12 @@ export const useTransferManagements = () => {
 
   const loading = productionsLoading || distributorsLoading;
 
+  // Response structure: { success: true, data: [...], count: 7 }
+  // data là array trực tiếp, không có nested productions
   const productions = productionsData?.success
-    ? productionsData.data?.productions || productionsData.data || []
+    ? Array.isArray(productionsData.data)
+      ? productionsData.data
+      : productionsData.data?.productions || []
     : [];
 
   const distributors = distributorsData?.success
@@ -168,6 +172,9 @@ export const useTransferManagements = () => {
       id: production?.id,
       batchNumber: production?.batchNumber,
       quantity: production?.quantity,
+      drugId: production?.drugId,
+      drug: production?.drug,
+      drugIdFromDrug: production?.drug?._id || production?.drug?.id,
       hasTokenIds: !!production?.tokenIds,
       tokenIdsType: typeof production?.tokenIds,
       tokenIdsIsArray: Array.isArray(production?.tokenIds),
@@ -450,44 +457,40 @@ export const useTransferManagements = () => {
 
     setButtonAnimating(true);
     setButtonDone(false);
-    setShowBlockchainView(false);
+    setShowBlockchainView(true);
 
     try {
-      console.log("🌐 [handleSubmit] Creating transfer...");
+      console.log("🔗 [handleSubmit] Starting blockchain transfer directly...");
       
-      const response = await createTransferMutation.mutateAsync({
-        productionId: selectedProduction._id,
-        distributorId: formData.distributorId,
-        tokenIds,
-        amounts: tokenIds.map(() => 1),
-        notes: formData.notes || "",
-      });
-
-      console.log("✅ [handleSubmit] Transfer created:", response);
-
-      if (!isMountedRef.current) {
-        console.log("⚠️ [handleSubmit] Component unmounted");
+      // Lấy distributor address từ selectedDistributor
+      const distributorAddress = selectedDistributor?.walletAddress;
+      
+      if (!distributorAddress) {
+        console.error("❌ [handleSubmit] Missing distributor wallet address:", selectedDistributor);
+        toast.error("Lỗi: Nhà phân phối không có địa chỉ ví", {
+          position: "top-right",
+          duration: 5000,
+        });
+        setButtonAnimating(false);
+        setShowBlockchainView(false);
         console.groupEnd();
         return;
       }
-
-      if (response.success) {
-        const { invoice, distributorAddress } = response.data || {};
-
-        if (invoice && distributorAddress) {
-          console.log("🔗 [handleSubmit] Starting blockchain transfer...");
-          setShowBlockchainView(true);
-          handleBlockchainTransfer(invoice, distributorAddress, tokenIds);
-        } else {
-          console.log("✅ [handleSubmit] Transfer created (no blockchain)");
-          setButtonAnimating(false);
-          toast.success("Tạo yêu cầu chuyển giao thành công!", {
-            position: "top-right",
-          });
-          handleCloseDialog();
-          refetchProductions();
-        }
-      }
+      
+      console.log("🔍 [handleSubmit] Transfer info:", {
+        productionId: selectedProduction._id,
+        distributorId: formData.distributorId,
+        distributorAddress: distributorAddress,
+        tokenIdsCount: tokenIds.length,
+        tokenIds: tokenIds,
+      });
+      
+      // Gọi blockchain transfer trực tiếp (không gọi backend trước)
+      await handleBlockchainTransfer(
+        null, // invoice sẽ được tạo sau khi blockchain transfer thành công
+        distributorAddress,
+        tokenIds
+      );
       
     } catch (error) {
       console.error("❌ [handleSubmit] Error:", error);
@@ -498,7 +501,7 @@ export const useTransferManagements = () => {
       }
 
       const errorMessage = error.response?.data?.message || error.message || "Lỗi không xác định";
-      toast.error("Không thể tạo chuyển giao: " + errorMessage, {
+      toast.error("Không thể chuyển giao: " + errorMessage, {
         position: "top-right",
         duration: 5000,
       });
@@ -518,7 +521,7 @@ export const useTransferManagements = () => {
     console.group("⛓️ [handleBlockchainTransfer] START");
     
     setTransferProgress(0);
-    setTransferStatus("minting");
+    setTransferStatus("preparing");
 
     if (transferProgressIntervalRef.current) {
       clearInterval(transferProgressIntervalRef.current);
@@ -559,11 +562,13 @@ export const useTransferManagements = () => {
       setTransferProgress(0.2);
       setTransferStatus("transferring");
 
-      console.log("🚀 [handleBlockchainTransfer] Starting NFT transfer:", {
+      console.log("🚀 [handleBlockchainTransfer] Starting NFT transfer on blockchain:", {
         tokenIds,
         distributorAddress,
+        from: currentWallet,
       });
 
+      // BƯỚC 1: Gọi smart contract để transfer NFT
       const transferPromise = transferNFTToDistributor(
         tokenIds,
         distributorAddress
@@ -576,9 +581,14 @@ export const useTransferManagements = () => {
         );
       }, 100);
 
+      // Chờ transaction được ký và confirm trên blockchain
       const onchain = await transferPromise;
 
-      console.log("✅ [handleBlockchainTransfer] NFT transferred:", onchain);
+      console.log("✅ [handleBlockchainTransfer] NFT transferred on blockchain:", {
+        transactionHash: onchain.transactionHash,
+        blockNumber: onchain.blockNumber,
+        status: onchain.status,
+      });
 
       if (!isMountedRef.current) {
         console.groupEnd();
@@ -590,16 +600,42 @@ export const useTransferManagements = () => {
         transferProgressIntervalRef.current = null;
       }
 
+      // BƯỚC 2: Sau khi blockchain transfer thành công, gọi backend để lưu data
       setTransferProgress(0.85);
       setTransferStatus("saving");
 
-      console.log("💾 [handleBlockchainTransfer] Saving transaction...");
+      console.log("💾 [handleBlockchainTransfer] Saving data to backend...");
 
-      await saveTransferTransactionMutation.mutateAsync({
-        invoiceId: invoice._id,
-        transactionHash: onchain.transactionHash,
+      // Lấy drugId từ production
+      const drugId = selectedProduction?.drugId || 
+                     selectedProduction?.drug?._id || 
+                     selectedProduction?.drug?.id;
+      
+      const cleanDrugId = typeof drugId === 'string' ? drugId : 
+                         (drugId?._id || drugId?.id || String(drugId));
+
+      // Gọi API backend để lưu transfer data
+      // Format theo API: { distributorId, drugId, tokenIds, invoiceNumber, invoiceDate, quantity, notes, batchNumber, chainTxHash }
+      const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+      const invoiceDate = new Date().toISOString();
+      
+      const saveData = {
+        distributorId: formData.distributorId,
+        drugId: cleanDrugId,
         tokenIds,
-      });
+        invoiceNumber,
+        invoiceDate,
+        quantity: tokenIds.length,
+        notes: formData.notes || "",
+        batchNumber: selectedProduction.batchNumber || selectedProduction.drug?.batchNumber || "",
+        chainTxHash: onchain.transactionHash,
+      };
+
+      console.log("📤 [handleBlockchainTransfer] Sending to backend:", saveData);
+
+      const response = await createTransferMutation.mutateAsync(saveData);
+
+      console.log("✅ [handleBlockchainTransfer] Backend saved:", response);
 
       if (!isMountedRef.current) {
         console.groupEnd();
@@ -611,7 +647,7 @@ export const useTransferManagements = () => {
       setButtonDone(true);
       setButtonAnimating(false);
 
-      console.log("✅ [handleBlockchainTransfer] SUCCESS");
+      console.log("✅ [handleBlockchainTransfer] SUCCESS - Complete flow");
 
       toast.success(
         `Chuyển giao ${tokenIds.length} NFT thành công! TxHash: ${onchain.transactionHash.slice(0,10)}...`,

@@ -32,45 +32,132 @@ export const useTransferToPharmacy = () => {
   const chainIntervalRef = useRef(null);
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  const { data: distributionHistoryData, refetch: refetchDistributionHistory } =
-    useDistributorDistributionHistory({ status: "confirmed" });
-  const { data: pharmaciesData, refetch: refetchPharmacies } =
-    useDistributorPharmacies();
+  const { 
+    data: distributionHistoryData, 
+    isLoading: distributionLoading,
+    error: distributionError,
+    refetch: refetchDistributionHistory 
+  } = useDistributorDistributionHistory({ status: "confirmed" });
+  const { 
+    data: pharmaciesData, 
+    isLoading: pharmaciesLoading,
+    error: pharmaciesError,
+    refetch: refetchPharmacies 
+  } = useDistributorPharmacies();
+
+  // Debug logs
+  useEffect(() => {
+    if (distributionHistoryData) {
+      console.log("🔍 [useTransferToPharmacy] Distribution History Data:", distributionHistoryData);
+    }
+    if (distributionError) {
+      console.error("❌ [useTransferToPharmacy] Distribution History Error:", distributionError);
+    }
+  }, [distributionHistoryData, distributionError]);
+
+  useEffect(() => {
+    if (pharmaciesData) {
+      console.log("🔍 [useTransferToPharmacy] Pharmacies Data:", pharmaciesData);
+    }
+    if (pharmaciesError) {
+      console.error("❌ [useTransferToPharmacy] Pharmacies Error:", pharmaciesError);
+    }
+  }, [pharmaciesData, pharmaciesError]);
   const { mutateAsync: transferToPharmacyMutation } =
     useTransferToPharmacyMutation();
   const { mutateAsync: saveTransferTransaction } = useSaveTransferTransaction();
 
   useEffect(() => {
-    if (distributionHistoryData?.data) {
-      const data = distributionHistoryData.data;
-      if (data.success) {
-        const nextDistributions = data.data?.distributions || [];
-        setDistributions(nextDistributions);
-        queryClient.setQueryData(TRANSFER_CACHE_KEY, {
-          distributions: nextDistributions,
-          pharmacies: pharmacies || [],
-        });
+    if (distributionHistoryData) {
+      // Xử lý nhiều cấu trúc response khác nhau
+      let nextDistributions = [];
+      
+      // Case 1: { success: true, data: { distributions: [...] } }
+      if (distributionHistoryData.success && distributionHistoryData.data?.distributions) {
+        nextDistributions = Array.isArray(distributionHistoryData.data.distributions)
+          ? distributionHistoryData.data.distributions
+          : [];
       }
+      // Case 2: { data: { success: true, data: { distributions: [...] } } }
+      else if (distributionHistoryData.data?.success && distributionHistoryData.data.data?.distributions) {
+        nextDistributions = Array.isArray(distributionHistoryData.data.data.distributions)
+          ? distributionHistoryData.data.data.distributions
+          : [];
+      }
+      // Case 3: { data: { distributions: [...] } }
+      else if (distributionHistoryData.data?.distributions) {
+        nextDistributions = Array.isArray(distributionHistoryData.data.distributions)
+          ? distributionHistoryData.data.distributions
+          : [];
+      }
+      // Case 4: Direct array
+      else if (Array.isArray(distributionHistoryData.data)) {
+        nextDistributions = distributionHistoryData.data;
+      }
+      // Case 5: { data: [...] }
+      else if (Array.isArray(distributionHistoryData)) {
+        nextDistributions = distributionHistoryData;
+      }
+
+      console.log("📦 [useTransferToPharmacy] Parsed distributions:", {
+        raw: distributionHistoryData,
+        parsed: nextDistributions,
+        count: nextDistributions.length,
+      });
+
+      setDistributions(nextDistributions);
+      queryClient.setQueryData(TRANSFER_CACHE_KEY, {
+        distributions: nextDistributions,
+        pharmacies: pharmacies || [],
+      });
     }
-  }, [distributionHistoryData, queryClient]);
+  }, [distributionHistoryData, queryClient, pharmacies]);
 
   useEffect(() => {
-    if (pharmaciesData?.data) {
-      const data = pharmaciesData.data;
-      if (data.success && data.data) {
-        const nextPharmacies = Array.isArray(data.data.pharmacies)
-          ? data.data.pharmacies
-          : Array.isArray(data.data)
-          ? data.data
+    if (pharmaciesData) {
+      // Xử lý nhiều cấu trúc response khác nhau
+      let nextPharmacies = [];
+      
+      // Case 1: { success: true, data: { pharmacies: [...] } }
+      if (pharmaciesData.success && pharmaciesData.data?.pharmacies) {
+        nextPharmacies = Array.isArray(pharmaciesData.data.pharmacies)
+          ? pharmaciesData.data.pharmacies
           : [];
-        setPharmacies(nextPharmacies);
-        queryClient.setQueryData(TRANSFER_CACHE_KEY, {
-          distributions: distributions || [],
-          pharmacies: nextPharmacies,
-        });
       }
+      // Case 2: { data: { success: true, data: { pharmacies: [...] } } }
+      else if (pharmaciesData.data?.success && pharmaciesData.data.data?.pharmacies) {
+        nextPharmacies = Array.isArray(pharmaciesData.data.data.pharmacies)
+          ? pharmaciesData.data.data.pharmacies
+          : [];
+      }
+      // Case 3: { data: { pharmacies: [...] } }
+      else if (pharmaciesData.data?.pharmacies) {
+        nextPharmacies = Array.isArray(pharmaciesData.data.pharmacies)
+          ? pharmaciesData.data.pharmacies
+          : [];
+      }
+      // Case 4: Direct array
+      else if (Array.isArray(pharmaciesData.data)) {
+        nextPharmacies = pharmaciesData.data;
+      }
+      // Case 5: { data: [...] }
+      else if (Array.isArray(pharmaciesData)) {
+        nextPharmacies = pharmaciesData;
+      }
+
+      console.log("💊 [useTransferToPharmacy] Parsed pharmacies:", {
+        raw: pharmaciesData,
+        parsed: nextPharmacies,
+        count: nextPharmacies.length,
+      });
+
+      setPharmacies(nextPharmacies);
+      queryClient.setQueryData(TRANSFER_CACHE_KEY, {
+        distributions: distributions || [],
+        pharmacies: nextPharmacies,
+      });
     }
-  }, [pharmaciesData, queryClient]);
+  }, [pharmaciesData, queryClient, distributions]);
 
   useEffect(() => {
     const cached = queryClient.getQueryData(TRANSFER_CACHE_KEY);
@@ -120,17 +207,79 @@ export const useTransferToPharmacy = () => {
       const distributionResponse = distributionResult?.data;
       const pharmaciesResponse = pharmaciesResult?.data;
 
-      const nextDistributions = distributionResponse?.success
-        ? distributionResponse.data?.distributions || []
-        : [];
+      // Parse distributions với nhiều cấu trúc response
+      let nextDistributions = [];
+      if (distributionResponse) {
+        // Case 1: { success: true, data: { distributions: [...] } }
+        if (distributionResponse.success && distributionResponse.data?.distributions) {
+          nextDistributions = Array.isArray(distributionResponse.data.distributions)
+            ? distributionResponse.data.distributions
+            : [];
+        }
+        // Case 2: { data: { success: true, data: { distributions: [...] } } }
+        else if (distributionResponse.data?.success && distributionResponse.data.data?.distributions) {
+          nextDistributions = Array.isArray(distributionResponse.data.data.distributions)
+            ? distributionResponse.data.data.distributions
+            : [];
+        }
+        // Case 3: { data: { distributions: [...] } }
+        else if (distributionResponse.data?.distributions) {
+          nextDistributions = Array.isArray(distributionResponse.data.distributions)
+            ? distributionResponse.data.distributions
+            : [];
+        }
+        // Case 4: Direct array
+        else if (Array.isArray(distributionResponse.data)) {
+          nextDistributions = distributionResponse.data;
+        }
+        // Case 5: { data: [...] }
+        else if (Array.isArray(distributionResponse)) {
+          nextDistributions = distributionResponse;
+        }
+      }
 
-      const nextPharmacies = pharmaciesResponse?.success
-        ? Array.isArray(pharmaciesResponse.data?.pharmacies)
-          ? pharmaciesResponse.data.pharmacies
-          : Array.isArray(pharmaciesResponse.data)
-          ? pharmaciesResponse.data
-          : []
-        : [];
+      console.log("📦 [useTransferToPharmacy] Loaded distributions:", {
+        raw: distributionResponse,
+        parsed: nextDistributions,
+        count: nextDistributions.length,
+      });
+
+      // Parse pharmacies với nhiều cấu trúc response
+      let nextPharmacies = [];
+      if (pharmaciesResponse) {
+        // Case 1: { success: true, data: { pharmacies: [...] } }
+        if (pharmaciesResponse.success && pharmaciesResponse.data?.pharmacies) {
+          nextPharmacies = Array.isArray(pharmaciesResponse.data.pharmacies)
+            ? pharmaciesResponse.data.pharmacies
+            : [];
+        }
+        // Case 2: { data: { success: true, data: { pharmacies: [...] } } }
+        else if (pharmaciesResponse.data?.success && pharmaciesResponse.data.data?.pharmacies) {
+          nextPharmacies = Array.isArray(pharmaciesResponse.data.data.pharmacies)
+            ? pharmaciesResponse.data.data.pharmacies
+            : [];
+        }
+        // Case 3: { data: { pharmacies: [...] } }
+        else if (pharmaciesResponse.data?.pharmacies) {
+          nextPharmacies = Array.isArray(pharmaciesResponse.data.pharmacies)
+            ? pharmaciesResponse.data.pharmacies
+            : [];
+        }
+        // Case 4: Direct array
+        else if (Array.isArray(pharmaciesResponse.data)) {
+          nextPharmacies = pharmaciesResponse.data;
+        }
+        // Case 5: { data: [...] }
+        else if (Array.isArray(pharmaciesResponse)) {
+          nextPharmacies = pharmaciesResponse;
+        }
+      }
+
+      console.log("💊 [useTransferToPharmacy] Loaded pharmacies:", {
+        raw: pharmaciesResponse,
+        parsed: nextPharmacies,
+        count: nextPharmacies.length,
+      });
 
       setDistributions(nextDistributions);
       setPharmacies(nextPharmacies);
@@ -150,12 +299,17 @@ export const useTransferToPharmacy = () => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
-      console.error("Lỗi khi tải dữ liệu:", error);
+      console.error("❌ [useTransferToPharmacy] Lỗi khi tải dữ liệu:", {
+        error,
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       setDistributions([]);
       setPharmacies([]);
       toast.error(
         `Không thể tải dữ liệu: ${
-          error.response?.data?.message || error.message
+          error.response?.data?.message || error.message || "Lỗi không xác định"
         }`,
         {
           position: "top-right",
@@ -171,22 +325,50 @@ export const useTransferToPharmacy = () => {
   };
 
   const extractTokenIds = (distributionObj) => {
+    console.log("🔍 [extractTokenIds] Distribution object:", distributionObj);
+
+    // Case 1: manufacturerInvoice.tokenIds
     if (
       distributionObj.manufacturerInvoice?.tokenIds &&
       Array.isArray(distributionObj.manufacturerInvoice.tokenIds)
     ) {
-      return distributionObj.manufacturerInvoice.tokenIds.map((id) =>
+      const tokenIds = distributionObj.manufacturerInvoice.tokenIds.map((id) =>
         String(id)
       );
+      console.log("✅ [extractTokenIds] Found in manufacturerInvoice.tokenIds:", tokenIds);
+      return tokenIds;
     }
 
+    // Case 2: invoice.tokenIds
     if (
       distributionObj.invoice?.tokenIds &&
       Array.isArray(distributionObj.invoice.tokenIds)
     ) {
-      return distributionObj.invoice.tokenIds.map((id) => String(id));
+      const tokenIds = distributionObj.invoice.tokenIds.map((id) => String(id));
+      console.log("✅ [extractTokenIds] Found in invoice.tokenIds:", tokenIds);
+      return tokenIds;
     }
 
+    // Case 3: proofOfDistribution.tokenIds
+    if (
+      distributionObj.proofOfDistribution?.tokenIds &&
+      Array.isArray(distributionObj.proofOfDistribution.tokenIds)
+    ) {
+      const tokenIds = distributionObj.proofOfDistribution.tokenIds.map((id) =>
+        String(id)
+      );
+      console.log("✅ [extractTokenIds] Found in proofOfDistribution.tokenIds:", tokenIds);
+      return tokenIds;
+    }
+
+    // Case 4: Direct tokenIds
+    if (distributionObj.tokenIds && Array.isArray(distributionObj.tokenIds)) {
+      const tokenIds = distributionObj.tokenIds.map((id) => String(id));
+      console.log("✅ [extractTokenIds] Found in tokenIds:", tokenIds);
+      return tokenIds;
+    }
+
+    // Case 5: nftInfos array
     if (distributionObj.nftInfos && Array.isArray(distributionObj.nftInfos)) {
       const tokenIds = distributionObj.nftInfos
         .map((nft) => {
@@ -197,18 +379,18 @@ export const useTransferToPharmacy = () => {
         })
         .filter(Boolean);
       if (tokenIds.length > 0) {
+        console.log("✅ [extractTokenIds] Found in nftInfos:", tokenIds);
         return tokenIds;
       }
     }
 
-    if (distributionObj.tokenIds && Array.isArray(distributionObj.tokenIds)) {
-      return distributionObj.tokenIds.map((id) => String(id));
-    }
-
+    // Case 6: manufacturerInvoice._id hoặc invoiceId để gọi API
+    console.warn("⚠️ [extractTokenIds] No tokenIds found in distribution object");
     return [];
   };
 
   const handleSelectDistribution = async (dist) => {
+    console.log("📦 [handleSelectDistribution] Selected distribution:", dist);
     let tokenIds = extractTokenIds(dist);
 
     if (tokenIds.length === 0) {
@@ -216,15 +398,26 @@ export const useTransferToPharmacy = () => {
     }
 
     try {
+      // Nếu không tìm thấy tokenIds, thử lấy từ API
       if (tokenIds.length === 0) {
+        console.log("🔍 [handleSelectDistribution] No tokenIds found, trying to fetch from API...");
+        
+        // Thử nhiều cách lấy invoiceId
         const manufacturerInvoiceId =
-          dist?.manufacturerInvoice?._id || dist?.manufacturerInvoice;
+          dist?.manufacturerInvoice?._id || 
+          dist?.manufacturerInvoice?.id ||
+          dist?.manufacturerInvoice ||
+          dist?.invoice?._id ||
+          dist?.invoice?.id ||
+          dist?.invoice ||
+          dist?.invoiceId ||
+          dist?._id;
 
-        if (
-          manufacturerInvoiceId &&
-          typeof manufacturerInvoiceId === "string"
-        ) {
+        console.log("🔍 [handleSelectDistribution] Invoice ID to fetch:", manufacturerInvoiceId);
+
+        if (manufacturerInvoiceId && typeof manufacturerInvoiceId === "string") {
           try {
+            console.log("📡 [handleSelectDistribution] Fetching invoice detail from API...");
             const invoiceDetailRes = await queryClient.fetchQuery({
               queryKey: ["getInvoiceDetail", manufacturerInvoiceId],
               queryFn: async () => {
@@ -234,24 +427,96 @@ export const useTransferToPharmacy = () => {
                 return response.data;
               },
             });
+            
+            console.log("📡 [handleSelectDistribution] Invoice detail response:", invoiceDetailRes);
+
+            // Xử lý nhiều cấu trúc response
+            let invoiceDetail = null;
             if (invoiceDetailRes?.success && invoiceDetailRes.data) {
-              const invoiceDetail = invoiceDetailRes.data;
-              if (
-                invoiceDetail.tokenIds &&
-                Array.isArray(invoiceDetail.tokenIds) &&
-                invoiceDetail.tokenIds.length > 0
-              ) {
-                tokenIds = invoiceDetail.tokenIds.map((id) => String(id));
+              invoiceDetail = invoiceDetailRes.data;
+            } else if (invoiceDetailRes?.data) {
+              invoiceDetail = invoiceDetailRes.data;
+            } else if (invoiceDetailRes) {
+              invoiceDetail = invoiceDetailRes;
+            }
+
+            if (invoiceDetail) {
+              // Tìm tokenIds trong nhiều path
+              const foundTokenIds = 
+                invoiceDetail.tokenIds ||
+                invoiceDetail.data?.tokenIds ||
+                invoiceDetail.invoice?.tokenIds ||
+                invoiceDetail.manufacturerInvoice?.tokenIds;
+
+              if (foundTokenIds && Array.isArray(foundTokenIds) && foundTokenIds.length > 0) {
+                tokenIds = foundTokenIds.map((id) => String(id));
+                console.log("✅ [handleSelectDistribution] Found tokenIds from invoice API:", tokenIds);
               } else {
                 console.warn(
-                  "⚠️ API getInvoiceDetail không trả về tokenIds:",
+                  "⚠️ [handleSelectDistribution] API getInvoiceDetail không trả về tokenIds:",
                   invoiceDetail
                 );
               }
             }
           } catch (invoiceError) {
-            console.warn("Lỗi khi gọi getInvoiceDetail:", invoiceError);
+            console.error("❌ [handleSelectDistribution] Lỗi khi gọi getInvoiceDetail:", invoiceError);
+            // Không throw error, để tiếp tục với tokenIds rỗng
           }
+        }
+
+        // Nếu vẫn không có tokenIds, thử gọi distribution detail API
+        if (tokenIds.length === 0 && dist?._id) {
+          try {
+            console.log("📡 [handleSelectDistribution] Trying distribution detail API...");
+            const distributionDetailRes = await queryClient.fetchQuery({
+              queryKey: ["getDistributionDetail", dist._id],
+              queryFn: async () => {
+                const response = await api.get(
+                  `/distributor/distributions/${dist._id}`
+                );
+                return response.data;
+              },
+            });
+
+            console.log("📡 [handleSelectDistribution] Distribution detail response:", distributionDetailRes);
+
+            // Xử lý nhiều cấu trúc response
+            let distributionDetail = null;
+            if (distributionDetailRes?.success && distributionDetailRes.data) {
+              distributionDetail = distributionDetailRes.data;
+            } else if (distributionDetailRes?.data) {
+              distributionDetail = distributionDetailRes.data?.data || distributionDetailRes.data;
+            } else if (distributionDetailRes) {
+              distributionDetail = distributionDetailRes;
+            }
+
+            if (distributionDetail) {
+              // Tìm tokenIds trong nhiều path từ distribution detail
+              const foundTokenIds = 
+                distributionDetail.tokenIds ||
+                distributionDetail.data?.tokenIds ||
+                distributionDetail.invoice?.tokenIds ||
+                distributionDetail.manufacturerInvoice?.tokenIds ||
+                distributionDetail.proofOfDistribution?.tokenIds;
+
+              if (foundTokenIds && Array.isArray(foundTokenIds) && foundTokenIds.length > 0) {
+                tokenIds = foundTokenIds.map((id) => String(id));
+                console.log("✅ [handleSelectDistribution] Found tokenIds from distribution detail API:", tokenIds);
+              } else {
+                console.warn(
+                  "⚠️ [handleSelectDistribution] Distribution detail API không trả về tokenIds:",
+                  distributionDetail
+                );
+              }
+            }
+          } catch (distributionError) {
+            console.error("❌ [handleSelectDistribution] Lỗi khi gọi distribution detail API:", distributionError);
+            // Không throw error, để tiếp tục với tokenIds rỗng
+          }
+        }
+
+        if (tokenIds.length === 0) {
+          console.warn("⚠️ [handleSelectDistribution] Không tìm thấy invoiceId hoặc distributionId để gọi API");
         }
       }
 

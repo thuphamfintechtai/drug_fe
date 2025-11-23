@@ -132,7 +132,7 @@ export default function TransferManagement() {
                   <tbody className="divide-y divide-gray-100">
                     {productions.map((prod, index) => (
                       <tr
-                        key={prod._id || index}
+                        key={prod._id || prod.id || index}
                         className="hover:bg-gray-50 transition-colors"
                       >
                         <td className="px-6 py-4 font-medium text-gray-800">
@@ -155,38 +155,74 @@ export default function TransferManagement() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-gray-600">
-                          {formatDate(prod.mfgDate)}
+                          {formatDate(prod.mfgDate || prod.manufacturingDate)}
                         </td>
                         <td className="px-6 py-4 text-gray-600">
-                          {formatDate(prod.expDate)}
+                          {formatDate(prod.expDate || prod.expiryDate)}
                         </td>
                         <td className="px-6 py-4">
-                          {prod.transferStatus === "transferred" ? (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
-                              Đã chuyển
-                            </span>
-                          ) : prod.transferStatus === "pending" ? (
-                            <span className="inline-flex items-center px-2.5 py-1 w-26 justify-center rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
-                              Chưa chuyển
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
-                              Không xác định
-                            </span>
-                          )}
+                          {(() => {
+                            if (prod.status === "distributed") {
+                              // Đã chuyển giao cho distributor
+                              return (
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
+                                  Đã chuyển
+                                </span>
+                              );
+                            }
+                            
+                            if (prod.status === "completed") {
+                              // Đã mint NFT, sẵn sàng để transfer
+                              return (
+                                <span className="inline-flex items-center px-2.5 py-1 w-24 justify-center rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
+                                  Chưa chuyển
+                                </span>
+                              );
+                            }
+                            
+                            if (prod.status === "pending") {
+                              // Đang chờ mint NFT
+                              return (
+                                <span className="inline-flex items-center px-2.5 py-1 w-24 justify-center rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                                  Đang chờ
+                                </span>
+                              );
+                            }
+                            
+                            if (prod.status === "failed") {
+                              // Mint NFT thất bại
+                              return (
+                                <span className="inline-flex items-center px-2.5 py-1 w-24 justify-center rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
+                                  Thất bại
+                                </span>
+                              );
+                            }
+                            
+                            // Mặc định: chưa chuyển
+                            return (
+                              <span className="inline-flex items-center px-2.5 py-1 w-24 justify-center rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
+                                Chưa chuyển
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-6 py-4 text-center">
                           <button
                             onClick={() => handleSelectProduction(prod)}
-                            disabled={prod.transferStatus === "transferred"}
+                            disabled={
+                              prod.status === "distributed" || 
+                              prod.status !== "completed"
+                            }
                             className={`px-4 py-2 text-sm whitespace-nowrap justify-center border-2 rounded-full font-semibold transition-all duration-200 ${
-                              prod.transferStatus === "transferred"
+                              prod.status === "distributed" || prod.status !== "completed"
                                 ? "border-gray-300 text-gray-400 cursor-not-allowed"
                                 : "border-secondary text-secondary hover:bg-secondary hover:!text-white hover:shadow-md hover:shadow-secondary/40"
                             }`}
                           >
-                            {prod.transferStatus === "transferred"
+                            {prod.status === "distributed"
                               ? "Đã chuyển"
+                              : prod.status !== "completed"
+                              ? "Chưa sẵn sàng"
                               : "Chuyển giao"}
                           </button>
                         </td>
