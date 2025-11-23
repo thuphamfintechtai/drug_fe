@@ -41,7 +41,7 @@ export default function CreateContract() {
     },
   });
 
-  const pharmacies = pharmaciesResponse?.data?.data || [];
+  const pharmacies = pharmaciesResponse?.data?.pharmacies || [];
 
   const handleFileChange = ({ fileList: newFileList }) => {
     setFileList(newFileList);
