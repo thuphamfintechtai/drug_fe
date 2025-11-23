@@ -14,14 +14,12 @@ gsap.registerPlugin(MotionPathPlugin);
  * @param {Object} props
  * @param {number} props.duration - Animation duration (seconds)
  * @param {boolean} props.showTrail - Show dotted trail
- * @param {string} props.bgColor - Background color
  * @param {number} props.animationSpeed - Animation speed multiplier
  * @param {function} props.onComplete - Callback when animation completes
  */
 const TruckTransfer = ({
   duration = 12,
   showTrail = false,
-  bgColor = "#F7F5EF",
   animationSpeed = 1,
   onComplete = null,
 }) => {
@@ -30,30 +28,30 @@ const TruckTransfer = ({
   const smokeContainerRef = useRef(null);
 
   // Điều chỉnh đường ray lên cao hơn và nằm giữa
-  const pathData = `M 70 220
-          C 95 64, 154 65, 318 62
-          C 640 113, 341 222, 675 276
-          C 873 294, 945 246, 948 97`;
+  const pathData = `M 70 200
+          C 95 44, 154 44, 318 42
+          C 640 93, 341 202, 675 256
+          C 873 274, 945 226, 948 77`;
 
   // Stations data - điều chỉnh vị trí các trạm lên cao
   const stations = [
     {
       name: "Nhà sản xuất",
       icon: manufacturingIcon,
-      x: 35,
-      y: 250,
+      x: 44,
+      y: 230,
       color: "#0A7BA8",
       description: "Sản xuất thuốc",
-      size: 30  ,
+      size: 70,
     },
     {
       name: "Nhà phân phối",
       icon: distributionIcon,
-      x: 500,
-      y: 160,
+      x: 550,
+      y: 80,
       color: "#1F8AC0",
       description: "Phân phối & kiểm tra",
-      size: 30,
+      size: 70,
     },
     {
       name: "Nhà thuốc",
@@ -62,7 +60,7 @@ const TruckTransfer = ({
       y: 15,
       color: "#3C4EB7",
       description: "Bán lẻ cho khách hàng",
-      size: 30,
+      size: 70,
     },
   ];
 
@@ -153,8 +151,6 @@ const TruckTransfer = ({
         },
       });
 
-      // Không cần animation cho đường - chỉ xe di chuyển
-
       const smokeInterval = setInterval(() => {
         createSmokeCluster();
       }, 250);
@@ -172,33 +168,14 @@ const TruckTransfer = ({
     <div
       style={{
         width: "100%",
-        maxWidth: "1000px",
+        maxWidth: "2000px",
         margin: "0 auto",
         position: "relative",
-        background: `linear-gradient(135deg, ${bgColor} 0%, #E8F4F8 100%)`,
         padding: "clamp(10px, 2vw, 20px)",
-        borderRadius: "clamp(12px, 2vw, 20px)",
-        boxShadow:
-          "0 20px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.5) inset",
         aspectRatio: "10 / 3.5",
         overflow: "hidden",
       }}
     >
-      {/* Background decoration */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          opacity: 0.03,
-          backgroundImage: `radial-gradient(circle at 2px 2px, #06B6D4 1px, transparent 0)`,
-          backgroundSize: "40px 40px",
-          pointerEvents: "none",
-        }}
-      />
-
       <svg
         viewBox="0 0 1000 700"
         xmlns="http://www.w3.org/2000/svg"
@@ -231,7 +208,7 @@ const TruckTransfer = ({
             d={pathData}
             fill="none"
             stroke="#808080"
-            strokeWidth="22"
+            strokeWidth="35"
             strokeLinecap="round"
             filter="url(#roadShadow)"
           />
@@ -243,7 +220,7 @@ const TruckTransfer = ({
             d={pathData}
             fill="none"
             stroke="white"
-            strokeWidth="4"
+            strokeWidth="5"
             strokeDasharray="20 15"
             strokeLinecap="round"
           />
@@ -255,85 +232,43 @@ const TruckTransfer = ({
           const iconRadius = iconSize / 2 + 4;
           return (
             <g key={index}>
-            {/* Pulsing circle background */}
-            <circle
-              cx={station.x + 25}
-              cy={station.y + 25}
-              r="30"
-              fill={station.color}
-              opacity="0.15"
-            >
-              <animate
-                attributeName="r"
-                values="35;42;35"
-                dur="2s"
-                repeatCount="indefinite"
-                begin={`${index * 0.5}s`}
-              />
-              <animate
-                attributeName="opacity"
-                values="0.15;0.05;0.15"
-                dur="2s"
-                repeatCount="indefinite"
-                begin={`${index * 0.5}s`}
-              />
-            </circle>
+              {/* Pulsing circle background */}
 
-            {/* Station icon circle */}
-            <circle
-              cx={station.x + 25}
-              cy={station.y + 25}
-              r={iconRadius}
-              fill="white"
-              stroke={station.color}
-              strokeWidth="3"
-              filter="drop-shadow(0 4px 12px rgba(0,0,0,0.15))"
-            />
-
-            {/* Icon */}
-            <image
-              href={station.icon}
-              x={station.x + 25 - iconSize / 2}
-              y={station.y + 25 - iconSize / 2}
-              width={iconSize}
-              height={iconSize}
-              style={{ pointerEvents: "none" }}
-            />
-
-            {/* Station label - responsive */}
-            <g transform={`translate(${station.x + 25}, ${station.y + 75})`}>
-              <rect
-                x="-55"
-                y="-12"
-                width="110"
-                height="24"
-                rx="12"
-                fill="white"
-                opacity="0.95"
-                filter="drop-shadow(0 2px 8px rgba(0,0,0,0.1))"
+              {/* Icon */}
+              <image
+                href={station.icon}
+                x={station.x + 25 - iconSize / 2}
+                y={station.y + 25 - iconSize / 2}
+                width={iconSize}
+                height={iconSize}
+                style={{ pointerEvents: "none" }}
               />
-              <text
-                textAnchor="middle"
-                y="4"
-                fill={station.color}
-                fontSize="clamp(10, 12, 13)"
-                fontWeight="600"
-              >
-                {station.name}
-              </text>
+
+              {/* Station label - responsive */}
+              <g transform={`translate(${station.x + 25}, ${station.y + 75})`}>
+                <rect
+                  x="-55"
+                  y="-12"
+                  width="110"
+                  height="24"
+                  rx="12"
+                  fill="white"
+                  opacity="0.95"
+                  filter="drop-shadow(0 2px 8px rgba(0,0,0,0.1))"
+                />
+                <text
+                  textAnchor="middle"
+                  y="4"
+                  fill={station.color}
+                  fontSize="clamp(10, 12, 13)"
+                  fontWeight="600"
+                >
+                  {station.name}
+                </text>
+              </g>
             </g>
-
-          </g>
           );
         })}
-
-        {/* Decorative elements - pills/capsules */}
-        <g opacity="0.1">
-          <ellipse cx="150" cy="480" rx="8" ry="15" fill="#10B981" />
-          <ellipse cx="800" cy="450" rx="8" ry="15" fill="#3B82F6" />
-          <circle cx="300" cy="150" r="10" fill="#8B5CF6" />
-          <circle cx="700" cy="180" r="8" fill="#10B981" />
-        </g>
       </svg>
 
       {/* Vehicle with Smoke */}
