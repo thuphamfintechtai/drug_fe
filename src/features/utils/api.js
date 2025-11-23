@@ -3,7 +3,7 @@ import { getAuthToken } from "../auth/utils/cookieUtils";
 
 const getApiBaseUrl = () => {
   if (import.meta.env.DEV) {
-    return "http://localhost:9000/api";
+    return "https://drug-be.vercel.app";
   }
 };
 
