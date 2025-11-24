@@ -7,12 +7,282 @@ import {
   useDistributorPharmacies,
   useTransferToPharmacy as useTransferToPharmacyMutation,
   useSaveTransferTransaction,
+  useUpdateInvoiceStatus,
 } from "../apis/distributor";
 import api from "../../utils/api";
+import {
+  transferNFTToPharmacy,
+  checkDistributorNFTBalances,
+  connectWallet, // ✅ THÊM: Import hàm connect wallet
+  getCurrentAccount, // ✅ THÊM: Import hàm get current account
+  finalizeDistributorPharmacyContract, // ✅ THÊM: Import hàm finalize contract
+  createDistributorPharmacyContract, // ✅ THÊM: Import hàm tạo contract
+} from "../../utils/web3Helper";
+
+// ✅ VALIDATION FUNCTIONS
+const validateTokenIds = (tokenIds) => {
+  if (!Array.isArray(tokenIds) || tokenIds.length === 0) {
+    return { valid: false, error: "tokenIds phải là array không rỗng" };
+  }
+
+  const trimmed = tokenIds.map((id) => String(id).trim()).filter((id) => id !== "");
+  if (trimmed.length === 0) {
+    return { valid: false, error: "tokenIds không được rỗng" };
+  }
+
+  const unique = [...new Set(trimmed)];
+  if (unique.length !== trimmed.length) {
+    const duplicates = findDuplicates(trimmed);
+    return {
+      valid: false,
+      error: "tokenIds không được có giá trị trùng lặp",
+      duplicates,
+    };
+  }
+
+  return { valid: true, tokenIds: unique };
+};
+
+const validateQuantity = (quantity, tokenIdsLength) => {
+  if (quantity === null || quantity === undefined || quantity === "") {
+    return { valid: true }; // Optional field
+  }
+
+  const qty = typeof quantity === "number" ? quantity : parseInt(quantity);
+  if (isNaN(qty)) {
+    return { valid: false, error: "quantity phải là số" };
+  }
+
+  if (qty !== tokenIdsLength) {
+    return {
+      valid: false,
+      error: `quantity (${qty}) phải bằng số lượng tokenIds (${tokenIdsLength})`,
+    };
+  }
+
+  return { valid: true };
+};
+
+const validateTransactionHash = (hash) => {
+  if (!hash || typeof hash !== "string") {
+    return { valid: false, error: "transactionHash không hợp lệ" };
+  }
+
+  if (!/^0x[a-fA-F0-9]{64}$/.test(hash)) {
+    return {
+      valid: false,
+      error: "transactionHash phải có định dạng Ethereum hash (0x + 64 hex chars)",
+    };
+  }
+
+  return { valid: true };
+};
+
+const findDuplicates = (arr) => {
+  const seen = new Set();
+  const duplicates = new Set();
+
+  arr.forEach((item) => {
+    if (seen.has(item)) {
+      duplicates.add(item);
+    } else {
+      seen.add(item);
+    }
+  });
+
+  return Array.from(duplicates);
+};
 
 export const useTransferToPharmacy = () => {
   const queryClient = useQueryClient();
   const TRANSFER_CACHE_KEY = ["distributor", "transfer-to-pharmacy"];
+
+  const normalizeDistribution = (item = {}) => {
+    const manufacturerObj =
+      item.manufacturer ||
+      item.fromManufacturer ||
+      (item.manufacturerName
+        ? { fullName: item.manufacturerName }
+        : item.manufacturerId
+        ? { fullName: item.manufacturerId }
+        : null);
+
+    const manufacturerId =
+      item.manufacturerId ||
+      item?.manufacturer?._id ||
+      item?.fromManufacturer?._id ||
+      item._fromManufacturerId ||
+      (typeof item.manufacturer === "string" ? item.manufacturer : undefined);
+
+    const invoiceNumber =
+      item.manufacturerInvoice?.invoiceNumber ||
+      item.invoice?.invoiceNumber ||
+      item.invoiceNumber ||
+      item?.manufacturerInvoice?.invoice?.number ||
+      item?.invoice?.code ||
+      item?.code ||
+      item?.id;
+
+    const manufacturerInvoice =
+      item.manufacturerInvoice ||
+      item.invoice ||
+      (invoiceNumber ? { invoiceNumber } : undefined);
+
+    const tokenIds = Array.isArray(item.tokenIds)
+      ? item.tokenIds.map((id) => String(id))
+      : item.tokenIds;
+
+    const quantity =
+      item.distributedQuantity ??
+      item.quantity ??
+      (Array.isArray(tokenIds) ? tokenIds.length : undefined);
+
+    const batchNumber = item.batchNumber || item._batchNumber || undefined;
+
+    return {
+      ...item,
+      _id: item._id || item.id || item.distributionId,
+      manufacturer: manufacturerObj || undefined,
+      manufacturerId,
+      manufacturerInvoice,
+      invoiceNumber,
+      batchNumber,
+      drugId:
+        item.drugId ||
+        item._drugId ||
+        item?.drug?._id ||
+        item?.drug?.id ||
+        item?.proofOfProduction?.drugId ||
+        item?.manufacturerInvoice?.drugId ||
+        item?.manufacturerInvoice?._drugId ||
+        item?.invoice?.drugId ||
+        item?.invoice?._drugId,
+      distributedQuantity: quantity,
+      tokenIds,
+      distributionDate:
+        item.distributionDate || item.receivedAt || item.createdAt || null,
+      chainTxHash: item.chainTxHash || item._chainTxHash || undefined,
+    };
+  };
+
+  const extractTokenIdsFromInvoiceDetail = (detail = {}) => {
+    const candidates = [
+      detail.tokenIds,
+      detail._tokenIds,
+      detail?.data?.tokenIds,
+      detail?.invoice?.tokenIds,
+      detail?.manufacturerInvoice?.tokenIds,
+    ];
+    for (const candidate of candidates) {
+      if (Array.isArray(candidate) && candidate.length > 0) {
+        return candidate.map((id) => String(id));
+      }
+    }
+    return [];
+  };
+
+  const parseInvoiceDetail = (detail = {}) => {
+    if (!detail || typeof detail !== "object") {
+      return {};
+    }
+
+    const invoiceNumber =
+      detail.invoiceNumber ||
+      detail?.invoice?.invoiceNumber ||
+      detail?.manufacturerInvoice?.invoiceNumber ||
+      detail?._invoiceNumber?._value ||
+      detail?._invoiceNumber?.value ||
+      detail?.invoiceCode ||
+      detail?._id;
+
+    const tokenIds = extractTokenIdsFromInvoiceDetail(detail);
+    const status = (detail.status || detail._status || "").toLowerCase();
+    const quantity =
+      detail.quantity ??
+      detail?._quantity?._value ??
+      detail?._quantity?.value ??
+      detail?._quantity ??
+      null;
+
+    const drugId =
+      detail.drugId ||
+      detail._drugId ||
+      detail?.drug?._id ||
+      detail?.drug?.id;
+
+    const batchNumber = detail.batchNumber || detail._batchNumber || undefined;
+
+    return {
+      id: detail._id || detail.id,
+      invoiceNumber,
+      status,
+      tokenIds,
+      drugId,
+      batchNumber,
+      manufacturerId:
+        detail._fromManufacturerId ||
+        detail.fromManufacturerId ||
+        detail.manufacturerId,
+      invoiceDate: detail.invoiceDate || detail._invoiceDate || null,
+      quantity,
+    };
+  };
+
+  const resolveDrugId = (distribution = {}) => {
+    return (
+      distribution.drugId ||
+      distribution._drugId ||
+      distribution?.manufacturerInvoice?.drugId ||
+      distribution?.manufacturerInvoice?._drugId ||
+      distribution?.invoice?.drugId ||
+      distribution?.invoice?._drugId ||
+      distribution?.proofOfProduction?.drugId ||
+      distribution?.proofOfProduction?._drugId ||
+      distribution?.drug?._id ||
+      distribution?.drug?.id
+    );
+  };
+
+  const findInvoiceIdByTokens = async (tokenIds, batchNumber) => {
+    if (!Array.isArray(tokenIds) || tokenIds.length === 0) {
+      return null;
+    }
+
+    try {
+      console.log("🔍 [findInvoiceIdByTokens] Searching for invoice with tokenIds:", tokenIds, "batchNumber:", batchNumber);
+      
+      const response = await api.get("/distributor/invoices");
+      
+      let invoices = [];
+      if (response.data?.success && response.data?.data) {
+        invoices = Array.isArray(response.data.data) ? response.data.data : [];
+      } else if (Array.isArray(response.data?.data)) {
+        invoices = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        invoices = response.data;
+      }
+
+      console.log("📋 [findInvoiceIdByTokens] Found invoices:", invoices.length);
+
+      const targetTokenId = tokenIds[0];
+      const matchedInvoice = invoices.find((inv) => {
+        const invTokenIds = inv.tokenIds || inv._tokenIds || [];
+        return invTokenIds.some(id => String(id) === String(targetTokenId));
+      });
+
+      if (matchedInvoice) {
+        console.log("✅ [findInvoiceIdByTokens] Found matching invoice:", matchedInvoice._id || matchedInvoice.id);
+        return matchedInvoice._id || matchedInvoice.id;
+      }
+
+      console.warn("⚠️ [findInvoiceIdByTokens] No matching invoice found");
+      return null;
+    } catch (error) {
+      console.error("❌ [findInvoiceIdByTokens] Error:", error);
+      return null;
+    }
+  };
+
   const [distributions, setDistributions] = useState([]);
   const [pharmacies, setPharmacies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,20 +302,20 @@ export const useTransferToPharmacy = () => {
   const chainIntervalRef = useRef(null);
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  const { 
-    data: distributionHistoryData, 
+  const {
+    data: distributionHistoryData,
     isLoading: distributionLoading,
     error: distributionError,
-    refetch: refetchDistributionHistory 
+    refetch: refetchDistributionHistory
   } = useDistributorDistributionHistory({ status: "confirmed" });
-  const { 
-    data: pharmaciesData, 
+  
+  const {
+    data: pharmaciesData,
     isLoading: pharmaciesLoading,
     error: pharmaciesError,
-    refetch: refetchPharmacies 
+    refetch: refetchPharmacies
   } = useDistributorPharmacies();
 
-  // Debug logs
   useEffect(() => {
     if (distributionHistoryData) {
       console.log("🔍 [useTransferToPharmacy] Distribution History Data:", distributionHistoryData);
@@ -63,39 +333,32 @@ export const useTransferToPharmacy = () => {
       console.error("❌ [useTransferToPharmacy] Pharmacies Error:", pharmaciesError);
     }
   }, [pharmaciesData, pharmaciesError]);
-  const { mutateAsync: transferToPharmacyMutation } =
-    useTransferToPharmacyMutation();
+
+  const { mutateAsync: transferToPharmacyMutation } = useTransferToPharmacyMutation();
   const { mutateAsync: saveTransferTransaction } = useSaveTransferTransaction();
+  const { mutateAsync: updateInvoiceStatus } = useUpdateInvoiceStatus();
 
   useEffect(() => {
     if (distributionHistoryData) {
-      // Xử lý nhiều cấu trúc response khác nhau
       let nextDistributions = [];
-      
-      // Case 1: { success: true, data: { distributions: [...] } }
+
       if (distributionHistoryData.success && distributionHistoryData.data?.distributions) {
         nextDistributions = Array.isArray(distributionHistoryData.data.distributions)
           ? distributionHistoryData.data.distributions
           : [];
-      }
-      // Case 2: { data: { success: true, data: { distributions: [...] } } }
-      else if (distributionHistoryData.data?.success && distributionHistoryData.data.data?.distributions) {
+      } else if (distributionHistoryData.data?.success && distributionHistoryData.data.data?.distributions) {
         nextDistributions = Array.isArray(distributionHistoryData.data.data.distributions)
           ? distributionHistoryData.data.data.distributions
           : [];
-      }
-      // Case 3: { data: { distributions: [...] } }
-      else if (distributionHistoryData.data?.distributions) {
+      } else if (distributionHistoryData.data?.distributions) {
         nextDistributions = Array.isArray(distributionHistoryData.data.distributions)
           ? distributionHistoryData.data.distributions
           : [];
-      }
-      // Case 4: Direct array
-      else if (Array.isArray(distributionHistoryData.data)) {
+      } else if (distributionHistoryData.success && Array.isArray(distributionHistoryData.data)) {
         nextDistributions = distributionHistoryData.data;
-      }
-      // Case 5: { data: [...] }
-      else if (Array.isArray(distributionHistoryData)) {
+      } else if (Array.isArray(distributionHistoryData.data)) {
+        nextDistributions = distributionHistoryData.data;
+      } else if (Array.isArray(distributionHistoryData)) {
         nextDistributions = distributionHistoryData;
       }
 
@@ -105,9 +368,12 @@ export const useTransferToPharmacy = () => {
         count: nextDistributions.length,
       });
 
-      setDistributions(nextDistributions);
+      const normalized = nextDistributions.map((item) =>
+        normalizeDistribution(item)
+      );
+      setDistributions(normalized);
       queryClient.setQueryData(TRANSFER_CACHE_KEY, {
-        distributions: nextDistributions,
+        distributions: normalized,
         pharmacies: pharmacies || [],
       });
     }
@@ -115,33 +381,23 @@ export const useTransferToPharmacy = () => {
 
   useEffect(() => {
     if (pharmaciesData) {
-      // Xử lý nhiều cấu trúc response khác nhau
       let nextPharmacies = [];
-      
-      // Case 1: { success: true, data: { pharmacies: [...] } }
+
       if (pharmaciesData.success && pharmaciesData.data?.pharmacies) {
         nextPharmacies = Array.isArray(pharmaciesData.data.pharmacies)
           ? pharmaciesData.data.pharmacies
           : [];
-      }
-      // Case 2: { data: { success: true, data: { pharmacies: [...] } } }
-      else if (pharmaciesData.data?.success && pharmaciesData.data.data?.pharmacies) {
+      } else if (pharmaciesData.data?.success && pharmaciesData.data.data?.pharmacies) {
         nextPharmacies = Array.isArray(pharmaciesData.data.data.pharmacies)
           ? pharmaciesData.data.data.pharmacies
           : [];
-      }
-      // Case 3: { data: { pharmacies: [...] } }
-      else if (pharmaciesData.data?.pharmacies) {
+      } else if (pharmaciesData.data?.pharmacies) {
         nextPharmacies = Array.isArray(pharmaciesData.data.pharmacies)
           ? pharmaciesData.data.pharmacies
           : [];
-      }
-      // Case 4: Direct array
-      else if (Array.isArray(pharmaciesData.data)) {
+      } else if (Array.isArray(pharmaciesData.data)) {
         nextPharmacies = pharmaciesData.data;
-      }
-      // Case 5: { data: [...] }
-      else if (Array.isArray(pharmaciesData)) {
+      } else if (Array.isArray(pharmaciesData)) {
         nextPharmacies = pharmaciesData;
       }
 
@@ -151,9 +407,12 @@ export const useTransferToPharmacy = () => {
         count: nextPharmacies.length,
       });
 
+      const normalizedDistributions = distributions?.length
+        ? distributions
+        : [];
       setPharmacies(nextPharmacies);
       queryClient.setQueryData(TRANSFER_CACHE_KEY, {
-        distributions: distributions || [],
+        distributions: normalizedDistributions,
         pharmacies: nextPharmacies,
       });
     }
@@ -207,33 +466,25 @@ export const useTransferToPharmacy = () => {
       const distributionResponse = distributionResult?.data;
       const pharmaciesResponse = pharmaciesResult?.data;
 
-      // Parse distributions với nhiều cấu trúc response
       let nextDistributions = [];
       if (distributionResponse) {
-        // Case 1: { success: true, data: { distributions: [...] } }
         if (distributionResponse.success && distributionResponse.data?.distributions) {
           nextDistributions = Array.isArray(distributionResponse.data.distributions)
             ? distributionResponse.data.distributions
             : [];
-        }
-        // Case 2: { data: { success: true, data: { distributions: [...] } } }
-        else if (distributionResponse.data?.success && distributionResponse.data.data?.distributions) {
+        } else if (distributionResponse.data?.success && distributionResponse.data.data?.distributions) {
           nextDistributions = Array.isArray(distributionResponse.data.data.distributions)
             ? distributionResponse.data.data.distributions
             : [];
-        }
-        // Case 3: { data: { distributions: [...] } }
-        else if (distributionResponse.data?.distributions) {
+        } else if (distributionResponse.data?.distributions) {
           nextDistributions = Array.isArray(distributionResponse.data.distributions)
             ? distributionResponse.data.distributions
             : [];
-        }
-        // Case 4: Direct array
-        else if (Array.isArray(distributionResponse.data)) {
+        } else if (distributionResponse.success && Array.isArray(distributionResponse.data)) {
           nextDistributions = distributionResponse.data;
-        }
-        // Case 5: { data: [...] }
-        else if (Array.isArray(distributionResponse)) {
+        } else if (Array.isArray(distributionResponse.data)) {
+          nextDistributions = distributionResponse.data;
+        } else if (Array.isArray(distributionResponse)) {
           nextDistributions = distributionResponse;
         }
       }
@@ -244,33 +495,23 @@ export const useTransferToPharmacy = () => {
         count: nextDistributions.length,
       });
 
-      // Parse pharmacies với nhiều cấu trúc response
       let nextPharmacies = [];
       if (pharmaciesResponse) {
-        // Case 1: { success: true, data: { pharmacies: [...] } }
         if (pharmaciesResponse.success && pharmaciesResponse.data?.pharmacies) {
           nextPharmacies = Array.isArray(pharmaciesResponse.data.pharmacies)
             ? pharmaciesResponse.data.pharmacies
             : [];
-        }
-        // Case 2: { data: { success: true, data: { pharmacies: [...] } } }
-        else if (pharmaciesResponse.data?.success && pharmaciesResponse.data.data?.pharmacies) {
+        } else if (pharmaciesResponse.data?.success && pharmaciesResponse.data.data?.pharmacies) {
           nextPharmacies = Array.isArray(pharmaciesResponse.data.data.pharmacies)
             ? pharmaciesResponse.data.data.pharmacies
             : [];
-        }
-        // Case 3: { data: { pharmacies: [...] } }
-        else if (pharmaciesResponse.data?.pharmacies) {
+        } else if (pharmaciesResponse.data?.pharmacies) {
           nextPharmacies = Array.isArray(pharmaciesResponse.data.pharmacies)
             ? pharmaciesResponse.data.pharmacies
             : [];
-        }
-        // Case 4: Direct array
-        else if (Array.isArray(pharmaciesResponse.data)) {
+        } else if (Array.isArray(pharmaciesResponse.data)) {
           nextPharmacies = pharmaciesResponse.data;
-        }
-        // Case 5: { data: [...] }
-        else if (Array.isArray(pharmaciesResponse)) {
+        } else if (Array.isArray(pharmaciesResponse)) {
           nextPharmacies = pharmaciesResponse;
         }
       }
@@ -281,11 +522,14 @@ export const useTransferToPharmacy = () => {
         count: nextPharmacies.length,
       });
 
-      setDistributions(nextDistributions);
+      const normalizedDistributions = nextDistributions.map((item) =>
+        normalizeDistribution(item)
+      );
+      setDistributions(normalizedDistributions);
       setPharmacies(nextPharmacies);
 
       queryClient.setQueryData(TRANSFER_CACHE_KEY, {
-        distributions: nextDistributions,
+        distributions: normalizedDistributions,
         pharmacies: nextPharmacies,
       });
 
@@ -307,15 +551,13 @@ export const useTransferToPharmacy = () => {
       });
       setDistributions([]);
       setPharmacies([]);
-      toast.error(
-        `Không thể tải dữ liệu: ${
-          error.response?.data?.message || error.message || "Lỗi không xác định"
-        }`,
-        {
-          position: "top-right",
-          duration: 4000,
-        }
-      );
+      
+      // ✅ IMPROVED: Error message rõ ràng hơn
+      const errorMessage = error.response?.data?.message || error.message || "Lỗi không xác định";
+      toast.error(`Không thể tải dữ liệu: ${errorMessage}`, {
+        position: "top-right",
+        duration: 4000,
+      });
     } finally {
       if (shouldShowLoader) {
         setLoading(false);
@@ -327,7 +569,6 @@ export const useTransferToPharmacy = () => {
   const extractTokenIds = (distributionObj) => {
     console.log("🔍 [extractTokenIds] Distribution object:", distributionObj);
 
-    // Case 1: manufacturerInvoice.tokenIds
     if (
       distributionObj.manufacturerInvoice?.tokenIds &&
       Array.isArray(distributionObj.manufacturerInvoice.tokenIds)
@@ -339,7 +580,6 @@ export const useTransferToPharmacy = () => {
       return tokenIds;
     }
 
-    // Case 2: invoice.tokenIds
     if (
       distributionObj.invoice?.tokenIds &&
       Array.isArray(distributionObj.invoice.tokenIds)
@@ -349,7 +589,6 @@ export const useTransferToPharmacy = () => {
       return tokenIds;
     }
 
-    // Case 3: proofOfDistribution.tokenIds
     if (
       distributionObj.proofOfDistribution?.tokenIds &&
       Array.isArray(distributionObj.proofOfDistribution.tokenIds)
@@ -361,14 +600,12 @@ export const useTransferToPharmacy = () => {
       return tokenIds;
     }
 
-    // Case 4: Direct tokenIds
     if (distributionObj.tokenIds && Array.isArray(distributionObj.tokenIds)) {
       const tokenIds = distributionObj.tokenIds.map((id) => String(id));
       console.log("✅ [extractTokenIds] Found in tokenIds:", tokenIds);
       return tokenIds;
     }
 
-    // Case 5: nftInfos array
     if (distributionObj.nftInfos && Array.isArray(distributionObj.nftInfos)) {
       const tokenIds = distributionObj.nftInfos
         .map((nft) => {
@@ -384,7 +621,6 @@ export const useTransferToPharmacy = () => {
       }
     }
 
-    // Case 6: manufacturerInvoice._id hoặc invoiceId để gọi API
     console.warn("⚠️ [extractTokenIds] No tokenIds found in distribution object");
     return [];
   };
@@ -392,45 +628,54 @@ export const useTransferToPharmacy = () => {
   const handleSelectDistribution = async (dist) => {
     console.log("📦 [handleSelectDistribution] Selected distribution:", dist);
     let tokenIds = extractTokenIds(dist);
+    let enrichedDistribution = normalizeDistribution(dist);
 
-    if (tokenIds.length === 0) {
+    const needsDetailFetch = tokenIds.length === 0 || !enrichedDistribution.drugId;
+
+    if (needsDetailFetch) {
       setDialogLoading(true);
     }
 
     try {
-      // Nếu không tìm thấy tokenIds, thử lấy từ API
-      if (tokenIds.length === 0) {
-        console.log("🔍 [handleSelectDistribution] No tokenIds found, trying to fetch from API...");
-        
-        // Thử nhiều cách lấy invoiceId
-        const manufacturerInvoiceId =
-          dist?.manufacturerInvoice?._id || 
-          dist?.manufacturerInvoice?.id ||
-          dist?.manufacturerInvoice ||
-          dist?.invoice?._id ||
-          dist?.invoice?.id ||
-          dist?.invoice ||
-          dist?.invoiceId ||
-          dist?._id;
+      if (needsDetailFetch) {
+        console.log(
+          "🔍 [handleSelectDistribution] Missing tokenIds or drugId, trying to fetch from API..."
+        );
 
-        console.log("🔍 [handleSelectDistribution] Invoice ID to fetch:", manufacturerInvoiceId);
+        let invoiceIdToFetch = null;
 
-        if (manufacturerInvoiceId && typeof manufacturerInvoiceId === "string") {
+        if (tokenIds.length > 0 && !enrichedDistribution.drugId) {
+          console.log("🔍 [handleSelectDistribution] Have tokenIds but missing drugId, searching for invoice...");
+          invoiceIdToFetch = await findInvoiceIdByTokens(tokenIds, enrichedDistribution.batchNumber);
+        } else {
+          invoiceIdToFetch =
+            dist?.manufacturerInvoice?._id ||
+            dist?.manufacturerInvoice?.id ||
+            dist?.manufacturerInvoice ||
+            dist?.manufacturerInvoiceId ||
+            dist?.invoice?._id ||
+            dist?.invoice?.id ||
+            dist?.invoice ||
+            dist?.invoiceId;
+        }
+
+        console.log("🔍 [handleSelectDistribution] Invoice ID to fetch:", invoiceIdToFetch);
+
+        if (invoiceIdToFetch && typeof invoiceIdToFetch === "string") {
           try {
             console.log("📡 [handleSelectDistribution] Fetching invoice detail from API...");
             const invoiceDetailRes = await queryClient.fetchQuery({
-              queryKey: ["getInvoiceDetail", manufacturerInvoiceId],
+              queryKey: ["getInvoiceDetail", invoiceIdToFetch],
               queryFn: async () => {
                 const response = await api.get(
-                  `/distributor/invoices/${manufacturerInvoiceId}/detail`
+                  `/distributor/invoices/${invoiceIdToFetch}/detail`
                 );
                 return response.data;
               },
             });
-            
+
             console.log("📡 [handleSelectDistribution] Invoice detail response:", invoiceDetailRes);
 
-            // Xử lý nhiều cấu trúc response
             let invoiceDetail = null;
             if (invoiceDetailRes?.success && invoiceDetailRes.data) {
               invoiceDetail = invoiceDetailRes.data;
@@ -441,31 +686,51 @@ export const useTransferToPharmacy = () => {
             }
 
             if (invoiceDetail) {
-              // Tìm tokenIds trong nhiều path
-              const foundTokenIds = 
-                invoiceDetail.tokenIds ||
-                invoiceDetail.data?.tokenIds ||
-                invoiceDetail.invoice?.tokenIds ||
-                invoiceDetail.manufacturerInvoice?.tokenIds;
+              const parsedInvoice = parseInvoiceDetail(invoiceDetail);
 
-              if (foundTokenIds && Array.isArray(foundTokenIds) && foundTokenIds.length > 0) {
-                tokenIds = foundTokenIds.map((id) => String(id));
-                console.log("✅ [handleSelectDistribution] Found tokenIds from invoice API:", tokenIds);
-              } else {
-                console.warn(
-                  "⚠️ [handleSelectDistribution] API getInvoiceDetail không trả về tokenIds:",
-                  invoiceDetail
+              if ((!tokenIds || tokenIds.length === 0) && parsedInvoice.tokenIds?.length) {
+                tokenIds = parsedInvoice.tokenIds;
+                console.log(
+                  "✅ [handleSelectDistribution] Found tokenIds from invoice API:",
+                  tokenIds
                 );
               }
+
+              enrichedDistribution = {
+                ...enrichedDistribution,
+                manufacturerInvoice:
+                  enrichedDistribution.manufacturerInvoice ||
+                  (parsedInvoice.invoiceNumber
+                    ? { invoiceNumber: parsedInvoice.invoiceNumber }
+                    : enrichedDistribution.manufacturerInvoice),
+                invoiceNumber:
+                  parsedInvoice.invoiceNumber || enrichedDistribution.invoiceNumber,
+                manufacturerId:
+                  enrichedDistribution.manufacturerId || parsedInvoice.manufacturerId,
+                manufacturer:
+                  enrichedDistribution.manufacturer ||
+                  (parsedInvoice.manufacturerId
+                    ? { fullName: parsedInvoice.manufacturerId }
+                    : enrichedDistribution.manufacturer),
+                drugId: parsedInvoice.drugId || enrichedDistribution.drugId,
+                distributedQuantity:
+                  enrichedDistribution.distributedQuantity ||
+                  parsedInvoice.quantity ||
+                  enrichedDistribution.distributedQuantity,
+                distributionDate:
+                  enrichedDistribution.distributionDate ||
+                  parsedInvoice.invoiceDate ||
+                  enrichedDistribution.distributionDate,
+              };
+
+              console.log("✅ [handleSelectDistribution] Enriched with invoice data, drugId:", enrichedDistribution.drugId);
             }
           } catch (invoiceError) {
             console.error("❌ [handleSelectDistribution] Lỗi khi gọi getInvoiceDetail:", invoiceError);
-            // Không throw error, để tiếp tục với tokenIds rỗng
           }
         }
 
-        // Nếu vẫn không có tokenIds, thử gọi distribution detail API
-        if (tokenIds.length === 0 && dist?._id) {
+        if ((tokenIds.length === 0 || !enrichedDistribution.drugId) && dist?._id) {
           try {
             console.log("📡 [handleSelectDistribution] Trying distribution detail API...");
             const distributionDetailRes = await queryClient.fetchQuery({
@@ -480,7 +745,6 @@ export const useTransferToPharmacy = () => {
 
             console.log("📡 [handleSelectDistribution] Distribution detail response:", distributionDetailRes);
 
-            // Xử lý nhiều cấu trúc response
             let distributionDetail = null;
             if (distributionDetailRes?.success && distributionDetailRes.data) {
               distributionDetail = distributionDetailRes.data;
@@ -491,27 +755,27 @@ export const useTransferToPharmacy = () => {
             }
 
             if (distributionDetail) {
-              // Tìm tokenIds trong nhiều path từ distribution detail
-              const foundTokenIds = 
-                distributionDetail.tokenIds ||
-                distributionDetail.data?.tokenIds ||
-                distributionDetail.invoice?.tokenIds ||
-                distributionDetail.manufacturerInvoice?.tokenIds ||
-                distributionDetail.proofOfDistribution?.tokenIds;
+              const detailNormalized = normalizeDistribution(distributionDetail);
 
-              if (foundTokenIds && Array.isArray(foundTokenIds) && foundTokenIds.length > 0) {
-                tokenIds = foundTokenIds.map((id) => String(id));
-                console.log("✅ [handleSelectDistribution] Found tokenIds from distribution detail API:", tokenIds);
-              } else {
-                console.warn(
-                  "⚠️ [handleSelectDistribution] Distribution detail API không trả về tokenIds:",
-                  distributionDetail
+              if (
+                (!tokenIds || tokenIds.length === 0) &&
+                Array.isArray(detailNormalized.tokenIds)
+              ) {
+                tokenIds = detailNormalized.tokenIds;
+                console.log(
+                  "✅ [handleSelectDistribution] Found tokenIds from distribution detail API:",
+                  tokenIds
                 );
               }
+
+              enrichedDistribution = {
+                ...enrichedDistribution,
+                ...detailNormalized,
+                drugId: enrichedDistribution.drugId || detailNormalized.drugId,
+              };
             }
           } catch (distributionError) {
             console.error("❌ [handleSelectDistribution] Lỗi khi gọi distribution detail API:", distributionError);
-            // Không throw error, để tiếp tục với tokenIds rỗng
           }
         }
 
@@ -521,14 +785,27 @@ export const useTransferToPharmacy = () => {
       }
 
       const distributionWithTokens = {
-        ...dist,
-        tokenIds: tokenIds,
+        ...enrichedDistribution,
+        drugId: resolveDrugId(enrichedDistribution),
+        tokenIds,
+        distributedQuantity:
+          enrichedDistribution.distributedQuantity ??
+          (Array.isArray(tokenIds) ? tokenIds.length : undefined),
       };
+
+      console.log("📦 [handleSelectDistribution] Final distribution with drugId:", {
+        id: distributionWithTokens._id,
+        drugId: distributionWithTokens.drugId,
+        tokenIds: distributionWithTokens.tokenIds,
+        quantity: distributionWithTokens.distributedQuantity,
+      });
 
       setSelectedDistribution(distributionWithTokens);
       setFormData({
         pharmacyId: "",
-        quantity: dist.distributedQuantity?.toString() || "",
+        quantity: distributionWithTokens.distributedQuantity
+          ? distributionWithTokens.distributedQuantity.toString()
+          : "",
         notes: "",
       });
 
@@ -537,34 +814,49 @@ export const useTransferToPharmacy = () => {
           "⚠️ Không tìm thấy tokenIds trong distribution:",
           dist._id
         );
-        toast.error(
-          `⚠️ Cảnh báo: Không tìm thấy token IDs. Distribution này có thể chưa có NFT được gán. Vui lòng kiểm tra invoice từ manufacturer hoặc liên hệ quản trị viên.`,
+        toast.warning(
+          "Không tìm thấy NFT tokens cho lô hàng này. Vui lòng kiểm tra lại hoặc liên hệ quản trị viên.",
           {
             position: "top-right",
-            duration: 6000,
+            duration: 5000,
+          }
+        );
+      }
+
+      if (!distributionWithTokens.drugId) {
+        console.warn(
+          "⚠️ Không tìm thấy drugId trong distribution:",
+          dist._id
+        );
+        toast.warning(
+          "Không tìm thấy thông tin thuốc. Vui lòng kiểm tra lại hoặc liên hệ quản trị viên.",
+          {
+            position: "top-right",
+            duration: 5000,
           }
         );
       }
 
       setShowDialog(true);
     } catch (error) {
-      console.error("Lỗi khi xử lý distribution:", error);
-      toast.error(
-        `Lỗi khi xử lý distribution: ${
-          error.response?.data?.message || error.message
-        }`,
-        {
-          position: "top-right",
-          duration: 5000,
-        }
-      );
+      console.error("❌ [handleSelectDistribution] Lỗi:", error);
+      
+      // ✅ IMPROVED: Error message rõ ràng hơn
+      const errorMessage = error.response?.data?.message || error.message || "Lỗi không xác định";
+      toast.error(`Lỗi khi tải thông tin distribution: ${errorMessage}`, {
+        position: "top-right",
+        duration: 5000,
+      });
+      
       setSelectedDistribution({
-        ...dist,
-        tokenIds: tokenIds,
+        ...enrichedDistribution,
+        tokenIds,
       });
       setFormData({
         pharmacyId: "",
-        quantity: dist.distributedQuantity?.toString() || "",
+        quantity: enrichedDistribution.distributedQuantity
+          ? enrichedDistribution.distributedQuantity.toString()
+          : "",
         notes: "",
       });
       setShowDialog(true);
@@ -574,21 +866,9 @@ export const useTransferToPharmacy = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.pharmacyId || !formData.quantity) {
-      toast.error("Vui lòng chọn nhà thuốc và nhập số lượng", {
-        position: "top-right",
-        duration: 4000,
-      });
-      return;
-    }
-
-    const requestedQty = parseInt(formData.quantity);
-
-    if (
-      requestedQty <= 0 ||
-      requestedQty > selectedDistribution.distributedQuantity
-    ) {
-      toast.error("Số lượng không hợp lệ", {
+    // ✅ VALIDATION: Kiểm tra form data
+    if (!formData.pharmacyId) {
+      toast.error("Vui lòng chọn nhà thuốc", {
         position: "top-right",
         duration: 4000,
       });
@@ -599,7 +879,7 @@ export const useTransferToPharmacy = () => {
 
     if (tokenIds.length === 0) {
       toast.error(
-        "Không tìm thấy tokenIds! Distribution này chưa có NFT được gán. Vui lòng liên hệ quản trị viên.",
+        "Không tìm thấy NFT tokens. Vui lòng chọn lô hàng khác hoặc liên hệ quản trị viên.",
         {
           position: "top-right",
           duration: 5000,
@@ -608,51 +888,175 @@ export const useTransferToPharmacy = () => {
       return;
     }
 
-    const selectedTokenIds = tokenIds.slice(0, requestedQty);
+    // ✅ VALIDATE TOKENIDS: Không rỗng, không trùng lặp
+    const tokenIdsValidation = validateTokenIds(tokenIds);
+    if (!tokenIdsValidation.valid) {
+      toast.error(tokenIdsValidation.error, {
+        position: "top-right",
+        duration: 5000,
+      });
+      if (tokenIdsValidation.duplicates) {
+        console.error("Duplicate tokenIds:", tokenIdsValidation.duplicates);
+      }
+      return;
+    }
 
-    if (selectedTokenIds.length < requestedQty) {
+    const validatedTokenIds = tokenIdsValidation.tokenIds;
+
+    // ✅ VALIDATE QUANTITY: Nếu có quantity, phải bằng tokenIds.length
+    const requestedQty = formData.quantity ? parseInt(formData.quantity) : validatedTokenIds.length;
+    const quantityValidation = validateQuantity(requestedQty, validatedTokenIds.length);
+    if (!quantityValidation.valid) {
+      toast.error(quantityValidation.error, {
+        position: "top-right",
+        duration: 5000,
+      });
+      return;
+    }
+
+    // ✅ VALIDATE QUANTITY RANGE: Không được vượt quá số lượng có sẵn
+    if (
+      isNaN(requestedQty) ||
+      requestedQty <= 0 ||
+      requestedQty > selectedDistribution.distributedQuantity
+    ) {
       toast.error(
-        `⚠️ Chỉ có ${selectedTokenIds.length} tokenIds khả dụng. Bạn yêu cầu ${requestedQty} nhưng chỉ có thể chuyển ${selectedTokenIds.length}.`,
+        `Số lượng không hợp lệ. Vui lòng nhập từ 1 đến ${selectedDistribution.distributedQuantity}`,
         {
           position: "top-right",
-          duration: 6000,
+          duration: 4000,
         }
       );
-      if (
-        !window.confirm(
-          `⚠️ Chỉ có ${selectedTokenIds.length} tokenIds khả dụng.\n\n` +
-            `Bạn yêu cầu ${requestedQty} nhưng chỉ có thể chuyển ${selectedTokenIds.length}.\n\n` +
-            `Tiếp tục với ${selectedTokenIds.length} NFT?`
-        )
-      ) {
+      return;
+    }
+
+    const selectedTokenIds = validatedTokenIds.slice(0, requestedQty);
+
+    if (selectedTokenIds.length < requestedQty) {
+      const confirmMessage =
+        `Chỉ có ${selectedTokenIds.length} NFT khả dụng trong khi bạn yêu cầu ${requestedQty}.\n\n` +
+        `Bạn có muốn tiếp tục với ${selectedTokenIds.length} NFT không?`;
+
+      if (!window.confirm(confirmMessage)) {
         return;
       }
     }
 
-    const amounts = selectedTokenIds.map(() => {
-      return 1;
-    });
+    const amounts = selectedTokenIds.map(() => 1);
 
     if (submitLoading) {
       return;
     }
+
     setSubmitLoading(true);
 
-    try {
-      console.log("Đang kiểm tra balance trên blockchain...");
-      const balanceCheck = await checkDistributorNFTBalances(selectedTokenIds);
+    // Lưu invoiceId để sử dụng trong error handling
+    let invoiceId = null;
 
-      if (!balanceCheck.canTransfer) {
+    try {
+      // ✅ STEP 1: Kiểm tra và kết nối ví MetaMask
+      console.log("🔐 [handleSubmit] Đang kiểm tra kết nối ví...");
+      
+      let currentAccount = await getCurrentAccount();
+      
+      if (!currentAccount) {
+        console.log("🔐 [handleSubmit] Chưa kết nối ví, đang yêu cầu kết nối...");
+        toast.info("Vui lòng kết nối ví MetaMask để tiếp tục", {
+          position: "top-right",
+          duration: 3000,
+        });
+        
+        try {
+          const walletConnection = await connectWallet();
+          
+          if (!walletConnection.success || !walletConnection.account) {
+            throw new Error("Không thể kết nối ví MetaMask");
+          }
+          
+          currentAccount = walletConnection.account;
+          console.log("✅ [handleSubmit] Đã kết nối ví:", currentAccount);
+          
+          toast.success("Đã kết nối ví thành công!", {
+            position: "top-right",
+            duration: 2000,
+          });
+        } catch (walletError) {
+          console.error("❌ [handleSubmit] Lỗi khi kết nối ví:", walletError);
+          
+          let errorMessage = "Không thể kết nối ví MetaMask";
+          
+          if (walletError.code === 4001) {
+            errorMessage = "Bạn đã từ chối kết nối ví";
+          } else if (walletError.message) {
+            errorMessage = walletError.message;
+          }
+          
+          toast.error(errorMessage, {
+            position: "top-right",
+            duration: 5000,
+          });
+          
+          setSubmitLoading(false);
+          return;
+        }
+      } else {
+        console.log("✅ [handleSubmit] Ví đã được kết nối:", currentAccount);
+      }
+
+      // ✅ STEP 2: Kiểm tra balance NFT trên blockchain
+      console.log("📊 [handleSubmit] Đang kiểm tra balance NFT...");
+      
+      let balanceCheck;
+      try {
+        balanceCheck = await checkDistributorNFTBalances(selectedTokenIds);
+      } catch (balanceError) {
+        console.error("❌ [handleSubmit] Lỗi khi kiểm tra balance:", balanceError);
+        
+        // ✅ IMPROVED: Xử lý các loại lỗi khác nhau
+        if (balanceError.message?.includes("Contract not deployed")) {
+          toast.warning(
+            "Smart contract chưa được deploy. Vui lòng liên hệ quản trị viên.",
+            {
+              position: "top-right",
+              duration: 5000,
+            }
+          );
+          setSubmitLoading(false);
+          return;
+        } else if (balanceError.message?.includes("MetaMask")) {
+          toast.warning(
+            "Không thể kết nối với MetaMask. Vui lòng kiểm tra lại ví của bạn.",
+            {
+              position: "top-right",
+              duration: 5000,
+            }
+          );
+          setSubmitLoading(false);
+          return;
+        } else {
+          // Cho phép tiếp tục trong các trường hợp lỗi khác (với cảnh báo)
+          toast.warning(
+            `Không thể kiểm tra balance: ${balanceError.message}. Tiếp tục với rủi ro.`,
+            {
+              position: "top-right",
+              duration: 5000,
+            }
+          );
+          balanceCheck = { canTransfer: true }; // Giả định có thể transfer
+        }
+      }
+
+      if (balanceCheck && !balanceCheck.canTransfer) {
         const issuesList = balanceCheck.issues
           .filter((issue) => issue.tokenId)
           .map(
             (issue) =>
-              `Token ID ${issue.tokenId}: có ${issue.balance}, cần ${issue.needed}`
+              `Token #${issue.tokenId}: có ${issue.balance}, cần ${issue.needed}`
           )
-          .join(", ");
+          .join("\n• ");
 
         toast.error(
-          `Không đủ số lượng NFT để chuyển giao! Chi tiết: ${issuesList}. Nguyên nhân: NFT chưa được transfer từ Manufacturer → Distributor trên blockchain. Vui lòng yêu cầu Manufacturer thực hiện transfer NFT trước.`,
+          `Không đủ NFT để chuyển giao!\n\n• ${issuesList}\n\nNguyên nhân: NFT chưa được transfer từ Manufacturer. Vui lòng yêu cầu Manufacturer thực hiện transfer trước.`,
           {
             position: "top-right",
             duration: 8000,
@@ -661,167 +1065,555 @@ export const useTransferToPharmacy = () => {
         setSubmitLoading(false);
         return;
       }
-    } catch (balanceError) {
-      console.error("Lỗi khi kiểm tra balance:", balanceError);
-      if (
-        balanceError.message?.includes("Contract not deployed") ||
-        balanceError.message?.includes("MetaMask")
-      ) {
+
+      // ✅ STEP 3: Tạo invoice trên backend
+      const resolvedDrugId = resolveDrugId(selectedDistribution);
+
+      if (!resolvedDrugId) {
         toast.error(
-          `⚠️ Không thể kiểm tra balance trên blockchain! Lỗi: ${balanceError.message}. Bạn có thể tiếp tục nhưng hãy đảm bảo NFT đã được transfer.`,
-          {
-            position: "top-right",
-            duration: 6000,
+          "Không tìm thấy thông tin thuốc (drugId). Vui lòng chọn lô hàng khác.",
+          { 
+            position: "top-right", 
+            duration: 5000 
           }
         );
-        // Vẫn cho phép tiếp tục trong trường hợp này
-      } else {
-        toast.error(`Lỗi khi kiểm tra balance: ${balanceError.message}`, {
+        setSubmitLoading(false);
+        return;
+      }
+
+      const payload = {
+        pharmacyId: formData.pharmacyId,
+        drugId: resolvedDrugId,
+        tokenIds: selectedTokenIds, // REQUIRED: Array không rỗng, không trùng lặp
+        quantity: selectedTokenIds.length, // Optional, nếu có PHẢI bằng tokenIds.length
+        notes: formData.notes || undefined,
+        // amounts không cần gửi lên backend trong Bước 1
+      };
+
+      console.log("📤 [handleSubmit] Payload gửi lên backend:", payload);
+
+      toast.info("Đang tạo invoice...", {
+        position: "top-right",
+        duration: 2000,
+      });
+
+      let response;
+      try {
+        response = await transferToPharmacyMutation(payload);
+      } catch (error) {
+        // ✅ IMPROVED: Handle specific backend validation errors
+        const errorMessage = error?.response?.data?.message || error?.message || "Không thể tạo invoice";
+        
+        // Handle duplicate tokenIds error
+        if (errorMessage.includes("trùng lặp") || errorMessage.includes("duplicate")) {
+          toast.error("TokenIds không được có giá trị trùng lặp. Vui lòng kiểm tra lại.", {
+            position: "top-right",
+            duration: 6000,
+          });
+          setSubmitLoading(false);
+          return;
+        }
+        
+        // Handle quantity mismatch error
+        if (errorMessage.includes("quantity") && errorMessage.includes("tokenIds")) {
+          toast.error("Quantity phải bằng số lượng tokenIds. Vui lòng kiểm tra lại.", {
+            position: "top-right",
+            duration: 6000,
+          });
+          setSubmitLoading(false);
+          return;
+        }
+        
+        // Handle NFT ownership error
+        if (errorMessage.includes("không thuộc về distributor") || errorMessage.includes("không thuộc về")) {
+          const tokenIdMatch = errorMessage.match(/tokenId[:\s]+([^\s,]+)/i);
+          const tokenId = tokenIdMatch ? tokenIdMatch[1] : "unknown";
+          toast.error(`NFT ${tokenId} không thuộc về bạn. Vui lòng kiểm tra lại.`, {
+            position: "top-right",
+            duration: 6000,
+          });
+          setSubmitLoading(false);
+          return;
+        }
+        
+        // Handle NFT cannot transfer error
+        if (errorMessage.includes("không thể chuyển giao") || errorMessage.includes("cannot transfer")) {
+          const tokenIdMatch = errorMessage.match(/tokenId[:\s]+([^\s,]+)/i);
+          const tokenId = tokenIdMatch ? tokenIdMatch[1] : "unknown";
+          toast.error(`NFT ${tokenId} không thể chuyển giao. Vui lòng kiểm tra trạng thái NFT.`, {
+            position: "top-right",
+            duration: 6000,
+          });
+          setSubmitLoading(false);
+          return;
+        }
+        
+        // Handle drug not found error
+        if (errorMessage.includes("Drug không tồn tại") || errorMessage.includes("drug not found")) {
+          toast.error("Thuốc không tồn tại. Vui lòng chọn lô hàng khác.", {
+            position: "top-right",
+            duration: 5000,
+          });
+          setSubmitLoading(false);
+          return;
+        }
+        
+        // Generic error
+        toast.error(errorMessage, {
           position: "top-right",
-          duration: 5000,
+          duration: 6000,
         });
         setSubmitLoading(false);
         return;
       }
-    }
-
-    try {
-      const payload = {
-        pharmacyId: formData.pharmacyId,
-        tokenIds: selectedTokenIds,
-        amounts: amounts,
-        quantity: selectedTokenIds.length,
-        notes: formData.notes || undefined,
-      };
-
-      console.log("Payload gửi lên backend:", payload);
-
-      const response = await transferToPharmacyMutation(payload);
-
-      if (response.data.success) {
-        const {
-          commercialInvoice,
-          pharmacyAddress,
-          tokenIds: responseTokenIds,
-          amounts: responseAmounts,
-        } = response.data.data;
-
-        console.log(" Invoice đã được tạo:", {
-          invoiceId: commercialInvoice._id,
-          invoiceNumber: commercialInvoice.invoiceNumber,
-          status: commercialInvoice.status,
+      
+      // Debug: Log response structure
+      console.log("📥 [handleSubmit] Raw response từ mutation:", response);
+      console.log("📥 [handleSubmit] Response type:", typeof response);
+      console.log("📥 [handleSubmit] Response keys:", response ? Object.keys(response) : "null/undefined");
+      
+      // Mutation đã trả về response.data từ API call
+      // Nhưng có thể response đã là data rồi, hoặc vẫn còn wrap trong object
+      let responseBody = response;
+      
+      // Nếu response có .data và .data có success, thì dùng .data
+      if (response?.data && typeof response.data === 'object' && 'success' in response.data) {
+        responseBody = response.data;
+      } 
+      // Nếu response không có .data nhưng có success ở root, dùng response
+      else if (response && typeof response === 'object' && 'success' in response) {
+        responseBody = response;
+      }
+      // Nếu response có .data nhưng không có success, thử dùng .data
+      else if (response?.data) {
+        responseBody = response.data;
+      }
+      
+      console.log("📥 [handleSubmit] Response body sau khi parse:", responseBody);
+      console.log("📥 [handleSubmit] Response body.success:", responseBody?.success);
+      
+      // Kiểm tra success - kiểm tra cả true và !== false để tránh undefined/null
+      if (responseBody?.success !== true) {
+        console.error("❌ [handleSubmit] Response không thành công:", {
+          responseBody,
+          success: responseBody?.success,
+          message: responseBody?.message,
         });
+        throw new Error(responseBody?.message || "Không thể tạo invoice");
+      }
 
-        toast.success(
-          `Invoice đã được tạo thành công! Đang chuyển NFT trên blockchain...`,
-          {
-            position: "top-right",
-            duration: 4000,
-          }
-        );
+      // Extract data từ responseBody.data hoặc responseBody (nếu data nằm ở root)
+      const responseData = responseBody?.data ?? responseBody;
+      
+      console.log("📥 [handleSubmit] Response data:", responseData);
 
-        try {
-          console.log("📤 Đang gọi smart contract để chuyển NFT...");
-          setShowDialog(false);
-          setShowChainView(true);
-          setChainStatus("minting");
-          setChainProgress(0.08);
+      // Extract các field cần thiết
+      // Backend có thể trả về commercialInvoice hoặc invoice trực tiếp trong data
+      const commercialInvoice = responseData?.commercialInvoice ?? responseData?.invoice ?? responseData;
+      
+      // Lấy pharmacyAddress từ selectedPharmacy (vì response không có field này)
+      const selectedPharmacy = pharmacies.find(p => p._id === formData.pharmacyId);
+      const pharmacyAddress = responseData?.pharmacyAddress 
+        ?? responseData?.pharmacy?.walletAddress 
+        ?? responseData?.pharmacy?.user?.walletAddress
+        ?? selectedPharmacy?.walletAddress
+        ?? selectedPharmacy?.user?.walletAddress;
+      
+      if (!pharmacyAddress) {
+        throw new Error("Không tìm thấy địa chỉ ví của nhà thuốc. Vui lòng kiểm tra lại thông tin nhà thuốc.");
+      }
+      
+      const responseTokenIds = responseData?.tokenIds ?? responseData?.commercialInvoice?.tokenIds ?? commercialInvoice?.tokenIds;
+      
+      // Nếu backend không trả về amounts, tạo từ tokenIds (mỗi token = 1 amount)
+      let responseAmounts = responseData?.amounts ?? responseData?.commercialInvoice?.amounts ?? commercialInvoice?.amounts;
+      
+      // Đảm bảo amounts là array và có cùng length với tokenIds
+      if (!Array.isArray(responseAmounts) || responseAmounts.length !== responseTokenIds?.length) {
+        console.log("⚠️ [handleSubmit] Response không có amounts hoặc không khớp, tạo amounts từ tokenIds");
+        responseAmounts = Array.isArray(responseTokenIds) 
+          ? responseTokenIds.map(() => 1) 
+          : [1];
+      }
 
-          if (chainIntervalRef.current) {
-            clearInterval(chainIntervalRef.current);
-          }
+      // Validate tokenIds và amounts
+      if (!Array.isArray(responseTokenIds) || responseTokenIds.length === 0) {
+        throw new Error("Không tìm thấy tokenIds trong response");
+      }
 
-          chainIntervalRef.current = setInterval(() => {
-            setChainProgress((prev) =>
-              prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
-            );
-          }, 120);
+      if (!Array.isArray(responseAmounts) || responseAmounts.length === 0) {
+        throw new Error("Không tìm thấy amounts trong response");
+      }
 
-          const transferResult = await transferNFTToPharmacy(
-            responseTokenIds,
-            responseAmounts,
-            pharmacyAddress
+      if (responseTokenIds.length !== responseAmounts.length) {
+        throw new Error(`TokenIds (${responseTokenIds.length}) và amounts (${responseAmounts.length}) không khớp`);
+      }
+
+      invoiceId = commercialInvoice?._id ?? commercialInvoice?.invoiceId;
+      
+      console.log("✅ [handleSubmit] Invoice đã được tạo:", {
+        invoiceId,
+        invoiceNumber: commercialInvoice?.invoiceNumber,
+        status: commercialInvoice?.status,
+        pharmacyAddress,
+        tokenIds: responseTokenIds,
+        amounts: responseAmounts,
+        tokenIdsLength: responseTokenIds?.length,
+        amountsLength: responseAmounts?.length,
+      });
+
+      toast.success("Invoice đã được tạo thành công!", {
+        position: "top-right",
+        duration: 3000,
+      });
+
+      // ✅ STEP 3.5: Lưu ý về finalize invoice trên blockchain
+      // Smart contract yêu cầu invoice/contract phải được finalize trên blockchain trước khi transfer NFT
+      // Backend API để finalize invoice không tồn tại (404), nên backend cần tự động finalize khi tạo invoice
+      // Hoặc cần một contract giữa distributor và pharmacy được tạo và finalize trước
+      
+      console.log("📝 [handleSubmit] Invoice đã được tạo. Backend cần finalize invoice trên blockchain.");
+      console.log("⏳ [handleSubmit] Đợi backend finalize invoice trên blockchain (nếu cần)...");
+      
+      // Đợi một chút để backend có thể finalize invoice trên blockchain (nếu backend làm điều này async)
+      // Nếu backend không tự động finalize, sẽ có lỗi ở bước transfer NFT
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      // ✅ STEP 4: Chuyển NFT trên blockchain
+      try {
+        console.log("🔗 [handleSubmit] Đang chuyển NFT trên blockchain...");
+        
+        // Hiển thị UI progress
+        setShowDialog(false);
+        setShowChainView(true);
+        setChainStatus("minting");
+        setChainProgress(0.08);
+
+        if (chainIntervalRef.current) {
+          clearInterval(chainIntervalRef.current);
+        }
+
+        chainIntervalRef.current = setInterval(() => {
+          setChainProgress((prev) =>
+            prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
           );
+        }, 120);
 
-          if (transferResult.success) {
-            console.log(" Smart contract thành công:", {
-              transactionHash: transferResult.transactionHash,
-              blockNumber: transferResult.blockNumber,
+        // ✅ STEP 4.1: Tạo và finalize contract giữa distributor và pharmacy
+        // Flow: Tạo contract → Pharmacy approve → Finalize → Transfer NFT
+        try {
+          console.log("📝 [handleSubmit] Đang kiểm tra và setup contract với pharmacy...");
+          
+          // Thử tạo contract trước (nếu chưa có)
+          try {
+            console.log("📝 [handleSubmit] Đang tạo contract với pharmacy (nếu chưa có)...");
+            toast.info("Đang tạo contract với pharmacy...", {
+              position: "top-right",
+              duration: 2000,
             });
 
-            if (chainIntervalRef.current) {
-              clearInterval(chainIntervalRef.current);
+            await createDistributorPharmacyContract(pharmacyAddress);
+            console.log("✅ [handleSubmit] Contract đã được tạo");
+            
+            toast.success("Contract đã được tạo!", {
+              position: "top-right",
+              duration: 2000,
+            });
+
+            // Đợi một chút để transaction được confirm
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+          } catch (createError) {
+            // Nếu contract đã tồn tại, không sao, tiếp tục
+            if (createError.message?.includes("already exists") || 
+                createError.message?.includes("đã tồn tại")) {
+              console.log("ℹ️ [handleSubmit] Contract đã tồn tại, tiếp tục...");
+            } else {
+              console.warn("⚠️ [handleSubmit] Lỗi khi tạo contract (có thể đã tồn tại):", createError.message);
             }
+          }
 
-            setChainProgress(1);
-            setChainStatus("completed");
+          // Thử finalize contract
+          try {
+            console.log("📝 [handleSubmit] Đang finalize contract với pharmacy...");
+            toast.info("Đang finalize contract với pharmacy...", {
+              position: "top-right",
+              duration: 3000,
+            });
 
-            try {
-              console.log("💾 Đang lưu transaction hash...");
+            const finalizeResult = await finalizeDistributorPharmacyContract(pharmacyAddress);
+            
+            console.log("✅ [handleSubmit] Contract đã được finalize:", {
+              transactionHash: finalizeResult.transactionHash,
+              blockNumber: finalizeResult.blockNumber,
+            });
 
-              const saveResponse = await saveTransferTransaction({
-                invoiceId: commercialInvoice._id,
-                transactionHash: transferResult.transactionHash,
-                tokenIds: responseTokenIds,
-              });
+            toast.success("Contract đã được finalize!", {
+              position: "top-right",
+              duration: 2000,
+            });
 
-              if (saveResponse.data.success) {
-                console.log("Transaction hash đã được lưu");
-                toast.success("Chuyển giao NFT thành công!", {
-                  position: "top-right",
-                  duration: 5000,
-                });
-                await new Promise((r) => setTimeout(r, 600));
-                setShowChainView(false);
-                setShowDialog(false);
-                setFormData({
-                  pharmacyId: "",
-                  quantity: "",
-                  notes: "",
-                });
-                loadData(true);
-              } else {
-                throw new Error(
-                  saveResponse.data.message || "Lỗi khi lưu transaction hash"
-                );
-              }
-            } catch (saveError) {
-              console.error("Lỗi khi lưu transaction hash:", saveError);
-              setChainStatus("error");
+            // Đợi một chút để transaction được confirm
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+          } catch (finalizeError) {
+            // Nếu pharmacy chưa approve, hiển thị thông báo rõ ràng và dừng lại
+            if (finalizeError.message?.includes("Pharmacy has not approved") || 
+                finalizeError.message?.includes("chưa approve")) {
+              console.error("❌ [handleSubmit] Pharmacy chưa approve contract:", finalizeError);
+              
+              const selectedPharmacy = pharmacies.find(p => p._id === formData.pharmacyId);
+              const pharmacyName = selectedPharmacy?.name || "N/A";
+              
               toast.error(
-                `Lỗi khi lưu transaction hash: ${
-                  saveError.response?.data?.message || saveError.message
-                }`,
+                `⚠️ Pharmacy chưa approve contract!\n\n` +
+                `📋 Flow contract đúng:\n` +
+                `1. Distributor tạo contract request (đã hoàn thành)\n` +
+                `2. Pharmacy approve contract (⚠️ ĐANG THIẾU)\n` +
+                `3. Distributor finalize contract\n` +
+                `4. Transfer NFT\n\n` +
+                `Thông tin:\n` +
+                `- Pharmacy: ${pharmacyName}\n` +
+                `- Pharmacy Address: ${pharmacyAddress}\n\n` +
+                `Giải pháp:\n` +
+                `1. Yêu cầu pharmacy đăng nhập và approve contract:\n` +
+                `   → Vào trang "Quản lý Contract"\n` +
+                `   → Tìm contract với bạn\n` +
+                `   → Click "Xác nhận & Ký"\n` +
+                `2. Sau khi pharmacy approve, thử lại transfer NFT\n` +
+                `3. Hoặc liên hệ backend team để tự động approve contract`,
                 {
                   position: "top-right",
-                  duration: 5000,
+                  duration: 20000,
                 }
               );
+              
+              setChainStatus("error");
+              setChainProgress(0.3);
+              setSubmitLoading(false);
+              return; // Dừng lại, không tiếp tục transfer NFT
             }
+            
+            // Nếu contract đã được finalize rồi, tiếp tục
+            if (finalizeError.message?.includes("already finalized") || 
+                finalizeError.message?.includes("đã được finalize")) {
+              console.log("ℹ️ [handleSubmit] Contract đã được finalize, tiếp tục...");
+            } else {
+              console.warn("⚠️ [handleSubmit] Lỗi khi finalize contract:", finalizeError.message);
+              // Vẫn tiếp tục thử transfer NFT, có thể contract đã được finalize trước đó
+            }
+          }
+        } catch (contractError) {
+          console.error("❌ [handleSubmit] Lỗi khi setup contract:", contractError);
+          // Vẫn tiếp tục thử transfer NFT
+        }
+
+        // ✅ STEP 4.2: Transfer NFT trên blockchain
+        toast.info("Vui lòng xác nhận giao dịch trong MetaMask...", {
+          position: "top-right",
+          duration: 4000,
+        });
+
+        const transferResult = await transferNFTToPharmacy(
+          responseTokenIds,
+          responseAmounts,
+          pharmacyAddress
+        );
+
+        if (!transferResult.success) {
+          throw new Error(transferResult.error || "Transfer NFT thất bại");
+        }
+
+        console.log("✅ [handleSubmit] Smart contract thành công:", {
+          transactionHash: transferResult.transactionHash,
+          blockNumber: transferResult.blockNumber,
+        });
+
+        if (chainIntervalRef.current) {
+          clearInterval(chainIntervalRef.current);
+        }
+
+        setChainProgress(1);
+        setChainStatus("completed");
+
+        toast.success("NFT đã được chuyển trên blockchain!", {
+          position: "top-right",
+          duration: 3000,
+        });
+
+        // ✅ STEP 5: Lưu transaction hash vào backend
+        try {
+          console.log("💾 [handleSubmit] Đang lưu transaction hash...");
+
+          const transactionHash = transferResult.transactionHash;
+          
+          // ✅ VALIDATE TRANSACTION HASH FORMAT
+          const hashValidation = validateTransactionHash(transactionHash);
+          if (!hashValidation.valid) {
+            throw new Error(hashValidation.error);
+          }
+
+          // ✅ CHECK INVOICE STATUS: Phải là "issued"
+          const invoiceStatus = commercialInvoice?.status;
+          if (invoiceStatus !== "issued") {
+            throw new Error(
+              `Invoice phải ở trạng thái 'issued' để lưu transaction. Trạng thái hiện tại: ${invoiceStatus}`
+            );
+          }
+
+          // ✅ USE TOKENIDS FROM INVOICE (read-only, không cho phép edit)
+          const invoiceTokenIds = responseTokenIds; // Đã được validate từ invoice response
+
+          const saveResponse = await saveTransferTransaction({
+            invoiceId: commercialInvoice._id || commercialInvoice.invoiceId,
+            transactionHash,
+            tokenIds: invoiceTokenIds, // Use from invoice, not from form
+          });
+
+          const saveBody = saveResponse?.data ?? saveResponse;
+
+          if (saveBody?.success) {
+            console.log("✅ [handleSubmit] Transaction hash đã được lưu");
+            
+            toast.success("Chuyển giao NFT hoàn tất!", {
+              position: "top-right",
+              duration: 5000,
+            });
+            
+            // Reset UI
+            await new Promise((r) => setTimeout(r, 1000));
+            setShowChainView(false);
+            setShowDialog(false);
+            setFormData({
+              pharmacyId: "",
+              quantity: "",
+              notes: "",
+            });
+            
+            // Reload data
+            await loadData(true);
           } else {
-            throw new Error("Smart contract transfer không thành công");
+            throw new Error(
+              saveBody?.message || "Lỗi khi lưu transaction hash"
+            );
           }
-        } catch (transferError) {
-          console.error("Lỗi khi gọi smart contract:", transferError);
-          if (chainIntervalRef.current) {
-            clearInterval(chainIntervalRef.current);
-          }
+        } catch (saveError) {
+          console.error("❌ [handleSubmit] Lỗi khi lưu transaction hash:", saveError);
           setChainStatus("error");
-          setChainProgress((prev) => (prev < 0.3 ? 0.3 : prev));
-          toast.error(
-            `Lỗi khi chuyển NFT trên blockchain: ${
-              transferError.message || "Unknown error"
-            }`,
-            {
+          
+          const errorMessage = saveError.response?.data?.message || saveError.message;
+          
+          // ✅ IMPROVED: Handle specific backend errors
+          if (errorMessage.includes("trạng thái") || errorMessage.includes("status")) {
+            toast.error(
+              `Invoice phải ở trạng thái 'issued'. Vui lòng reload trang và thử lại.`,
+              {
+                position: "top-right",
+                duration: 6000,
+              }
+            );
+            // Reload invoice data
+            await loadData(true);
+          } else if (errorMessage.includes("transactionHash không hợp lệ") || errorMessage.includes("format")) {
+            toast.error("Transaction hash không hợp lệ. Vui lòng kiểm tra lại.", {
               position: "top-right",
               duration: 6000,
-            }
-          );
+            });
+          } else if (errorMessage.includes("tokenIds không khớp") || errorMessage.includes("tokenIds")) {
+            toast.error("TokenIds không khớp với invoice. Vui lòng reload trang và thử lại.", {
+              position: "top-right",
+              duration: 6000,
+            });
+            // Reload invoice data
+            await loadData(true);
+          } else if (errorMessage.includes("không còn thuộc về distributor")) {
+            toast.error("NFTs đã không còn thuộc về bạn. Vui lòng kiểm tra lại.", {
+              position: "top-right",
+              duration: 6000,
+            });
+            // Reload invoice data
+            await loadData(true);
+          } else {
+            toast.error(`Lỗi khi lưu transaction: ${errorMessage}`, {
+              position: "top-right",
+              duration: 6000,
+            });
+          }
         }
+      } catch (transferError) {
+        console.error("❌ [handleSubmit] Lỗi khi chuyển NFT:", transferError);
+        
+        if (chainIntervalRef.current) {
+          clearInterval(chainIntervalRef.current);
+        }
+        
+        setChainStatus("error");
+        setChainProgress((prev) => (prev < 0.3 ? 0.3 : prev));
+        
+        // ✅ IMPROVED: Xử lý các loại lỗi blockchain khác nhau
+        let errorMessage = "Lỗi không xác định";
+        let duration = 6000;
+        
+        if (transferError.code === 4001) {
+          errorMessage = "Bạn đã từ chối giao dịch trong MetaMask";
+        } else if (transferError.message?.includes("insufficient funds")) {
+          errorMessage = "Không đủ gas fee để thực hiện giao dịch";
+        } else if (transferError.message?.includes("nonce")) {
+          errorMessage = "Lỗi nonce. Vui lòng reset MetaMask và thử lại";
+        } else if (transferError.message?.includes("Receiver is not a Pharmacy") || 
+                   transferError.message?.includes("chưa được đăng ký")) {
+          // Lỗi pharmacy chưa được đăng ký - hiển thị thông báo dài hơn
+          errorMessage = transferError.message;
+          duration = 10000; // Hiển thị lâu hơn để user đọc được
+        } else if (transferError.message?.includes("not finalized") || 
+                   transferError.message?.includes("not signed") ||
+                   transferError.message?.includes("finalized/signed") ||
+                   transferError.message?.includes("Contract is not finalized")) {
+          // Lỗi contract chưa được finalize/sign trên blockchain
+          // Smart contract yêu cầu contract giữa distributor và pharmacy phải được finalize trước
+          const selectedPharmacy = pharmacies.find(p => p._id === formData.pharmacyId);
+          const pharmacyName = selectedPharmacy?.name || "N/A";
+          
+          errorMessage = 
+            `⚠️ Contract chưa được finalize trên blockchain!\n\n` +
+            `Smart contract yêu cầu contract giữa distributor và pharmacy phải được finalize trên blockchain trước khi transfer NFT.\n\n` +
+            `Thông tin:\n` +
+            `- Pharmacy: ${pharmacyName}\n` +
+            `- Invoice ID: ${invoiceId || "N/A"}\n\n` +
+            `Nguyên nhân:\n` +
+            `- Chưa có contract giữa distributor và pharmacy này\n` +
+            `- Hoặc contract đã tồn tại nhưng chưa được finalize trên blockchain\n\n` +
+            `Giải pháp:\n` +
+            `1. Tạo contract giữa distributor và pharmacy (nếu chưa có)\n` +
+            `   → Vào trang "Quản lý Contract" → Tạo contract mới với pharmacy này\n` +
+            `2. Finalize contract trên blockchain\n` +
+            `   → Vào trang "Quản lý Contract" → Chọn contract → Finalize\n` +
+            `3. Sau khi contract đã được finalize, thử lại transfer NFT\n\n` +
+            `Hoặc liên hệ backend team để:\n` +
+            `- Tự động tạo và finalize contract khi tạo invoice\n` +
+            `- Hoặc finalize contract hiện có\n\n` +
+            `Lỗi chi tiết: ${transferError.message}`;
+          duration = 20000; // Hiển thị lâu hơn để user đọc được
+        } else if (transferError.message) {
+          errorMessage = transferError.message;
+        }
+        
+        toast.error(`Lỗi blockchain: ${errorMessage}`, {
+          position: "top-right",
+          duration: duration,
+        });
       }
     } catch (error) {
-      console.error("Lỗi:", error);
-      toast.error(`${error.response?.data?.message || error.message}`, {
+      console.error("❌ [handleSubmit] Lỗi tổng thể:", error);
+      
+      // ✅ IMPROVED: Error handling tốt hơn
+      let errorMessage = "Lỗi không xác định";
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(`Lỗi: ${errorMessage}`, {
         position: "top-right",
         duration: 5000,
       });
@@ -832,6 +1624,7 @@ export const useTransferToPharmacy = () => {
       }
     }
   };
+
   return {
     distributions,
     pharmacies,

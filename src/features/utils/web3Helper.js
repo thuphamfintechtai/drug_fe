@@ -448,8 +448,8 @@ export const transferNFTToDistributor = async (
       if (BigInt(balance) < normalizedAmounts[i]) {
         throw new Error(
           `Insufficient balance for token ID ${normalizedTokenIds[i]}: ` +
-            `have ${balance}, need ${requiredAmount}. ` +
-            `Please ensure the token IDs are correct and belong to this manufacturer.`
+          `have ${balance}, need ${requiredAmount}. ` +
+          `Please ensure the token IDs are correct and belong to this manufacturer.`
         );
       }
     }
@@ -485,10 +485,10 @@ export const transferNFTToDistributor = async (
       if (/insufficient balance/i.test(errorMessage)) {
         throw new Error(
           "Không đủ số lượng token để chuyển giao. " +
-            "Vui lòng kiểm tra:\n" +
-            "1. Token IDs có tồn tại và đã được mint chưa?\n" +
-            "2. Token IDs có thuộc sở hữu của manufacturer này không?\n" +
-            "3. Token IDs đã được transfer đi chưa?"
+          "Vui lòng kiểm tra:\n" +
+          "1. Token IDs có tồn tại và đã được mint chưa?\n" +
+          "2. Token IDs có thuộc sở hữu của manufacturer này không?\n" +
+          "3. Token IDs đã được transfer đi chưa?"
         );
       }
       throw new Error(
@@ -592,8 +592,8 @@ export const transferBatchNFTToDistributor = async (
       if (BigInt(balance) < normalizedAmounts[i]) {
         throw new Error(
           `Insufficient balance for token ID ${normalizedTokenIds[i]}: ` +
-            `have ${balance}, need ${requiredAmount}. ` +
-            `Please ensure the token IDs are correct and belong to this manufacturer.`
+          `have ${balance}, need ${requiredAmount}. ` +
+          `Please ensure the token IDs are correct and belong to this manufacturer.`
         );
       }
     }
@@ -628,10 +628,10 @@ export const transferBatchNFTToDistributor = async (
       if (/insufficient balance/i.test(errorMessage)) {
         throw new Error(
           "Không đủ số lượng token để chuyển giao. " +
-            "Vui lòng kiểm tra:\n" +
-            "1. Token IDs có tồn tại và đã được mint chưa?\n" +
-            "2. Token IDs có thuộc sở hữu của manufacturer này không?\n" +
-            "3. Token IDs đã được transfer đi chưa?"
+          "Vui lòng kiểm tra:\n" +
+          "1. Token IDs có tồn tại và đã được mint chưa?\n" +
+          "2. Token IDs có thuộc sở hữu của manufacturer này không?\n" +
+          "3. Token IDs đã được transfer đi chưa?"
         );
       }
       throw new Error(
@@ -645,6 +645,147 @@ export const transferBatchNFTToDistributor = async (
       throw error; // Re-throw our custom error message
     }
     throw new Error(error?.message || "Failed to transfer NFTs");
+  }
+};
+
+/**
+ * Create contract between distributor and pharmacy on blockchain
+ * @param {string} pharmacyAddress - Pharmacy wallet address
+ * @returns {Object} - { success: true, transactionHash: string, blockNumber: number }
+ */
+export const createDistributorPharmacyContract = async (pharmacyAddress) => {
+  try {
+    if (!ethers.isAddress(pharmacyAddress)) {
+      throw new Error("Invalid pharmacy address");
+    }
+
+    const provider = await getWeb3Provider();
+    const signer = await provider.getSigner();
+    const signerAddress = await signer.getAddress();
+
+    // Ensure contracts are deployed on this network
+    await ensureDeployed(provider, NFT_CONTRACT_ADDRESS);
+    await ensureDeployed(provider, ACCESS_CONTROL_ADDRESS);
+
+    const contract = await getNFTContract();
+
+    console.log("📝 [createDistributorPharmacyContract] Đang tạo contract với pharmacy:", pharmacyAddress);
+
+    // Call distributorCreateAContract(pharmacyAddress)
+    const tx = await contract.distributorCreateAContract(pharmacyAddress);
+
+    console.log("⏳ [createDistributorPharmacyContract] Transaction submitted:", tx.hash);
+    console.log("⏳ [createDistributorPharmacyContract] Waiting for confirmation...");
+
+    const receipt = await tx.wait();
+
+    console.log("✅ [createDistributorPharmacyContract] Contract đã được tạo:", receipt);
+
+    return {
+      success: true,
+      transactionHash: tx.hash,
+      blockNumber: receipt.blockNumber,
+    };
+  } catch (error) {
+    console.error("Error creating distributor-pharmacy contract:", error);
+    
+    // Friendly error messages
+    if (error?.code === "ACTION_REJECTED" || error?.code === 4001) {
+      throw new Error("User rejected the transaction");
+    }
+    
+    if (error?.code === "CALL_EXCEPTION") {
+      const reason =
+        error.reason ||
+        (error.data && ethers.toUtf8String(error.data)) ||
+        error.message?.match(/revert\s+"?([^"]+)"?/)?.[1] ||
+        "unknown reason";
+      
+      throw new Error(
+        `Contract call exception (reverted). Reason: ${reason}`
+      );
+    }
+    
+    throw new Error(error?.message || "Failed to create contract");
+  }
+};
+
+/**
+ * Finalize contract between distributor and pharmacy on blockchain
+ * @param {string} pharmacyAddress - Pharmacy wallet address
+ * @returns {Object} - { success: true, transactionHash: string, blockNumber: number }
+ */
+export const finalizeDistributorPharmacyContract = async (pharmacyAddress) => {
+  try {
+    if (!ethers.isAddress(pharmacyAddress)) {
+      throw new Error("Invalid pharmacy address");
+    }
+
+    const provider = await getWeb3Provider();
+    const signer = await provider.getSigner();
+    const signerAddress = await signer.getAddress();
+
+    // Ensure contracts are deployed on this network
+    await ensureDeployed(provider, NFT_CONTRACT_ADDRESS);
+    await ensureDeployed(provider, ACCESS_CONTROL_ADDRESS);
+
+    const contract = await getNFTContract();
+
+    console.log("📝 [finalizeDistributorPharmacyContract] Đang finalize contract với pharmacy:", pharmacyAddress);
+
+    // Call distributorFinalizeAndMint(pharmacyAddress)
+    const tx = await contract.distributorFinalizeAndMint(pharmacyAddress);
+
+    console.log("⏳ [finalizeDistributorPharmacyContract] Transaction submitted:", tx.hash);
+    console.log("⏳ [finalizeDistributorPharmacyContract] Waiting for confirmation...");
+
+    const receipt = await tx.wait();
+
+    console.log("✅ [finalizeDistributorPharmacyContract] Contract đã được finalize:", receipt);
+
+    return {
+      success: true,
+      transactionHash: tx.hash,
+      blockNumber: receipt.blockNumber,
+    };
+  } catch (error) {
+    console.error("Error finalizing distributor-pharmacy contract:", error);
+    
+    // Friendly error messages
+    if (error?.code === "ACTION_REJECTED" || error?.code === 4001) {
+      throw new Error("User rejected the transaction");
+    }
+    
+    if (error?.code === "CALL_EXCEPTION") {
+      const reason =
+        error.reason ||
+        (error.data && ethers.toUtf8String(error.data)) ||
+        error.message?.match(/revert\s+"?([^"]+)"?/)?.[1] ||
+        "unknown reason";
+      
+      // Handle specific errors
+      if (reason.includes("Pharmacy has not approved") || reason.includes("not approved")) {
+        throw new Error(
+          `⚠️ Pharmacy chưa approve contract!\n\n` +
+          `Contract giữa distributor và pharmacy cần được pharmacy approve trước khi distributor có thể finalize.\n\n` +
+          `Flow đúng:\n` +
+          `1. Distributor tạo contract (nếu chưa có)\n` +
+          `2. Pharmacy approve contract\n` +
+          `3. Distributor finalize contract\n` +
+          `4. Sau đó mới transfer NFT\n\n` +
+          `Giải pháp:\n` +
+          `- Yêu cầu pharmacy approve contract trước\n` +
+          `- Hoặc liên hệ backend team để tự động approve\n\n` +
+          `Lỗi chi tiết: ${reason}`
+        );
+      }
+      
+      throw new Error(
+        `Contract call exception (reverted). Reason: ${reason}`
+      );
+    }
+    
+    throw new Error(error?.message || "Failed to finalize contract");
   }
 };
 
@@ -790,12 +931,41 @@ export const transferNFTToPharmacy = async (
       const reason =
         error.reason ||
         (error.data && ethers.toUtf8String(error.data)) ||
+        error.message?.match(/revert\s+"?([^"]+)"?/)?.[1] ||
         "unknown reason";
+      
+      // Xử lý các lỗi cụ thể
       if (reason.includes("insufficient balance")) {
         throw new Error(
           `Contract reverted: Insufficient balance. Please check if the distributor owns the NFTs being transferred. Details: ${reason}`
         );
       }
+      
+      if (reason.includes("Receiver is not a Pharmacy") || reason.includes("not a Pharmacy")) {
+        throw new Error(
+          `⚠️ Địa chỉ nhà thuốc chưa được đăng ký trong smart contract!\n\n` +
+          `Địa chỉ: ${pharmacyAddress}\n\n` +
+          `Giải pháp:\n` +
+          `1. Nhà thuốc cần đăng ký địa chỉ ví trong smart contract trước\n` +
+          `2. Liên hệ quản trị viên để đăng ký địa chỉ này\n` +
+          `3. Sau khi đăng ký, thử lại chuyển giao NFT\n\n` +
+          `Lỗi chi tiết: ${reason}`
+        );
+      }
+      
+      if (reason.includes("not finalized") || reason.includes("not signed") || 
+          reason.includes("finalized/signed") || reason.includes("Contract is not finalized")) {
+        throw new Error(
+          `⚠️ Invoice chưa được finalize/sign!\n\n` +
+          `Smart contract yêu cầu invoice phải được finalize/sign trước khi có thể transfer NFT.\n\n` +
+          `Giải pháp:\n` +
+          `1. Kiểm tra xem invoice đã được finalize/sign chưa\n` +
+          `2. Nếu chưa, cần finalize/sign invoice trước\n` +
+          `3. Sau đó thử lại chuyển giao NFT\n\n` +
+          `Lỗi chi tiết: ${reason}`
+        );
+      }
+      
       throw new Error(
         `Contract call exception (reverted). Please check ownership and network. Details: ${reason}`
       );
@@ -965,6 +1135,11 @@ export const disconnectWallet = async () => {
 };
 
 /**
+ * Legacy alias cho getCurrentWalletAddress nhằm tránh lỗi import
+ */
+export const getCurrentAccount = getCurrentWalletAddress;
+
+/**
  * Sign a message with MetaMask and get private key from secure storage
  * @param {string} message - Message to sign
  * @returns {Promise<Object>} - Signature and private key
@@ -991,7 +1166,7 @@ export const signMessageWithMetaMask = async (message) => {
     if (!privateKey) {
       privateKey = prompt(
         "Để ký hợp đồng trên blockchain, vui lòng nhập private key của bạn:\n\n" +
-          "Private key sẽ được lưu an toàn cho các giao dịch tiếp theo."
+        "Private key sẽ được lưu an toàn cho các giao dịch tiếp theo."
       );
 
       if (!privateKey) {
@@ -1027,5 +1202,6 @@ export default {
   isWalletConnected,
   connectWallet,
   disconnectWallet,
+  getCurrentAccount,
   signMessageWithMetaMask,
 };

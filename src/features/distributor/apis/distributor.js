@@ -236,10 +236,7 @@ export const useCreateProofToPharmacy = () => {
 export const useTransferToPharmacy = () => {
   return useMutation({
     mutationFn: async (data) => {
-      const response = await api.post(
-        "/distributor/transfer-to-pharmacy",
-        data
-      );
+      const response = await api.post("/distributor/transfer/pharmacy", data);
       return response.data;
     },
   });
@@ -249,7 +246,7 @@ export const useSaveTransferTransaction = () => {
   return useMutation({
     mutationFn: async (data) => {
       const response = await api.post(
-        "/distributor/transfer/transaction",
+        "/distributor/transfer/pharmacy/save-transaction",
         data
       );
       return response.data;

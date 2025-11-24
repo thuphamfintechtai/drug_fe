@@ -43,6 +43,40 @@ export default function TransferToPharmacy() {
     (p) => p._id === formData.pharmacyId
   );
 
+  const getManufacturerDisplay = (record) =>
+    record?.manufacturer?.fullName ||
+    record?.manufacturer?.name ||
+    record?.manufacturer?.username ||
+    record?.fromManufacturer?.fullName ||
+    record?.fromManufacturer?.username ||
+    record?.manufacturerId ||
+    "N/A";
+
+  const getInvoiceDisplay = (record) =>
+    record?.manufacturerInvoice?.invoiceNumber ||
+    record?.invoiceNumber ||
+    record?.invoice?.invoiceNumber ||
+    record?.code ||
+    record?._id ||
+    record?.id ||
+    "N/A";
+
+  const getQuantityValue = (record) => {
+    const value =
+      record?.distributedQuantity ??
+      record?.quantity ??
+      (Array.isArray(record?.tokenIds) ? record.tokenIds.length : undefined);
+    return typeof value === "number" ? value : undefined;
+  };
+
+  const getQuantityDisplay = (record) => {
+    const value = getQuantityValue(record);
+    return typeof value === "number" ? value : "N/A";
+  };
+
+  const getDateDisplay = (value) =>
+    value ? new Date(value).toLocaleDateString("vi-VN") : "N/A";
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {showChainView && (
@@ -144,29 +178,23 @@ export default function TransferToPharmacy() {
                         className="hover:bg-gray-50 transition-colors"
                       >
                         <td className="px-6 py-4 font-semibold text-[#003544]">
-                          {dist.fromManufacturer?.fullName ||
-                            dist.fromManufacturer?.username ||
-                            "N/A"}
+                          {getManufacturerDisplay(dist)}
                         </td>
                         <td className="px-6 py-4">
                           <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">
-                            {dist.manufacturerInvoice?.invoiceNumber || "N/A"}
+                            {getInvoiceDisplay(dist)}
                           </span>
                         </td>
                         <td className="px-6 py-4">
                           <span className="font-semibold text-gray-800">
-                            {dist.distributedQuantity}
+                            {getQuantityDisplay(dist)}
                           </span>
                           <span className="text-xs text-slate-500 ml-1">
                             NFT
                           </span>
                         </td>
                         <td className="px-6 py-4 text-slate-700 text-sm">
-                          {dist.distributionDate
-                            ? new Date(
-                                dist.distributionDate
-                              ).toLocaleDateString("vi-VN")
-                            : "N/A"}
+                          {getDateDisplay(dist.distributionDate)}
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex items-center justify-center">
@@ -246,38 +274,25 @@ export default function TransferToPharmacy() {
                       <div className="flex justify-between">
                         <span className="text-slate-600">Đơn hàng:</span>
                         <span className="font-mono font-medium">
-                          {selectedDistribution.manufacturerInvoice
-                            ?.invoiceNumber ||
-                            selectedDistribution.invoice?.invoiceNumber ||
-                            "N/A"}
+                            {getInvoiceDisplay(selectedDistribution)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Từ:</span>
                         <span className="font-medium">
-                          {selectedDistribution.fromManufacturer?.fullName ||
-                            selectedDistribution.fromManufacturer?.username ||
-                            selectedDistribution.invoice?.fromManufacturer
-                              ?.fullName ||
-                            selectedDistribution.invoice?.fromManufacturer
-                              ?.username ||
-                            "N/A"}
+                            {getManufacturerDisplay(selectedDistribution)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Tổng số NFT:</span>
                         <span className="font-bold text-orange-700">
-                          {selectedDistribution.distributedQuantity || "N/A"}
+                            {getQuantityDisplay(selectedDistribution)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Ngày nhận:</span>
                         <span className="font-medium">
-                          {selectedDistribution.distributionDate
-                            ? new Date(
-                                selectedDistribution.distributionDate
-                              ).toLocaleDateString("vi-VN")
-                            : "N/A"}
+                            {getDateDisplay(selectedDistribution.distributionDate)}
                         </span>
                       </div>
                     </div>
@@ -406,10 +421,10 @@ export default function TransferToPharmacy() {
                       className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition"
                       placeholder="Nhập số lượng"
                       min="1"
-                      max={selectedDistribution.distributedQuantity}
+                    max={getQuantityValue(selectedDistribution)}
                     />
                     <div className="text-xs text-cyan-600 mt-1">
-                      Tối đa: {selectedDistribution.distributedQuantity} NFT
+                      Tối đa: {getQuantityDisplay(selectedDistribution)} NFT
                     </div>
                   </div>
 
