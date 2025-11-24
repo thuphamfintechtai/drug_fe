@@ -1180,7 +1180,6 @@ export const signMessageWithMetaMask = async (message) => {
     return {
       signature,
       address,
-      privateKey: privateKey.trim(),
       message,
     };
   } catch (error) {

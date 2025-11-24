@@ -2,16 +2,18 @@ import axios from "axios";
 import { getAuthToken } from "../auth/utils/cookieUtils";
 
 const getApiBaseUrl = () => {
+  // Ưu tiên cấu hình thủ công qua biến môi trường
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
 
-  // Development mode: sử dụng proxy hoặc local API
   if (import.meta.env.DEV) {
-    return "https://drug-be.vercel.app";
+    // Trong development, dùng proxy /api (vite.config.js proxy tới backend)
+    // hoặc có thể đặt VITE_DEV_API_BASE_URL nếu muốn trỏ trực tiếp
+    return import.meta.env.VITE_DEV_API_BASE_URL || "/api";
   }
 
-  // Production mode: sử dụng production API URL
+  // Production: API thật (luôn có /api ở cuối)
   return "https://drug-be.vercel.app/api";
 };
 
