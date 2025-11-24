@@ -853,7 +853,7 @@ export default function UserHome() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-center mb-4 sm:mb-6 lg:mb-8"
+              className="text-left mt-12"
             >
               <motion.h1
                 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-[#2176FF] mb-3 sm:mb-4 md:mb-6 leading-tight tracking-tight"
@@ -869,35 +869,36 @@ export default function UserHome() {
                 >
                   Hệ Thống Truy Xuất Nguồn Gốc Thuốc
                 </motion.span>
-              </motion.h1>
-
-              <motion.p
-                className="text-sm sm:text-base md:text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto font-medium leading-relaxed px-2 sm:px-0"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-              >
-                Tra cứu thông tin sản phẩm, theo dõi lộ trình phân phối an toàn
-                với công nghệ{" "}
-                <motion.strong
-                  className="text-[#054f67] font-bold relative"
-                  animate={{
-                    textShadow: [
-                      "0 0 0px rgba(75, 173, 209, 0)",
-                      "0 0 10px rgba(75, 173, 209, 0.5)",
-                    ],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    repeatType: "reverse",
-                    ease: "easeInOut",
-                  }}
+                <motion.div
+                  className="text-sm sm:text-base md:text-lg lg:text-xl text-slate-600 w-full font-medium leading-relaxed px-2 sm:px-0 text-left tracking-wide"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.4 }}
                 >
-                  Blockchain
-                </motion.strong>
-                .
-              </motion.p>
+                  <span className="text-left">
+                    Tra cứu thông tin sản phẩm, theo dõi lộ trình phân phối an
+                    toàn với công nghệ{" "}
+                  </span>
+                  <motion.strong
+                    className="text-[#054f67] font-bold relative"
+                    animate={{
+                      textShadow: [
+                        "0 0 0px rgba(75, 173, 209, 0)",
+                        "0 0 10px rgba(75, 173, 209, 0.5)",
+                      ],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatType: "reverse",
+                      ease: "easeInOut",
+                    }}
+                  >
+                    Blockchain
+                  </motion.strong>
+                  .
+                </motion.div>
+              </motion.h1>
             </motion.div>
 
             {/* HORIZONTAL LAYOUT: Form Left + Map Right */}
@@ -910,32 +911,32 @@ export default function UserHome() {
                 className="w-full px-2 sm:px-0 order-2 lg:order-1 lg:max-w-[750px]"
               >
                 {/* Tabs */}
-                <div className="flex gap-2 mb-4 justify-center lg:justify-start flex-wrap">
-                  <button
-                    onClick={() => setSearchMode("nft")}
-                    className={`px-3 sm:px-6 py-2 text-xs sm:text-sm md:text-base rounded-lg font-semibold transition whitespace-nowrap ${
-                      searchMode === "nft"
-                        ? "bg-[#077CA3] text-white shadow-lg"
-                        : "bg-white text-slate-700 border-2 border-slate-200 hover:border-[#077CA3]"
-                    }`}
-                  >
-                    Tra cứu NFT
-                  </button>
-                  <button
-                    onClick={() => setSearchMode("drug")}
-                    className={`px-3 sm:px-6 py-2 text-xs sm:text-sm md:text-base rounded-lg font-semibold transition whitespace-nowrap ${
-                      searchMode === "drug"
-                        ? "bg-[#077CA3] text-white shadow-lg"
-                        : "bg-white text-slate-700 border-2 border-slate-200 hover:border-[#077CA3]"
-                    }`}
-                  >
-                    Thông tin thuốc
-                  </button>
-                </div>
 
-                <div className="bg-white rounded-2xl shadow-xl border-2 border-[#077CA3] p-4 sm:p-6 md:p-8">
+                <div className="bg-white rounded-2xl mt-16 shadow-xl border-2 border-[#077CA3] p-4 sm:p-6 md:p-8">
                   {searchMode === "nft" ? (
                     <>
+                      <div className="flex gap-2 mb-4 justify-center lg:justify-start flex-wrap">
+                        <button
+                          onClick={() => setSearchMode("nft")}
+                          className={`px-3 sm:px-6 py-2 text-xs sm:text-sm md:text-base rounded-lg font-semibold transition whitespace-nowrap ${
+                            searchMode === "nft"
+                              ? "bg-[#077CA3] !text-white shadow-lg"
+                              : "bg-white text-slate-700 border-2 border-slate-200 hover:border-[#077CA3]"
+                          }`}
+                        >
+                          Tra cứu NFT
+                        </button>
+                        <button
+                          onClick={() => setSearchMode("drug")}
+                          className={`px-3 sm:px-6 py-2 text-xs sm:text-sm md:text-base rounded-lg font-semibold transition whitespace-nowrap ${
+                            searchMode === "drug"
+                              ? "bg-[#077CA3] !text-white shadow-lg"
+                              : "bg-white text-slate-700 border-2 border-slate-200 hover:border-[#077CA3]"
+                          }`}
+                        >
+                          Thông tin thuốc
+                        </button>
+                      </div>
                       <p className="text-slate-700 mb-4 sm:mb-5 text-left text-xs sm:text-sm font-semibold flex items-center gap-2">
                         <svg
                           className="w-3 sm:w-4 h-3 sm:h-4 text-[#077CA3] flex-shrink-0"
@@ -1019,7 +1020,7 @@ export default function UserHome() {
 
                           <button
                             onClick={handleTrackDrug}
-                            className="px-3 py-3 bg-[#077CA3] text-white font-semibold rounded-xl transition-all flex flex-col items-center justify-center gap-1 text-xs hover:opacity-90 hover:shadow-md active:scale-95"
+                            className="px-3 py-3 bg-[#077CA3] !text-white font-semibold rounded-xl transition-all flex flex-col items-center justify-center gap-1 text-xs hover:opacity-90 hover:shadow-md active:scale-95"
                           >
                             <svg
                               className="w-5 h-5 flex-shrink-0"
@@ -1124,7 +1125,7 @@ export default function UserHome() {
                 transition={{ duration: 0.8, delay: 0.8 }}
                 className="w-full flex items-center justify-center lg:justify-end order-1 lg:order-2"
               >
-                <div className="w-full max-w-[200px] lg:max-w-[250px] lg:ml-6">
+                <div className="w-full max-w-[200px] lg:max-w-[250px] lg:ml-6 mt-16">
                   <VietnamDeliveryMapAdvanced
                     duration={12}
                     showTrail={true}
@@ -1228,7 +1229,7 @@ export default function UserHome() {
       </section>
 
       {/* Truck Transfer Visualization - giữ nguyên từ code gốc */}
-      <section className="py-12 sm:py-16 md:py-20 px-4 bg-white">
+      <section className="py-12 sm:py-16s md:py-20 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

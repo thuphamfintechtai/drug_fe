@@ -116,9 +116,7 @@ export default function Login() {
                   />
                 </svg>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold">
-                    MetaMask đã kết nối
-                  </p>
+                  <p className="text-sm font-semibold">MetaMask đã kết nối</p>
                   <p className="text-xs text-green-600 mt-0.5">
                     {account.slice(0, 6)}...{account.slice(-4)}
                   </p>
@@ -128,20 +126,22 @@ export default function Login() {
           )}
 
           {!isConnected && (
-            <button
-              type="button"
-              onClick={handleConnectMetaMask}
-              className="w-full py-2.5 sm:py-3 bg-orange-500 hover:bg-orange-600 !text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-sm sm:text-base mb-4"
-            >
-              <svg
-                className="w-5 h-5"
-                viewBox="0 0 40 40"
-                fill="currentColor"
+            <div className="mb-5">
+              <button
+                type="button"
+                onClick={handleConnectMetaMask}
+                className="w-full  py-2.5 sm:py-3 bg-orange-500 hover:bg-orange-600 !text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-sm sm:text-base mb-4"
               >
-                <path d="M32.7 24.5l-4.5-1.5-2.3 3.5-1.5-0.5 2.3-3.5-4.5-1.5 1-3 4.5 1.5 1.5-2.3 1.5 0.5-1.5 2.3 4.5 1.5-1 3zm-20-8l-4.5-1.5-2.3 3.5-1.5-0.5 2.3-3.5-4.5-1.5 1-3 4.5 1.5 1.5-2.3 1.5 0.5-1.5 2.3 4.5 1.5-1 3z" />
-              </svg>
-              Kết nối MetaMask
-            </button>
+                <svg
+                  className="w-5 h-5"
+                  viewBox="0 0 40 40"
+                  fill="currentColor"
+                >
+                  <path d="M32.7 24.5l-4.5-1.5-2.3 3.5-1.5-0.5 2.3-3.5-4.5-1.5 1-3 4.5 1.5 1.5-2.3 1.5 0.5-1.5 2.3 4.5 1.5-1 3zm-20-8l-4.5-1.5-2.3 3.5-1.5-0.5 2.3-3.5-4.5-1.5 1-3 4.5 1.5 1.5-2.3 1.5 0.5-1.5 2.3 4.5 1.5-1 3z" />
+                </svg>
+                Kết nối MetaMask
+              </button>
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
