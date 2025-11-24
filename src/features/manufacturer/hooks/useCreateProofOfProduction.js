@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../shared/context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import {
-  useGetDrugsByManufacturerId,
-} from "../apis/drugAPIs";
+import { useGetDrugsByManufacturerId } from "../apis/drugAPIs";
 import {
   useGenerateNFTMetadata,
   useCreateProofOfProduction,
@@ -16,7 +14,7 @@ import {
 } from "../../utils/web3Helper";
 import { uploadMetadataToIPFS } from "../../utils/ipfsHelper";
 
-export const useCreateProofOfProduction = () => {
+export const useCreateProofOfProductionHook = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -182,9 +180,7 @@ export const useCreateProofOfProduction = () => {
 
       // Upload metadata to IPFS
       console.log("📤 Uploading metadata to IPFS...");
-      const tokenURI = await uploadMetadataToIPFS(
-        nftMetadata.metadata
-      );
+      const tokenURI = await uploadMetadataToIPFS(nftMetadata.metadata);
       console.log(" Token URI:", tokenURI);
 
       // Mint NFT on blockchain

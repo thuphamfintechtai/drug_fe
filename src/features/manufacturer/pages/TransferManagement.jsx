@@ -387,7 +387,11 @@ export default function TransferManagement() {
                   type="number"
                   value={formData.quantity}
                   onChange={(e) =>
-                    setFormData({ ...formData, quantity: e.target.value })
+                    setFormData({
+                      ...formData,
+                      quantity: e.target.value,
+                      maxQuantity: selectedProduction.quantity,
+                    })
                   }
                   className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                   placeholder="Nhập số lượng"

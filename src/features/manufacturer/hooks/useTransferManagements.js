@@ -43,6 +43,23 @@ export const useTransferManagements = () => {
     ? productionsData.data?.productions || productionsData.data || []
     : [];
 
+  useEffect(() => {
+    if (productions.length > 0 && import.meta.env.DEV) {
+      console.log("📋 Productions loaded:", {
+        count: productions.length,
+        sample: productions[0]
+          ? {
+              _id: productions[0]._id,
+              id: productions[0].id,
+              batchNumber: productions[0].batchNumber,
+              quantity: productions[0].quantity,
+              allKeys: Object.keys(productions[0]),
+            }
+          : null,
+      });
+    }
+  }, [productions]);
+
   const distributors = distributorsData?.success
     ? Array.isArray(distributorsData.data?.distributors)
       ? distributorsData.data.distributors
@@ -83,11 +100,29 @@ export const useTransferManagements = () => {
 
   // FIX: Use separate loading state to not hide dialog
   const handleSelectProduction = async (production) => {
+    // Validate production object and _id
+    if (!production) {
+      console.error("Production object is null or undefined");
+      toast.error("Lỗi: Không tìm thấy thông tin sản xuất", {
+        position: "top-right",
+      });
+      return;
+    }
+
+    const productionId = production._id || production.id;
+    if (!productionId) {
+      console.error("Production ID is missing:", production);
+      toast.error("Lỗi: Không tìm thấy ID sản xuất", {
+        position: "top-right",
+      });
+      return;
+    }
+
     setSelectedProduction(production);
     setFormData({
-      productionId: production._id,
+      productionId: productionId,
       distributorId: "",
-      quantity: production.quantity.toString(),
+      quantity: production.quantity?.toString() || "",
       notes: "",
     });
 
@@ -96,7 +131,7 @@ export const useTransferManagements = () => {
 
     try {
       const response = await api.get(
-        `/production/${production._id}/available-tokens`
+        `/production/${productionId}/available-tokens`
       );
       const res = response.data;
       const ids =
@@ -106,6 +141,9 @@ export const useTransferManagements = () => {
       setAvailableTokenIds(Array.isArray(ids) ? ids : []);
     } catch (e) {
       console.error("Không thể tải token khả dụng:", e);
+      toast.error("Không thể tải danh sách token khả dụng", {
+        position: "top-right",
+      });
       setAvailableTokenIds([]);
     } finally {
       setLoadingTokens(false);
@@ -125,31 +163,43 @@ export const useTransferManagements = () => {
       return;
     }
 
-    const requestedQty = parseInt(formData.quantity);
+    // Convert to number and validate
+    const requestedQty = Number(formData.quantity);
+    const availableCount = availableTokenIds?.length || 0;
 
-    // FIX: Proper quantity validation
+    // FIX: Proper quantity validation with better type handling
     if (
       isNaN(requestedQty) ||
-      requestedQty <= 0 ||
-      requestedQty > selectedProduction.quantity
+      !Number.isInteger(requestedQty) ||
+      requestedQty <= 0
     ) {
-      toast.error("Số lượng không hợp lệ", { position: "top-right" });
-      return;
-    }
-
-    const tokenIds = (availableTokenIds || []).slice(0, requestedQty);
-
-    if (tokenIds.length === 0) {
-      toast.error("Không tìm thấy tokenId phù hợp để chuyển.", {
+      toast.error("Số lượng phải là số nguyên dương", {
         position: "top-right",
       });
       return;
     }
 
-    // FIX: Check if token count matches requested quantity
-    if (tokenIds.length < requestedQty) {
+    // Check against available token IDs first (this is the actual limit)
+    if (availableCount === 0) {
+      toast.error("Không có token khả dụng để chuyển", {
+        position: "top-right",
+      });
+      return;
+    }
+
+    if (requestedQty > availableCount) {
       toast.error(
-        `Chỉ có ${tokenIds.length} token khả dụng, nhưng bạn yêu cầu ${requestedQty}`,
+        `Số lượng không hợp lệ: Chỉ có ${availableCount} token khả dụng, nhưng bạn nhập ${requestedQty}`,
+        { position: "top-right" }
+      );
+      return;
+    }
+
+    const tokenIds = (availableTokenIds || []).slice(0, requestedQty);
+
+    if (tokenIds.length !== requestedQty) {
+      toast.error(
+        `Lỗi: Không thể lấy đủ ${requestedQty} token (chỉ lấy được ${tokenIds.length})`,
         { position: "top-right" }
       );
       return;
