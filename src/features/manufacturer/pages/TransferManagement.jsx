@@ -491,8 +491,8 @@ export default function TransferManagement() {
 
                   <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
                     <div className="text-sm text-yellow-800">
-                      ⚠️ Sau khi xác nhận, hệ thống sẽ tạo yêu cầu chuyển giao
-                      và gọi smart contract để transfer NFT. Vui lòng đảm bảo ví
+                      ⚠️ Sau khi xác nhận, hệ thống sẽ tạo yêu cầu chuyển giao và
+                      gọi smart contract để transfer NFT. Vui lòng đảm bảo ví
                       MetaMask đã kết nối.
                     </div>
                   </div>

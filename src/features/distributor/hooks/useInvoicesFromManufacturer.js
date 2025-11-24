@@ -124,6 +124,11 @@ export const useInvoicesFromManufacturer = () => {
   };
 
   const handleOpenConfirm = (invoice) => {
+    if (invoice?.status?.toLowerCase() !== "sent") {
+      toast.error("Chỉ có thể xác nhận những đơn đang ở trạng thái 'sent'");
+      return;
+    }
+
     setSelectedInvoice(invoice);
     setConfirmForm({
       receivedBy: {

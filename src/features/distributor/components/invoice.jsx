@@ -96,7 +96,7 @@ export function InvoiceComponent({
                     </div>
                   </div>
 
-                  {item.status === "sent" && (
+                  {item?.status?.toLowerCase() === "sent" && (
                     <button
                       onClick={() => handleOpenConfirm(item)}
                       disabled={isConfirming}

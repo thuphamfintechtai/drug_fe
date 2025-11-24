@@ -108,6 +108,9 @@ export const useTransferManagements = () => {
     };
   }, []);
 
+  const isValidMongoId = (value) =>
+    typeof value === "string" && /^[0-9a-fA-F]{24}$/.test(value);
+
   // Helper function to extract token IDs from API response
   const extractTokenIds = (responseObj) => {
     console.log("🔍 [extractTokenIds] Response object:", responseObj);
@@ -536,17 +539,20 @@ export const useTransferManagements = () => {
     console.log("✅ [handleSubmit] Validation passed:", {
       requestedQty,
       tokenIdsToTransfer: tokenIds,
+      manufacturerUserId: user?._id,
+      manufacturerCompanyId: user?.pharmaCompanyId,
     });
 
     setButtonAnimating(true);
     setButtonDone(false);
     setShowBlockchainView(true);
+    setTransferProgress(0.05);
+    setTransferStatus("issuing");
 
     try {
-      console.log("🔗 [handleSubmit] Starting blockchain transfer directly...");
-
-      // Lấy distributor address từ selectedDistributor
-      const distributorAddress = selectedDistributor?.walletAddress;
+      const distributorAddress =
+        selectedDistributor?.walletAddress ||
+        selectedDistributor?.user?.walletAddress;
 
       if (!distributorAddress) {
         console.error(
@@ -563,19 +569,90 @@ export const useTransferManagements = () => {
         return;
       }
 
-      console.log("🔍 [handleSubmit] Transfer info:", {
-        productionId: selectedProduction._id,
+      const rawDrugId =
+        selectedProduction?.drugId ||
+        selectedProduction?.drug?._id ||
+        selectedProduction?.drug?.id;
+      const cleanDrugId =
+        typeof rawDrugId === "string"
+          ? rawDrugId
+          : rawDrugId?._id || rawDrugId?.id || String(rawDrugId || "");
+
+      const issuePayload = {
         distributorId: formData.distributorId,
-        distributorAddress: distributorAddress,
-        tokenIdsCount: tokenIds.length,
-        tokenIds: tokenIds,
+        drugId: cleanDrugId,
+        tokenIds,
+        quantity: tokenIds.length,
+        notes: formData.notes || "",
+        batchNumber:
+          selectedProduction.batchNumber ||
+          selectedProduction.drug?.batchNumber ||
+          "",
+      };
+
+      console.log("📄 [handleSubmit] Issuing invoice via API:", issuePayload);
+
+      const issueResponse = await createTransferMutation.mutateAsync(
+        issuePayload
+      );
+
+      const invoiceCandidate =
+        issueResponse?.data?.invoice ||
+        issueResponse?.data?.transfer ||
+        issueResponse?.invoice ||
+        issueResponse?.transfer ||
+        issueResponse?.data ||
+        issueResponse;
+
+      const invoiceId =
+        invoiceCandidate?._id ||
+        invoiceCandidate?.id ||
+        invoiceCandidate?.invoiceId ||
+        issueResponse?.invoiceId ||
+        issueResponse?.data?.invoiceId;
+
+      if (!invoiceId) {
+        throw new Error("API transfer không trả về invoiceId hợp lệ");
+      }
+
+      if (!isValidMongoId(invoiceId)) {
+        console.error("❌ [handleSubmit] Invalid invoiceId format:", {
+          invoiceId,
+          issueResponse,
+        });
+        toast.error(
+          "invoiceId không hợp lệ. Vui lòng thử lại hoặc kiểm tra backend.",
+          {
+            position: "top-right",
+            duration: 5000,
+          }
+        );
+        setButtonAnimating(false);
+        setShowBlockchainView(false);
+        setTransferProgress(0);
+        setTransferStatus("error");
+        console.groupEnd();
+        return;
+      }
+
+      const invoiceTokenIds = Array.isArray(invoiceCandidate?.tokenIds)
+        ? invoiceCandidate.tokenIds.map((id) => String(id))
+        : tokenIds.map((id) => String(id));
+
+      console.log("🧾 [handleSubmit] Invoice issued:", {
+        invoiceId,
+        invoiceNumber:
+          invoiceCandidate?.invoiceNumber ||
+          issueResponse?.invoiceNumber ||
+          issueResponse?.data?.invoiceNumber ||
+          "",
+        invoiceTokenIds,
       });
 
-      // Gọi blockchain transfer trực tiếp (không gọi backend trước)
       await handleBlockchainTransfer(
-        null, // invoice sẽ được tạo sau khi blockchain transfer thành công
+        invoiceId,
         distributorAddress,
-        tokenIds
+        invoiceTokenIds
       );
     } catch (error) {
       console.error("❌ [handleSubmit] Error:", error);
@@ -594,19 +671,21 @@ export const useTransferManagements = () => {
 
       setButtonAnimating(false);
       setShowBlockchainView(false);
+      setTransferProgress(0);
+      setTransferStatus("error");
     }
 
     console.groupEnd();
   };
 
   const handleBlockchainTransfer = async (
-    invoice,
+    invoiceId,
     distributorAddress,
     tokenIds
   ) => {
     console.group("⛓️ [handleBlockchainTransfer] START");
 
-    setTransferProgress(0);
+    setTransferProgress(0.2);
     setTransferStatus("preparing");
 
     if (transferProgressIntervalRef.current) {
@@ -620,7 +699,7 @@ export const useTransferManagements = () => {
         return;
       }
 
-      setTransferProgress(0.1);
+      setTransferProgress(0.3);
       const currentWallet = await getCurrentWalletAddress();
 
       console.log("🔍 [handleBlockchainTransfer] Wallet check:", {
@@ -651,7 +730,7 @@ export const useTransferManagements = () => {
         return;
       }
 
-      setTransferProgress(0.2);
+      setTransferProgress(0.4);
       setTransferStatus("transferring");
 
       console.log(
@@ -700,54 +779,10 @@ export const useTransferManagements = () => {
         transferProgressIntervalRef.current = null;
       }
 
-      // BƯỚC 2: Sau khi blockchain transfer thành công, gọi backend để lưu data
       setTransferProgress(0.85);
       setTransferStatus("saving");
 
-      console.log("💾 [handleBlockchainTransfer] Saving data to backend...");
-
-      // Lấy drugId từ production
-      const drugId =
-        selectedProduction?.drugId ||
-        selectedProduction?.drug?._id ||
-        selectedProduction?.drug?.id;
-
-      const cleanDrugId =
-        typeof drugId === "string"
-          ? drugId
-          : drugId?._id || drugId?.id || String(drugId);
-
-      // Gọi API backend để lưu transfer data
-      // Format theo API: { distributorId, drugId, tokenIds, invoiceNumber, invoiceDate, quantity, notes, batchNumber, chainTxHash }
-      const invoiceNumber = `INV-${Date.now()}-${Math.random()
-        .toString(36)
-        .substring(2, 10)
-        .toUpperCase()}`;
-      const invoiceDate = new Date().toISOString();
-
-      const saveData = {
-        distributorId: formData.distributorId,
-        drugId: cleanDrugId,
-        tokenIds,
-        invoiceNumber,
-        invoiceDate,
-        quantity: tokenIds.length,
-        notes: formData.notes || "",
-        batchNumber:
-          selectedProduction.batchNumber ||
-          selectedProduction.drug?.batchNumber ||
-          "",
-        chainTxHash: onchain.transactionHash,
-      };
-
-      console.log(
-        "📤 [handleBlockchainTransfer] Sending to backend:",
-        saveData
-      );
-
-      const response = await createTransferMutation.mutateAsync(saveData);
-
-      console.log("✅ [handleBlockchainTransfer] Backend saved:", response);
+      await persistTransfer(invoiceId, tokenIds, onchain.transactionHash);
 
       if (!isMountedRef.current) {
         console.groupEnd();
@@ -758,8 +793,6 @@ export const useTransferManagements = () => {
       setTransferStatus("completed");
       setButtonDone(true);
       setButtonAnimating(false);
-
-      console.log("✅ [handleBlockchainTransfer] SUCCESS - Complete flow");
 
       toast.success(
         `Chuyển giao ${
@@ -790,6 +823,7 @@ export const useTransferManagements = () => {
 
       setTransferStatus("error");
       setTransferProgress(0);
+      setShowBlockchainView(false);
       setButtonAnimating(false);
       setButtonDone(false);
 
@@ -812,6 +846,25 @@ export const useTransferManagements = () => {
     }
 
     console.groupEnd();
+  };
+
+  const persistTransfer = async (invoiceId, tokenIds, transactionHash) => {
+    console.group("💾 [persistTransfer] START");
+    try {
+      const payload = {
+        invoiceId,
+        tokenIds,
+        transactionHash,
+      };
+
+      console.log("💾 [persistTransfer] Payload:", payload);
+
+      await saveTransferTransactionMutation.mutateAsync(payload);
+
+      console.log("✅ [persistTransfer] Transaction saved successfully");
+    } finally {
+      console.groupEnd();
+    }
   };
 
   const handleCloseDialog = () => {
@@ -851,7 +904,10 @@ export const useTransferManagements = () => {
 
   const safeDistributors = Array.isArray(distributors) ? distributors : [];
   const selectedDistributor = safeDistributors.find(
-    (d) => d._id === formData.distributorId
+    (d) =>
+      d._id === formData.distributorId ||
+      d.id === formData.distributorId ||
+      d.userId === formData.distributorId
   );
 
   return {

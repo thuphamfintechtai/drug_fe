@@ -326,7 +326,7 @@ export const useDistributions = () => {
               >
                 Chi tiết
               </Button>
-              {(record.status === "pending" || record.status === "issued") && (
+              {(record?.status || "").toLowerCase() === "sent" && (
                 <Button
                   size="small"
                   type="primary"
