@@ -176,9 +176,15 @@ export const useDistributorDeliveriesToPharmacy = (params = {}) => {
 // Mutations
 export const useConfirmDistribution = () => {
   return useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (payload) => {
+      // Nếu payload là string (id cũ), chuyển thành object với invoiceId
+      const requestPayload = typeof payload === 'string' 
+        ? { invoiceId: payload }
+        : payload;
+      
       const response = await api.post(
-        `/distributor/distributions/${id}/confirm-receipt`
+        `/distributor/invoices/confirm-receipt`,
+        requestPayload
       );
       return response.data;
     },
@@ -254,9 +260,20 @@ export const useSaveTransferTransaction = () => {
 export const useConfirmReceipt = () => {
   return useMutation({
     mutationFn: async (payload) => {
+      // Đảm bảo payload có invoiceId
+      const requestPayload = {
+        invoiceId: payload.invoiceId || payload._id || payload.id,
+        ...(payload.receivedBy && { receivedBy: payload.receivedBy }),
+        ...(payload.deliveryAddress && { deliveryAddress: payload.deliveryAddress }),
+        ...(payload.shippingInfo && { shippingInfo: payload.shippingInfo }),
+        ...(payload.notes && { notes: payload.notes }),
+        ...(payload.distributionDate && { distributionDate: payload.distributionDate }),
+        ...(payload.distributedQuantity && { distributedQuantity: payload.distributedQuantity }),
+      };
+      
       const response = await api.post(
-        `/distributor/invoices/${payload.invoiceId}/confirm-receipt`,
-        payload
+        `/distributor/invoices/confirm-receipt`,
+        requestPayload
       );
       return response.data;
     },

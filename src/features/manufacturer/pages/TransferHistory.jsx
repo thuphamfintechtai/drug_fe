@@ -135,6 +135,7 @@ export default function TransferHistory() {
                   className="h-12 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-12 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
                 >
                   <option value="">Tất cả</option>
+                  <option value="issued">Đã phát hành</option>
                   <option value="pending">Pending</option>
                   <option value="sent">Sent</option>
                   <option value="received">Received</option>
@@ -196,13 +197,21 @@ export default function TransferHistory() {
                             <h3 className="text-lg font-semibold text-slate-800">
                               {item.distributor?.fullName ||
                                 item.distributor?.name ||
-                                "N/A"}
+                                item.distributor?.username ||
+                                item.distributor?.email ||
+                                item.invoiceNumber ||
+                                "Chưa có thông tin"}
                             </h3>
                             <div className="text-sm text-slate-600 mt-1">
                               Số hóa đơn:{" "}
                               <span className="font-mono font-medium">
                                 {item.invoiceNumber || "N/A"}
                               </span>
+                              {item.distributor?.email && (
+                                <span className="ml-3 text-xs">
+                                  • {item.distributor.email}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -227,16 +236,6 @@ export default function TransferHistory() {
                       <div className="px-5 pb-5 border-t border-slate-200">
                         {/* Summary */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm mt-4">
-                          {item.production?.batchNumber && (
-                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                              <div className="text-slate-600">
-                                Số lô:{" "}
-                                <span className="font-mono font-medium text-slate-800">
-                                  {item.production.batchNumber}
-                                </span>
-                              </div>
-                            </div>
-                          )}
                           <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
                             <div className="text-slate-600">
                               Số lượng:{" "}
@@ -253,41 +252,94 @@ export default function TransferHistory() {
                               </span>
                             </div>
                           </div>
-                        </div>
-
-                        {/* Distributor Panel */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                            <div className="text-xs text-slate-500 mb-1">
-                              Nhà phân phối
-                            </div>
-                            <div className="font-semibold text-slate-800">
-                              {item.distributor?.fullName ||
-                                item.distributor?.name ||
-                                "N/A"}
-                            </div>
-                            {item.distributor?.email && (
-                              <div className="text-xs text-slate-500 mt-1">
-                                {item.distributor.email}
-                              </div>
-                            )}
-                            {item.distributor?.address && (
-                              <div className="text-xs text-slate-500 mt-1">
-                                {item.distributor.address}
-                              </div>
-                            )}
-                          </div>
-                          {item.distributor?.walletAddress && (
+                          {item.drug && (
                             <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
                               <div className="text-xs text-slate-500 mb-1">
-                                Wallet Address
+                                Thuốc
                               </div>
-                              <div className="font-mono text-xs text-slate-800 break-all">
-                                {item.distributor.walletAddress}
+                              <div className="font-semibold text-slate-800">
+                                {item.drug.tradeName || "N/A"}
                               </div>
+                              {item.drug.atcCode && (
+                                <div className="text-xs text-slate-500 mt-1">
+                                  ATC: {item.drug.atcCode}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
+
+                        {/* Token IDs */}
+                        {item.tokenIds && item.tokenIds.length > 0 && (
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
+                            <div className="text-xs text-slate-500 mb-2">
+                              Token IDs ({item.tokenIds.length})
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {item.tokenIds.slice(0, 10).map((tokenId, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-1 bg-white rounded text-xs font-mono text-slate-700 border border-slate-200"
+                                >
+                                  {tokenId}
+                                </span>
+                              ))}
+                              {item.tokenIds.length > 10 && (
+                                <span className="px-2 py-1 bg-white rounded text-xs text-slate-500 border border-slate-200">
+                                  +{item.tokenIds.length - 10} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Distributor Panel */}
+                        {item.distributor ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                              <div className="text-xs text-slate-500 mb-1">
+                                Nhà phân phối
+                              </div>
+                              <div className="font-semibold text-slate-800">
+                                {item.distributor.fullName ||
+                                  item.distributor.name ||
+                                  item.distributor.username ||
+                                  "N/A"}
+                              </div>
+                              {item.distributor.email && (
+                                <div className="text-xs text-slate-500 mt-1">
+                                  {item.distributor.email}
+                                </div>
+                              )}
+                              {item.distributor.phone && (
+                                <div className="text-xs text-slate-500 mt-1">
+                                  ĐT: {item.distributor.phone}
+                                </div>
+                              )}
+                              {item.distributor.address && (
+                                <div className="text-xs text-slate-500 mt-1">
+                                  {item.distributor.address}
+                                </div>
+                              )}
+                            </div>
+                            {item.distributor.walletAddress && (
+                              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                                <div className="text-xs text-slate-500 mb-1">
+                                  Wallet Address
+                                </div>
+                                <div className="font-mono text-xs text-slate-800 break-all">
+                                  {item.distributor.walletAddress}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 text-sm mb-3">
+                            <div className="text-amber-800">
+                              ⚠️ Chưa có thông tin nhà phân phối
+                            </div>
+                          </div>
+                        )}
 
                         {item.transactionHash && (
                           <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
@@ -308,33 +360,6 @@ export default function TransferHistory() {
                           </div>
                         )}
 
-                        {/* Retry button */}
-                        {["pending", "sent"].includes(item.status) &&
-                          !item.transactionHash &&
-                          item.distributor?.walletAddress && (
-                            <div className="mt-4 pt-4 border-t border-slate-200">
-                              <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 text-sm text-amber-800 mb-3">
-                                {item.status === "sent"
-                                  ? "Distributor đã xác nhận. Vui lòng chuyển quyền sở hữu NFT on-chain."
-                                  : "Chưa chuyển NFT on-chain. Vui lòng xác nhận chuyển quyền sở hữu NFT."}
-                              </div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRetry(item);
-                                }}
-                                disabled={retryingId === item._id}
-                                className="w-full px-4 py-2.5 rounded-xl !text-white bg-gradient-to-r from-[#00b4d8] to-[#48cae4] hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all font-semibold"
-                              >
-                                {retryingId === item._id
-                                  ? "Đang xử lý..."
-                                  : item.status === "sent"
-                                  ? "Xác nhận chuyển NFT"
-                                  : "Thử lại chuyển giao"}
-                              </button>
-                            </div>
-                          )}
-
                         {/* Status Timeline */}
                         <div className="mt-4 pt-4 border-t border-slate-200">
                           <div className="flex items-center gap-2 text-xs">
@@ -342,6 +367,7 @@ export default function TransferHistory() {
                               className={`flex items-center gap-1 ${
                                 [
                                   "pending",
+                                  "issued",
                                   "sent",
                                   "received",
                                   "paid",
@@ -354,6 +380,7 @@ export default function TransferHistory() {
                                 className={`w-2 h-2 rounded-full ${
                                   [
                                     "pending",
+                                    "issued",
                                     "sent",
                                     "received",
                                     "paid",
@@ -362,7 +389,7 @@ export default function TransferHistory() {
                                     : "bg-slate-300"
                                 }`}
                               ></div>
-                              <span>Pending</span>
+                              <span>Đã phát hành</span>
                             </div>
                             <div className="flex-1 h-px bg-slate-200"></div>
                             <div
@@ -383,7 +410,7 @@ export default function TransferHistory() {
                                     : "bg-slate-300"
                                 }`}
                               ></div>
-                              <span>Sent</span>
+                              <span>Đã gửi</span>
                             </div>
                             <div className="flex-1 h-px bg-slate-200"></div>
                             <div
@@ -400,7 +427,7 @@ export default function TransferHistory() {
                                     : "bg-slate-300"
                                 }`}
                               ></div>
-                              <span>Received</span>
+                              <span>Đã nhận</span>
                             </div>
                             <div className="flex-1 h-px bg-slate-200"></div>
                             <div
@@ -417,7 +444,7 @@ export default function TransferHistory() {
                                     : "bg-slate-300"
                                 }`}
                               ></div>
-                              <span>Paid</span>
+                              <span>Đã thanh toán</span>
                             </div>
                           </div>
                         </div>

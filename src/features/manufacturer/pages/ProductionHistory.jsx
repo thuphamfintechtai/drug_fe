@@ -214,28 +214,54 @@ export default function ProductionHistory() {
                         {/* Top facts */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-sm mt-4">
                           <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                            {item.nftCount !== undefined && (
-                              <div className="mb-2">
-                                Số lượng NFT đã mint:{" "}
-                                <span className="font-bold text-cyan-700">
-                                  {item.nftCount}
-                                </span>
-                              </div>
-                            )}
+                            <div className="text-slate-600 mb-2">
+                              Số lượng sản xuất:{" "}
+                              <span className="font-bold text-purple-700">
+                                {item.quantity || 0}
+                              </span>
+                            </div>
                             <div className="text-slate-600">
                               ATC Code:{" "}
                               <span className="font-mono text-cyan-700">
                                 {item.drug?.atcCode || "N/A"}
                               </span>
                             </div>
+                            {item.nftCount !== undefined && (
+                              <div className="text-slate-600 mt-2">
+                                Số lượng NFT đã mint:{" "}
+                                <span className="font-bold text-cyan-700">
+                                  {item.nftCount}
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                            <div className="text-slate-600">
-                              Số lượng sản xuất:{" "}
-                              <span className="font-bold text-purple-700">
-                                {item.quantity || 0}
-                              </span>
+                            <div className="text-xs text-slate-500 mb-1">
+                              Trạng thái sản xuất
                             </div>
+                            <div className="font-semibold text-slate-800">
+                              {item.status === "completed" 
+                                ? "Hoàn thành" 
+                                : item.status === "pending"
+                                ? "Đang chờ"
+                                : item.status === "distributed"
+                                ? "Đã phân phối"
+                                : item.status === "failed"
+                                ? "Thất bại"
+                                : item.status || "N/A"}
+                            </div>
+                            {item.transferStatus && (
+                              <div className="text-xs text-slate-500 mt-2">
+                                Trạng thái chuyển giao:{" "}
+                                <span className="font-medium">
+                                  {item.transferStatus === "transferred" 
+                                    ? "Đã chuyển" 
+                                    : item.transferStatus === "pending"
+                                    ? "Đang chờ"
+                                    : "Chưa chuyển"}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -273,8 +299,8 @@ export default function ProductionHistory() {
                               Ngày tạo
                             </div>
                             <div className="font-medium text-slate-700 text-sm">
-                              {item.createdAt
-                                ? new Date(item.createdAt).toLocaleString(
+                              {(item.createdAt || item.drug?.createdAt)
+                                ? new Date(item.createdAt || item.drug?.createdAt).toLocaleString(
                                     "vi-VN"
                                   )
                                 : "N/A"}
@@ -285,8 +311,8 @@ export default function ProductionHistory() {
                               Cập nhật lần cuối
                             </div>
                             <div className="font-medium text-slate-700 text-sm">
-                              {item.updatedAt
-                                ? new Date(item.updatedAt).toLocaleString(
+                              {(item.updatedAt || item.drug?.updatedAt)
+                                ? new Date(item.updatedAt || item.drug?.updatedAt).toLocaleString(
                                     "vi-VN"
                                   )
                                 : "N/A"}
