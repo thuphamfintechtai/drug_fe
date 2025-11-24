@@ -369,6 +369,40 @@ export default function TransferManagement() {
                   </div>
                 </div>
 
+                {/* Distributor Selection */}
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                    Chọn nhà phân phối *
+                  </label>
+                  <select
+                    value={formData.distributorId}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        distributorId: e.target.value,
+                      })
+                    }
+                    className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 focus:ring-2 focus:ring-secondary focus:border-secondary focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
+                    disabled={loadingTokens || buttonAnimating}
+                  >
+                    <option value="">-- Chọn nhà phân phối --</option>
+                    {safeDistributors.map((distributor) => (
+                      <option
+                        key={distributor._id || distributor.id}
+                        value={distributor._id || distributor.id}
+                      >
+                        {distributor.name || distributor.businessName || "N/A"}
+                        {distributor.taxCode ? ` (${distributor.taxCode})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {safeDistributors.length === 0 && (
+                    <div className="text-xs text-red-600 mt-1">
+                      Không có nhà phân phối nào khả dụng
+                    </div>
+                  )}
+                </div>
+
                 {/* Quantity */}
                 <div>
                   <label className="text-sm font-semibold text-gray-700 mb-2 block">
@@ -438,59 +472,6 @@ export default function TransferManagement() {
                       </div>
                     </div>
                   )}
-
-                  <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                      Số lượng NFT *
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.quantity}
-                      onChange={(e) =>
-                        setFormData({ ...formData, quantity: e.target.value })
-                      }
-                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-secondary focus:border-secondary focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
-                      placeholder="Nhập số lượng"
-                      min="1"
-                      max={availableTokenIds.length}
-                      disabled={
-                        loadingTokens ||
-                        availableTokenIds.length === 0 ||
-                        buttonAnimating
-                      }
-                    />
-                    <div className="text-xs text-cyan-600 mt-1 space-y-1">
-                      {loadingTokens ? (
-                        <div className="text-blue-600">
-                          Đang tải danh sách token...
-                        </div>
-                      ) : (
-                        <>
-                          <div>
-                            Khả dụng:{" "}
-                            <span className="font-semibold text-green-700">
-                              {availableTokenIds.length}
-                            </span>{" "}
-                            NFT
-                            {availableTokenIds.length <
-                              selectedProduction.quantity && (
-                              <span className="text-orange-600 ml-1">
-                                (Đã chuyển:{" "}
-                                {selectedProduction.quantity -
-                                  availableTokenIds.length}
-                                )
-                              </span>
-                            )}
-                          </div>
-                          {availableTokenIds.length === 0 && (
-                            <div className="text-red-600 font-semibold">
-                              ⚠️ Không còn token khả dụng để chuyển
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
 
                   <div>
                     <label className="text-sm font-semibold text-gray-700 mb-2 block">

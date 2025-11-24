@@ -108,6 +108,104 @@ export const useTransferManagements = () => {
     };
   }, []);
 
+  // Helper function to extract token IDs from API response
+  const extractTokenIds = (responseObj) => {
+    console.log("🔍 [extractTokenIds] Response object:", responseObj);
+
+    // Case 1: Direct tokenIds array
+    if (responseObj.tokenIds && Array.isArray(responseObj.tokenIds)) {
+      const tokenIds = responseObj.tokenIds.map((id) => String(id));
+      console.log("✅ [extractTokenIds] Found in tokenIds:", tokenIds);
+      return tokenIds;
+    }
+
+    // Case 2: Nested in data.tokenIds
+    if (
+      responseObj.data?.tokenIds &&
+      Array.isArray(responseObj.data.tokenIds)
+    ) {
+      const tokenIds = responseObj.data.tokenIds.map((id) => String(id));
+      console.log("✅ [extractTokenIds] Found in data.tokenIds:", tokenIds);
+      return tokenIds;
+    }
+
+    // Case 3: availableTokens array (array of objects with tokenId)
+    if (
+      responseObj.availableTokens &&
+      Array.isArray(responseObj.availableTokens)
+    ) {
+      const tokenIds = responseObj.availableTokens
+        .map((token) => {
+          if (typeof token === "string") {
+            return token;
+          }
+          return String(token.tokenId || token._id || token.id || "");
+        })
+        .filter(Boolean);
+      if (tokenIds.length > 0) {
+        console.log("✅ [extractTokenIds] Found in availableTokens:", tokenIds);
+        return tokenIds;
+      }
+    }
+
+    // Case 4: data.availableTokens
+    if (
+      responseObj.data?.availableTokens &&
+      Array.isArray(responseObj.data.availableTokens)
+    ) {
+      const tokenIds = responseObj.data.availableTokens
+        .map((token) => {
+          if (typeof token === "string") {
+            return token;
+          }
+          return String(token.tokenId || token._id || token.id || "");
+        })
+        .filter(Boolean);
+      if (tokenIds.length > 0) {
+        console.log(
+          "✅ [extractTokenIds] Found in data.availableTokens:",
+          tokenIds
+        );
+        return tokenIds;
+      }
+    }
+
+    // Case 5: tokens array
+    if (responseObj.tokens && Array.isArray(responseObj.tokens)) {
+      const tokenIds = responseObj.tokens
+        .map((token) => {
+          if (typeof token === "string") {
+            return token;
+          }
+          return String(token.tokenId || token._id || token.id || "");
+        })
+        .filter(Boolean);
+      if (tokenIds.length > 0) {
+        console.log("✅ [extractTokenIds] Found in tokens:", tokenIds);
+        return tokenIds;
+      }
+    }
+
+    // Case 6: data.tokens
+    if (responseObj.data?.tokens && Array.isArray(responseObj.data.tokens)) {
+      const tokenIds = responseObj.data.tokens
+        .map((token) => {
+          if (typeof token === "string") {
+            return token;
+          }
+          return String(token.tokenId || token._id || token.id || "");
+        })
+        .filter(Boolean);
+      if (tokenIds.length > 0) {
+        console.log("✅ [extractTokenIds] Found in data.tokens:", tokenIds);
+        return tokenIds;
+      }
+    }
+
+    console.warn("⚠️ [extractTokenIds] No tokenIds found in response object");
+    return [];
+  };
+
   // FIX: Completely rewritten handleSelectProduction
   const handleSelectProduction = async (production) => {
     console.group("🎯 [handleSelectProduction] START");
@@ -572,7 +670,9 @@ export const useTransferManagements = () => {
       );
 
       transferProgressIntervalRef.current = setInterval(() => {
-        if (!isMountedRef.current) {return;}
+        if (!isMountedRef.current) {
+          return;
+        }
         setTransferProgress((prev) =>
           prev < 0.8 ? Math.min(prev + 0.01, 0.8) : prev
         );
@@ -669,7 +769,9 @@ export const useTransferManagements = () => {
       );
 
       setTimeout(() => {
-        if (!isMountedRef.current) {return;}
+        if (!isMountedRef.current) {
+          return;
+        }
         handleCloseDialog();
         refetchProductions();
       }, 2000);
@@ -738,7 +840,9 @@ export const useTransferManagements = () => {
   };
 
   const formatDate = (dateValue) => {
-    if (!dateValue) {return "Chưa có";}
+    if (!dateValue) {
+      return "Chưa có";
+    }
     const date = new Date(dateValue);
     return isNaN(date.getTime())
       ? "Không hợp lệ"

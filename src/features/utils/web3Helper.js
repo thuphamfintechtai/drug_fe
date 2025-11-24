@@ -91,77 +91,62 @@ const trySwitchToPioneNetwork = async () => {
       method: "eth_chainId",
     });
 
-    // Thử lấy danh sách networks từ MetaMask (API mới)
+    // PIONE Network chainId: 0x1e240 (123456 decimal)
+    const PIONE_CHAIN_ID = "0x1e240";
+
+    // Nếu đã ở đúng network rồi
+    if (currentChainId === PIONE_CHAIN_ID) {
+      return true;
+    }
+
+    // Thử switch sang PIONE network
     try {
-      const networkList = await window.ethereum.request({
-        method: "wallet_getEthereumChains",
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: PIONE_CHAIN_ID }],
       });
-
-      // Tìm PIONE network trong danh sách
-      const pioneNetwork = networkList?.find((network) => {
-        const name = (network.name || "").toLowerCase();
-        return name.includes("pione") || name.includes("zero");
-      });
-
-      if (pioneNetwork && pioneNetwork.chainId !== currentChainId) {
-        // Request switch sang PIONE network
+      console.log("✅ Successfully switched to PIONE Network");
+      return true;
+    } catch (switchError) {
+      // Nếu network chưa được thêm vào MetaMask (error code 4902), thử add network
+      if (switchError.code === 4902) {
         try {
           await window.ethereum.request({
-            method: "wallet_switchEthereumChain",
-            params: [{ chainId: pioneNetwork.chainId }],
-          });
-
-          return true;
-        } catch (switchError) {
-          // Nếu network chưa được thêm vào MetaMask, thử add network
-          if (
-            switchError.code === 4902 &&
-            pioneNetwork.rpcUrls &&
-            pioneNetwork.rpcUrls.length > 0
-          ) {
-            try {
-              await window.ethereum.request({
-                method: "wallet_addEthereumChain",
-                params: [
-                  {
-                    chainId: pioneNetwork.chainId,
-                    chainName: pioneNetwork.name,
-                    nativeCurrency: pioneNetwork.nativeCurrency || {
-                      name: "PZO",
-                      symbol: "PZO",
-                      decimals: 18,
-                    },
-                    rpcUrls: pioneNetwork.rpcUrls,
-                    blockExplorerUrls: pioneNetwork.blockExplorerUrls || [],
-                  },
+            method: "wallet_addEthereumChain",
+            params: [
+              {
+                chainId: PIONE_CHAIN_ID,
+                chainName: "Pione Network",
+                nativeCurrency: {
+                  name: "PZO",
+                  symbol: "PZO",
+                  decimals: 18,
+                },
+                rpcUrls: [
+                  "https://rpc.pione.chaintech.dev",
+                  "https://pione-rpc.chaintech.dev",
                 ],
-              });
-
-              return true;
-            } catch (addError) {
-              console.error("Error adding network:", addError);
-            }
-          }
+                blockExplorerUrls: ["https://zeroscan.org"],
+              },
+            ],
+          });
+          console.log("✅ Successfully added PIONE Network to MetaMask");
+          return true;
+        } catch (addError) {
+          console.error("❌ Error adding PIONE Network:", addError);
+          return false;
         }
-      }
-    } catch (apiError) {
-      console.error("Error getting network list:", apiError);
-    }
-
-    // Fallback: Thử các chainId phổ biến của PIONE network
-    // (cần update với chainId thực tế từ Zero Scan)
-    const commonPioneChainIds = [
-      "0x1e240", // 123456 decimal - example, cần thay bằng chainId thực tế
-    ];
-
-    for (const chainId of commonPioneChainIds) {
-      if (currentChainId === chainId) {
-        return true;
+      } else if (switchError.code === 4001) {
+        // User rejected the request
+        console.log("⚠️ User rejected network switch");
+        return false;
+      } else {
+        console.error("❌ Error switching to PIONE Network:", switchError);
+        return false;
       }
     }
-
-    return false;
   } catch (error) {
+    console.error("❌ Error in trySwitchToPioneNetwork:", error);
     return false;
   }
 };
@@ -189,7 +174,6 @@ const ensureDeployed = async (provider, address) => {
 
       // Get new provider after switch
       const newProvider = new ethers.BrowserProvider(window.ethereum);
-      const newNetwork = await newProvider.getNetwork();
       const newCode = await newProvider.getCode(address);
 
       if (newCode !== "0x") {
@@ -199,21 +183,25 @@ const ensureDeployed = async (provider, address) => {
 
     // Nếu không thể switch tự động hoặc vẫn không tìm thấy contract
     const currentChainIdHex = "0x" + network.chainId.toString(16);
+    const PIONE_CHAIN_ID = "0x1e240";
 
     const errorMessage =
-      `Contract không tồn tại trên network hiện tại!\n\n` +
+      `⚠️ MetaMask đang kết nối với network sai!\n\n` +
       `Thông tin hiện tại:\n` +
       `- Network: ${network.name}\n` +
       `- Chain ID: ${currentChainIdHex} (${network.chainId})\n` +
       `- Contract Address: ${address}\n\n` +
-      ` Contract ĐÃ TỒN TẠI trên PIONE/Zero network (đã verify trên Zero Scan với 15+ transactions)\n` +
-      `Nhưng MetaMask đang kết nối với network khác!\n\n` +
-      `🔧 Giải pháp:\n` +
-      `1. Mở MetaMask (click vào icon 🦊)\n` +
-      `2. Click vào network dropdown (top của MetaMask, hiện tại: "${network.name}")\n` +
-      `3. Chọn "Pione Network" từ danh sách enabled networks\n` +
-      `4. Sau khi chuyển, thử lại chuyển NFT\n\n` +
-      `🔗 Kiểm tra contract: zeroscan.org/address/${address}`;
+      `✅ Contract ĐÃ TỒN TẠI trên PIONE Network (Chain ID: ${PIONE_CHAIN_ID})\n` +
+      `   Đã verify trên Zero Scan với nhiều transactions thành công\n\n` +
+      `🔧 Cách khắc phục:\n` +
+      `1. Mở MetaMask (click icon 🦊 ở góc trên bên phải trình duyệt)\n` +
+      `2. Click vào network dropdown ở đầu MetaMask (hiện tại: "${network.name}")\n` +
+      `3. Chọn "Pione Network" từ danh sách\n` +
+      `   (Nếu chưa có, MetaMask sẽ tự động thêm khi bạn thử lại)\n` +
+      `4. Sau khi chuyển network, thử lại chuyển NFT\n\n` +
+      `💡 Lưu ý: Hệ thống đã cố gắng tự động chuyển network nhưng không thành công.\n` +
+      `   Vui lòng chuyển thủ công theo hướng dẫn trên.\n\n` +
+      `🔗 Xem contract trên Zero Scan: https://zeroscan.org/address/${address}`;
 
     throw new Error(errorMessage);
   }
@@ -1003,7 +991,7 @@ export const signMessageWithMetaMask = async (message) => {
     if (!privateKey) {
       privateKey = prompt(
         "Để ký hợp đồng trên blockchain, vui lòng nhập private key của bạn:\n\n" +
-        "Private key sẽ được lưu an toàn cho các giao dịch tiếp theo."
+          "Private key sẽ được lưu an toàn cho các giao dịch tiếp theo."
       );
 
       if (!privateKey) {
