@@ -33,6 +33,12 @@ export default function TransferManagement() {
     formatDate,
     safeDistributors,
     selectedDistributor,
+    pendingInvoice,
+    transactionHashInput,
+    setTransactionHashInput,
+    handleSaveTransfer,
+    saveTransferLoading,
+    isSaveTransferReady,
   } = useTransferManagements();
 
   return (
@@ -130,105 +136,113 @@ export default function TransferManagement() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {productions.map((prod, index) => (
-                      <tr
-                        key={prod._id || prod.id || index}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-6 py-4 font-medium text-gray-800">
-                          {prod.drug?.tradeName || "N/A"}
-                          <div className="text-xs text-slate-500">
-                            {prod.drug?.atcCode}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">
-                            {prod.batchNumber}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          <span className="font-semibold text-gray-800">
-                            {prod.quantity}
-                          </span>
-                          <span className="text-xs text-slate-500 ml-1">
-                            NFT
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {formatDate(prod.mfgDate || prod.manufacturingDate)}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {formatDate(prod.expDate || prod.expiryDate)}
-                        </td>
-                        <td className="px-6 py-4">
-                          {(() => {
-                            if (prod.status === "distributed") {
-                              // Đã chuyển giao cho distributor
-                              return (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
-                                  Đã chuyển
-                                </span>
-                              );
-                            }
+                    {productions.map((prod, index) => {
+                      // ✅ FIX Bug #10: Improved status logic with clear mapping
+                      const getStatusInfo = (status) => {
+                        const normalizedStatus = (status || "").toLowerCase();
+                        
+                        switch (normalizedStatus) {
+                          case "distributed":
+                          case "transferred":
+                            return {
+                              label: "Đã chuyển",
+                              className: "bg-green-100 text-green-700 border-green-200",
+                              canTransfer: false,
+                              buttonText: "Đã chuyển",
+                            };
+                          
+                          case "completed":
+                          case "minted":
+                            return {
+                              label: "Chưa chuyển",
+                              className: "bg-yellow-100 text-yellow-700 border-yellow-200",
+                              canTransfer: true,
+                              buttonText: "Chuyển giao",
+                            };
+                          
+                          case "pending":
+                          case "processing":
+                            return {
+                              label: "Đang chờ",
+                              className: "bg-gray-100 text-gray-700 border-gray-200",
+                              canTransfer: false,
+                              buttonText: "Đang chờ mint",
+                            };
+                          
+                          case "failed":
+                          case "error":
+                            return {
+                              label: "Thất bại",
+                              className: "bg-red-100 text-red-700 border-red-200",
+                              canTransfer: false,
+                              buttonText: "Mint thất bại",
+                            };
+                          
+                          default:
+                            return {
+                              label: "Không xác định",
+                              className: "bg-gray-100 text-gray-500 border-gray-200",
+                              canTransfer: false,
+                              buttonText: "Chưa sẵn sàng",
+                            };
+                        }
+                      };
 
-                            if (prod.status === "completed") {
-                              // Đã mint NFT, sẵn sàng để transfer
-                              return (
-                                <span className="inline-flex items-center px-2.5 py-1 w-24 justify-center rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
-                                  Chưa chuyển
-                                </span>
-                              );
-                            }
+                      const statusInfo = getStatusInfo(prod.status);
 
-                            if (prod.status === "pending") {
-                              // Đang chờ mint NFT
-                              return (
-                                <span className="inline-flex items-center px-2.5 py-1 w-24 justify-center rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
-                                  Đang chờ
-                                </span>
-                              );
-                            }
-
-                            if (prod.status === "failed") {
-                              // Mint NFT thất bại
-                              return (
-                                <span className="inline-flex items-center px-2.5 py-1 w-24 justify-center rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
-                                  Thất bại
-                                </span>
-                              );
-                            }
-
-                            // Mặc định: chưa chuyển
-                            return (
-                              <span className="inline-flex items-center px-2.5 py-1 w-24 justify-center rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
-                                Chưa chuyển
-                              </span>
-                            );
-                          })()}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <button
-                            onClick={() => handleSelectProduction(prod)}
-                            disabled={
-                              prod.status === "distributed" ||
-                              prod.status !== "completed"
-                            }
-                            className={`px-4 py-2 text-sm whitespace-nowrap justify-center border-2 rounded-full font-semibold transition-all duration-200 ${
-                              prod.status === "distributed" ||
-                              prod.status !== "completed"
-                                ? "border-gray-300 text-gray-400 cursor-not-allowed"
-                                : "border-secondary text-secondary hover:bg-secondary hover:!text-white hover:shadow-md hover:shadow-secondary/40"
-                            }`}
-                          >
-                            {prod.status === "distributed"
-                              ? "Đã chuyển"
-                              : prod.status !== "completed"
-                              ? "Chưa sẵn sàng"
-                              : "Chuyển giao"}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                      return (
+                        <tr
+                          key={prod._id || prod.id || index}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-6 py-4 font-medium text-gray-800">
+                            {prod.drug?.tradeName || "N/A"}
+                            <div className="text-xs text-slate-500">
+                              {prod.drug?.atcCode}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">
+                              {prod.batchNumber}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-gray-600">
+                            <span className="font-semibold text-gray-800">
+                              {prod.quantity}
+                            </span>
+                            <span className="text-xs text-slate-500 ml-1">
+                              NFT
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-gray-600">
+                            {formatDate(prod.mfgDate || prod.manufacturingDate)}
+                          </td>
+                          <td className="px-6 py-4 text-gray-600">
+                            {formatDate(prod.expDate || prod.expiryDate)}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-1 w-24 justify-center rounded-full text-xs font-semibold border ${statusInfo.className}`}
+                            >
+                              {statusInfo.label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <button
+                              onClick={() => handleSelectProduction(prod)}
+                              disabled={!statusInfo.canTransfer}
+                              className={`px-4 py-2 text-sm whitespace-nowrap justify-center border-2 rounded-full font-semibold transition-all duration-200 ${
+                                !statusInfo.canTransfer
+                                  ? "border-gray-300 text-gray-400 cursor-not-allowed"
+                                  : "border-secondary text-secondary hover:bg-secondary hover:!text-white hover:shadow-md hover:shadow-secondary/40"
+                              }`}
+                            >
+                              {statusInfo.buttonText}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -270,7 +284,8 @@ export default function TransferManagement() {
                   Chuyển giao NFT
                 </h2>
                 <p className="text-cyan-100 text-sm">
-                  Chọn distributor và số lượng
+                  Chọn distributor và thực hiện đủ 2 bước: Issue → Lưu
+                  transaction
                 </p>
               </div>
               <button
@@ -403,36 +418,24 @@ export default function TransferManagement() {
                   )}
                 </div>
 
-                {/* Quantity */}
+                {/* ✅ FIX Bug #3: Simplified quantity display */}
                 <div>
                   <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                    Số lượng NFT *
+                    Số lượng NFT (không thể chỉnh sửa)
                   </label>
                   <input
-                    type="number"
-                    value={formData.quantity}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        quantity: e.target.value,
-                        maxQuantity: selectedProduction.quantity,
-                      })
-                    }
-                    className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
-                    placeholder="Nhập số lượng"
-                    min="1"
-                    max={selectedProduction.quantity}
-                    disabled={loadingTokens}
+                    type="text"
+                    value={availableTokenIds.length}
+                    readOnly
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 text-gray-500 bg-gray-50 cursor-not-allowed"
                   />
-                  <div className="text-xs text-cyan-600 mt-1">
-                    Tối đa: {selectedProduction.quantity} NFT{" "}
-                    {availableTokenIds.length > 0 && (
-                      <span>({availableTokenIds.length} khả dụng)</span>
-                    )}
+                  <div className="text-xs text-cyan-700 mt-1">
+                    Số lượng được lấy từ danh sách NFT khả dụng và bằng đúng số
+                    NFT sẽ chuyển giao.
                   </div>
 
                   {selectedDistributor && (
-                    <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
+                    <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200 mt-3">
                       <div className="text-sm font-semibold text-cyan-800 mb-2">
                         Thông tin distributor:
                       </div>
@@ -473,7 +476,7 @@ export default function TransferManagement() {
                     </div>
                   )}
 
-                  <div>
+                  <div className="mt-3">
                     <label className="text-sm font-semibold text-gray-700 mb-2 block">
                       Ghi chú
                     </label>
@@ -489,17 +492,80 @@ export default function TransferManagement() {
                     />
                   </div>
 
-                  <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
-                    <div className="text-sm text-yellow-800">
-                      ⚠️ Sau khi xác nhận, hệ thống sẽ tạo yêu cầu chuyển giao và
-                      gọi smart contract để transfer NFT. Vui lòng đảm bảo ví
-                      MetaMask đã kết nối.
-                    </div>
+                  <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200 space-y-1 text-sm text-yellow-800 mt-3">
+                    <p>
+                      ⚠️ Bước 1: "Tạo hoá đơn & ký giao dịch" sẽ issue invoice
+                      ở trạng thái <b>issued</b> và thực hiện transfer NFT trên
+                      blockchain.
+                    </p>
+                    <p>
+                      ⚠️ Bước 2: "Lưu transaction" dùng transaction hash vừa ký
+                      để cập nhật invoice sang <b>sent</b>. Nếu bỏ qua,
+                      distributor không thể xác nhận.
+                    </p>
                   </div>
                 </div>
+
+                {pendingInvoice && (
+                  <div className="space-y-4">
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-900">
+                      <div className="font-semibold text-emerald-800 mb-2">
+                        Hoá đơn chờ lưu transaction
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex justify-between gap-3">
+                          <span>ID:</span>
+                          <span className="font-mono text-xs break-all">
+                            {pendingInvoice.id}
+                          </span>
+                        </div>
+                        {pendingInvoice.invoiceNumber && (
+                          <div className="flex justify-between gap-3">
+                            <span>Số hoá đơn:</span>
+                            <span className="font-medium">
+                              {pendingInvoice.invoiceNumber}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex justify-between gap-3">
+                          <span>Trạng thái:</span>
+                          <span className="font-semibold capitalize">
+                            {pendingInvoice.status}
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span>Số NFT đã khóa:</span>
+                          <span className="font-semibold">
+                            {pendingInvoice.tokenIds?.length || 0}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                        Transaction Hash *
+                      </label>
+                      <input
+                        type="text"
+                        value={transactionHashInput}
+                        onChange={(e) =>
+                          setTransactionHashInput(e.target.value)
+                        }
+                        className="w-full border-2 border-gray-300 rounded-xl p-3 font-mono text-xs text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-secondary focus:border-secondary focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
+                        placeholder="0x..."
+                        disabled={saveTransferLoading}
+                      />
+                      <div className="text-xs text-slate-500 mt-1">
+                        Hệ thống sẽ tự điền hash nhận được sau khi ký MetaMask.
+                        Định dạng yêu cầu: <b>0x</b> + 64 ký tự hex.
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
+              <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex flex-wrap justify-end gap-3">
                 <button
                   onClick={handleCloseDialog}
                   disabled={buttonAnimating}
@@ -516,7 +582,7 @@ export default function TransferManagement() {
                     buttonAnimating ||
                     availableTokenIds.length === 0 ||
                     !formData.distributorId ||
-                    !formData.quantity
+                    !!pendingInvoice
                   }
                   buttonState={
                     buttonDone
@@ -525,16 +591,32 @@ export default function TransferManagement() {
                       ? "uploading"
                       : "idle"
                   }
-                  defaultText="Xác nhận chuyển giao"
-                  uploadingText="Đang xử lý..."
-                  successText="Hoàn thành"
+                  defaultText="Tạo hoá đơn & ký giao dịch"
+                  uploadingText="Đang issue & ký..."
+                  successText="Hoàn tất bước 1"
                   animationMode="infinite"
                   animationDuration={3}
                 />
+                <button
+                  onClick={handleSaveTransfer}
+                  disabled={
+                    !pendingInvoice ||
+                    !isSaveTransferReady ||
+                    saveTransferLoading
+                  }
+                  className={`px-6 py-2.5 rounded-full font-semibold transition-all duration-200 ${
+                    !pendingInvoice || !isSaveTransferReady
+                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                      : "bg-secondary text-white hover:bg-secondary/90 shadow-sm"
+                  } ${saveTransferLoading ? "opacity-70" : ""}`}
+                >
+                  {saveTransferLoading
+                    ? "Đang lưu transaction..."
+                    : "Lưu transaction"}
+                </button>
               </div>
             </div>
           </div>
-          )
         </div>
       )}
     </DashboardLayout>

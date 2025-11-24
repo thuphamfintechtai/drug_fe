@@ -6,6 +6,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button, Tag } from "antd";
+import api from "../../utils/api";
 
 export const statusColor = (status) => {
   switch (status) {
@@ -38,6 +39,7 @@ export const useDistributions = () => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [confirmForm, setConfirmForm] = useState({
     receivedBy: "",
+    receivedByTitle: "",
     deliveryAddress: {
       street: "",
       city: "",
@@ -101,9 +103,9 @@ export const useDistributions = () => {
 
   const handleOpenConfirmDialog = useCallback((record) => {
     setSelectedRecord(record);
-    // Reset form với giá trị mặc định
     setConfirmForm({
       receivedBy: "",
+      receivedByTitle: "",
       deliveryAddress: {
         street: "",
         city: "",
@@ -129,42 +131,28 @@ export const useDistributions = () => {
     setConfirmFormErrors({});
   }, []);
 
-  const validateForm = useCallback(() => {
+  const validateForm = useCallback((maxQuantity) => {
     const errors = {};
-    
-    if (!confirmForm.receivedBy?.trim()) {
-      errors.receivedBy = "Vui lòng nhập tên người nhận";
+
+    if (
+      confirmForm.distributedQuantity &&
+      parseInt(confirmForm.distributedQuantity, 10) <= 0
+    ) {
+      errors.distributedQuantity = "Số lượng phải lớn hơn 0";
+    } else if (
+      confirmForm.distributedQuantity &&
+      maxQuantity > 0 &&
+      parseInt(confirmForm.distributedQuantity, 10) > maxQuantity
+    ) {
+      errors.distributedQuantity = `Số lượng không được vượt quá ${maxQuantity}`;
     }
-    
-    if (!confirmForm.deliveryAddress.street?.trim()) {
-      errors.deliveryAddressStreet = "Vui lòng nhập địa chỉ đường";
-    }
-    
-    if (!confirmForm.deliveryAddress.city?.trim()) {
-      errors.deliveryAddressCity = "Vui lòng nhập thành phố";
-    }
-    
-    if (!confirmForm.distributedQuantity || parseInt(confirmForm.distributedQuantity) <= 0) {
-      errors.distributedQuantity = "Vui lòng nhập số lượng hợp lệ";
-    } else {
-      const quantity = parseInt(confirmForm.distributedQuantity);
-      const maxQuantity = selectedRecord?.quantity || 0;
-      if (maxQuantity > 0 && quantity > maxQuantity) {
-        errors.distributedQuantity = `Số lượng không được vượt quá ${maxQuantity}`;
-      }
-    }
-    
+
     setConfirmFormErrors(errors);
     return Object.keys(errors).length === 0;
-  }, [confirmForm, selectedRecord]);
+  }, [confirmForm]);
 
   const handleSubmitConfirm = useCallback(async () => {
     if (!selectedRecord || isConfirming) {
-      return;
-    }
-
-    if (!validateForm()) {
-      toast.error("Vui lòng kiểm tra và sửa các lỗi trong form");
       return;
     }
 
@@ -178,40 +166,54 @@ export const useDistributions = () => {
         return;
       }
 
-      // Tạo payload theo format API
+      let latestInvoice;
+      try {
+        const response = await api.get(`/distributor/invoices/${invoiceId}/detail`);
+        latestInvoice = response.data?.data || response.data;
+      } catch (error) {
+        const message = error?.response?.data?.message || error.message || "Không thể tải thông tin invoice";
+        toast.error(message);
+        setIsConfirming(false);
+        return;
+      }
+
+      const latestStatus = (latestInvoice?._status || "").toLowerCase();
+      if (latestStatus !== "sent") {
+        toast.error("Invoice hiện chưa ở trạng thái 'sent'. Vui lòng kiểm tra lại bước lưu transaction.");
+        setIsConfirming(false);
+        return;
+      }
+
+      const maxQuantity =
+        latestInvoice?.quantity ||
+        latestInvoice?.totalQuantity ||
+        latestInvoice?.tokenIds?.length ||
+        selectedRecord.quantity ||
+        0;
+
+      if (!validateForm(maxQuantity)) {
+        toast.error("Vui lòng kiểm tra và sửa các lỗi trong form");
+        setIsConfirming(false);
+        return;
+      }
+
       const payload = {
-        invoiceId: invoiceId,
-        receivedBy: confirmForm.receivedBy.trim(),
-        deliveryAddress: {
-          street: confirmForm.deliveryAddress.street.trim(),
-          city: confirmForm.deliveryAddress.city.trim(),
-          ...(confirmForm.deliveryAddress.state?.trim() && {
-            state: confirmForm.deliveryAddress.state.trim(),
-          }),
-          ...(confirmForm.deliveryAddress.postalCode?.trim() && {
-            postalCode: confirmForm.deliveryAddress.postalCode.trim(),
-          }),
-          ...(confirmForm.deliveryAddress.country?.trim() && {
-            country: confirmForm.deliveryAddress.country.trim(),
-          }),
-        },
-        ...(confirmForm.shippingInfo.carrier?.trim() || confirmForm.shippingInfo.trackingNumber?.trim() ? {
-          shippingInfo: {
-            ...(confirmForm.shippingInfo.carrier?.trim() && {
-              carrier: confirmForm.shippingInfo.carrier.trim(),
-            }),
-            ...(confirmForm.shippingInfo.trackingNumber?.trim() && {
-              trackingNumber: confirmForm.shippingInfo.trackingNumber.trim(),
-            }),
-          },
-        } : {}),
-        ...(confirmForm.notes?.trim() && { notes: confirmForm.notes.trim() }),
+        invoiceId,
         ...(confirmForm.distributionDate && {
           distributionDate: new Date(confirmForm.distributionDate).toISOString(),
         }),
         ...(confirmForm.distributedQuantity && {
-          distributedQuantity: parseInt(confirmForm.distributedQuantity),
+          distributedQuantity: parseInt(confirmForm.distributedQuantity, 10),
         }),
+        ...(confirmForm.receivedBy?.trim() && {
+          receivedBy: {
+            name: confirmForm.receivedBy.trim(),
+            ...(confirmForm.receivedByTitle?.trim() && {
+              title: confirmForm.receivedByTitle.trim(),
+            }),
+          },
+        }),
+        ...(confirmForm.notes?.trim() && { notes: confirmForm.notes.trim() }),
       };
 
       await confirmDistributionMutation(payload);
@@ -220,15 +222,19 @@ export const useDistributions = () => {
       fetchData();
     } catch (error) {
       console.error("Lỗi xác nhận nhận hàng:", error);
-      toast.error(
-        error?.response?.data?.message || 
-        error?.message || 
-        "Xác nhận thất bại!"
-      );
+      toast.error(error?.response?.data?.message || error?.message || "Xác nhận thất bại!");
     } finally {
       setIsConfirming(false);
     }
-  }, [selectedRecord, confirmForm, isConfirming, validateForm, confirmDistributionMutation, handleCloseConfirmDialog, fetchData]);
+  }, [
+    selectedRecord,
+    confirmForm,
+    isConfirming,
+    validateForm,
+    confirmDistributionMutation,
+    handleCloseConfirmDialog,
+    fetchData,
+  ]);
 
   const onConfirm = handleOpenConfirmDialog;
 

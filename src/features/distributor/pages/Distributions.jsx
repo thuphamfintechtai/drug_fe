@@ -192,7 +192,7 @@ export default function Distributions() {
               {/* Người nhận */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Người nhận hàng <span className="text-red-500">*</span>
+                  Người nhận hàng
                 </label>
                 <input
                   value={confirmForm.receivedBy}
@@ -225,6 +225,23 @@ export default function Distributions() {
                 {confirmFormErrors.receivedBy && (
                   <p className="mt-1 text-xs text-red-600">{confirmFormErrors.receivedBy}</p>
                 )}
+                <div className="mt-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Chức vụ (tuỳ chọn)
+                  </label>
+                  <input
+                    value={confirmForm.receivedByTitle}
+                    onChange={(e) =>
+                      setConfirmForm({
+                        ...confirmForm,
+                        receivedByTitle: e.target.value.replace(/[^a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]/g, "").slice(0, 50),
+                      })
+                    }
+                    placeholder="VD: Kho vận"
+                    maxLength={50}
+                    className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150"
+                  />
+                </div>
               </div>
 
               {/* Địa chỉ giao hàng */}

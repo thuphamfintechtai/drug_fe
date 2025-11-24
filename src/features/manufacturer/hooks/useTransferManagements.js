@@ -83,6 +83,9 @@ export const useTransferManagements = () => {
   const [showBlockchainView, setShowBlockchainView] = useState(false);
   const [transferProgress, setTransferProgress] = useState(0);
   const [transferStatus, setTransferStatus] = useState("minting");
+  const [pendingInvoice, setPendingInvoice] = useState(null);
+  const [transactionHashInput, setTransactionHashInput] = useState("");
+  const [saveTransferLoading, setSaveTransferLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     productionId: "",
@@ -110,6 +113,9 @@ export const useTransferManagements = () => {
 
   const isValidMongoId = (value) =>
     typeof value === "string" && /^[0-9a-fA-F]{24}$/.test(value);
+
+  const isValidTxHash = (value) =>
+    typeof value === "string" && /^0x[a-fA-F0-9]{64}$/.test((value || "").trim());
 
   // Helper function to extract token IDs from API response
   const extractTokenIds = (responseObj) => {
@@ -469,7 +475,7 @@ export const useTransferManagements = () => {
     }
   };
 
-  // Improved validation
+  // ✅ FIX Bug #1, #5: Improved validation with proper quantity check
   const handleSubmit = async () => {
     console.group("🚀 [handleSubmit] START");
 
@@ -485,55 +491,48 @@ export const useTransferManagements = () => {
       tokens: availableTokenIds,
     });
 
-    if (!formData.distributorId || !formData.quantity) {
-      toast.error("Vui lòng chọn nhà phân phối và nhập số lượng", {
+    // ✅ FIX: Enhanced validation
+    if (!formData.distributorId) {
+      toast.error("Vui lòng chọn nhà phân phối", {
         position: "top-right",
       });
       console.groupEnd();
       return;
     }
 
-    // Convert to number and validate
-    const requestedQty = Number(formData.quantity);
-    const availableCount = availableTokenIds?.length || 0;
-
-    // FIX: Proper quantity validation with better type handling
-    if (
-      isNaN(requestedQty) ||
-      !Number.isInteger(requestedQty) ||
-      requestedQty <= 0
-    ) {
-      toast.error("Số lượng phải là số nguyên dương", {
-        position: "top-right",
-      });
-      return;
-    }
-
-    // Check against available token IDs first (this is the actual limit)
-    if (availableCount === 0) {
+    const tokenIds = (availableTokenIds || []).map((id) => String(id));
+    if (tokenIds.length === 0) {
       toast.error("Không có token khả dụng để chuyển", {
         position: "top-right",
       });
-      return;
-    }
-
-    if (requestedQty > availableCount) {
-      toast.error(
-        `Số lượng không hợp lệ: Chỉ có ${availableCount} token khả dụng, nhưng bạn nhập ${requestedQty}`,
-        { position: "top-right" }
-      );
-      return;
-    }
-
-    let tokenIds = (availableTokenIds || []).slice(0, requestedQty);
-
-    if (tokenIds.length !== requestedQty) {
-      toast.error(
-        `Lỗi: Không thể lấy đủ ${requestedQty} token (chỉ lấy được ${tokenIds.length})`,
-        { position: "top-right" }
-      );
       console.groupEnd();
       return;
+    }
+
+    // ✅ FIX Bug #5: Proper quantity validation
+    const requestedQty = parseInt(formData.quantity, 10);
+    if (isNaN(requestedQty) || requestedQty <= 0) {
+      toast.error("Số lượng không hợp lệ", {
+        position: "top-right",
+      });
+      console.groupEnd();
+      return;
+    }
+
+    if (requestedQty > tokenIds.length) {
+      toast.error(`Chỉ có ${tokenIds.length} NFT khả dụng để chuyển`, {
+        position: "top-right",
+      });
+      console.groupEnd();
+      return;
+    }
+
+    // Always use all available tokens
+    if (formData.quantity !== tokenIds.length.toString()) {
+      setFormData((prev) => ({
+        ...prev,
+        quantity: tokenIds.length.toString(),
+      }));
     }
 
     console.log("✅ [handleSubmit] Validation passed:", {
@@ -578,16 +577,28 @@ export const useTransferManagements = () => {
           ? rawDrugId
           : rawDrugId?._id || rawDrugId?.id || String(rawDrugId || "");
 
+      const lockedBatchNumber =
+        selectedProduction?.batchNumber ||
+        selectedProduction?.proofOfProduction?.batchNumber ||
+        selectedProduction?.drug?.batchNumber ||
+        "";
+
+      if (!lockedBatchNumber) {
+        toast.error("Không tìm thấy batchNumber hợp lệ cho lô sản xuất này", {
+          position: "top-right",
+        });
+        setButtonAnimating(false);
+        setShowBlockchainView(false);
+        console.groupEnd();
+        return;
+      }
+
       const issuePayload = {
         distributorId: formData.distributorId,
         drugId: cleanDrugId,
         tokenIds,
-        quantity: tokenIds.length,
         notes: formData.notes || "",
-        batchNumber:
-          selectedProduction.batchNumber ||
-          selectedProduction.drug?.batchNumber ||
-          "",
+        batchNumber: lockedBatchNumber,
       };
 
       console.log("📄 [handleSubmit] Issuing invoice via API:", issuePayload);
@@ -639,20 +650,44 @@ export const useTransferManagements = () => {
         ? invoiceCandidate.tokenIds.map((id) => String(id))
         : tokenIds.map((id) => String(id));
 
-      console.log("🧾 [handleSubmit] Invoice issued:", {
-        invoiceId,
+      const normalizedInvoice = {
+        id: invoiceId,
         invoiceNumber:
           invoiceCandidate?.invoiceNumber ||
           issueResponse?.invoiceNumber ||
           issueResponse?.data?.invoiceNumber ||
           "",
-        invoiceTokenIds,
-      });
+        status: (invoiceCandidate?.status || "issued").toLowerCase(),
+        tokenIds: invoiceTokenIds,
+      };
 
-      await handleBlockchainTransfer(
-        invoiceId,
+      setPendingInvoice(normalizedInvoice);
+
+      console.log("🧾 [handleSubmit] Invoice issued:", normalizedInvoice);
+
+      // ✅ FIX Bug #6, #8: Enhanced blockchain transfer with validation
+      const onchainHash = await handleBlockchainTransfer(
+        normalizedInvoice.id,
         distributorAddress,
-        invoiceTokenIds
+        normalizedInvoice.tokenIds
+      );
+
+      // ✅ FIX Bug #8: Validate transaction hash before setting
+      if (!onchainHash || !isValidTxHash(onchainHash)) {
+        throw new Error(
+          "Transaction hash không hợp lệ hoặc không nhận được từ blockchain"
+        );
+      }
+
+      setTransactionHashInput(onchainHash);
+      setTransferStatus("awaiting-save");
+      setShowBlockchainView(false);
+      setButtonAnimating(false);
+      setButtonDone(false);
+
+      toast.info(
+        "Giao dịch on-chain đã hoàn tất. Vui lòng lưu transaction để cập nhật invoice.",
+        { position: "top-center", duration: 5000 }
       );
     } catch (error) {
       console.error("❌ [handleSubmit] Error:", error);
@@ -678,6 +713,7 @@ export const useTransferManagements = () => {
     console.groupEnd();
   };
 
+  // ✅ FIX Bug #6, #9: Enhanced blockchain transfer with proper cleanup
   const handleBlockchainTransfer = async (
     invoiceId,
     distributorAddress,
@@ -688,6 +724,7 @@ export const useTransferManagements = () => {
     setTransferProgress(0.2);
     setTransferStatus("preparing");
 
+    // ✅ FIX Bug #9: Clear existing interval before creating new one
     if (transferProgressIntervalRef.current) {
       clearInterval(transferProgressIntervalRef.current);
       transferProgressIntervalRef.current = null;
@@ -696,7 +733,7 @@ export const useTransferManagements = () => {
     try {
       if (!isMountedRef.current) {
         console.groupEnd();
-        return;
+        return null;
       }
 
       setTransferProgress(0.3);
@@ -727,7 +764,7 @@ export const useTransferManagements = () => {
 
       if (!isMountedRef.current) {
         console.groupEnd();
-        return;
+        return null;
       }
 
       setTransferProgress(0.4);
@@ -748,8 +785,13 @@ export const useTransferManagements = () => {
         distributorAddress
       );
 
+      // ✅ FIX Bug #9: Improved interval cleanup
       transferProgressIntervalRef.current = setInterval(() => {
         if (!isMountedRef.current) {
+          if (transferProgressIntervalRef.current) {
+            clearInterval(transferProgressIntervalRef.current);
+            transferProgressIntervalRef.current = null;
+          }
           return;
         }
         setTransferProgress((prev) =>
@@ -771,46 +813,36 @@ export const useTransferManagements = () => {
 
       if (!isMountedRef.current) {
         console.groupEnd();
-        return;
+        return null;
+      }
+
+      // ✅ FIX Bug #6: Validate transaction result
+      if (!onchain || !onchain.transactionHash) {
+        throw new Error(
+          "Transaction failed: No transaction hash returned from blockchain"
+        );
+      }
+
+      // Check if transaction was successful (status = 1 means success)
+      if (onchain.status === 0 || onchain.status === false) {
+        throw new Error(
+          "Transaction reverted on blockchain. Please check your wallet and try again."
+        );
       }
 
       if (transferProgressIntervalRef.current) {
         clearInterval(transferProgressIntervalRef.current);
         transferProgressIntervalRef.current = null;
-      }
-
-      setTransferProgress(0.85);
-      setTransferStatus("saving");
-
-      await persistTransfer(invoiceId, tokenIds, onchain.transactionHash);
-
-      if (!isMountedRef.current) {
-        console.groupEnd();
-        return;
       }
 
       setTransferProgress(1);
       setTransferStatus("completed");
-      setButtonDone(true);
-      setButtonAnimating(false);
 
-      toast.success(
-        `Chuyển giao ${
-          tokenIds.length
-        } NFT thành công! TxHash: ${onchain.transactionHash.slice(0, 10)}...`,
-        { position: "top-right", duration: 5000 }
-      );
-
-      setTimeout(() => {
-        if (!isMountedRef.current) {
-          return;
-        }
-        handleCloseDialog();
-        refetchProductions();
-      }, 2000);
+      return onchain.transactionHash;
     } catch (error) {
       console.error("❌ [handleBlockchainTransfer] Error:", error);
 
+      // ✅ FIX Bug #9: Ensure cleanup on error
       if (transferProgressIntervalRef.current) {
         clearInterval(transferProgressIntervalRef.current);
         transferProgressIntervalRef.current = null;
@@ -818,7 +850,7 @@ export const useTransferManagements = () => {
 
       if (!isMountedRef.current) {
         console.groupEnd();
-        return;
+        return null;
       }
 
       setTransferStatus("error");
@@ -835,6 +867,8 @@ export const useTransferManagements = () => {
         errorMessage = "Không đủ gas fee để thực hiện giao dịch";
       } else if (error.message?.includes("Wrong wallet")) {
         errorMessage = "Vui lòng kết nối đúng ví manufacturer";
+      } else if (error.message?.includes("reverted")) {
+        errorMessage = "Giao dịch bị revert trên blockchain. Vui lòng kiểm tra lại.";
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -843,25 +877,8 @@ export const useTransferManagements = () => {
         position: "top-right",
         duration: 6000,
       });
-    }
 
-    console.groupEnd();
-  };
-
-  const persistTransfer = async (invoiceId, tokenIds, transactionHash) => {
-    console.group("💾 [persistTransfer] START");
-    try {
-      const payload = {
-        invoiceId,
-        tokenIds,
-        transactionHash,
-      };
-
-      console.log("💾 [persistTransfer] Payload:", payload);
-
-      await saveTransferTransactionMutation.mutateAsync(payload);
-
-      console.log("✅ [persistTransfer] Transaction saved successfully");
+      throw error;
     } finally {
       console.groupEnd();
     }
@@ -869,6 +886,12 @@ export const useTransferManagements = () => {
 
   const handleCloseDialog = () => {
     console.log("🔒 [handleCloseDialog] Closing and resetting...");
+
+    // ✅ FIX Bug #9: Comprehensive cleanup
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
 
     if (transferProgressIntervalRef.current) {
       clearInterval(transferProgressIntervalRef.current);
@@ -890,6 +913,68 @@ export const useTransferManagements = () => {
     setButtonAnimating(false);
     setButtonDone(false);
     setLoadingTokens(false);
+    setPendingInvoice(null);
+    setTransactionHashInput("");
+    setSaveTransferLoading(false);
+  };
+
+  const handleSaveTransfer = async () => {
+    if (!pendingInvoice) {
+      toast.error("Không tìm thấy invoice để lưu transaction", {
+        position: "top-right",
+      });
+      return;
+    }
+
+    if ((pendingInvoice.status || "").toLowerCase() !== "issued") {
+      toast.error("Invoice chưa ở trạng thái 'issued'", {
+        position: "top-right",
+      });
+      return;
+    }
+
+    if (!isValidTxHash(transactionHashInput)) {
+      toast.error("Transaction hash không hợp lệ (0x + 64 ký tự hex)", {
+        position: "top-right",
+      });
+      return;
+    }
+
+    setSaveTransferLoading(true);
+    setTransferStatus("saving");
+
+    try {
+      await saveTransferTransactionMutation.mutateAsync({
+        invoiceId: pendingInvoice.id,
+        tokenIds: pendingInvoice.tokenIds,
+        transactionHash: transactionHashInput.trim(),
+      });
+
+      toast.success(
+        "Lưu transaction thành công. Invoice đã chuyển sang 'sent'.",
+        {
+          position: "top-right",
+        }
+      );
+
+      handleCloseDialog();
+      refetchProductions();
+    } catch (error) {
+      console.error("❌ [handleSaveTransfer] Error:", error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Lỗi không xác định";
+      toast.error(message, {
+        position: "top-right",
+        duration: 5000,
+      });
+      setTransferStatus("awaiting-save");
+    } finally {
+      if (isMountedRef.current) {
+        setSaveTransferLoading(false);
+      }
+    }
   };
 
   const formatDate = (dateValue) => {
@@ -909,6 +994,11 @@ export const useTransferManagements = () => {
       d.id === formData.distributorId ||
       d.userId === formData.distributorId
   );
+
+  const isSaveTransferReady =
+    !!pendingInvoice &&
+    (pendingInvoice.status || "").toLowerCase() === "issued" &&
+    isValidTxHash(transactionHashInput);
 
   return {
     productions,
@@ -936,5 +1026,11 @@ export const useTransferManagements = () => {
     formatDate,
     safeDistributors,
     selectedDistributor,
+    pendingInvoice,
+    transactionHashInput,
+    setTransactionHashInput,
+    handleSaveTransfer,
+    saveTransferLoading,
+    isSaveTransferReady,
   };
 };
