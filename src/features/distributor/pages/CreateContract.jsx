@@ -86,11 +86,11 @@ export default function CreateContract() {
       setLoading(true);
 
       // Step 1: Get MetaMask signature
-      const signature = await signMessageWithMetaMask(
+      const signatureResult = await signMessageWithMetaMask(
         "Tạo yêu cầu hợp đồng với nhà thuốc"
       );
 
-      if (!signature || !signature.privateKey) {
+      if (!signatureResult || !signatureResult.signature) {
         throw new Error("Không thể lấy chữ ký từ MetaMask");
       }
 
@@ -99,7 +99,9 @@ export default function CreateContract() {
         pharmacyId: values.pharmacyId,
         contractFileUrl: uploadedFileUrl,
         contractFileName: uploadedFileName,
-        distributorPrivateKey: signature.privateKey,
+        distributorSignature: signatureResult.signature,
+        distributorAddress: signatureResult.address,
+        signedMessage: signatureResult.message,
       });
 
       toast.success("Tạo yêu cầu hợp đồng thành công!");

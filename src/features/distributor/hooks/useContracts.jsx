@@ -29,10 +29,30 @@ export const contractStatusLabel = (status) => {
   return labels[status] || status;
 };
 
+const extractPharmacyInfo = (pharmacyObj, pharmacyIdField) => {
+  if (pharmacyObj && Object.keys(pharmacyObj).length > 0) {
+    return pharmacyObj;
+  }
+
+  if (typeof pharmacyIdField === "string") {
+    const nameMatch = pharmacyIdField.match(/name:\s*'([^']+)'/);
+    const licenseMatch = pharmacyIdField.match(/licenseNo:\s*'([^']+)'/);
+    const taxMatch = pharmacyIdField.match(/taxCode:\s*'([^']+)'/);
+
+    return {
+      name: nameMatch ? nameMatch[1] : pharmacyIdField,
+      licenseNo: licenseMatch ? licenseMatch[1] : undefined,
+      taxCode: taxMatch ? taxMatch[1] : undefined,
+    };
+  }
+
+  return {};
+};
+
 export const useContracts = () => {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
-  
+
   const {
     data: contractsResponse,
     isLoading: loading,
@@ -40,8 +60,21 @@ export const useContracts = () => {
   } = useDistributorContracts();
 
   const contracts = useMemo(() => {
-    const data = contractsResponse?.data?.data;
-    return Array.isArray(data) ? data : [];
+    const rawData = contractsResponse?.data ?? contractsResponse;
+    const list = Array.isArray(rawData?.data)
+      ? rawData.data
+      : Array.isArray(rawData)
+      ? rawData
+      : [];
+
+    return list.map((item) => {
+      const pharmacyInfo = extractPharmacyInfo(item.pharmacy, item.pharmacyId);
+      return {
+        ...item,
+        _id: item._id || item.id || item.contractId,
+        pharmacy: pharmacyInfo,
+      };
+    });
   }, [contractsResponse]);
 
   const filteredContracts = useMemo(() => {
@@ -80,12 +113,14 @@ export const useContracts = () => {
       },
       {
         title: "Pharmacy",
-        dataIndex: ["pharmacy", "businessName"],
+        dataIndex: ["pharmacy", "name"],
         key: "pharmacyName",
         ellipsis: true,
-        render: (text, record) => {
-          return record.pharmacy?.businessName || record.pharmacy?.name || "N/A";
-        },
+        render: (_, record) =>
+          record.pharmacy?.businessName ||
+          record.pharmacy?.name ||
+          record.pharmacyId ||
+          "N/A",
       },
       {
         title: "Trạng thái",

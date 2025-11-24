@@ -38,11 +38,11 @@ export default function FinalizeContract() {
       setLoading(true);
 
       // Step 1: Get MetaMask signature
-      const signature = await signMessageWithMetaMask(
+      const signatureResult = await signMessageWithMetaMask(
         "Ký hợp đồng lần cuối và Mint NFT"
       );
 
-      if (!signature || !signature.privateKey) {
+      if (!signatureResult || !signatureResult.signature) {
         throw new Error("Không thể lấy chữ ký từ MetaMask");
       }
 
@@ -50,7 +50,9 @@ export default function FinalizeContract() {
       const result = await finalizeContract({
         contractId: contractId,
         pharmacyAddress: contract.pharmacyWalletAddress,
-        distributorPrivateKey: signature.privateKey,
+        distributorSignature: signatureResult.signature,
+        distributorAddress: signatureResult.address,
+        signedMessage: signatureResult.message,
       });
 
       toast.success("Ký hợp đồng và Mint NFT thành công!");

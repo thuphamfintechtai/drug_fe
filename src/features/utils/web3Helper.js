@@ -982,30 +982,10 @@ export const signMessageWithMetaMask = async (message) => {
     // Sign the message with MetaMask
     const signature = await signer.signMessage(message);
 
-    // Get private key from localStorage (stored during login/registration)
-    // In production, this should be encrypted or retrieved from secure backend
-    const storageKey = "privateKey_" + address;
-    let privateKey = localStorage.getItem(storageKey);
-
-    // If not found in localStorage, ask user to input (for backward compatibility)
-    if (!privateKey) {
-      privateKey = prompt(
-        "Để ký hợp đồng trên blockchain, vui lòng nhập private key của bạn:\n\n" +
-          "Private key sẽ được lưu an toàn cho các giao dịch tiếp theo."
-      );
-
-      if (!privateKey) {
-        throw new Error("Private key là bắt buộc để ký hợp đồng");
-      }
-
-      // Save to localStorage for future use (should be encrypted in production)
-      localStorage.setItem(storageKey, privateKey.trim());
-    }
-
+    // Return signature info (backend should verify using signature + message)
     return {
       signature,
       address,
-      privateKey: privateKey.trim(),
       message,
     };
   } catch (error) {
