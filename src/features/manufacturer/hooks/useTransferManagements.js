@@ -48,6 +48,23 @@ export const useTransferManagements = () => {
       : productionsData.data?.productions || []
     : [];
 
+  useEffect(() => {
+    if (productions.length > 0 && import.meta.env.DEV) {
+      console.log("📋 Productions loaded:", {
+        count: productions.length,
+        sample: productions[0]
+          ? {
+              _id: productions[0]._id,
+              id: productions[0].id,
+              batchNumber: productions[0].batchNumber,
+              quantity: productions[0].quantity,
+              allKeys: Object.keys(productions[0]),
+            }
+          : null,
+      });
+    }
+  }, [productions]);
+
   const distributors = distributorsData?.success
     ? Array.isArray(distributorsData.data?.distributors)
       ? distributorsData.data.distributors
@@ -77,7 +94,7 @@ export const useTransferManagements = () => {
   // Comprehensive cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
-    
+
     return () => {
       isMountedRef.current = false;
       if (progressIntervalRef.current) {
@@ -90,79 +107,6 @@ export const useTransferManagements = () => {
       }
     };
   }, []);
-
-  // Safe setState helper to prevent memory leaks
-  const safeSetState = (setter) => {
-    return (...args) => {
-      if (isMountedRef.current) {
-        setter(...args);
-      }
-    };
-  };
-
-  // FIX: Enhanced token extraction with detailed logging
-  const extractTokenIds = (response) => {
-    console.log("🔍 [extractTokenIds] Full response structure:", {
-      response,
-      type: typeof response,
-      isArray: Array.isArray(response),
-      keys: response ? Object.keys(response) : [],
-    });
-
-    // If response is already an array of token IDs
-    if (Array.isArray(response)) {
-      console.log("✅ [extractTokenIds] Response is array:", response);
-      return response;
-    }
-
-    const paths = [
-      ['data', 'data', 'availableTokenIds'],
-      ['data', 'availableTokenIds'],
-      ['data', 'data', 'tokens'],
-      ['data', 'tokens'],
-      ['data', 'tokenIds'],
-      ['data', 'data', 'tokenIds'],
-      ['availableTokenIds'],
-      ['tokens'],
-      ['tokenIds'],
-      ['data', 'data'], // Array case
-      ['data'], // Direct array in data
-    ];
-    
-    for (const path of paths) {
-      let value = response;
-      let pathString = '';
-      
-      for (const key of path) {
-        pathString += (pathString ? '.' : '') + key;
-        value = value?.[key];
-        
-        if (value === undefined) {
-          console.log(`⚠️ [extractTokenIds] Path ${pathString} not found`);
-          break;
-        }
-      }
-      
-      if (Array.isArray(value)) {
-        if (value.length > 0) {
-          console.log(`✅ [extractTokenIds] Found tokenIds at: ${pathString}`, {
-            count: value.length,
-            sample: value.slice(0, 3),
-          });
-          return value;
-        } else {
-          console.log(`⚠️ [extractTokenIds] Found empty array at: ${pathString}`);
-        }
-      }
-    }
-    
-    console.warn("❌ [extractTokenIds] No valid tokenIds array found", {
-      response,
-      checkedPaths: paths.map(p => p.join('.')),
-    });
-    
-    return [];
-  };
 
   // FIX: Completely rewritten handleSelectProduction
   const handleSelectProduction = async (production) => {
@@ -217,9 +161,9 @@ export const useTransferManagements = () => {
     setShowDialog(true);
 
     // Check if production already has valid tokenIds
-    const hasValidTokenIds = 
-      production.tokenIds && 
-      Array.isArray(production.tokenIds) && 
+    const hasValidTokenIds =
+      production.tokenIds &&
+      Array.isArray(production.tokenIds) &&
       production.tokenIds.length > 0;
 
     console.log("🔍 [handleSelectProduction] Checking production.tokenIds:", {
@@ -231,37 +175,43 @@ export const useTransferManagements = () => {
     });
 
     if (hasValidTokenIds) {
-      console.log("✅ [handleSelectProduction] Using tokenIds from production:", {
-        count: production.tokenIds.length,
-        tokenIds: production.tokenIds,
-      });
-      
+      console.log(
+        "✅ [handleSelectProduction] Using tokenIds from production:",
+        {
+          count: production.tokenIds.length,
+          tokenIds: production.tokenIds,
+        }
+      );
+
       if (isMountedRef.current) {
         setAvailableTokenIds(production.tokenIds);
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           quantity: production.tokenIds.length.toString(),
         }));
         setLoadingTokens(false);
-        
-        toast.success(`Tìm thấy ${production.tokenIds.length} NFT khả dụng từ production data`, {
-          position: "top-right",
-          duration: 2000,
-        });
+
+        toast.success(
+          `Tìm thấy ${production.tokenIds.length} NFT khả dụng từ production data`,
+          {
+            position: "top-right",
+            duration: 2000,
+          }
+        );
       }
-      
+
       console.groupEnd();
       return;
     }
 
     // Fetch available tokens from API
     console.log("🌐 [handleSelectProduction] Fetching from API...");
-    
+
     try {
       let response = null;
       let res = null;
       let successEndpoint = null;
-      
+
       // Try multiple possible endpoints
       const endpoints = [
         `/api/manufacturer/production/${productionId}/available-tokens`,
@@ -277,19 +227,18 @@ export const useTransferManagements = () => {
       for (const endpoint of endpoints) {
         try {
           console.log(`🔄 [handleSelectProduction] Attempting: ${endpoint}`);
-          
+
           const apiResponse = await api.get(endpoint);
-          
+
           console.log(`✅ [handleSelectProduction] Success with ${endpoint}:`, {
             status: apiResponse.status,
             data: apiResponse.data,
           });
-          
+
           response = apiResponse;
           res = apiResponse.data;
           successEndpoint = endpoint;
           break;
-          
         } catch (err) {
           console.log(`❌ [handleSelectProduction] Failed ${endpoint}:`, {
             status: err.response?.status,
@@ -300,7 +249,9 @@ export const useTransferManagements = () => {
       }
 
       if (!response || !res) {
-        throw new Error("All API endpoints failed - no valid response received");
+        throw new Error(
+          "All API endpoints failed - no valid response received"
+        );
       }
 
       console.log("✅ [handleSelectProduction] API call successful:", {
@@ -310,14 +261,16 @@ export const useTransferManagements = () => {
       });
 
       if (!isMountedRef.current) {
-        console.log("⚠️ [handleSelectProduction] Component unmounted, aborting");
+        console.log(
+          "⚠️ [handleSelectProduction] Component unmounted, aborting"
+        );
         console.groupEnd();
         return;
       }
 
       // Extract token IDs
       const tokenIdsArray = extractTokenIds(res);
-      
+
       console.log("📊 [handleSelectProduction] Token analysis:", {
         totalProductionQuantity: production.quantity,
         extractedTokensCount: tokenIdsArray.length,
@@ -326,7 +279,9 @@ export const useTransferManagements = () => {
       });
 
       if (!isMountedRef.current) {
-        console.log("⚠️ [handleSelectProduction] Component unmounted, aborting");
+        console.log(
+          "⚠️ [handleSelectProduction] Component unmounted, aborting"
+        );
         console.groupEnd();
         return;
       }
@@ -334,11 +289,11 @@ export const useTransferManagements = () => {
       setAvailableTokenIds(tokenIdsArray);
 
       if (tokenIdsArray.length > 0) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           quantity: tokenIdsArray.length.toString(),
         }));
-        
+
         toast.success(`Tìm thấy ${tokenIdsArray.length} NFT khả dụng từ API`, {
           position: "top-right",
           duration: 2000,
@@ -351,7 +306,6 @@ export const useTransferManagements = () => {
       }
 
       console.log("✅ [handleSelectProduction] Successfully set token IDs");
-      
     } catch (error) {
       console.error("❌ [handleSelectProduction] API error:", {
         message: error.message,
@@ -361,37 +315,50 @@ export const useTransferManagements = () => {
       });
 
       if (!isMountedRef.current) {
-        console.log("⚠️ [handleSelectProduction] Component unmounted, aborting error handling");
+        console.log(
+          "⚠️ [handleSelectProduction] Component unmounted, aborting error handling"
+        );
         console.groupEnd();
         return;
       }
 
       // Fallback: Try to use tokenIds from production object
-      if (production.tokenIds && Array.isArray(production.tokenIds) && production.tokenIds.length > 0) {
-        console.log("⚠️ [handleSelectProduction] Using fallback tokenIds from production");
-        
+      if (
+        production.tokenIds &&
+        Array.isArray(production.tokenIds) &&
+        production.tokenIds.length > 0
+      ) {
+        console.log(
+          "⚠️ [handleSelectProduction] Using fallback tokenIds from production"
+        );
+
         setAvailableTokenIds(production.tokenIds);
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           quantity: production.tokenIds.length.toString(),
         }));
-        
-        toast.info(`Sử dụng ${production.tokenIds.length} NFT từ dữ liệu production (fallback)`, {
-          position: "top-right",
-          duration: 3000,
-        });
+
+        toast.info(
+          `Sử dụng ${production.tokenIds.length} NFT từ dữ liệu production (fallback)`,
+          {
+            position: "top-right",
+            duration: 3000,
+          }
+        );
       } else {
         console.error("❌ [handleSelectProduction] No fallback available");
-        
+
         setAvailableTokenIds([]);
-        
-        const errorMsg = error.response?.data?.message || error.message || "Lỗi không xác định";
+
+        const errorMsg =
+          error.response?.data?.message ||
+          error.message ||
+          "Lỗi không xác định";
         toast.error(`Không thể tải danh sách token: ${errorMsg}`, {
           position: "top-right",
           duration: 5000,
         });
       }
-      
     } finally {
       if (isMountedRef.current) {
         setLoadingTokens(false);
@@ -404,7 +371,7 @@ export const useTransferManagements = () => {
   // Improved validation
   const handleSubmit = async () => {
     console.group("🚀 [handleSubmit] START");
-    
+
     if (buttonAnimating) {
       console.log("⚠️ [handleSubmit] Already processing, ignoring");
       console.groupEnd();
@@ -425,31 +392,49 @@ export const useTransferManagements = () => {
       return;
     }
 
-    const requestedQty = parseInt(formData.quantity);
+    // Convert to number and validate
+    const requestedQty = Number(formData.quantity);
+    const availableCount = availableTokenIds?.length || 0;
 
-    if (isNaN(requestedQty) || requestedQty <= 0) {
-      toast.error("Số lượng phải là số nguyên dương", { position: "top-right" });
-      console.groupEnd();
+    // FIX: Proper quantity validation with better type handling
+    if (
+      isNaN(requestedQty) ||
+      !Number.isInteger(requestedQty) ||
+      requestedQty <= 0
+    ) {
+      toast.error("Số lượng phải là số nguyên dương", {
+        position: "top-right",
+      });
       return;
     }
 
-    if (availableTokenIds.length === 0) {
-      toast.error("Không có token khả dụng để chuyển", { position: "top-right" });
-      console.groupEnd();
+    // Check against available token IDs first (this is the actual limit)
+    if (availableCount === 0) {
+      toast.error("Không có token khả dụng để chuyển", {
+        position: "top-right",
+      });
       return;
     }
 
-    if (requestedQty > availableTokenIds.length) {
+    if (requestedQty > availableCount) {
       toast.error(
-        `Chỉ có ${availableTokenIds.length} token khả dụng. Vui lòng nhập số lượng từ 1 đến ${availableTokenIds.length}`,
-        { position: "top-right", duration: 4000 }
+        `Số lượng không hợp lệ: Chỉ có ${availableCount} token khả dụng, nhưng bạn nhập ${requestedQty}`,
+        { position: "top-right" }
+      );
+      return;
+    }
+
+    let tokenIds = (availableTokenIds || []).slice(0, requestedQty);
+
+    if (tokenIds.length !== requestedQty) {
+      toast.error(
+        `Lỗi: Không thể lấy đủ ${requestedQty} token (chỉ lấy được ${tokenIds.length})`,
+        { position: "top-right" }
       );
       console.groupEnd();
       return;
     }
 
-    const tokenIds = availableTokenIds.slice(0, requestedQty);
-    
     console.log("✅ [handleSubmit] Validation passed:", {
       requestedQty,
       tokenIdsToTransfer: tokenIds,
@@ -461,12 +446,15 @@ export const useTransferManagements = () => {
 
     try {
       console.log("🔗 [handleSubmit] Starting blockchain transfer directly...");
-      
+
       // Lấy distributor address từ selectedDistributor
       const distributorAddress = selectedDistributor?.walletAddress;
-      
+
       if (!distributorAddress) {
-        console.error("❌ [handleSubmit] Missing distributor wallet address:", selectedDistributor);
+        console.error(
+          "❌ [handleSubmit] Missing distributor wallet address:",
+          selectedDistributor
+        );
         toast.error("Lỗi: Nhà phân phối không có địa chỉ ví", {
           position: "top-right",
           duration: 5000,
@@ -476,7 +464,7 @@ export const useTransferManagements = () => {
         console.groupEnd();
         return;
       }
-      
+
       console.log("🔍 [handleSubmit] Transfer info:", {
         productionId: selectedProduction._id,
         distributorId: formData.distributorId,
@@ -484,14 +472,13 @@ export const useTransferManagements = () => {
         tokenIdsCount: tokenIds.length,
         tokenIds: tokenIds,
       });
-      
+
       // Gọi blockchain transfer trực tiếp (không gọi backend trước)
       await handleBlockchainTransfer(
         null, // invoice sẽ được tạo sau khi blockchain transfer thành công
         distributorAddress,
         tokenIds
       );
-      
     } catch (error) {
       console.error("❌ [handleSubmit] Error:", error);
 
@@ -500,7 +487,8 @@ export const useTransferManagements = () => {
         return;
       }
 
-      const errorMessage = error.response?.data?.message || error.message || "Lỗi không xác định";
+      const errorMessage =
+        error.response?.data?.message || error.message || "Lỗi không xác định";
       toast.error("Không thể chuyển giao: " + errorMessage, {
         position: "top-right",
         duration: 5000,
@@ -509,7 +497,7 @@ export const useTransferManagements = () => {
       setButtonAnimating(false);
       setShowBlockchainView(false);
     }
-    
+
     console.groupEnd();
   };
 
@@ -519,7 +507,7 @@ export const useTransferManagements = () => {
     tokenIds
   ) => {
     console.group("⛓️ [handleBlockchainTransfer] START");
-    
+
     setTransferProgress(0);
     setTransferStatus("preparing");
 
@@ -540,7 +528,8 @@ export const useTransferManagements = () => {
       console.log("🔍 [handleBlockchainTransfer] Wallet check:", {
         currentWallet,
         userWallet: user?.walletAddress,
-        match: currentWallet.toLowerCase() === user?.walletAddress?.toLowerCase(),
+        match:
+          currentWallet.toLowerCase() === user?.walletAddress?.toLowerCase(),
       });
 
       if (
@@ -548,7 +537,12 @@ export const useTransferManagements = () => {
         currentWallet.toLowerCase() !== user.walletAddress.toLowerCase()
       ) {
         toast.error(
-          `Ví hiện tại (${currentWallet.slice(0,6)}...${currentWallet.slice(-4)}) không khớp với ví manufacturer (${user.walletAddress.slice(0,6)}...${user.walletAddress.slice(-4)})`,
+          `Ví hiện tại (${currentWallet.slice(0, 6)}...${currentWallet.slice(
+            -4
+          )}) không khớp với ví manufacturer (${user.walletAddress.slice(
+            0,
+            6
+          )}...${user.walletAddress.slice(-4)})`,
           { position: "top-right", duration: 6000 }
         );
         throw new Error("Wrong wallet connected");
@@ -562,11 +556,14 @@ export const useTransferManagements = () => {
       setTransferProgress(0.2);
       setTransferStatus("transferring");
 
-      console.log("🚀 [handleBlockchainTransfer] Starting NFT transfer on blockchain:", {
-        tokenIds,
-        distributorAddress,
-        from: currentWallet,
-      });
+      console.log(
+        "🚀 [handleBlockchainTransfer] Starting NFT transfer on blockchain:",
+        {
+          tokenIds,
+          distributorAddress,
+          from: currentWallet,
+        }
+      );
 
       // BƯỚC 1: Gọi smart contract để transfer NFT
       const transferPromise = transferNFTToDistributor(
@@ -575,7 +572,7 @@ export const useTransferManagements = () => {
       );
 
       transferProgressIntervalRef.current = setInterval(() => {
-        if (!isMountedRef.current) return;
+        if (!isMountedRef.current) {return;}
         setTransferProgress((prev) =>
           prev < 0.8 ? Math.min(prev + 0.01, 0.8) : prev
         );
@@ -584,11 +581,14 @@ export const useTransferManagements = () => {
       // Chờ transaction được ký và confirm trên blockchain
       const onchain = await transferPromise;
 
-      console.log("✅ [handleBlockchainTransfer] NFT transferred on blockchain:", {
-        transactionHash: onchain.transactionHash,
-        blockNumber: onchain.blockNumber,
-        status: onchain.status,
-      });
+      console.log(
+        "✅ [handleBlockchainTransfer] NFT transferred on blockchain:",
+        {
+          transactionHash: onchain.transactionHash,
+          blockNumber: onchain.blockNumber,
+          status: onchain.status,
+        }
+      );
 
       if (!isMountedRef.current) {
         console.groupEnd();
@@ -607,18 +607,24 @@ export const useTransferManagements = () => {
       console.log("💾 [handleBlockchainTransfer] Saving data to backend...");
 
       // Lấy drugId từ production
-      const drugId = selectedProduction?.drugId || 
-                     selectedProduction?.drug?._id || 
-                     selectedProduction?.drug?.id;
-      
-      const cleanDrugId = typeof drugId === 'string' ? drugId : 
-                         (drugId?._id || drugId?.id || String(drugId));
+      const drugId =
+        selectedProduction?.drugId ||
+        selectedProduction?.drug?._id ||
+        selectedProduction?.drug?.id;
+
+      const cleanDrugId =
+        typeof drugId === "string"
+          ? drugId
+          : drugId?._id || drugId?.id || String(drugId);
 
       // Gọi API backend để lưu transfer data
       // Format theo API: { distributorId, drugId, tokenIds, invoiceNumber, invoiceDate, quantity, notes, batchNumber, chainTxHash }
-      const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+      const invoiceNumber = `INV-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 10)
+        .toUpperCase()}`;
       const invoiceDate = new Date().toISOString();
-      
+
       const saveData = {
         distributorId: formData.distributorId,
         drugId: cleanDrugId,
@@ -627,11 +633,17 @@ export const useTransferManagements = () => {
         invoiceDate,
         quantity: tokenIds.length,
         notes: formData.notes || "",
-        batchNumber: selectedProduction.batchNumber || selectedProduction.drug?.batchNumber || "",
+        batchNumber:
+          selectedProduction.batchNumber ||
+          selectedProduction.drug?.batchNumber ||
+          "",
         chainTxHash: onchain.transactionHash,
       };
 
-      console.log("📤 [handleBlockchainTransfer] Sending to backend:", saveData);
+      console.log(
+        "📤 [handleBlockchainTransfer] Sending to backend:",
+        saveData
+      );
 
       const response = await createTransferMutation.mutateAsync(saveData);
 
@@ -650,16 +662,17 @@ export const useTransferManagements = () => {
       console.log("✅ [handleBlockchainTransfer] SUCCESS - Complete flow");
 
       toast.success(
-        `Chuyển giao ${tokenIds.length} NFT thành công! TxHash: ${onchain.transactionHash.slice(0,10)}...`,
+        `Chuyển giao ${
+          tokenIds.length
+        } NFT thành công! TxHash: ${onchain.transactionHash.slice(0, 10)}...`,
         { position: "top-right", duration: 5000 }
       );
 
       setTimeout(() => {
-        if (!isMountedRef.current) return;
+        if (!isMountedRef.current) {return;}
         handleCloseDialog();
         refetchProductions();
       }, 2000);
-
     } catch (error) {
       console.error("❌ [handleBlockchainTransfer] Error:", error);
 
@@ -695,13 +708,13 @@ export const useTransferManagements = () => {
         duration: 6000,
       });
     }
-    
+
     console.groupEnd();
   };
 
   const handleCloseDialog = () => {
     console.log("🔒 [handleCloseDialog] Closing and resetting...");
-    
+
     if (transferProgressIntervalRef.current) {
       clearInterval(transferProgressIntervalRef.current);
       transferProgressIntervalRef.current = null;
@@ -725,7 +738,7 @@ export const useTransferManagements = () => {
   };
 
   const formatDate = (dateValue) => {
-    if (!dateValue) return "Chưa có";
+    if (!dateValue) {return "Chưa có";}
     const date = new Date(dateValue);
     return isNaN(date.getTime())
       ? "Không hợp lệ"

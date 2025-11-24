@@ -40,15 +40,21 @@ export const useProductionManagement = () => {
     if (drugs.length > 0) {
       console.log("📋 Drugs loaded:", {
         count: drugs.length,
-        sample: drugs[0] ? {
-          _id: drugs[0]._id,
-          id: drugs[0].id,
-          tradeName: drugs[0].tradeName,
-          atcCode: drugs[0].atcCode,
-          has_id: !!drugs[0]._id,
-          has_id_field: !!drugs[0].id
-        } : null,
-        allIds: drugs.map(d => ({ _id: d._id, id: d.id, tradeName: d.tradeName }))
+        sample: drugs[0]
+          ? {
+              _id: drugs[0]._id,
+              id: drugs[0].id,
+              tradeName: drugs[0].tradeName,
+              atcCode: drugs[0].atcCode,
+              has_id: !!drugs[0]._id,
+              has_id_field: !!drugs[0].id,
+            }
+          : null,
+        allIds: drugs.map((d) => ({
+          _id: d._id,
+          id: d.id,
+          tradeName: d.tradeName,
+        })),
       });
     }
   }, [drugs]);
@@ -172,12 +178,12 @@ export const useProductionManagement = () => {
       newErrors.batchNumber = "Số lô không được vượt quá 30 ký tự";
     }
 
-    // Validate số lượng: > 0 và < 10,000,000
+    // Validate số lượng: chỉ cho phép 1
     const quantity = parseInt(formData.quantity);
     if (!formData.quantity || isNaN(quantity) || quantity <= 0) {
       newErrors.quantity = "Số lượng phải lớn hơn 0";
-    } else if (quantity >= 10000000) {
-      newErrors.quantity = "Số lượng phải nhỏ hơn 10,000,000";
+    } else if (quantity > 1) {
+      newErrors.quantity = "Số lượng tối đa là 1";
     }
 
     // Validate ngày sản xuất: không quá 60 ngày trước và không được lớn hơn ngày hiện tại
@@ -260,13 +266,17 @@ export const useProductionManagement = () => {
 
       // Validate drugId format first - must be MongoDB ObjectId (24 hex chars)
       const isValidMongoId = /^[0-9a-fA-F]{24}$/.test(formData.drugId);
-      
+
       if (!isValidMongoId) {
         console.error("❌ Invalid drugId format when uploading:", {
           drugId: formData.drugId,
           drugIdType: typeof formData.drugId,
           isValidMongoId,
-          availableDrugs: drugs.map(d => ({ _id: d._id, tradeName: d.tradeName, atcCode: d.atcCode }))
+          availableDrugs: drugs.map((d) => ({
+            _id: d._id,
+            tradeName: d.tradeName,
+            atcCode: d.atcCode,
+          })),
         });
         toast.error(
           `drugId không hợp lệ: "${formData.drugId}". Vui lòng chọn lại thuốc từ dropdown.`,
@@ -276,15 +286,21 @@ export const useProductionManagement = () => {
         return;
       }
 
-      const selectedDrug = drugs.find((d) => (d._id || d.id) === formData.drugId);
-      
+      const selectedDrug = drugs.find(
+        (d) => (d._id || d.id) === formData.drugId
+      );
+
       // Validate selectedDrug exists
       if (!selectedDrug) {
         console.error("❌ Selected drug not found:", {
           drugId: formData.drugId,
           drugIdType: typeof formData.drugId,
           isValidMongoId,
-          availableDrugs: drugs.map(d => ({ _id: d._id, tradeName: d.tradeName, atcCode: d.atcCode }))
+          availableDrugs: drugs.map((d) => ({
+            _id: d._id,
+            tradeName: d.tradeName,
+            atcCode: d.atcCode,
+          })),
         });
         toast.error("Không tìm thấy thông tin thuốc đã chọn", {
           position: "top-right",
@@ -325,16 +341,16 @@ export const useProductionManagement = () => {
       };
 
       // Verify drug exists in available drugs list
-      const drugExists = drugs.some(d => (d._id || d.id) === formData.drugId);
+      const drugExists = drugs.some((d) => (d._id || d.id) === formData.drugId);
       if (!drugExists) {
         console.error("❌ Drug not found in available drugs list:", {
           drugId: formData.drugId,
-          availableDrugIds: drugs.map(d => ({
+          availableDrugIds: drugs.map((d) => ({
             _id: d._id,
             id: d.id,
             tradeName: d.tradeName,
-            atcCode: d.atcCode
-          }))
+            atcCode: d.atcCode,
+          })),
         });
         toast.error(
           `Thuốc đã chọn không có trong danh sách. Vui lòng chọn lại thuốc.`,
@@ -345,30 +361,33 @@ export const useProductionManagement = () => {
       }
 
       // Include drugId in payload - backend may need it
-      const uploadPayload = { 
-        drugId: formData.drugId, 
-        quantity, 
-        metadata 
+      const uploadPayload = {
+        drugId: formData.drugId,
+        quantity,
+        metadata,
       };
-      
+
       console.log("📤 Uploading to IPFS:", {
         drugId: formData.drugId,
         drugIdType: typeof formData.drugId,
-        selectedDrug: selectedDrug ? { 
-          _id: selectedDrug._id, 
-          id: selectedDrug.id,
-          tradeName: selectedDrug.tradeName,
-          manufacturerId: selectedDrug.manufacturerId || selectedDrug.manufacturer
-        } : null,
+        selectedDrug: selectedDrug
+          ? {
+              _id: selectedDrug._id,
+              id: selectedDrug.id,
+              tradeName: selectedDrug.tradeName,
+              manufacturerId:
+                selectedDrug.manufacturerId || selectedDrug.manufacturer,
+            }
+          : null,
         quantity,
         metadataKeys: Object.keys(metadata),
-        allAvailableDrugIds: drugs.map(d => ({
+        allAvailableDrugIds: drugs.map((d) => ({
           _id: d._id,
           id: d.id,
           tradeName: d.tradeName,
-          matches: (d._id || d.id) === formData.drugId
+          matches: (d._id || d.id) === formData.drugId,
         })),
-        payload: uploadPayload
+        payload: uploadPayload,
       });
 
       const response = await uploadToIPFSMutation.mutateAsync(uploadPayload);
@@ -564,29 +583,39 @@ export const useProductionManagement = () => {
       // Save to backend
       // Validate drugId format first - must be MongoDB ObjectId (24 hex chars)
       const isValidMongoId = /^[0-9a-fA-F]{24}$/.test(formData.drugId);
-      
+
       if (!isValidMongoId) {
         console.error("❌ Invalid drugId format:", {
           drugId: formData.drugId,
           drugIdType: typeof formData.drugId,
           isValidMongoId,
-          availableDrugs: drugs.map(d => ({ _id: d._id, tradeName: d.tradeName, atcCode: d.atcCode }))
+          availableDrugs: drugs.map((d) => ({
+            _id: d._id,
+            tradeName: d.tradeName,
+            atcCode: d.atcCode,
+          })),
         });
         throw new Error(
           `drugId không hợp lệ: "${formData.drugId}". ` +
-          `Vui lòng chọn lại thuốc từ dropdown.`
+            `Vui lòng chọn lại thuốc từ dropdown.`
         );
       }
-      
-      const selectedDrug = drugs.find((d) => (d._id || d.id) === formData.drugId);
-      
+
+      const selectedDrug = drugs.find(
+        (d) => (d._id || d.id) === formData.drugId
+      );
+
       // Validate selectedDrug exists
       if (!selectedDrug) {
         console.error("❌ Selected drug not found when saving:", {
           drugId: formData.drugId,
           drugIdType: typeof formData.drugId,
           isValidMongoId,
-          availableDrugs: drugs.map(d => ({ _id: d._id, tradeName: d.tradeName, atcCode: d.atcCode }))
+          availableDrugs: drugs.map((d) => ({
+            _id: d._id,
+            tradeName: d.tradeName,
+            atcCode: d.atcCode,
+          })),
         });
         throw new Error("Không tìm thấy thông tin thuốc đã chọn");
       }
@@ -614,9 +643,12 @@ export const useProductionManagement = () => {
       console.log("💾 Saving to backend:", {
         drugId: saveData.drugId,
         drugIdType: typeof saveData.drugId,
-        selectedDrug: { _id: selectedDrug._id, tradeName: selectedDrug.tradeName },
+        selectedDrug: {
+          _id: selectedDrug._id,
+          tradeName: selectedDrug.tradeName,
+        },
         tokenIdsCount: saveData.tokenIds.length,
-        quantity: saveData.quantity
+        quantity: saveData.quantity,
       });
 
       const response = await saveMintedNFTsMutation.mutateAsync(saveData);

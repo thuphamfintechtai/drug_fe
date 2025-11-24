@@ -170,7 +170,7 @@ export default function TransferManagement() {
                                 </span>
                               );
                             }
-                            
+
                             if (prod.status === "completed") {
                               // Đã mint NFT, sẵn sàng để transfer
                               return (
@@ -179,7 +179,7 @@ export default function TransferManagement() {
                                 </span>
                               );
                             }
-                            
+
                             if (prod.status === "pending") {
                               // Đang chờ mint NFT
                               return (
@@ -188,7 +188,7 @@ export default function TransferManagement() {
                                 </span>
                               );
                             }
-                            
+
                             if (prod.status === "failed") {
                               // Mint NFT thất bại
                               return (
@@ -197,7 +197,7 @@ export default function TransferManagement() {
                                 </span>
                               );
                             }
-                            
+
                             // Mặc định: chưa chuyển
                             return (
                               <span className="inline-flex items-center px-2.5 py-1 w-24 justify-center rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
@@ -210,11 +210,12 @@ export default function TransferManagement() {
                           <button
                             onClick={() => handleSelectProduction(prod)}
                             disabled={
-                              prod.status === "distributed" || 
+                              prod.status === "distributed" ||
                               prod.status !== "completed"
                             }
                             className={`px-4 py-2 text-sm whitespace-nowrap justify-center border-2 rounded-full font-semibold transition-all duration-200 ${
-                              prod.status === "distributed" || prod.status !== "completed"
+                              prod.status === "distributed" ||
+                              prod.status !== "completed"
                                 ? "border-gray-300 text-gray-400 cursor-not-allowed"
                                 : "border-secondary text-secondary hover:bg-secondary hover:!text-white hover:shadow-md hover:shadow-secondary/40"
                             }`}
@@ -283,7 +284,11 @@ export default function TransferManagement() {
               </button>
             </div>
 
-            <div className={`relative ${loadingTokens ? "pointer-events-none" : ""}`}>
+            <div
+              className={`relative ${
+                loadingTokens ? "pointer-events-none" : ""
+              }`}
+            >
               {loadingTokens && (
                 <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] z-10 flex items-center justify-center rounded-b-3xl">
                   <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col items-center">
@@ -307,7 +312,9 @@ export default function TransferManagement() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                    <p className="text-gray-700 font-medium">Đang tải danh sách token...</p>
+                    <p className="text-gray-700 font-medium">
+                      Đang tải danh sách token...
+                    </p>
                   </div>
                 </div>
               )}
@@ -349,7 +356,8 @@ export default function TransferManagement() {
                       <span className="font-bold text-red-700">
                         {loadingTokens
                           ? "..."
-                          : selectedProduction.quantity - availableTokenIds.length}
+                          : selectedProduction.quantity -
+                            availableTokenIds.length}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -361,69 +369,7 @@ export default function TransferManagement() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                    Chọn nhà phân phối *
-                  </label>
-                  <select
-                    value={formData.distributorId}
-                    onChange={(e) =>
-                      setFormData({ ...formData, distributorId: e.target.value })
-                    }
-                    className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-secondary focus:border-secondary focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
-                    disabled={loadingTokens || buttonAnimating}
-                  >
-                    <option value="">-- Chọn distributor --</option>
-                    {safeDistributors.map((dist) => (
-                      <option key={dist._id} value={dist._id}>
-                        {dist.name} ({dist.taxCode})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {selectedDistributor && (
-                  <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
-                    <div className="text-sm font-semibold text-cyan-800 mb-2">
-                      Thông tin distributor:
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-slate-600">Tên:</span>{" "}
-                        <span className="font-medium">
-                          {selectedDistributor.name || "N/A"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-600">Mã số thuế:</span>{" "}
-                        <span className="font-medium">
-                          {selectedDistributor.taxCode || "N/A"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-600">Quốc gia:</span>{" "}
-                        <span className="font-medium">
-                          {selectedDistributor.country || "N/A"}
-                        </span>
-                      </div>
-                      <div className="md:col-span-2">
-                        <span className="text-slate-600">Địa chỉ:</span>{" "}
-                        <span className="font-medium">
-                          {selectedDistributor.address || "N/A"}
-                        </span>
-                      </div>
-                      <div className="md:col-span-2">
-                        <span className="text-slate-600">Wallet:</span>{" "}
-                        <span className="font-mono text-xs break-all">
-                          {selectedDistributor.walletAddress ||
-                            selectedDistributor.user?.walletAddress ||
-                            "Chưa có"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
+                {/* Quantity */}
                 <div>
                   <label className="text-sm font-semibold text-gray-700 mb-2 block">
                     Số lượng NFT *
@@ -432,101 +378,182 @@ export default function TransferManagement() {
                     type="number"
                     value={formData.quantity}
                     onChange={(e) =>
-                      setFormData({ ...formData, quantity: e.target.value })
+                      setFormData({
+                        ...formData,
+                        quantity: e.target.value,
+                        maxQuantity: selectedProduction.quantity,
+                      })
                     }
-                    className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-secondary focus:border-secondary focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
+                    className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                     placeholder="Nhập số lượng"
                     min="1"
-                    max={availableTokenIds.length}
-                    disabled={loadingTokens || availableTokenIds.length === 0 || buttonAnimating}
+                    max={selectedProduction.quantity}
+                    disabled={loadingTokens}
                   />
-                  <div className="text-xs text-cyan-600 mt-1 space-y-1">
-                    {loadingTokens ? (
-                      <div className="text-blue-600">Đang tải danh sách token...</div>
-                    ) : (
-                      <>
-                        <div>
-                          Khả dụng:{" "}
-                          <span className="font-semibold text-green-700">
-                            {availableTokenIds.length}
-                          </span>{" "}
-                          NFT
-                          {availableTokenIds.length < selectedProduction.quantity && (
-                            <span className="text-orange-600 ml-1">
-                              (Đã chuyển:{" "}
-                              {selectedProduction.quantity - availableTokenIds.length})
-                            </span>
-                          )}
-                        </div>
-                        {availableTokenIds.length === 0 && (
-                          <div className="text-red-600 font-semibold">
-                            ⚠️ Không còn token khả dụng để chuyển
-                          </div>
-                        )}
-                      </>
+                  <div className="text-xs text-cyan-600 mt-1">
+                    Tối đa: {selectedProduction.quantity} NFT{" "}
+                    {availableTokenIds.length > 0 && (
+                      <span>({availableTokenIds.length} khả dụng)</span>
                     )}
                   </div>
-                </div>
 
-                <div>
-                  <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                    Ghi chú
-                  </label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) =>
-                      setFormData({ ...formData, notes: e.target.value })
-                    }
-                    className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-secondary focus:border-secondary focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
-                    rows="3"
-                    placeholder="Ghi chú về đơn chuyển giao..."
-                    disabled={loadingTokens || buttonAnimating}
-                  />
-                </div>
+                  {selectedDistributor && (
+                    <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
+                      <div className="text-sm font-semibold text-cyan-800 mb-2">
+                        Thông tin distributor:
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-slate-600">Tên:</span>{" "}
+                          <span className="font-medium">
+                            {selectedDistributor.name || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-600">Mã số thuế:</span>{" "}
+                          <span className="font-medium">
+                            {selectedDistributor.taxCode || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-600">Quốc gia:</span>{" "}
+                          <span className="font-medium">
+                            {selectedDistributor.country || "N/A"}
+                          </span>
+                        </div>
+                        <div className="md:col-span-2">
+                          <span className="text-slate-600">Địa chỉ:</span>{" "}
+                          <span className="font-medium">
+                            {selectedDistributor.address || "N/A"}
+                          </span>
+                        </div>
+                        <div className="md:col-span-2">
+                          <span className="text-slate-600">Wallet:</span>{" "}
+                          <span className="font-mono text-xs break-all">
+                            {selectedDistributor.walletAddress ||
+                              selectedDistributor.user?.walletAddress ||
+                              "Chưa có"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
-                  <div className="text-sm text-yellow-800">
-                    ⚠️ Sau khi xác nhận, hệ thống sẽ tạo yêu cầu chuyển giao và gọi
-                    smart contract để transfer NFT. Vui lòng đảm bảo ví MetaMask đã kết nối.
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                      Số lượng NFT *
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.quantity}
+                      onChange={(e) =>
+                        setFormData({ ...formData, quantity: e.target.value })
+                      }
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-secondary focus:border-secondary focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
+                      placeholder="Nhập số lượng"
+                      min="1"
+                      max={availableTokenIds.length}
+                      disabled={
+                        loadingTokens ||
+                        availableTokenIds.length === 0 ||
+                        buttonAnimating
+                      }
+                    />
+                    <div className="text-xs text-cyan-600 mt-1 space-y-1">
+                      {loadingTokens ? (
+                        <div className="text-blue-600">
+                          Đang tải danh sách token...
+                        </div>
+                      ) : (
+                        <>
+                          <div>
+                            Khả dụng:{" "}
+                            <span className="font-semibold text-green-700">
+                              {availableTokenIds.length}
+                            </span>{" "}
+                            NFT
+                            {availableTokenIds.length <
+                              selectedProduction.quantity && (
+                              <span className="text-orange-600 ml-1">
+                                (Đã chuyển:{" "}
+                                {selectedProduction.quantity -
+                                  availableTokenIds.length}
+                                )
+                              </span>
+                            )}
+                          </div>
+                          {availableTokenIds.length === 0 && (
+                            <div className="text-red-600 font-semibold">
+                              ⚠️ Không còn token khả dụng để chuyển
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                      Ghi chú
+                    </label>
+                    <textarea
+                      value={formData.notes}
+                      onChange={(e) =>
+                        setFormData({ ...formData, notes: e.target.value })
+                      }
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-secondary focus:border-secondary focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
+                      rows="3"
+                      placeholder="Ghi chú về đơn chuyển giao..."
+                      disabled={loadingTokens || buttonAnimating}
+                    />
+                  </div>
+
+                  <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
+                    <div className="text-sm text-yellow-800">
+                      ⚠️ Sau khi xác nhận, hệ thống sẽ tạo yêu cầu chuyển giao
+                      và gọi smart contract để transfer NFT. Vui lòng đảm bảo ví
+                      MetaMask đã kết nối.
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
-              <button
-                onClick={handleCloseDialog}
-                disabled={buttonAnimating}
-                className={`px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-full font-semibold transition-all duration-200 hover:bg-gray-100 ${
-                  buttonAnimating ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-              >
-                Hủy
-              </button>
-              <TruckAnimationButton
-                onClick={handleSubmit}
-                disabled={
-                  loadingTokens ||
-                  buttonAnimating ||
-                  availableTokenIds.length === 0 ||
-                  !formData.distributorId ||
-                  !formData.quantity
-                }
-                buttonState={
-                  buttonDone
-                    ? "completed"
-                    : buttonAnimating
-                    ? "uploading"
-                    : "idle"
-                }
-                defaultText="Xác nhận chuyển giao"
-                uploadingText="Đang xử lý..."
-                successText="Hoàn thành"
-                animationMode="infinite"
-                animationDuration={3}
-              />
+              <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
+                <button
+                  onClick={handleCloseDialog}
+                  disabled={buttonAnimating}
+                  className={`px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-full font-semibold transition-all duration-200 hover:bg-gray-100 ${
+                    buttonAnimating ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  Hủy
+                </button>
+                <TruckAnimationButton
+                  onClick={handleSubmit}
+                  disabled={
+                    loadingTokens ||
+                    buttonAnimating ||
+                    availableTokenIds.length === 0 ||
+                    !formData.distributorId ||
+                    !formData.quantity
+                  }
+                  buttonState={
+                    buttonDone
+                      ? "completed"
+                      : buttonAnimating
+                      ? "uploading"
+                      : "idle"
+                  }
+                  defaultText="Xác nhận chuyển giao"
+                  uploadingText="Đang xử lý..."
+                  successText="Hoàn thành"
+                  animationMode="infinite"
+                  animationDuration={3}
+                />
+              </div>
             </div>
           </div>
+          )
         </div>
       )}
     </DashboardLayout>

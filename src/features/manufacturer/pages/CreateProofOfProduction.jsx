@@ -1,7 +1,7 @@
 import React from "react";
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import { getManufacturerNavigationItems } from "../components/manufacturerNavigation";
-import { useCreateProofOfProduction } from "../hooks/useCreateProofOfProduction";
+import { useCreateProofOfProductionHook } from "../hooks/useCreateProofOfProduction";
 
 export default function CreateProofOfProduction() {
   const {
@@ -20,7 +20,7 @@ export default function CreateProofOfProduction() {
     drugsError,
     drugs,
     setStep,
-  } = useCreateProofOfProduction();
+  } = useCreateProofOfProductionHook();
   const navigationItems = getManufacturerNavigationItems(location.pathname);
 
   return (
@@ -87,7 +87,7 @@ export default function CreateProofOfProduction() {
         {step === 1 && (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
             <h2 className="text-xl font-bold text-gray-800 mb-6">
-               Thông tin sản xuất
+              Thông tin sản xuất
             </h2>
 
             <div className="space-y-4">
