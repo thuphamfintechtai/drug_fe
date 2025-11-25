@@ -36,7 +36,11 @@ export default function ConfirmContract() {
 
   const { mutateAsync: confirmContract } = useConfirmContract();
 
-  const contract = contractResponse?.data?.data;
+  // Support different possible response shapes from backend:
+  // - contractResponse === { success: true, data: { ...contract } }
+  // - contractResponse === { ...contract } (older shape)
+  const contract =
+    contractResponse?.data?.data || contractResponse?.data || contractResponse || null;
 
   const handleConfirm = async () => {
     try {
@@ -47,15 +51,17 @@ export default function ConfirmContract() {
         "Xác nhận hợp đồng với nhà phân phối"
       );
 
-      if (!signature || !signature.privateKey) {
+      if (!signature || !signature.signature) {
         throw new Error("Không thể lấy chữ ký từ MetaMask");
       }
 
-      // Step 2: Confirm contract
+      // Step 2: Confirm contract (send signature to backend for verification)
       const result = await confirmContract({
         contractId: contractId,
         distributorAddress: contract.distributorWalletAddress,
-        pharmacyPrivateKey: signature.privateKey,
+        pharmacySignature: signature.signature,
+        pharmacyAddress: signature.address,
+        signedMessage: signature.message,
       });
 
       toast.success("Xác nhận hợp đồng thành công!");
@@ -86,7 +92,7 @@ export default function ConfirmContract() {
     );
   }
 
-  const canConfirm = contract.status === "pending";
+  const canConfirm = contract?.status === "pending";
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
@@ -137,7 +143,7 @@ export default function ConfirmContract() {
 
         <Descriptions title="Thông tin Hợp đồng" bordered column={1}>
           <Descriptions.Item label="Mã hợp đồng">
-            <span className="font-mono text-sm">{contract._id}</span>
+            <span className="font-mono text-sm">{contract.id || contract._id}</span>
           </Descriptions.Item>
 
           <Descriptions.Item label="Tên file">
@@ -162,6 +168,7 @@ export default function ConfirmContract() {
           <Descriptions.Item label="Nhà phân phối">
             {contract.distributor?.businessName ||
               contract.distributor?.name ||
+              contract.distributorId ||
               "N/A"}
           </Descriptions.Item>
 
@@ -173,13 +180,13 @@ export default function ConfirmContract() {
 
           <Descriptions.Item label="Wallet Distributor">
             <span className="font-mono text-xs">
-              {contract.distributorWalletAddress}
+              {contract.distributorWalletAddress || "-"}
             </span>
           </Descriptions.Item>
 
           <Descriptions.Item label="Wallet Pharmacy">
             <span className="font-mono text-xs">
-              {contract.pharmacyWalletAddress}
+              {contract.pharmacyWalletAddress || "-"}
             </span>
           </Descriptions.Item>
 
@@ -205,7 +212,9 @@ export default function ConfirmContract() {
           )}
 
           <Descriptions.Item label="Ngày tạo">
-            {new Date(contract.createdAt).toLocaleString("vi-VN")}
+            {contract.createdAt
+              ? new Date(contract.createdAt).toLocaleString("vi-VN")
+              : "N/A"}
           </Descriptions.Item>
         </Descriptions>
 

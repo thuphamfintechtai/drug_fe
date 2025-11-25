@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { usePharmacyContracts as usePharmacyContractsQuery } from "../../distributor/apis/contract";
 import { useNavigate } from "react-router-dom";
-import { Tag, Button } from "antd";
+import { Tag, Button, Empty } from "antd";
 
 export const contractStatusColor = (status) => {
   switch (status) {
@@ -10,6 +10,8 @@ export const contractStatusColor = (status) => {
     case "approved":
       return "blue";
     case "signed":
+      return "green";
+    case "confirmed":
       return "green";
     case "rejected":
       return "red";
@@ -23,6 +25,7 @@ export const contractStatusLabel = (status) => {
     pending: "Chờ xác nhận",
     approved: "Đã xác nhận - Chờ Distributor",
     signed: "Đã hoàn tất",
+    confirmed: "Đã xác nhận",
     rejected: "Đã từ chối",
     not_created: "Chưa tạo",
   };
@@ -40,7 +43,7 @@ export const usePharmacyContracts = () => {
   } = usePharmacyContractsQuery();
 
   const contracts = useMemo(() => {
-    const data = contractsResponse?.data?.data;
+    const data = contractsResponse?.data;
     return Array.isArray(data) ? data : [];
   }, [contractsResponse]);
 
@@ -52,7 +55,7 @@ export const usePharmacyContracts = () => {
     return contracts.filter((contract) => {
       const searchLower = searchText.toLowerCase();
       return (
-        contract._id?.toLowerCase().includes(searchLower) ||
+        contract.id?.toLowerCase().includes(searchLower) ||
         contract.contractFileName?.toLowerCase().includes(searchLower) ||
         contract.status?.toLowerCase().includes(searchLower)
       );
@@ -63,10 +66,10 @@ export const usePharmacyContracts = () => {
     () => [
       {
         title: "Mã hợp đồng",
-        dataIndex: "_id",
-        key: "_id",
+        dataIndex: "id",
+        key: "id",
         render: (text) => (
-          <span className="font-mono text-sm text-gray-600">
+          <span className="font-mono text-sm text-gray-600" title={text}>
             {text?.substring(0, 8)}...
           </span>
         ),
@@ -79,17 +82,18 @@ export const usePharmacyContracts = () => {
         render: (text) => text || "N/A",
       },
       {
-        title: "Distributor",
-        dataIndex: ["distributor", "businessName"],
-        key: "distributorName",
+        title: "URL hợp đồng",
+        dataIndex: "contractFileUrl",
+        key: "contractFileUrl",
         ellipsis: true,
-        render: (text, record) => {
-          return (
-            record.distributor?.businessName ||
-            record.distributor?.name ||
+        render: (url) => 
+          url ? (
+            <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+              Xem file
+            </a>
+          ) : (
             "N/A"
-          );
-        },
+          ),
       },
       {
         title: "Trạng thái",
@@ -99,6 +103,16 @@ export const usePharmacyContracts = () => {
           <Tag color={contractStatusColor(status)}>
             {contractStatusLabel(status)}
           </Tag>
+        ),
+      },
+      {
+        title: "Blockchain",
+        dataIndex: "blockchainStatus",
+        key: "blockchainStatus",
+        render: (status) => (
+          <span className="text-sm">
+            {status || "Chưa tạo"}
+          </span>
         ),
       },
       {
@@ -112,6 +126,20 @@ export const usePharmacyContracts = () => {
         ),
       },
       {
+        title: "Ký bởi Distributor",
+        dataIndex: "distributorSignedAt",
+        key: "distributorSignedAt",
+        render: (date) =>
+          date ? new Date(date).toLocaleDateString("vi-VN") : "Chưa ký",
+      },
+      {
+        title: "Ký bởi Pharmacy",
+        dataIndex: "pharmacySignedAt",
+        key: "pharmacySignedAt",
+        render: (date) =>
+          date ? new Date(date).toLocaleDateString("vi-VN") : "Chưa ký",
+      },
+      {
         title: "Ngày tạo",
         dataIndex: "createdAt",
         key: "createdAt",
@@ -121,11 +149,13 @@ export const usePharmacyContracts = () => {
       {
         title: "Thao tác",
         key: "action",
+        width: 150,
+        fixed: "right",
         render: (_, record) => (
           <div className="flex gap-2">
             <Button
               size="small"
-              onClick={() => navigate(`/pharmacy/contracts/${record._id}`)}
+              onClick={() => navigate(`/pharmacy/contracts/${record.id}`)}
             >
               Chi tiết
             </Button>
@@ -134,7 +164,7 @@ export const usePharmacyContracts = () => {
                 size="small"
                 type="primary"
                 onClick={() =>
-                  navigate(`/pharmacy/contracts/${record._id}/confirm`)
+                  navigate(`/pharmacy/contracts/${record.id}/confirm`)
                 }
               >
                 Xác nhận

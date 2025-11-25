@@ -71,13 +71,13 @@ export default function PharmacyContracts() {
             handleClearSearch={handleClearSearch}
             placeholder="Tìm kiếm theo mã hợp đồng, tên file..."
             data={filteredContracts}
-            getSearchText={(item) => item._id || item.contractFileName || ""}
+            getSearchText={(item) => item.id || item.contractFileName || ""}
             matchFunction={(item, searchLower) => {
-              const id = (item._id || "").toLowerCase();
+              const id = (item.id || "").toLowerCase();
               const fileName = (item.contractFileName || "").toLowerCase();
               return id.includes(searchLower) || fileName.includes(searchLower);
             }}
-            getDisplayText={(item) => item.contractFileName || item._id}
+            getDisplayText={(item) => item.contractFileName || item.id}
             enableAutoSearch={false}
           />
         </div>
@@ -94,9 +94,9 @@ export default function PharmacyContracts() {
           <Table
             columns={columns}
             dataSource={filteredContracts}
-            rowKey="_id"
+            rowKey="id"
             pagination={{ pageSize: 10, showSizeChanger: true }}
-            scroll={{ x: 1000 }}
+            scroll={{ x: 1200 }}
           />
         </Spin>
       </motion.div>

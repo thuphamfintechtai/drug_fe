@@ -1157,26 +1157,10 @@ export const signMessageWithMetaMask = async (message) => {
     // Sign the message with MetaMask
     const signature = await signer.signMessage(message);
 
-    // Get private key from localStorage (stored during login/registration)
-    // In production, this should be encrypted or retrieved from secure backend
-    const storageKey = "privateKey_" + address;
-    let privateKey = localStorage.getItem(storageKey);
-
-    // If not found in localStorage, ask user to input (for backward compatibility)
-    if (!privateKey) {
-      privateKey = prompt(
-        "Để ký hợp đồng trên blockchain, vui lòng nhập private key của bạn:\n\n" +
-        "Private key sẽ được lưu an toàn cho các giao dịch tiếp theo."
-      );
-
-      if (!privateKey) {
-        throw new Error("Private key là bắt buộc để ký hợp đồng");
-      }
-
-      // Save to localStorage for future use (should be encrypted in production)
-      localStorage.setItem(storageKey, privateKey.trim());
-    }
-
+    // NOTE: removed prompting for raw private key to avoid exposing secrets in UI.
+    // We only return the signature, address and message. On-chain transactions
+    // should be performed by the user (MetaMask) or via a secure backend
+    // mechanism. This avoids asking the user to paste a private key in the UI.
     return {
       signature,
       address,
