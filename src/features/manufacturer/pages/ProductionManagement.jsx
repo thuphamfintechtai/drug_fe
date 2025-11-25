@@ -1,7 +1,6 @@
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckAnimationButton from "../../shared/components/TruckAnimationButton";
 import BlockchainMintingView from "../../shared/components/BlockchainMintingView";
-import TruckLoader from "../../shared/components/TruckLoader";
 import { CardUI } from "../../shared/components/ui/cardUI";
 import { navigationItems } from "../constants/navigationProductionManagement";
 import { useProductionManagement } from "../hooks/useProductionManagement";
@@ -11,47 +10,282 @@ export default function ProductionManagement() {
   const {
     drugs,
     loading,
-
+    selectedDrug,
     showDialog,
-    loadingProgress,
-
-    handleStartProduction,
-    handleClose,
     step,
+    uploadButtonState,
+    mintButtonState,
+    processingMint,
     formData,
     setFormData,
+    shelfLifeValue,
+    setShelfLifeValue,
+    shelfLifeUnit,
+    setShelfLifeUnit,
     errors,
     setErrors,
-    selectedDrug,
-    validateAndFixManufacturingDate,
+    ipfsData,
+    mintResult,
+    handleStartProduction,
+    handleUploadToIPFS,
+    handleMintNFT,
+    handleClose,
     getMaxShelfLife,
     validateShelfLife,
     formatDateMDY,
-    setShelfLifeValue,
-    setShelfLifeUnit,
-    shelfLifeValue,
-    shelfLifeUnit,
-    ipfsData,
-    mintResult,
-    mintButtonState,
-    processingMint,
-    uploadButtonState,
-    handleUploadToIPFS,
-    handleMintNFT,
+    validateAndFixManufacturingDate,
   } = useProductionManagement();
+
+  // ============================================
+  // HANDLERS
+  // ============================================
+
+  const handleDrugSelect = (e) => {
+    const selectedId = e.target.value;
+
+    // Validate: chỉ set nếu là MongoDB ObjectId hợp lệ hoặc empty string
+    if (selectedId === "" || /^[0-9a-fA-F]{24}$/.test(selectedId)) {
+      setFormData({ ...formData, drugId: selectedId });
+      if (errors.drugId) {
+        setErrors({ ...errors, drugId: "" });
+      }
+    } else {
+      console.error("❌ Invalid drugId selected:", selectedId);
+      toast.error("Lỗi: Vui lòng chọn lại thuốc", {
+        position: "top-right",
+      });
+    }
+  };
+
+  const handleBatchNumberChange = (e) => {
+    // Chỉ cho phép chữ và số, tự động uppercase, giới hạn 30 ký tự
+    let value = e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+
+    if (value.length > 30) {
+      value = value.substring(0, 30);
+    }
+
+    setFormData({ ...formData, batchNumber: value });
+
+    if (errors.batchNumber) {
+      setErrors({ ...errors, batchNumber: "" });
+    }
+  };
+
+  const handleQuantityChange = (e) => {
+    let value = e.target.value;
+
+    // Cho phép rỗng để người dùng có thể xóa
+    if (value === "") {
+      setFormData({ ...formData, quantity: value });
+      if (errors.quantity) {
+        setErrors({ ...errors, quantity: "" });
+      }
+      return;
+    }
+
+    // Loại bỏ ký tự không phải số
+    value = value.replace(/[^0-9]/g, "");
+
+    if (value === "") {
+      setFormData({ ...formData, quantity: "" });
+      if (errors.quantity) {
+        setErrors({ ...errors, quantity: "" });
+      }
+      return;
+    }
+
+    const numValue = parseInt(value);
+
+    // Kiểm tra giới hạn tối đa là 1
+    if (numValue > 1) {
+      value = "1";
+    }
+
+    setFormData({ ...formData, quantity: value });
+
+    if (errors.quantity) {
+      setErrors({ ...errors, quantity: "" });
+    }
+  };
+
+  const handleManufacturingDateChange = (e) => {
+    const selectedDate = e.target.value;
+
+    if (!selectedDate) {
+      setFormData({ ...formData, manufacturingDate: selectedDate });
+      if (errors.manufacturingDate) {
+        setErrors({ ...errors, manufacturingDate: "" });
+      }
+      return;
+    }
+
+    // Set date và clear error
+    setFormData({ ...formData, manufacturingDate: selectedDate });
+
+    if (errors.manufacturingDate) {
+      setErrors({ ...errors, manufacturingDate: "" });
+    }
+  };
+
+  const handleManufacturingDateBlur = (e) => {
+    const selectedDate = e.target.value;
+    if (!selectedDate) return;
+
+    // Kiểm tra và cảnh báo nếu không hợp lệ (nhưng KHÔNG tự động sửa)
+    const validationResult = validateAndFixManufacturingDate(selectedDate);
+
+    if (!validationResult.isValid) {
+      setErrors({
+        ...errors,
+        manufacturingDate: validationResult.error,
+      });
+    }
+  };
+
+  const handleShelfLifeValueChange = (e) => {
+    let value = e.target.value;
+
+    // Cho phép rỗng
+    if (value === "") {
+      setShelfLifeValue(value);
+      if (errors.shelfLife) {
+        setErrors({ ...errors, shelfLife: "" });
+      }
+      return;
+    }
+
+    // Loại bỏ ký tự không phải số và dấu chấm
+    value = value.replace(/[^0-9.]/g, "");
+
+    // Chỉ cho phép một dấu chấm
+    const parts = value.split(".");
+    if (parts.length > 2) {
+      value = parts[0] + "." + parts.slice(1).join("");
+    }
+
+    const numValue = parseFloat(value);
+    const maxValue = getMaxShelfLife(shelfLifeUnit);
+
+    // Kiểm tra giới hạn tối đa
+    if (!isNaN(numValue) && numValue > maxValue) {
+      value = maxValue.toString();
+    }
+
+    setShelfLifeValue(value);
+
+    // Validate realtime
+    if (value) {
+      const validation = validateShelfLife(
+        value,
+        shelfLifeUnit,
+        formData.manufacturingDate
+      );
+      if (!validation.isValid) {
+        setErrors({ ...errors, shelfLife: validation.error });
+      } else {
+        if (errors.shelfLife) {
+          setErrors({ ...errors, shelfLife: "" });
+        }
+      }
+    } else {
+      if (
+        errors.shelfLife &&
+        errors.shelfLife !== "Thời hạn sử dụng không được để trống"
+      ) {
+        setErrors({ ...errors, shelfLife: "" });
+      }
+    }
+  };
+
+  const handleShelfLifeValueBlur = (e) => {
+    const value = e.target.value;
+    if (!value || !value.trim()) return;
+
+    // Validate khi blur
+    const validation = validateShelfLife(
+      value,
+      shelfLifeUnit,
+      formData.manufacturingDate
+    );
+    if (!validation.isValid) {
+      setErrors({ ...errors, shelfLife: validation.error });
+    }
+  };
+
+  const handleShelfLifeUnitChange = (e) => {
+    const newUnit = e.target.value;
+    setShelfLifeUnit(newUnit);
+
+    // Kiểm tra lại giá trị với đơn vị mới
+    if (shelfLifeValue) {
+      const maxValue = getMaxShelfLife(newUnit);
+      const numValue = parseFloat(shelfLifeValue);
+
+      // Nếu giá trị vượt quá giới hạn mới, tự động điều chỉnh
+      if (!isNaN(numValue) && numValue > maxValue) {
+        setShelfLifeValue(maxValue.toString());
+      }
+
+      // Validate lại
+      const validation = validateShelfLife(
+        numValue > maxValue ? maxValue.toString() : shelfLifeValue,
+        newUnit,
+        formData.manufacturingDate
+      );
+      if (!validation.isValid) {
+        setErrors({ ...errors, shelfLife: validation.error });
+      } else {
+        setErrors({ ...errors, shelfLife: "" });
+      }
+    } else {
+      if (errors.shelfLife) {
+        setErrors({ ...errors, shelfLife: "" });
+      }
+    }
+  };
+
+  const handleNotesChange = (e) => {
+    setFormData({ ...formData, notes: e.target.value });
+  };
+
+  // ============================================
+  // COMPUTED VALUES
+  // ============================================
+
+  const getMinManufacturingDate = () => {
+    const today = new Date();
+    const minDate = new Date(today);
+    minDate.setDate(today.getDate() - 60);
+    return minDate.toISOString().split("T")[0];
+  };
+
+  const getMaxManufacturingDate = () => {
+    return new Date().toISOString().split("T")[0];
+  };
+
+  const getShelfLifeUnitText = () => {
+    return shelfLifeUnit === "year"
+      ? "năm"
+      : shelfLifeUnit === "month"
+      ? "tháng"
+      : "ngày";
+  };
+
+  // ============================================
+  // RENDER
+  // ============================================
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
       {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
-          <div className="w-full max-w-2xl">
-            <TruckLoader height={72} progress={loadingProgress} showTrack />
-          </div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-cyan-600"></div>
           <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
       ) : (
         <div className="space-y-5">
           {/* Banner */}
-
           <CardUI
             title="Sản xuất thuốc & Mint NFT"
             subtitle="Tạo lô sản xuất và mint NFT trên blockchain (2 bước: IPFS + Smart Contract)"
@@ -106,11 +340,14 @@ export default function ProductionManagement() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl max-h-[90vh] flex flex-col">
             <style>{`
-              /* Ẩn scrollbar trong modal để giao diện sạch hơn */
-              .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
-              .custom-scroll::-webkit-scrollbar { width: 0; height: 0; }
-              .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-              .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
+              .custom-scroll { 
+                scrollbar-width: none; 
+                -ms-overflow-style: none; 
+              }
+              .custom-scroll::-webkit-scrollbar { 
+                width: 0; 
+                height: 0; 
+              }
             `}</style>
 
             {/* Header - Fixed */}
@@ -130,7 +367,7 @@ export default function ProductionManagement() {
                 <button
                   onClick={handleClose}
                   disabled={step === 3}
-                  className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition disabled:opacity-50"
+                  className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ✕
                 </button>
@@ -143,53 +380,16 @@ export default function ProductionManagement() {
               style={{ minHeight: "400px" }}
             >
               {/* Step 1: Form */}
-              {step === 1 ? (
+              {step === 1 && (
                 <div className="p-8 space-y-4">
+                  {/* Drug Selection */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Chọn thuốc *
                     </label>
                     <select
                       value={formData.drugId}
-                      onChange={(e) => {
-                        const selectedId = e.target.value;
-                        const selectedOption =
-                          e.target.options[e.target.selectedIndex];
-
-                        console.log("🔍 Drug selected:", {
-                          selectedId,
-                          selectedIdType: typeof selectedId,
-                          isMongoId: /^[0-9a-fA-F]{24}$/.test(selectedId),
-                          selectedOptionValue: selectedOption?.value,
-                          selectedOptionText: selectedOption?.text,
-                          allOptions: Array.from(e.target.options).map(
-                            (opt) => ({
-                              value: opt.value,
-                              text: opt.text,
-                              isMongoId: /^[0-9a-fA-F]{24}$/.test(opt.value),
-                            })
-                          ),
-                        });
-
-                        // Validate: chỉ set nếu là MongoDB ObjectId hợp lệ hoặc empty string
-                        if (
-                          selectedId === "" ||
-                          /^[0-9a-fA-F]{24}$/.test(selectedId)
-                        ) {
-                          setFormData({ ...formData, drugId: selectedId });
-                          if (errors.drugId) {
-                            setErrors({ ...errors, drugId: "" });
-                          }
-                        } else {
-                          console.error(
-                            "❌ Invalid drugId selected:",
-                            selectedId
-                          );
-                          toast.error("Lỗi: Vui lòng chọn lại thuốc", {
-                            position: "top-right",
-                          });
-                        }
-                      }}
+                      onChange={handleDrugSelect}
                       className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
                         errors.drugId
                           ? "border-red-500 focus:ring-red-400"
@@ -198,7 +398,6 @@ export default function ProductionManagement() {
                     >
                       <option value="">-- Chọn thuốc --</option>
                       {drugs.map((drug) => {
-                        // Đảm bảo có _id hoặc id hợp lệ
                         const drugId = drug._id || drug.id;
                         if (!drugId) {
                           console.warn("⚠️ Drug missing _id:", drug);
@@ -218,6 +417,7 @@ export default function ProductionManagement() {
                     )}
                   </div>
 
+                  {/* Drug Info Display */}
                   {selectedDrug && (
                     <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
                       <div className="text-sm font-semibold text-cyan-800 mb-2">
@@ -252,6 +452,7 @@ export default function ProductionManagement() {
                     </div>
                   )}
 
+                  {/* Batch Number & Quantity */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -261,26 +462,7 @@ export default function ProductionManagement() {
                         type="text"
                         value={formData.batchNumber}
                         maxLength={30}
-                        onChange={(e) => {
-                          // Chỉ cho phép chữ và số, tự động chuyển sang uppercase, giới hạn 30 ký tự
-                          let value = e.target.value
-                            .replace(/[^A-Za-z0-9]/g, "")
-                            .toUpperCase();
-
-                          // Giới hạn tối đa 30 ký tự
-                          if (value.length > 30) {
-                            value = value.substring(0, 30);
-                          }
-
-                          setFormData({
-                            ...formData,
-                            batchNumber: value,
-                          });
-                          // Clear error khi người dùng nhập
-                          if (errors.batchNumber) {
-                            setErrors({ ...errors, batchNumber: "" });
-                          }
-                        }}
+                        onChange={handleBatchNumberChange}
                         className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
                           errors.batchNumber
                             ? "border-red-500 focus:ring-red-400"
@@ -297,6 +479,7 @@ export default function ProductionManagement() {
                         </p>
                       )}
                     </div>
+
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Số lượng (hộp) *
@@ -304,52 +487,9 @@ export default function ProductionManagement() {
                       <input
                         type="number"
                         value={formData.quantity}
-                        onChange={(e) => {
-                          let value = e.target.value;
-
-                          // Cho phép rỗng để người dùng có thể xóa
-                          if (value === "") {
-                            setFormData({ ...formData, quantity: value });
-                            if (errors.quantity) {
-                              setErrors({ ...errors, quantity: "" });
-                            }
-                            return;
-                          }
-
-                          // Loại bỏ dấu trừ và các ký tự không phải số
-                          value = value.replace(/[^0-9]/g, "");
-
-                          if (value === "") {
-                            setFormData({ ...formData, quantity: "" });
-                            if (errors.quantity) {
-                              setErrors({ ...errors, quantity: "" });
-                            }
-                            return;
-                          }
-
-                          const numValue = parseInt(value);
-
-                          // Kiểm tra giới hạn tối đa là 1
-                          if (numValue > 1) {
-                            value = "1";
-                          }
-
-                          setFormData({ ...formData, quantity: value });
-
-                          // Clear error khi người dùng nhập
-                          if (errors.quantity) {
-                            setErrors({ ...errors, quantity: "" });
-                          }
-                        }}
+                        onChange={handleQuantityChange}
                         onKeyDown={(e) => {
-                          // Ngăn chặn nhập dấu trừ, dấu cộng, chữ e, E, dấu chấm
-                          if (
-                            e.key === "-" ||
-                            e.key === "+" ||
-                            e.key === "e" ||
-                            e.key === "E" ||
-                            e.key === "."
-                          ) {
+                          if (["-", "+", "e", "E", "."].includes(e.key)) {
                             e.preventDefault();
                           }
                         }}
@@ -374,6 +514,7 @@ export default function ProductionManagement() {
                     </div>
                   </div>
 
+                  {/* Manufacturing Date & Shelf Life */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -382,58 +523,10 @@ export default function ProductionManagement() {
                       <input
                         type="date"
                         value={formData.manufacturingDate}
-                        onChange={(e) => {
-                          const selectedDate = e.target.value;
-
-                          if (!selectedDate) {
-                            setFormData({
-                              ...formData,
-                              manufacturingDate: selectedDate,
-                            });
-                            if (errors.manufacturingDate) {
-                              setErrors({ ...errors, manufacturingDate: "" });
-                            }
-                            return;
-                          }
-
-                          // Kiểm tra và sửa ngày nếu không hợp lệ
-                          const validationResult =
-                            validateAndFixManufacturingDate(selectedDate);
-
-                          setFormData({
-                            ...formData,
-                            manufacturingDate: validationResult.fixedDate,
-                          });
-
-                          // Clear error khi người dùng chọn ngày
-                          if (errors.manufacturingDate) {
-                            setErrors({ ...errors, manufacturingDate: "" });
-                          }
-                        }}
-                        onBlur={(e) => {
-                          const selectedDate = e.target.value;
-                          if (!selectedDate) {
-                            return;
-                          }
-
-                          // Kiểm tra lại khi blur và tự động sửa nếu không hợp lệ
-                          const validationResult =
-                            validateAndFixManufacturingDate(selectedDate);
-
-                          if (!validationResult.isValid) {
-                            setFormData({
-                              ...formData,
-                              manufacturingDate: validationResult.fixedDate,
-                            });
-                          }
-                        }}
-                        min={(() => {
-                          const today = new Date();
-                          const minDate = new Date(today);
-                          minDate.setDate(today.getDate() - 60);
-                          return minDate.toISOString().split("T")[0];
-                        })()}
-                        max={new Date().toISOString().split("T")[0]}
+                        onChange={handleManufacturingDateChange}
+                        onBlur={handleManufacturingDateBlur}
+                        min={getMinManufacturingDate()}
+                        max={getMaxManufacturingDate()}
                         className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
                           errors.manufacturingDate
                             ? "border-red-500 focus:ring-red-400"
@@ -449,6 +542,7 @@ export default function ProductionManagement() {
                         </p>
                       )}
                     </div>
+
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Thời hạn sử dụng *
@@ -460,86 +554,8 @@ export default function ProductionManagement() {
                           step="0.1"
                           max={getMaxShelfLife(shelfLifeUnit)}
                           value={shelfLifeValue}
-                          onChange={(e) => {
-                            let value = e.target.value;
-
-                            // Cho phép rỗng để người dùng có thể xóa
-                            if (value === "") {
-                              setShelfLifeValue(value);
-                              if (errors.shelfLife) {
-                                setErrors({ ...errors, shelfLife: "" });
-                              }
-                              return;
-                            }
-
-                            // Loại bỏ ký tự không phải số và dấu chấm
-                            value = value.replace(/[^0-9.]/g, "");
-
-                            // Chỉ cho phép một dấu chấm
-                            const parts = value.split(".");
-                            if (parts.length > 2) {
-                              value = parts[0] + "." + parts.slice(1).join("");
-                            }
-
-                            const numValue = parseFloat(value);
-                            const maxValue = getMaxShelfLife(shelfLifeUnit);
-
-                            // Kiểm tra giới hạn tối đa
-                            if (!isNaN(numValue) && numValue > maxValue) {
-                              value = maxValue.toString();
-                            }
-
-                            setShelfLifeValue(value);
-
-                            // Validate realtime
-                            if (value) {
-                              const validation = validateShelfLife(
-                                value,
-                                shelfLifeUnit,
-                                formData.manufacturingDate
-                              );
-                              if (!validation.isValid) {
-                                setErrors({
-                                  ...errors,
-                                  shelfLife: validation.error,
-                                });
-                              } else {
-                                // Clear error khi hợp lệ
-                                if (errors.shelfLife) {
-                                  setErrors({ ...errors, shelfLife: "" });
-                                }
-                              }
-                            } else {
-                              // Clear error khi rỗng (để người dùng có thể xóa)
-                              if (
-                                errors.shelfLife &&
-                                errors.shelfLife !==
-                                  "Thời hạn sử dụng không được để trống"
-                              ) {
-                                setErrors({ ...errors, shelfLife: "" });
-                              }
-                            }
-                          }}
-                          onBlur={(e) => {
-                            const value = e.target.value;
-                            if (!value || !value.trim()) {
-                              // Không làm gì khi blur nếu rỗng, để validation form xử lý
-                              return;
-                            }
-
-                            // Validate khi blur
-                            const validation = validateShelfLife(
-                              value,
-                              shelfLifeUnit,
-                              formData.manufacturingDate
-                            );
-                            if (!validation.isValid) {
-                              setErrors({
-                                ...errors,
-                                shelfLife: validation.error,
-                              });
-                            }
-                          }}
+                          onChange={handleShelfLifeValueChange}
+                          onBlur={handleShelfLifeValueBlur}
                           className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
                             errors.shelfLife
                               ? "border-red-500 focus:ring-red-400"
@@ -549,43 +565,7 @@ export default function ProductionManagement() {
                         />
                         <select
                           value={shelfLifeUnit}
-                          onChange={(e) => {
-                            const newUnit = e.target.value;
-                            setShelfLifeUnit(newUnit);
-
-                            // Kiểm tra lại giá trị với đơn vị mới
-                            if (shelfLifeValue) {
-                              const maxValue = getMaxShelfLife(newUnit);
-                              const numValue = parseFloat(shelfLifeValue);
-
-                              // Nếu giá trị vượt quá giới hạn mới, tự động điều chỉnh
-                              if (!isNaN(numValue) && numValue > maxValue) {
-                                setShelfLifeValue(maxValue.toString());
-                              }
-
-                              // Validate lại
-                              const validation = validateShelfLife(
-                                numValue > maxValue
-                                  ? maxValue.toString()
-                                  : shelfLifeValue,
-                                newUnit,
-                                formData.manufacturingDate
-                              );
-                              if (!validation.isValid) {
-                                setErrors({
-                                  ...errors,
-                                  shelfLife: validation.error,
-                                });
-                              } else {
-                                setErrors({ ...errors, shelfLife: "" });
-                              }
-                            } else {
-                              // Clear error khi chọn đơn vị mới
-                              if (errors.shelfLife) {
-                                setErrors({ ...errors, shelfLife: "" });
-                              }
-                            }
-                          }}
+                          onChange={handleShelfLifeUnitChange}
                           className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                         >
                           <option value="day">ngày</option>
@@ -599,12 +579,7 @@ export default function ProductionManagement() {
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         Giới hạn tối đa: {getMaxShelfLife(shelfLifeUnit)}{" "}
-                        {shelfLifeUnit === "year"
-                          ? "năm"
-                          : shelfLifeUnit === "month"
-                          ? "tháng"
-                          : "ngày"}{" "}
-                        (10 năm)
+                        {getShelfLifeUnitText()} (10 năm)
                       </div>
                       {errors.shelfLife && (
                         <p className="mt-1 text-sm text-red-600">
@@ -614,27 +589,26 @@ export default function ProductionManagement() {
                     </div>
                   </div>
 
+                  {/* Notes */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Ghi chú
                     </label>
                     <textarea
                       value={formData.notes}
-                      onChange={(e) =>
-                        setFormData({ ...formData, notes: e.target.value })
-                      }
+                      onChange={handleNotesChange}
                       className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150"
                       rows="3"
                       placeholder="Ghi chú thêm về lô sản xuất..."
                     />
                   </div>
                 </div>
-              ) : null}
+              )}
 
               {/* Step 2: IPFS Success */}
               {step === 2 && ipfsData && (
                 <div className="p-8 space-y-4">
-                  {/* Box: Bước 1 hoàn thành */}
+                  {/* IPFS Success Box */}
                   <div className="rounded-xl p-5 border border-cyan-200 bg-cyan-50">
                     <div className="flex items-start gap-3 mb-3">
                       <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white text-cyan-600 border border-cyan-200 shadow-sm flex-shrink-0">
@@ -676,7 +650,7 @@ export default function ProductionManagement() {
                     </div>
                   </div>
 
-                  {/* Box: Thông tin sản xuất */}
+                  {/* Production Info Box */}
                   <div className="rounded-xl p-5 border border-cyan-200 bg-cyan-50">
                     <div className="font-semibold text-cyan-800 mb-3">
                       Thông tin sản xuất:
@@ -715,7 +689,7 @@ export default function ProductionManagement() {
                     </div>
                   </div>
 
-                  {/* Box: Cảnh báo */}
+                  {/* Warning Box */}
                   <div className="rounded-xl p-4 border border-amber-200 bg-amber-50">
                     <div className="flex items-start gap-3">
                       <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white text-amber-600 border border-amber-200 shadow-sm flex-shrink-0">
@@ -823,29 +797,25 @@ export default function ProductionManagement() {
                 />
               )}
               {step === 2 && (
-                <>
-                  <button
-                    onClick={handleMintNFT}
-                    disabled={processingMint}
-                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] !text-white font-medium shadow-md hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {mintButtonState === "minting"
-                      ? "Đang mint..."
-                      : mintButtonState === "completed"
-                      ? "Mint thành công!"
-                      : "Mint NFT ngay"}
-                  </button>
-                </>
+                <button
+                  onClick={handleMintNFT}
+                  disabled={processingMint}
+                  className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] !text-white font-medium shadow-md hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {mintButtonState === "minting"
+                    ? "Đang mint..."
+                    : mintButtonState === "completed"
+                    ? "Mint thành công!"
+                    : "Mint NFT ngay"}
+                </button>
               )}
               {step === 4 && (
-                <>
-                  <button
-                    onClick={handleClose}
-                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] !text-white font-medium shadow-md hover:shadow-lg transition"
-                  >
-                    Hoàn thành
-                  </button>
-                </>
+                <button
+                  onClick={handleClose}
+                  className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] !text-white font-medium shadow-md hover:shadow-lg transition"
+                >
+                  Hoàn thành
+                </button>
               )}
             </div>
           </div>
