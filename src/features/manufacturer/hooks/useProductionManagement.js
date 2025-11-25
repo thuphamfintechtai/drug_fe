@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ethers } from "ethers";
@@ -15,13 +15,259 @@ import {
   getNFTContract,
 } from "../../utils/web3Helper";
 
+// ============================================
+// CONSTANTS
+// ============================================
+const MAX_BATCH_LENGTH = 30;
+const MAX_QUANTITY = 1;
+const MANUFACTURING_DATE_RANGE_DAYS = 60;
+const MAX_SHELF_LIFE_YEARS = 10;
+
+const SHELF_LIFE_LIMITS = {
+  year: 10,
+  month: 120, // 10 years * 12
+  day: 3653, // 10 years * 365.25
+};
+
+// ============================================
+// HELPER FUNCTIONS (Pure functions - no side effects)
+// ============================================
+
+/**
+ * Validate MongoDB ObjectId format
+ */
+const isValidMongoId = (id) => /^[0-9a-fA-F]{24}$/.test(id);
+
+/**
+ * Find drug by id (_id or id field)
+ */
+const findDrugById = (drugs, drugId) => {
+  if (!drugId || !drugs || drugs.length === 0) return null;
+  return drugs.find((d) => (d._id || d.id) === drugId);
+};
+
+/**
+ * Validate and fix manufacturing date
+ * Returns: { isValid: boolean, fixedDate: string, error?: string }
+ */
+const validateManufacturingDate = (dateStr) => {
+  if (!dateStr) {
+    return {
+      isValid: false,
+      fixedDate: "",
+      error: "Ngày sản xuất không được để trống",
+    };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const minDate = new Date(today);
+  minDate.setDate(today.getDate() - MANUFACTURING_DATE_RANGE_DAYS);
+  minDate.setHours(0, 0, 0, 0);
+
+  const mfgDate = new Date(dateStr);
+  mfgDate.setHours(0, 0, 0, 0);
+
+  if (isNaN(mfgDate.getTime())) {
+    return {
+      isValid: false,
+      fixedDate: today.toISOString().split("T")[0],
+      error: "Ngày sản xuất không hợp lệ",
+    };
+  }
+
+  if (mfgDate < minDate) {
+    return {
+      isValid: false,
+      fixedDate: minDate.toISOString().split("T")[0],
+      error: `Ngày sản xuất phải trong vòng ${MANUFACTURING_DATE_RANGE_DAYS} ngày qua`,
+    };
+  }
+
+  if (mfgDate > today) {
+    return {
+      isValid: false,
+      fixedDate: today.toISOString().split("T")[0],
+      error: "Ngày sản xuất không được là tương lai",
+    };
+  }
+
+  return { isValid: true, fixedDate: dateStr };
+};
+
+/**
+ * Calculate expiry date from manufacturing date
+ */
+const calculateExpiryDate = (mfgDateStr, amount, unit) => {
+  if (!mfgDateStr || !amount) return "";
+
+  const date = new Date(mfgDateStr);
+  const value = parseFloat(amount);
+
+  if (isNaN(date.getTime()) || isNaN(value) || value <= 0) return "";
+
+  switch (unit) {
+    case "day":
+      date.setDate(date.getDate() + Math.round(value));
+      break;
+    case "month": {
+      const months = Math.round(value);
+      const currentDate = date.getDate();
+      date.setMonth(date.getMonth() + months);
+      if (date.getDate() < currentDate) {
+        date.setDate(0); // Last day of previous month
+      }
+      break;
+    }
+    case "year":
+      date.setFullYear(date.getFullYear() + Math.round(value));
+      break;
+    default:
+      return "";
+  }
+
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+/**
+ * Validate shelf life
+ */
+const validateShelfLife = (value, unit, mfgDate) => {
+  if (!value || !value.trim()) {
+    return { isValid: false, error: "Thời hạn sử dụng không được để trống" };
+  }
+
+  const numValue = parseFloat(value);
+  if (isNaN(numValue) || numValue <= 0) {
+    return { isValid: false, error: "Thời hạn sử dụng phải lớn hơn 0" };
+  }
+
+  const maxValue = SHELF_LIFE_LIMITS[unit] || 10;
+  if (numValue > maxValue) {
+    const unitText = unit === "year" ? "năm" : unit === "month" ? "tháng" : "ngày";
+    return {
+      isValid: false,
+      error: `Thời hạn sử dụng không được vượt quá ${maxValue} ${unitText}`,
+    };
+  }
+
+  // Check with manufacturing date
+  if (mfgDate) {
+    const expiryDate = calculateExpiryDate(mfgDate, value, unit);
+    if (expiryDate) {
+      const expDate = new Date(expiryDate);
+      const mfgDateObj = new Date(mfgDate);
+      const maxExpiryDate = new Date(mfgDateObj);
+      maxExpiryDate.setFullYear(mfgDateObj.getFullYear() + MAX_SHELF_LIFE_YEARS);
+
+      if (expDate > maxExpiryDate) {
+        return {
+          isValid: false,
+          error: `Hạn sử dụng không được vượt quá ${MAX_SHELF_LIFE_YEARS} năm từ ngày sản xuất`,
+        };
+      }
+    }
+  }
+
+  return { isValid: true };
+};
+
+/**
+ * Format date to MM/DD/YYYY
+ */
+const formatDateMDY = (dateStr) => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "";
+
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const yyyy = date.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
+};
+
+/**
+ * Parse token IDs from transaction receipt
+ */
+const parseTokenIdsFromReceipt = (receipt, contract, expectedQuantity) => {
+  const tokenIds = [];
+
+  // Try mintNFTEvent first
+  for (const log of receipt.logs) {
+    try {
+      const parsed = contract.interface.parseLog(log);
+      if (parsed?.name === "mintNFTEvent" && parsed.args.tokenIds) {
+        const ids = Array.isArray(parsed.args.tokenIds)
+          ? parsed.args.tokenIds
+          : [parsed.args.tokenIds];
+        ids.forEach((id) => tokenIds.push(id.toString()));
+        break;
+      }
+    } catch (e) {
+      // Skip unparseable logs
+    }
+  }
+
+  // Fallback: TransferSingle/TransferBatch
+  if (tokenIds.length === 0) {
+    for (const log of receipt.logs) {
+      try {
+        const parsed = contract.interface.parseLog(log);
+
+        if (
+          parsed?.name === "TransferSingle" &&
+          parsed.args.from === ethers.ZeroAddress
+        ) {
+          tokenIds.push(parsed.args.id.toString());
+        } else if (
+          parsed?.name === "TransferBatch" &&
+          parsed.args.from === ethers.ZeroAddress
+        ) {
+          const ids = parsed.args.ids || [];
+          ids.forEach((id) => tokenIds.push(id.toString()));
+        }
+      } catch (e) {
+        // Skip
+      }
+    }
+  }
+
+  // Sort token IDs
+  tokenIds.sort((a, b) => {
+    const bigA = BigInt(a);
+    const bigB = BigInt(b);
+    return bigA < bigB ? -1 : bigA > bigB ? 1 : 0;
+  });
+
+  // Generate missing token IDs if needed
+  if (tokenIds.length > 0 && tokenIds.length < expectedQuantity) {
+    let nextId = BigInt(tokenIds[tokenIds.length - 1]) + BigInt(1);
+    while (tokenIds.length < expectedQuantity) {
+      tokenIds.push(nextId.toString());
+      nextId = nextId + BigInt(1);
+    }
+  }
+
+  // Trim excess
+  if (tokenIds.length > expectedQuantity) {
+    tokenIds.splice(expectedQuantity);
+  }
+
+  return tokenIds;
+};
+
+// ============================================
+// MAIN HOOK
+// ============================================
+
 export const useProductionManagement = () => {
   const [searchParams] = useSearchParams();
-  const [showDialog, setShowDialog] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const progressIntervalRef = useRef(null);
 
-  // React Query hooks
+  // ========== React Query hooks ==========
   const {
     data: drugsData,
     isLoading: loading,
@@ -31,39 +277,19 @@ export const useProductionManagement = () => {
   const uploadToIPFSMutation = useUploadToIPFS();
   const saveMintedNFTsMutation = useSaveMintedNFTs();
 
+  // ========== Derived state ==========
   const drugs = drugsData?.success
     ? drugsData.data?.drugs || drugsData.data || []
     : [];
 
-  // Debug: Log drugs structure when loaded
-  useEffect(() => {
-    if (drugs.length > 0) {
-      console.log("📋 Drugs loaded:", {
-        count: drugs.length,
-        sample: drugs[0]
-          ? {
-              _id: drugs[0]._id,
-              id: drugs[0].id,
-              tradeName: drugs[0].tradeName,
-              atcCode: drugs[0].atcCode,
-              has_id: !!drugs[0]._id,
-              has_id_field: !!drugs[0].id,
-            }
-          : null,
-        allIds: drugs.map((d) => ({
-          _id: d._id,
-          id: d.id,
-          tradeName: d.tradeName,
-        })),
-      });
-    }
-  }, [drugs]);
-
-  const [step, setStep] = useState(1);
+  // ========== UI State ==========
+  const [showDialog, setShowDialog] = useState(false);
+  const [step, setStep] = useState(1); // 1: form, 2: ready to mint, 3: minting, 4: success
   const [uploadButtonState, setUploadButtonState] = useState("idle");
   const [mintButtonState, setMintButtonState] = useState("idle");
-  const [processingMint, setProcessingMint] = useState(false); // FIX: Separate state for minting
+  const [processingMint, setProcessingMint] = useState(false);
 
+  // ========== Form State ==========
   const [formData, setFormData] = useState({
     drugId: "",
     batchNumber: "",
@@ -73,18 +299,57 @@ export const useProductionManagement = () => {
     notes: "",
   });
 
-  const [ipfsData, setIpfsData] = useState(null);
-  const [mintResult, setMintResult] = useState(null);
   const [shelfLifeValue, setShelfLifeValue] = useState("");
   const [shelfLifeUnit, setShelfLifeUnit] = useState("month");
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState("");
   const [errors, setErrors] = useState({});
 
+  // ========== Blockchain State ==========
+  const [ipfsData, setIpfsData] = useState(null);
+  const [mintResult, setMintResult] = useState(null);
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState("");
+
+  // ========== Derived data ==========
+  const selectedDrug = findDrugById(drugs, formData.drugId);
+
+  // ========== Debug logging ==========
   useEffect(() => {
+    if (drugs.length > 0) {
+      console.log("📋 Drugs loaded:", {
+        count: drugs.length,
+        sample: drugs[0]
+          ? {
+              _id: drugs[0]._id,
+              tradeName: drugs[0].tradeName,
+              atcCode: drugs[0].atcCode,
+            }
+          : null,
+      });
+    }
+  }, [drugs]);
+
+  // ========== Wallet connection setup ==========
+  useEffect(() => {
+    const checkInitialWalletConnection = async () => {
+      if (isMetaMaskInstalled()) {
+        try {
+          const provider = await getWeb3Provider();
+          if (provider) {
+            const accounts = await provider.listAccounts();
+            if (accounts.length > 0) {
+              setWalletAddress(accounts[0]);
+              setWalletConnected(true);
+            }
+          }
+        } catch (error) {
+          console.log("Ví chưa được kết nối:", error.message);
+        }
+      }
+    };
+
     checkInitialWalletConnection();
 
-    // FIX: Listen for account changes
+    // Listen for account changes
     if (window.ethereum) {
       const handleAccountsChanged = (accounts) => {
         if (accounts.length === 0) {
@@ -99,112 +364,84 @@ export const useProductionManagement = () => {
       window.ethereum.on("accountsChanged", handleAccountsChanged);
 
       return () => {
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-        }
-        // Cleanup event listener
-        window.ethereum.removeListener(
-          "accountsChanged",
-          handleAccountsChanged
-        );
+        window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
       };
     }
-
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    };
   }, []);
 
-  // Khi load bằng IPFS từ trang lịch sử: tự nạp ipfsUrl + quantity và chuyển sang bước mint
+  // ========== Load from URL params (history page) ==========
   useEffect(() => {
     const ipfsUrl = searchParams.get("ipfsUrl");
     const qty = searchParams.get("quantity");
+
     if (ipfsUrl) {
       const cidMatch = ipfsUrl.match(/\/ipfs\/([^/?#]+)/i);
       const ipfsHash = cidMatch ? cidMatch[1] : "";
+
       setIpfsData({
         ipfsUrl,
         ipfsHash,
         amount: qty ? parseInt(qty) : undefined,
       });
+
       if (qty && !isNaN(parseInt(qty))) {
         setFormData((prev) => ({ ...prev, quantity: String(parseInt(qty)) }));
       }
-      setShowDialog(true);
-      setStep(2); // Bỏ qua bước upload, sẵn sàng mint
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
+      setShowDialog(true);
+      setStep(2); // Skip to mint step
+    }
+  }, [searchParams]);
+
+  // ========== Auto-calculate expiry date ==========
   useEffect(() => {
     if (formData.manufacturingDate && shelfLifeValue) {
-      const computed = addDuration(
+      const expiryDate = calculateExpiryDate(
         formData.manufacturingDate,
         shelfLifeValue,
         shelfLifeUnit
       );
-      setFormData((prev) => ({ ...prev, expiryDate: computed }));
+      setFormData((prev) => ({ ...prev, expiryDate }));
     }
   }, [formData.manufacturingDate, shelfLifeValue, shelfLifeUnit]);
 
-  const checkInitialWalletConnection = async () => {
-    if (isMetaMaskInstalled()) {
-      try {
-        const provider = await getWeb3Provider();
-        if (provider) {
-          const accounts = await provider.listAccounts();
-          if (accounts.length > 0) {
-            setWalletAddress(accounts[0]);
-            setWalletConnected(true);
-          }
-        }
-      } catch (error) {
-        console.log("Ví chưa được kết nối:", error.message);
-      }
-    }
-  };
-
-  const validateForm = () => {
+  // ========== Validation ==========
+  const validateForm = useCallback(() => {
     const newErrors = {};
 
-    // Validate số lô: chỉ chữ và số, không ký tự đặc biệt, tối đa 30 ký tự (đã được tự động chuyển sang uppercase trong onChange)
+    // Drug ID
+    if (!formData.drugId) {
+      newErrors.drugId = "Vui lòng chọn thuốc";
+    } else if (!isValidMongoId(formData.drugId)) {
+      newErrors.drugId = "ID thuốc không hợp lệ";
+    } else if (!findDrugById(drugs, formData.drugId)) {
+      newErrors.drugId = "Thuốc không tồn tại trong hệ thống";
+    }
+
+    // Batch number
     if (!formData.batchNumber.trim()) {
       newErrors.batchNumber = "Số lô không được để trống";
     } else if (!/^[A-Z0-9]+$/.test(formData.batchNumber)) {
       newErrors.batchNumber = "Số lô chỉ được chứa chữ cái và số";
-    } else if (formData.batchNumber.length > 30) {
-      newErrors.batchNumber = "Số lô không được vượt quá 30 ký tự";
+    } else if (formData.batchNumber.length > MAX_BATCH_LENGTH) {
+      newErrors.batchNumber = `Số lô không được vượt quá ${MAX_BATCH_LENGTH} ký tự`;
     }
 
-    // Validate số lượng: chỉ cho phép 1
+    // Quantity
     const quantity = parseInt(formData.quantity);
     if (!formData.quantity || isNaN(quantity) || quantity <= 0) {
       newErrors.quantity = "Số lượng phải lớn hơn 0";
-    } else if (quantity > 1) {
-      newErrors.quantity = "Số lượng tối đa là 1";
+    } else if (quantity > MAX_QUANTITY) {
+      newErrors.quantity = `Số lượng tối đa là ${MAX_QUANTITY}`;
     }
 
-    // Validate ngày sản xuất: không quá 60 ngày trước và không được lớn hơn ngày hiện tại
-    if (!formData.manufacturingDate) {
-      newErrors.manufacturingDate = "Ngày sản xuất không được để trống";
-    } else {
-      const validationResult = validateAndFixManufacturingDate(
-        formData.manufacturingDate
-      );
-
-      // Nếu ngày không hợp lệ, tự động sửa về ngày hiện tại
-      if (!validationResult.isValid) {
-        setFormData((prev) => ({
-          ...prev,
-          manufacturingDate: validationResult.fixedDate,
-        }));
-        // Không set error vì đã tự động sửa
-      }
+    // Manufacturing date - DON'T auto-fix, just validate
+    const mfgValidation = validateManufacturingDate(formData.manufacturingDate);
+    if (!mfgValidation.isValid) {
+      newErrors.manufacturingDate = mfgValidation.error;
     }
 
-    // Validate thời hạn sử dụng: không được bỏ trống và không quá 10 năm
+    // Shelf life
     const shelfLifeValidation = validateShelfLife(
       shelfLifeValue,
       shelfLifeUnit,
@@ -214,16 +451,13 @@ export const useProductionManagement = () => {
       newErrors.shelfLife = shelfLifeValidation.error;
     }
 
-    // Validate thuốc
-    if (!formData.drugId) {
-      newErrors.drugId = "Vui lòng chọn thuốc";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [formData, shelfLifeValue, shelfLifeUnit, drugs]);
 
-  const handleStartProduction = () => {
+  // ========== Handlers ==========
+
+  const handleStartProduction = useCallback(() => {
     setStep(1);
     setUploadButtonState("idle");
     setMintButtonState("idle");
@@ -242,10 +476,10 @@ export const useProductionManagement = () => {
     setShelfLifeUnit("month");
     setErrors({});
     setShowDialog(true);
-  };
+  }, []);
 
-  const handleUploadToIPFS = async () => {
-    // Validate form trước khi submit
+  const handleUploadToIPFS = useCallback(async () => {
+    // Validate form
     if (!validateForm()) {
       toast.error("Vui lòng kiểm tra và sửa các lỗi trong form", {
         position: "top-right",
@@ -256,139 +490,36 @@ export const useProductionManagement = () => {
     setUploadButtonState("uploading");
 
     try {
-      // Parse quantity từ formData
       const quantity = parseInt(formData.quantity);
-      if (isNaN(quantity) || quantity <= 0) {
-        toast.error("Số lượng không hợp lệ", { position: "top-right" });
-        setUploadButtonState("idle");
-        return;
-      }
+      const drug = findDrugById(drugs, formData.drugId);
 
-      // Validate drugId format first - must be MongoDB ObjectId (24 hex chars)
-      const isValidMongoId = /^[0-9a-fA-F]{24}$/.test(formData.drugId);
-
-      if (!isValidMongoId) {
-        console.error("❌ Invalid drugId format when uploading:", {
-          drugId: formData.drugId,
-          drugIdType: typeof formData.drugId,
-          isValidMongoId,
-          availableDrugs: drugs.map((d) => ({
-            _id: d._id,
-            tradeName: d.tradeName,
-            atcCode: d.atcCode,
-          })),
-        });
-        toast.error(
-          `drugId không hợp lệ: "${formData.drugId}". Vui lòng chọn lại thuốc từ dropdown.`,
-          { position: "top-right" }
-        );
-        setUploadButtonState("idle");
-        return;
-      }
-
-      const selectedDrug = drugs.find(
-        (d) => (d._id || d.id) === formData.drugId
-      );
-
-      // Validate selectedDrug exists
-      if (!selectedDrug) {
-        console.error("❌ Selected drug not found:", {
-          drugId: formData.drugId,
-          drugIdType: typeof formData.drugId,
-          isValidMongoId,
-          availableDrugs: drugs.map((d) => ({
-            _id: d._id,
-            tradeName: d.tradeName,
-            atcCode: d.atcCode,
-          })),
-        });
-        toast.error("Không tìm thấy thông tin thuốc đã chọn", {
-          position: "top-right",
-        });
-        setUploadButtonState("idle");
-        return;
+      if (!drug) {
+        throw new Error("Không tìm thấy thông tin thuốc");
       }
 
       const metadata = {
-        name: `${selectedDrug?.tradeName || "Unknown"} - Batch ${
-          formData.batchNumber
-        }`,
-        description: `Lô sản xuất ${
-          selectedDrug?.tradeName || "Unknown"
-        } - Số lô: ${formData.batchNumber}`,
-        image:
-          selectedDrug?.image ||
-          "https://via.placeholder.com/400x400?text=Drug+Image",
+        name: `${drug.tradeName} - Batch ${formData.batchNumber}`,
+        description: `Lô sản xuất ${drug.tradeName} - Số lô: ${formData.batchNumber}`,
+        image: drug.image || "https://via.placeholder.com/400x400?text=Drug+Image",
         attributes: [
-          { trait_type: "Drug", value: selectedDrug?.tradeName || "Unknown" },
-          {
-            trait_type: "Generic Name",
-            value: selectedDrug?.genericName || "N/A",
-          },
+          { trait_type: "Drug", value: drug.tradeName },
+          { trait_type: "Generic Name", value: drug.genericName || "N/A" },
           { trait_type: "Batch", value: formData.batchNumber },
-          {
-            trait_type: "Manufacturing Date",
-            value: formData.manufacturingDate || "N/A",
-          },
-          { trait_type: "Expiry Date", value: formData.expiryDate || "N/A" },
-          { trait_type: "ATC Code", value: selectedDrug?.atcCode || "N/A" },
-          {
-            trait_type: "Dosage Form",
-            value: selectedDrug?.dosageForm || "N/A",
-          },
-          { trait_type: "Strength", value: selectedDrug?.strength || "N/A" },
+          { trait_type: "Manufacturing Date", value: formData.manufacturingDate },
+          { trait_type: "Expiry Date", value: formData.expiryDate },
+          { trait_type: "ATC Code", value: drug.atcCode || "N/A" },
+          { trait_type: "Dosage Form", value: drug.dosageForm || "N/A" },
+          { trait_type: "Strength", value: drug.strength || "N/A" },
         ],
       };
 
-      // Verify drug exists in available drugs list
-      const drugExists = drugs.some((d) => (d._id || d.id) === formData.drugId);
-      if (!drugExists) {
-        console.error("❌ Drug not found in available drugs list:", {
-          drugId: formData.drugId,
-          availableDrugIds: drugs.map((d) => ({
-            _id: d._id,
-            id: d.id,
-            tradeName: d.tradeName,
-            atcCode: d.atcCode,
-          })),
-        });
-        toast.error(
-          `Thuốc đã chọn không có trong danh sách. Vui lòng chọn lại thuốc.`,
-          { position: "top-right" }
-        );
-        setUploadButtonState("idle");
-        return;
-      }
-
-      // Include drugId in payload - backend may need it
       const uploadPayload = {
         drugId: formData.drugId,
         quantity,
         metadata,
       };
 
-      console.log("📤 Uploading to IPFS:", {
-        drugId: formData.drugId,
-        drugIdType: typeof formData.drugId,
-        selectedDrug: selectedDrug
-          ? {
-              _id: selectedDrug._id,
-              id: selectedDrug.id,
-              tradeName: selectedDrug.tradeName,
-              manufacturerId:
-                selectedDrug.manufacturerId || selectedDrug.manufacturer,
-            }
-          : null,
-        quantity,
-        metadataKeys: Object.keys(metadata),
-        allAvailableDrugIds: drugs.map((d) => ({
-          _id: d._id,
-          id: d.id,
-          tradeName: d.tradeName,
-          matches: (d._id || d.id) === formData.drugId,
-        })),
-        payload: uploadPayload,
-      });
+      console.log("📤 Uploading to IPFS:", uploadPayload);
 
       const response = await uploadToIPFSMutation.mutateAsync(uploadPayload);
 
@@ -407,8 +538,6 @@ export const useProductionManagement = () => {
             position: "top-right",
           });
         }, 4500);
-
-        console.log("IPFS data:", ipfsData);
       }
     } catch (error) {
       console.error("Lỗi khi upload IPFS:", error);
@@ -419,9 +548,9 @@ export const useProductionManagement = () => {
       );
       setUploadButtonState("idle");
     }
-  };
+  }, [formData, drugs, validateForm, uploadToIPFSMutation]);
 
-  const checkWalletConnection = async () => {
+  const checkWalletConnection = useCallback(async () => {
     if (!isMetaMaskInstalled()) {
       toast.error("Vui lòng cài đặt MetaMask để mint NFT!", {
         position: "top-right",
@@ -431,7 +560,7 @@ export const useProductionManagement = () => {
 
     try {
       const result = await connectWallet();
-      if (result && result.success && result.address) {
+      if (result?.success && result.address) {
         setWalletAddress(result.address);
         setWalletConnected(true);
         return true;
@@ -444,88 +573,12 @@ export const useProductionManagement = () => {
       });
       return false;
     }
-  };
+  }, []);
 
-  const parseTokenIdsFromReceipt = (receipt, contract, expectedQuantity) => {
-    const tokenIds = [];
-    let foundEvent = false;
+  const handleMintNFT = useCallback(async () => {
+    if (processingMint) return;
 
-    // Try mintNFTEvent first
-    for (const log of receipt.logs) {
-      try {
-        const parsed = contract.interface.parseLog(log);
-        if (parsed?.name === "mintNFTEvent" && parsed.args.tokenIds) {
-          const ids = parsed.args.tokenIds;
-          if (Array.isArray(ids)) {
-            ids.forEach((id) => tokenIds.push(id.toString()));
-          } else {
-            tokenIds.push(ids.toString());
-          }
-          foundEvent = true;
-          break;
-        }
-      } catch (e) {
-        // Skip unparseable logs
-      }
-    }
-
-    // Fallback: TransferSingle/TransferBatch
-    if (!foundEvent) {
-      for (const log of receipt.logs) {
-        try {
-          const parsed = contract.interface.parseLog(log);
-
-          if (
-            parsed?.name === "TransferSingle" &&
-            parsed.args.from === ethers.ZeroAddress
-          ) {
-            tokenIds.push(parsed.args.id.toString());
-          } else if (
-            parsed?.name === "TransferBatch" &&
-            parsed.args.from === ethers.ZeroAddress
-          ) {
-            const ids = parsed.args.ids || [];
-            ids.forEach((id) => tokenIds.push(id.toString()));
-            foundEvent = true;
-            break;
-          }
-        } catch (e) {
-          // Skip
-        }
-      }
-    }
-
-    // Sort and validate
-    tokenIds.sort((a, b) => {
-      const bigA = BigInt(a);
-      const bigB = BigInt(b);
-      return bigA < bigB ? -1 : bigA > bigB ? 1 : 0;
-    });
-
-    // FIX: Generate missing token IDs if needed
-    if (tokenIds.length < expectedQuantity && tokenIds.length > 0) {
-      const lastId = BigInt(tokenIds[tokenIds.length - 1]);
-      let nextId = lastId + BigInt(1);
-
-      while (tokenIds.length < expectedQuantity) {
-        tokenIds.push(nextId.toString());
-        nextId = nextId + BigInt(1);
-      }
-    }
-
-    // Trim excess
-    if (tokenIds.length > expectedQuantity) {
-      tokenIds.splice(expectedQuantity);
-    }
-
-    return tokenIds;
-  };
-
-  const handleMintNFT = async () => {
-    if (processingMint) {
-      return;
-    }
-
+    // Validate prerequisites
     if (!ipfsData) {
       toast.error("Chưa có dữ liệu IPFS", { position: "top-right" });
       return;
@@ -537,18 +590,17 @@ export const useProductionManagement = () => {
     }
 
     const quantity = parseInt(formData.quantity);
-    if (quantity <= 0 || quantity >= 10000000) {
+    if (quantity <= 0 || quantity > 9999999) {
       toast.error("Số lượng không hợp lệ (1-9,999,999)", {
         position: "top-right",
       });
       return;
     }
 
+    // Check wallet
     if (!walletConnected) {
       const connected = await checkWalletConnection();
-      if (!connected) {
-        return;
-      }
+      if (!connected) return;
     }
 
     setProcessingMint(true);
@@ -557,99 +609,49 @@ export const useProductionManagement = () => {
 
     try {
       const ipfsUrl = ipfsData.ipfsUrl || `ipfs://${ipfsData.ipfsHash}`;
-      console.log("Mint NFT:", { quantity, ipfsUrl });
-
       const contract = await getNFTContract();
       const amounts = Array(quantity).fill(1);
 
-      console.log("Call mintNFT with amounts:", amounts);
+      console.log("🔗 Calling mintNFT with amounts:", amounts);
 
       const tx = await contract.mintNFT(amounts);
-      console.log("TX submitted:", tx.hash);
+      console.log("📝 TX submitted:", tx.hash);
 
       const receipt = await tx.wait();
-      console.log("TX confirmed:", receipt);
+      console.log("✅ TX confirmed:", receipt);
 
-      // FIX: Use improved parsing function
       const tokenIds = parseTokenIdsFromReceipt(receipt, contract, quantity);
-      console.log(" Final token IDs:", tokenIds);
+      console.log("🎫 Token IDs:", tokenIds);
 
       if (tokenIds.length === 0) {
-        throw new Error(
-          "Không tìm thấy token IDs. Kiểm tra smart contract events."
-        );
+        throw new Error("Không tìm thấy token IDs. Kiểm tra smart contract events.");
       }
 
-      // Save to backend
-      // Validate drugId format first - must be MongoDB ObjectId (24 hex chars)
-      const isValidMongoId = /^[0-9a-fA-F]{24}$/.test(formData.drugId);
-
-      if (!isValidMongoId) {
-        console.error("❌ Invalid drugId format:", {
-          drugId: formData.drugId,
-          drugIdType: typeof formData.drugId,
-          isValidMongoId,
-          availableDrugs: drugs.map((d) => ({
-            _id: d._id,
-            tradeName: d.tradeName,
-            atcCode: d.atcCode,
-          })),
-        });
-        throw new Error(
-          `drugId không hợp lệ: "${formData.drugId}". ` +
-            `Vui lòng chọn lại thuốc từ dropdown.`
-        );
-      }
-
-      const selectedDrug = drugs.find(
-        (d) => (d._id || d.id) === formData.drugId
-      );
-
-      // Validate selectedDrug exists
-      if (!selectedDrug) {
-        console.error("❌ Selected drug not found when saving:", {
-          drugId: formData.drugId,
-          drugIdType: typeof formData.drugId,
-          isValidMongoId,
-          availableDrugs: drugs.map((d) => ({
-            _id: d._id,
-            tradeName: d.tradeName,
-            atcCode: d.atcCode,
-          })),
-        });
+      // Validate drug before saving
+      const drug = findDrugById(drugs, formData.drugId);
+      if (!drug) {
         throw new Error("Không tìm thấy thông tin thuốc đã chọn");
       }
 
       const saveData = {
         drugId: formData.drugId,
-        tokenIds: tokenIds,
+        tokenIds,
         transactionHash: tx.hash,
-        quantity: quantity,
-        ipfsUrl: ipfsUrl,
+        quantity,
+        ipfsUrl,
         mfgDate: formData.manufacturingDate || undefined,
         expDate: formData.expiryDate || undefined,
         batchNumber: formData.batchNumber || undefined,
         metadata: {
-          name: `${selectedDrug?.tradeName || "Unknown"} - Batch ${
-            formData.batchNumber
-          }`,
-          description: `Lô sản xuất ${selectedDrug?.tradeName}`,
-          drug: selectedDrug?.tradeName,
-          genericName: selectedDrug?.genericName,
-          atcCode: selectedDrug?.atcCode,
+          name: `${drug.tradeName} - Batch ${formData.batchNumber}`,
+          description: `Lô sản xuất ${drug.tradeName}`,
+          drug: drug.tradeName,
+          genericName: drug.genericName,
+          atcCode: drug.atcCode,
         },
       };
 
-      console.log("💾 Saving to backend:", {
-        drugId: saveData.drugId,
-        drugIdType: typeof saveData.drugId,
-        selectedDrug: {
-          _id: selectedDrug._id,
-          tradeName: selectedDrug.tradeName,
-        },
-        tokenIdsCount: saveData.tokenIds.length,
-        quantity: saveData.quantity,
-      });
+      console.log("💾 Saving to backend:", saveData);
 
       const response = await saveMintedNFTsMutation.mutateAsync(saveData);
 
@@ -663,7 +665,7 @@ export const useProductionManagement = () => {
         throw new Error(response.message || "Backend failed");
       }
     } catch (error) {
-      console.error("Mint error:", error);
+      console.error("❌ Mint error:", error);
 
       let errorMsg = "Không thể mint NFT";
 
@@ -681,9 +683,17 @@ export const useProductionManagement = () => {
     } finally {
       setProcessingMint(false);
     }
-  };
+  }, [
+    processingMint,
+    ipfsData,
+    formData,
+    walletConnected,
+    drugs,
+    checkWalletConnection,
+    saveMintedNFTsMutation,
+  ]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setShowDialog(false);
     setStep(1);
     setUploadButtonState("idle");
@@ -702,188 +712,51 @@ export const useProductionManagement = () => {
     setShelfLifeValue("");
     setShelfLifeUnit("month");
     setErrors({});
-  };
+  }, []);
 
-  const selectedDrug = drugs.find((d) => (d._id || d.id) === formData.drugId);
-
-  // Helper function để kiểm tra và sửa ngày sản xuất nếu không hợp lệ
-  const validateAndFixManufacturingDate = (dateStr) => {
-    if (!dateStr) {
-      return { isValid: false, fixedDate: "" };
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const minDate = new Date(today);
-    minDate.setDate(today.getDate() - 60);
-    minDate.setHours(0, 0, 0, 0);
-
-    const mfgDate = new Date(dateStr);
-    mfgDate.setHours(0, 0, 0, 0);
-
-    // Nếu ngày không hợp lệ, trả về ngày hiện tại
-    if (mfgDate < minDate || mfgDate > today) {
-      return {
-        isValid: false,
-        fixedDate: today.toISOString().split("T")[0],
-      };
-    }
-
-    return { isValid: true, fixedDate: dateStr };
-  };
-
-  // Helper function để lấy giới hạn tối đa cho thời hạn sử dụng dựa trên đơn vị (10 năm)
-  const getMaxShelfLife = (unit) => {
-    switch (unit) {
-      case "year":
-        return 10;
-      case "month":
-        return 120; // 10 năm * 12 tháng
-      case "day":
-        return 3653; // 10 năm * 365.25 ngày (làm tròn lên)
-      default:
-        return 10;
-    }
-  };
-
-  // Helper function để kiểm tra thời hạn sử dụng có vượt quá 10 năm không
-  const validateShelfLife = (value, unit, manufacturingDate) => {
-    if (!value || !value.trim()) {
-      return { isValid: false, error: "Thời hạn sử dụng không được để trống" };
-    }
-
-    const shelfLifeNum = parseFloat(value);
-    if (isNaN(shelfLifeNum) || shelfLifeNum <= 0) {
-      return { isValid: false, error: "Thời hạn sử dụng phải lớn hơn 0" };
-    }
-
-    // Kiểm tra giới hạn tối đa dựa trên đơn vị
-    const maxShelfLife = getMaxShelfLife(unit);
-    if (shelfLifeNum > maxShelfLife) {
-      return {
-        isValid: false,
-        error: `Thời hạn sử dụng không được vượt quá ${maxShelfLife} ${
-          unit === "year" ? "năm" : unit === "month" ? "tháng" : "ngày"
-        } (10 năm)`,
-      };
-    }
-
-    // Kiểm tra với ngày sản xuất nếu có
-    if (manufacturingDate) {
-      const expiryDateStr = addDuration(manufacturingDate, value, unit);
-      if (expiryDateStr) {
-        const expiryDate = new Date(expiryDateStr);
-        const mfgDate = new Date(manufacturingDate);
-        const maxExpiryDate = new Date(mfgDate);
-        maxExpiryDate.setFullYear(mfgDate.getFullYear() + 10);
-
-        if (expiryDate > maxExpiryDate) {
-          return {
-            isValid: false,
-            error:
-              "Thời hạn sử dụng không được vượt quá 10 năm từ ngày sản xuất",
-          };
-        }
-      }
-    }
-
-    return { isValid: true, error: "" };
-  };
-
-  const addDuration = (dateStr, amount, unit) => {
-    if (!dateStr || !amount) {
-      return "";
-    }
-    const d = new Date(dateStr);
-    const n = parseFloat(amount);
-    if (Number.isNaN(n)) {
-      return "";
-    }
-
-    if (unit === "day") {
-      // Hỗ trợ số thập phân cho ngày (làm tròn)
-      d.setDate(d.getDate() + Math.round(n));
-    } else if (unit === "month") {
-      // Làm tròn số tháng
-      const months = Math.round(n);
-      const currentDate = d.getDate();
-      d.setMonth(d.getMonth() + months);
-      if (d.getDate() < currentDate) {
-        d.setDate(0);
-      }
-    } else if (unit === "year") {
-      // Làm tròn số năm
-      const years = Math.round(n);
-      d.setFullYear(d.getFullYear() + years);
-    }
-
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
-
-  const formatDateMDY = (dateStr) => {
-    if (!dateStr) {
-      return "";
-    }
-    const d = new Date(dateStr);
-    if (Number.isNaN(d.getTime())) {
-      return "";
-    }
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    const yyyy = d.getFullYear();
-    return `${mm}/${dd}/${yyyy}`;
-  };
-
+  // ========== Return ==========
   return {
+    // Data
     drugs,
     loading,
     drugsError,
-    uploadToIPFSMutation,
-    saveMintedNFTsMutation,
+    selectedDrug,
+
+    // UI State
     showDialog,
-    setShowDialog,
-    loadingProgress,
-    setLoadingProgress,
-    progressIntervalRef,
     step,
-    setStep,
     uploadButtonState,
-    setUploadButtonState,
     mintButtonState,
-    setMintButtonState,
     processingMint,
-    setProcessingMint,
+
+    // Form State
     formData,
     setFormData,
-    ipfsData,
-    setIpfsData,
-    mintResult,
-    setMintResult,
     shelfLifeValue,
     setShelfLifeValue,
     shelfLifeUnit,
     setShelfLifeUnit,
-    walletConnected,
-    setWalletConnected,
-    walletAddress,
-    setWalletAddress,
     errors,
     setErrors,
-    selectedDrug,
-    validateAndFixManufacturingDate,
-    getMaxShelfLife,
-    validateShelfLife,
-    addDuration,
-    formatDateMDY,
+
+    // Blockchain State
+    ipfsData,
+    mintResult,
+    walletConnected,
+    walletAddress,
+
+    // Handlers
     handleStartProduction,
     handleUploadToIPFS,
-    checkWalletConnection,
-    parseTokenIdsFromReceipt,
     handleMintNFT,
     handleClose,
-    validateForm,
+
+    // Utilities (for UI components)
+    getMaxShelfLife: (unit) => SHELF_LIFE_LIMITS[unit] || 10,
+    validateShelfLife,
+    formatDateMDY,
+    validateAndFixManufacturingDate: validateManufacturingDate,
+
+    // Loading progress removed - không sử dụng
   };
 };

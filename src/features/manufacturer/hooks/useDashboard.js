@@ -122,8 +122,14 @@ export const useDashboard = () => {
     ]);
   };
 
-  const nftStatusData = dashboardStats?.nfts?.byStatus
-    ? Object.entries(dashboardStats.nfts.byStatus)
+  const nftStatusSource =
+    dashboardStats?.nfts?.byStatus ||
+    dashboardStats?.byStatus?.nfts ||
+    stats?.nfts?.byStatus ||
+    stats?.byStatus?.nfts;
+
+  const nftStatusData = nftStatusSource
+    ? Object.entries(nftStatusSource)
         .map(([name, value]) => ({
           name:
             name === "minted"
@@ -142,8 +148,14 @@ export const useDashboard = () => {
         .filter((item) => item.value > 0)
     : [];
 
-  const transferStatusData = dashboardStats?.transfers?.byStatus
-    ? Object.entries(dashboardStats.transfers.byStatus)
+  const transferStatusSource =
+    dashboardStats?.transfers?.byStatus ||
+    dashboardStats?.byStatus?.transfers ||
+    stats?.transfers?.byStatus ||
+    stats?.byStatus?.transfers;
+
+  const transferStatusData = transferStatusSource
+    ? Object.entries(transferStatusSource)
         .map(([name, value]) => ({
           name:
             name === "pending"
@@ -160,7 +172,7 @@ export const useDashboard = () => {
         .filter((item) => item.value > 0)
     : [];
 
-  const displayStats = dashboardStats || stats;
+  const displayStats = stats || dashboardStats;
 
   return {
     stats,

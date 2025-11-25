@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useAuth } from "../../shared/context/AuthContext";
 import {
   useManufacturerProductionHistory,
@@ -14,14 +14,161 @@ import {
   getCurrentWalletAddress,
 } from "../../utils/web3Helper";
 
+// ============================================
+// CONSTANTS
+// ============================================
+const MAX_PROGRESS_BEFORE_COMPLETION = 0.95; // Increase to show "saving" progress
+const PROGRESS_INCREMENT = 0.01;
+const PROGRESS_INTERVAL_MS = 100;
+const REQUEST_TIMEOUT_MS = 30000;
+const AUTO_SAVE_RETRY_ATTEMPTS = 3;
+const AUTO_SAVE_RETRY_DELAY_MS = 2000;
+
+const TOKEN_ENDPOINTS = [
+  `/production/{id}/available-tokens`,
+  `/manufacturer/production/{id}/available-tokens`,
+];
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+const isValidMongoId = (value) =>
+  typeof value === "string" && /^[0-9a-fA-F]{24}$/.test(value);
+
+const isValidTxHash = (value) =>
+  typeof value === "string" &&
+  /^0x[a-fA-F0-9]{64}$/.test((value || "").trim());
+
+const sanitizeInput = (input) => {
+  if (typeof input !== "string") return "";
+  return input
+    .trim()
+    .replace(/[<>]/g, "")
+    .slice(0, 500);
+};
+
+const extractTokenIds = (responseObj) => {
+  if (!responseObj) return [];
+
+  const extractionPaths = [
+    () => responseObj.tokenIds,
+    () => responseObj.data?.tokenIds,
+    () => responseObj.availableTokens,
+    () => responseObj.data?.availableTokens,
+    () => responseObj.tokens,
+    () => responseObj.data?.tokens,
+  ];
+
+  for (const extractor of extractionPaths) {
+    try {
+      const value = extractor();
+      if (!value) continue;
+
+      if (Array.isArray(value)) {
+        const tokenIds = value
+          .map((item) => {
+            if (typeof item === "string") return item;
+            return String(item.tokenId || item._id || item.id || "");
+          })
+          .filter(Boolean);
+
+        if (tokenIds.length > 0) {
+          return tokenIds;
+        }
+      }
+    } catch (e) {
+      continue;
+    }
+  }
+
+  return [];
+};
+
+const formatDate = (dateValue) => {
+  if (!dateValue) return "Chưa có";
+  const date = new Date(dateValue);
+  return isNaN(date.getTime())
+    ? "Không hợp lệ"
+    : date.toLocaleDateString("vi-VN");
+};
+
+const normalizeProduction = (prod) => {
+  const id = prod._id || prod.id;
+  const drugId = prod.drugId || prod.drug?._id || prod.drug?.id;
+  const batchNumber =
+    prod.batchNumber ||
+    prod.proofOfProduction?.batchNumber ||
+    prod.drug?.batchNumber ||
+    "";
+
+  return {
+    ...prod,
+    id,
+    drugId,
+    batchNumber,
+    mfgDate: prod.mfgDate || prod.manufacturingDate,
+    expDate: prod.expDate || prod.expiryDate,
+  };
+};
+
+const getStatusInfo = (status) => {
+  const normalizedStatus = (status || "").toLowerCase();
+
+  switch (normalizedStatus) {
+    case "distributed":
+    case "transferred":
+      return {
+        label: "Đã chuyển",
+        className: "bg-green-100 text-green-700 border-green-200",
+        canTransfer: false,
+        buttonText: "Đã chuyển",
+      };
+    case "completed":
+    case "minted":
+      return {
+        label: "Chưa chuyển",
+        className: "bg-yellow-100 text-yellow-700 border-yellow-200",
+        canTransfer: true,
+        buttonText: "Chuyển giao",
+      };
+    case "pending":
+    case "processing":
+      return {
+        label: "Đang chờ",
+        className: "bg-gray-100 text-gray-700 border-gray-200",
+        canTransfer: false,
+        buttonText: "Đang chờ mint",
+      };
+    case "failed":
+    case "error":
+      return {
+        label: "Thất bại",
+        className: "bg-red-100 text-red-700 border-red-200",
+        canTransfer: false,
+        buttonText: "Mint thất bại",
+      };
+    default:
+      return {
+        label: "Không xác định",
+        className: "bg-gray-100 text-gray-500 border-gray-200",
+        canTransfer: false,
+        buttonText: "Chưa sẵn sàng",
+      };
+  }
+};
+
+// ============================================
+// MAIN HOOK - AUTO SAVE VERSION
+// ============================================
+
 export const useTransferManagements = () => {
   const { user } = useAuth();
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const progressIntervalRef = useRef(null);
+
   const transferProgressIntervalRef = useRef(null);
   const isMountedRef = useRef(true);
+  const abortControllerRef = useRef(null);
 
-  // React Query hooks
   const {
     data: productionsData,
     isLoading: productionsLoading,
@@ -40,52 +187,32 @@ export const useTransferManagements = () => {
 
   const loading = productionsLoading || distributorsLoading;
 
-  // Response structure: { success: true, data: [...], count: 7 }
-  // data là array trực tiếp, không có nested productions
-  const productions = productionsData?.success
-    ? Array.isArray(productionsData.data)
+  const productions = useMemo(() => {
+    if (!productionsData?.success) return [];
+    const rawProductions = Array.isArray(productionsData.data)
       ? productionsData.data
-      : productionsData.data?.productions || []
-    : [];
+      : productionsData.data?.productions || [];
+    return rawProductions.map(normalizeProduction);
+  }, [productionsData]);
 
-  useEffect(() => {
-    if (productions.length > 0 && import.meta.env.DEV) {
-      console.log("📋 Productions loaded:", {
-        count: productions.length,
-        sample: productions[0]
-          ? {
-              _id: productions[0]._id,
-              id: productions[0].id,
-              batchNumber: productions[0].batchNumber,
-              quantity: productions[0].quantity,
-              allKeys: Object.keys(productions[0]),
-            }
-          : null,
-      });
-    }
-  }, [productions]);
-
-  const distributors = distributorsData?.success
-    ? Array.isArray(distributorsData.data?.distributors)
+  const distributors = useMemo(() => {
+    if (!distributorsData?.success) return [];
+    return Array.isArray(distributorsData.data?.distributors)
       ? distributorsData.data.distributors
       : Array.isArray(distributorsData.data)
       ? distributorsData.data
-      : []
-    : [];
+      : [];
+  }, [distributorsData]);
 
   const [showDialog, setShowDialog] = useState(false);
   const [selectedProduction, setSelectedProduction] = useState(null);
   const [availableTokenIds, setAvailableTokenIds] = useState([]);
   const [loadingTokens, setLoadingTokens] = useState(false);
-
   const [buttonAnimating, setButtonAnimating] = useState(false);
   const [buttonDone, setButtonDone] = useState(false);
   const [showBlockchainView, setShowBlockchainView] = useState(false);
   const [transferProgress, setTransferProgress] = useState(0);
   const [transferStatus, setTransferStatus] = useState("minting");
-  const [pendingInvoice, setPendingInvoice] = useState(null);
-  const [transactionHashInput, setTransactionHashInput] = useState("");
-  const [saveTransferLoading, setSaveTransferLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     productionId: "",
@@ -94,15 +221,20 @@ export const useTransferManagements = () => {
     notes: "",
   });
 
-  // Comprehensive cleanup on unmount
+  const selectedDistributor = useMemo(() => {
+    if (!formData.distributorId || distributors.length === 0) return null;
+    return distributors.find(
+      (d) => d._id === formData.distributorId || d.id === formData.distributorId
+    );
+  }, [distributors, formData.distributorId]);
+
   useEffect(() => {
     isMountedRef.current = true;
-
     return () => {
       isMountedRef.current = false;
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
       }
       if (transferProgressIntervalRef.current) {
         clearInterval(transferProgressIntervalRef.current);
@@ -111,151 +243,27 @@ export const useTransferManagements = () => {
     };
   }, []);
 
-  const isValidMongoId = (value) =>
-    typeof value === "string" && /^[0-9a-fA-F]{24}$/.test(value);
-
-  const isValidTxHash = (value) =>
-    typeof value === "string" && /^0x[a-fA-F0-9]{64}$/.test((value || "").trim());
-
-  // Helper function to extract token IDs from API response
-  const extractTokenIds = (responseObj) => {
-    console.log("🔍 [extractTokenIds] Response object:", responseObj);
-
-    // Case 1: Direct tokenIds array
-    if (responseObj.tokenIds && Array.isArray(responseObj.tokenIds)) {
-      const tokenIds = responseObj.tokenIds.map((id) => String(id));
-      console.log("✅ [extractTokenIds] Found in tokenIds:", tokenIds);
-      return tokenIds;
-    }
-
-    // Case 2: Nested in data.tokenIds
-    if (
-      responseObj.data?.tokenIds &&
-      Array.isArray(responseObj.data.tokenIds)
-    ) {
-      const tokenIds = responseObj.data.tokenIds.map((id) => String(id));
-      console.log("✅ [extractTokenIds] Found in data.tokenIds:", tokenIds);
-      return tokenIds;
-    }
-
-    // Case 3: availableTokens array (array of objects with tokenId)
-    if (
-      responseObj.availableTokens &&
-      Array.isArray(responseObj.availableTokens)
-    ) {
-      const tokenIds = responseObj.availableTokens
-        .map((token) => {
-          if (typeof token === "string") {
-            return token;
-          }
-          return String(token.tokenId || token._id || token.id || "");
-        })
-        .filter(Boolean);
-      if (tokenIds.length > 0) {
-        console.log("✅ [extractTokenIds] Found in availableTokens:", tokenIds);
-        return tokenIds;
-      }
-    }
-
-    // Case 4: data.availableTokens
-    if (
-      responseObj.data?.availableTokens &&
-      Array.isArray(responseObj.data.availableTokens)
-    ) {
-      const tokenIds = responseObj.data.availableTokens
-        .map((token) => {
-          if (typeof token === "string") {
-            return token;
-          }
-          return String(token.tokenId || token._id || token.id || "");
-        })
-        .filter(Boolean);
-      if (tokenIds.length > 0) {
-        console.log(
-          "✅ [extractTokenIds] Found in data.availableTokens:",
-          tokenIds
-        );
-        return tokenIds;
-      }
-    }
-
-    // Case 5: tokens array
-    if (responseObj.tokens && Array.isArray(responseObj.tokens)) {
-      const tokenIds = responseObj.tokens
-        .map((token) => {
-          if (typeof token === "string") {
-            return token;
-          }
-          return String(token.tokenId || token._id || token.id || "");
-        })
-        .filter(Boolean);
-      if (tokenIds.length > 0) {
-        console.log("✅ [extractTokenIds] Found in tokens:", tokenIds);
-        return tokenIds;
-      }
-    }
-
-    // Case 6: data.tokens
-    if (responseObj.data?.tokens && Array.isArray(responseObj.data.tokens)) {
-      const tokenIds = responseObj.data.tokens
-        .map((token) => {
-          if (typeof token === "string") {
-            return token;
-          }
-          return String(token.tokenId || token._id || token.id || "");
-        })
-        .filter(Boolean);
-      if (tokenIds.length > 0) {
-        console.log("✅ [extractTokenIds] Found in data.tokens:", tokenIds);
-        return tokenIds;
-      }
-    }
-
-    console.warn("⚠️ [extractTokenIds] No tokenIds found in response object");
-    return [];
-  };
-
-  // FIX: Completely rewritten handleSelectProduction
-  const handleSelectProduction = async (production) => {
-    console.group("🎯 [handleSelectProduction] START");
-    console.log("Input production:", {
-      _id: production?._id,
-      id: production?.id,
-      batchNumber: production?.batchNumber,
-      quantity: production?.quantity,
-      drugId: production?.drugId,
-      drug: production?.drug,
-      drugIdFromDrug: production?.drug?._id || production?.drug?.id,
-      hasTokenIds: !!production?.tokenIds,
-      tokenIdsType: typeof production?.tokenIds,
-      tokenIdsIsArray: Array.isArray(production?.tokenIds),
-      tokenIdsLength: production?.tokenIds?.length,
-      tokenIds: production?.tokenIds,
-      fullProduction: production,
-    });
-
-    // Validate production
+  const handleSelectProduction = useCallback(async (production) => {
     if (!production) {
-      console.error("❌ [handleSelectProduction] No production provided");
       toast.error("Lỗi: Không có thông tin lô sản xuất", {
         position: "top-right",
       });
-      console.groupEnd();
       return;
     }
 
-    const productionId = production._id || production.id;
+    const productionId = production.id;
     if (!productionId) {
-      console.error("❌ [handleSelectProduction] No valid ID:", production);
       toast.error("Lỗi: Lô sản xuất không có ID hợp lệ", {
         position: "top-right",
       });
-      console.groupEnd();
       return;
     }
 
-    // Reset and initialize states
-    console.log("📝 [handleSelectProduction] Initializing states...");
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     setSelectedProduction(production);
     setFormData({
       productionId: productionId,
@@ -267,29 +275,12 @@ export const useTransferManagements = () => {
     setLoadingTokens(true);
     setShowDialog(true);
 
-    // Check if production already has valid tokenIds
     const hasValidTokenIds =
       production.tokenIds &&
       Array.isArray(production.tokenIds) &&
       production.tokenIds.length > 0;
 
-    console.log("🔍 [handleSelectProduction] Checking production.tokenIds:", {
-      exists: !!production.tokenIds,
-      isArray: Array.isArray(production.tokenIds),
-      length: production.tokenIds?.length,
-      hasValidTokenIds,
-      tokenIds: production.tokenIds,
-    });
-
     if (hasValidTokenIds) {
-      console.log(
-        "✅ [handleSelectProduction] Using tokenIds from production:",
-        {
-          count: production.tokenIds.length,
-          tokenIds: production.tokenIds,
-        }
-      );
-
       if (isMountedRef.current) {
         setAvailableTokenIds(production.tokenIds);
         setFormData((prev) => ({
@@ -297,111 +288,55 @@ export const useTransferManagements = () => {
           quantity: production.tokenIds.length.toString(),
         }));
         setLoadingTokens(false);
-
-        toast.success(
-          `Tìm thấy ${production.tokenIds.length} NFT khả dụng từ production data`,
-          {
-            position: "top-right",
-            duration: 2000,
-          }
-        );
+        toast.success(`Tìm thấy ${production.tokenIds.length} NFT khả dụng`, {
+          position: "top-right",
+          duration: 2000,
+        });
       }
-
-      console.groupEnd();
       return;
     }
 
-    // Fetch available tokens from API
-    console.log("🌐 [handleSelectProduction] Fetching from API...");
-
     try {
       let response = null;
-      let res = null;
-      let successEndpoint = null;
+      let tokenIds = [];
 
-      // Try multiple possible endpoints
-      const endpoints = [
-        `/api/manufacturer/production/${productionId}/available-tokens`,
-        `/api/production/${productionId}/available-tokens`,
-        `/manufacturer/production/${productionId}/available-tokens`,
-        `/production/${productionId}/available-tokens`,
-        `/api/productions/${productionId}/available-tokens`,
-        `/productions/${productionId}/available-tokens`,
-      ];
-
-      console.log("🔄 [handleSelectProduction] Trying endpoints:", endpoints);
-
-      for (const endpoint of endpoints) {
+      for (const endpointTemplate of TOKEN_ENDPOINTS) {
+        const endpoint = endpointTemplate.replace("{id}", productionId);
         try {
-          console.log(`🔄 [handleSelectProduction] Attempting: ${endpoint}`);
-
-          const apiResponse = await api.get(endpoint);
-
-          console.log(`✅ [handleSelectProduction] Success with ${endpoint}:`, {
-            status: apiResponse.status,
-            data: apiResponse.data,
-          });
+          const apiResponse = await Promise.race([
+            api.get(endpoint, {
+              signal: abortControllerRef.current.signal,
+            }),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("Timeout")), REQUEST_TIMEOUT_MS)
+            ),
+          ]);
 
           response = apiResponse;
-          res = apiResponse.data;
-          successEndpoint = endpoint;
-          break;
+          tokenIds = extractTokenIds(apiResponse.data);
+          if (tokenIds.length > 0) break;
         } catch (err) {
-          console.log(`❌ [handleSelectProduction] Failed ${endpoint}:`, {
-            status: err.response?.status,
-            message: err.message,
-          });
+          if (err.name === "AbortError" || err.message === "Timeout") {
+            throw err;
+          }
           continue;
         }
       }
 
-      if (!response || !res) {
-        throw new Error(
-          "All API endpoints failed - no valid response received"
-        );
+      if (!isMountedRef.current) return;
+
+      if (!response) {
+        throw new Error("Tất cả API endpoints đều thất bại");
       }
 
-      console.log("✅ [handleSelectProduction] API call successful:", {
-        endpoint: successEndpoint,
-        status: response.status,
-        responseData: res,
-      });
+      setAvailableTokenIds(tokenIds);
 
-      if (!isMountedRef.current) {
-        console.log(
-          "⚠️ [handleSelectProduction] Component unmounted, aborting"
-        );
-        console.groupEnd();
-        return;
-      }
-
-      // Extract token IDs
-      const tokenIdsArray = extractTokenIds(res);
-
-      console.log("📊 [handleSelectProduction] Token analysis:", {
-        totalProductionQuantity: production.quantity,
-        extractedTokensCount: tokenIdsArray.length,
-        extractedTokens: tokenIdsArray,
-        transferredCount: production.quantity - tokenIdsArray.length,
-      });
-
-      if (!isMountedRef.current) {
-        console.log(
-          "⚠️ [handleSelectProduction] Component unmounted, aborting"
-        );
-        console.groupEnd();
-        return;
-      }
-
-      setAvailableTokenIds(tokenIdsArray);
-
-      if (tokenIdsArray.length > 0) {
+      if (tokenIds.length > 0) {
         setFormData((prev) => ({
           ...prev,
-          quantity: tokenIdsArray.length.toString(),
+          quantity: tokenIds.length.toString(),
         }));
-
-        toast.success(`Tìm thấy ${tokenIdsArray.length} NFT khả dụng từ API`, {
+        toast.success(`Tìm thấy ${tokenIds.length} NFT khả dụng`, {
           position: "top-right",
           duration: 2000,
         });
@@ -411,52 +346,26 @@ export const useTransferManagements = () => {
           duration: 3000,
         });
       }
-
-      console.log("✅ [handleSelectProduction] Successfully set token IDs");
     } catch (error) {
-      console.error("❌ [handleSelectProduction] API error:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        config: error.config,
-      });
+      if (!isMountedRef.current) return;
+      if (error.name === "AbortError") return;
 
-      if (!isMountedRef.current) {
-        console.log(
-          "⚠️ [handleSelectProduction] Component unmounted, aborting error handling"
-        );
-        console.groupEnd();
-        return;
-      }
-
-      // Fallback: Try to use tokenIds from production object
       if (
         production.tokenIds &&
         Array.isArray(production.tokenIds) &&
         production.tokenIds.length > 0
       ) {
-        console.log(
-          "⚠️ [handleSelectProduction] Using fallback tokenIds from production"
-        );
-
         setAvailableTokenIds(production.tokenIds);
         setFormData((prev) => ({
           ...prev,
           quantity: production.tokenIds.length.toString(),
         }));
-
         toast.info(
-          `Sử dụng ${production.tokenIds.length} NFT từ dữ liệu production (fallback)`,
-          {
-            position: "top-right",
-            duration: 3000,
-          }
+          `Sử dụng ${production.tokenIds.length} NFT từ dữ liệu production`,
+          { position: "top-right", duration: 3000 }
         );
       } else {
-        console.error("❌ [handleSelectProduction] No fallback available");
-
         setAvailableTokenIds([]);
-
         const errorMsg =
           error.response?.data?.message ||
           error.message ||
@@ -469,34 +378,236 @@ export const useTransferManagements = () => {
     } finally {
       if (isMountedRef.current) {
         setLoadingTokens(false);
-        console.log("✅ [handleSelectProduction] Loading complete");
       }
-      console.groupEnd();
     }
-  };
+  }, []);
 
-  // ✅ FIX Bug #1, #5: Improved validation with proper quantity check
-  const handleSubmit = async () => {
-    console.group("🚀 [handleSubmit] START");
+  const handleBlockchainTransfer = useCallback(
+    async (invoiceId, distributorAddress, tokenIds) => {
+      setTransferProgress(0.2);
+      setTransferStatus("preparing");
 
-    if (buttonAnimating) {
-      console.log("⚠️ [handleSubmit] Already processing, ignoring");
-      console.groupEnd();
-      return;
-    }
+      if (transferProgressIntervalRef.current) {
+        clearInterval(transferProgressIntervalRef.current);
+        transferProgressIntervalRef.current = null;
+      }
 
-    console.log("📝 [handleSubmit] Form data:", formData);
-    console.log("📝 [handleSubmit] Available tokens:", {
-      count: availableTokenIds.length,
-      tokens: availableTokenIds,
-    });
+      try {
+        if (!isMountedRef.current) return null;
 
-    // ✅ FIX: Enhanced validation
+        setTransferProgress(0.3);
+        const currentWallet = await getCurrentWalletAddress();
+
+        if (!user?.walletAddress) {
+          throw new Error(
+            "Không tìm thấy địa chỉ ví của manufacturer trong hệ thống"
+          );
+        }
+
+        if (currentWallet.toLowerCase() !== user.walletAddress.toLowerCase()) {
+          toast.error(
+            `Ví hiện tại (${currentWallet.slice(
+              0,
+              6
+            )}...${currentWallet.slice(
+              -4
+            )}) không khớp với ví manufacturer (${user.walletAddress.slice(
+              0,
+              6
+            )}...${user.walletAddress.slice(-4)})`,
+            { position: "top-right", duration: 6000 }
+          );
+          throw new Error("Wrong wallet connected");
+        }
+
+        if (!isMountedRef.current) return null;
+
+        setTransferProgress(0.4);
+        setTransferStatus("transferring");
+
+        transferProgressIntervalRef.current = setInterval(() => {
+          if (!isMountedRef.current) {
+            if (transferProgressIntervalRef.current) {
+              clearInterval(transferProgressIntervalRef.current);
+              transferProgressIntervalRef.current = null;
+            }
+            return;
+          }
+          setTransferProgress((prev) =>
+            prev < MAX_PROGRESS_BEFORE_COMPLETION
+              ? Math.min(prev + PROGRESS_INCREMENT, MAX_PROGRESS_BEFORE_COMPLETION)
+              : prev
+          );
+        }, PROGRESS_INTERVAL_MS);
+
+        const onchain = await transferNFTToDistributor(
+          tokenIds,
+          distributorAddress
+        );
+
+        if (!isMountedRef.current) return null;
+
+        if (!onchain || !onchain.transactionHash) {
+          throw new Error(
+            "Transaction failed: No transaction hash returned from blockchain"
+          );
+        }
+
+        if (onchain.status === 0 || onchain.status === false) {
+          throw new Error(
+            "Transaction reverted on blockchain. Please check your wallet and try again."
+          );
+        }
+
+        if (transferProgressIntervalRef.current) {
+          clearInterval(transferProgressIntervalRef.current);
+          transferProgressIntervalRef.current = null;
+        }
+
+        setTransferProgress(MAX_PROGRESS_BEFORE_COMPLETION);
+        setTransferStatus("completed");
+
+        return onchain.transactionHash;
+      } catch (error) {
+        console.error("❌ Blockchain transfer error:", error);
+
+        if (transferProgressIntervalRef.current) {
+          clearInterval(transferProgressIntervalRef.current);
+          transferProgressIntervalRef.current = null;
+        }
+
+        if (!isMountedRef.current) return null;
+
+        setTransferStatus("error");
+        setTransferProgress(0);
+        setShowBlockchainView(false);
+        setButtonAnimating(false);
+        setButtonDone(false);
+
+        let errorMessage = "Có lỗi xảy ra khi chuyển NFT";
+
+        if (error.code === 4001) {
+          errorMessage = "Bạn đã từ chối giao dịch trong MetaMask";
+        } else if (error.message?.includes("insufficient funds")) {
+          errorMessage = "Không đủ gas fee để thực hiện giao dịch";
+        } else if (error.message?.includes("Wrong wallet")) {
+          errorMessage = "Vui lòng kết nối đúng ví manufacturer";
+        } else if (error.message?.includes("reverted")) {
+          errorMessage =
+            "Giao dịch bị revert trên blockchain. Vui lòng kiểm tra lại.";
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        toast.error(errorMessage, {
+          position: "top-right",
+          duration: 6000,
+        });
+
+        throw error;
+      }
+    },
+    [user?.walletAddress]
+  );
+
+  // 🆕 AUTO SAVE: Save transaction with retry logic
+  const autoSaveTransaction = useCallback(
+    async (invoiceId, tokenIds, transactionHash) => {
+      console.log("💾 [autoSaveTransaction] Starting auto-save...", {
+        invoiceId,
+        tokenIds,
+        transactionHash,
+      });
+
+      setTransferStatus("saving");
+
+      for (let attempt = 1; attempt <= AUTO_SAVE_RETRY_ATTEMPTS; attempt++) {
+        try {
+          console.log(`💾 [autoSaveTransaction] Attempt ${attempt}/${AUTO_SAVE_RETRY_ATTEMPTS}`);
+
+          await saveTransferTransactionMutation.mutateAsync({
+            invoiceId,
+            tokenIds,
+            transactionHash: transactionHash.trim(),
+          });
+
+          console.log("✅ [autoSaveTransaction] Save successful!");
+
+          // Success - update progress to 100%
+          setTransferProgress(1);
+          setTransferStatus("completed");
+
+          toast.success(
+            "Chuyển giao thành công! Invoice đã được lưu và cập nhật.",
+            {
+              position: "top-right",
+              duration: 4000,
+            }
+          );
+
+          // Auto close dialog after short delay
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              handleCloseDialog();
+              refetchProductions();
+            }
+          }, 2000);
+
+          return true; // Success
+        } catch (error) {
+          console.error(
+            `❌ [autoSaveTransaction] Attempt ${attempt} failed:`,
+            error
+          );
+
+          if (attempt < AUTO_SAVE_RETRY_ATTEMPTS) {
+            // Retry after delay
+            console.log(
+              `⏳ [autoSaveTransaction] Retrying in ${AUTO_SAVE_RETRY_DELAY_MS}ms...`
+            );
+            await new Promise((resolve) =>
+              setTimeout(resolve, AUTO_SAVE_RETRY_DELAY_MS)
+            );
+          } else {
+            // All attempts failed
+            console.error("❌ [autoSaveTransaction] All retry attempts failed");
+
+            setTransferStatus("error");
+
+            const errorMsg =
+              error?.response?.data?.message ||
+              error?.message ||
+              "Lỗi không xác định";
+
+            toast.error(
+              `Blockchain đã chuyển NFT thành công, nhưng không thể lưu vào hệ thống: ${errorMsg}\n\n` +
+                `Transaction Hash: ${transactionHash}\n\n` +
+                `Vui lòng liên hệ support hoặc thử lại sau.`,
+              {
+                position: "top-center",
+                duration: 10000,
+                style: { maxWidth: "600px" },
+              }
+            );
+
+            return false; // Failed
+          }
+        }
+      }
+
+      return false;
+    },
+    [saveTransferTransactionMutation, refetchProductions]
+  );
+
+  // 🆕 UPDATED: handleSubmit with auto-save
+  const handleSubmit = useCallback(async () => {
+    if (buttonAnimating) return;
+
     if (!formData.distributorId) {
       toast.error("Vui lòng chọn nhà phân phối", {
         position: "top-right",
       });
-      console.groupEnd();
       return;
     }
 
@@ -505,42 +616,30 @@ export const useTransferManagements = () => {
       toast.error("Không có token khả dụng để chuyển", {
         position: "top-right",
       });
-      console.groupEnd();
       return;
     }
 
-    // ✅ FIX Bug #5: Proper quantity validation
-    const requestedQty = parseInt(formData.quantity, 10);
-    if (isNaN(requestedQty) || requestedQty <= 0) {
-      toast.error("Số lượng không hợp lệ", {
+    const distributorAddress =
+      selectedDistributor?.walletAddress ||
+      selectedDistributor?.user?.walletAddress;
+
+    if (!distributorAddress) {
+      toast.error("Lỗi: Nhà phân phối không có địa chỉ ví", {
+        position: "top-right",
+        duration: 5000,
+      });
+      return;
+    }
+
+    const drugId = selectedProduction?.drugId;
+    const batchNumber = selectedProduction?.batchNumber;
+
+    if (!drugId || !batchNumber) {
+      toast.error("Thiếu thông tin thuốc hoặc batch number", {
         position: "top-right",
       });
-      console.groupEnd();
       return;
     }
-
-    if (requestedQty > tokenIds.length) {
-      toast.error(`Chỉ có ${tokenIds.length} NFT khả dụng để chuyển`, {
-        position: "top-right",
-      });
-      console.groupEnd();
-      return;
-    }
-
-    // Always use all available tokens
-    if (formData.quantity !== tokenIds.length.toString()) {
-      setFormData((prev) => ({
-        ...prev,
-        quantity: tokenIds.length.toString(),
-      }));
-    }
-
-    console.log("✅ [handleSubmit] Validation passed:", {
-      requestedQty,
-      tokenIdsToTransfer: tokenIds,
-      manufacturerUserId: user?._id,
-      manufacturerCompanyId: user?.pharmaCompanyId,
-    });
 
     setButtonAnimating(true);
     setButtonDone(false);
@@ -549,59 +648,17 @@ export const useTransferManagements = () => {
     setTransferStatus("issuing");
 
     try {
-      const distributorAddress =
-        selectedDistributor?.walletAddress ||
-        selectedDistributor?.user?.walletAddress;
-
-      if (!distributorAddress) {
-        console.error(
-          "❌ [handleSubmit] Missing distributor wallet address:",
-          selectedDistributor
-        );
-        toast.error("Lỗi: Nhà phân phối không có địa chỉ ví", {
-          position: "top-right",
-          duration: 5000,
-        });
-        setButtonAnimating(false);
-        setShowBlockchainView(false);
-        console.groupEnd();
-        return;
-      }
-
-      const rawDrugId =
-        selectedProduction?.drugId ||
-        selectedProduction?.drug?._id ||
-        selectedProduction?.drug?.id;
-      const cleanDrugId =
-        typeof rawDrugId === "string"
-          ? rawDrugId
-          : rawDrugId?._id || rawDrugId?.id || String(rawDrugId || "");
-
-      const lockedBatchNumber =
-        selectedProduction?.batchNumber ||
-        selectedProduction?.proofOfProduction?.batchNumber ||
-        selectedProduction?.drug?.batchNumber ||
-        "";
-
-      if (!lockedBatchNumber) {
-        toast.error("Không tìm thấy batchNumber hợp lệ cho lô sản xuất này", {
-          position: "top-right",
-        });
-        setButtonAnimating(false);
-        setShowBlockchainView(false);
-        console.groupEnd();
-        return;
-      }
+      const sanitizedNotes = sanitizeInput(formData.notes);
 
       const issuePayload = {
         distributorId: formData.distributorId,
-        drugId: cleanDrugId,
+        drugId,
         tokenIds,
-        notes: formData.notes || "",
-        batchNumber: lockedBatchNumber,
+        notes: sanitizedNotes,
+        batchNumber,
       };
 
-      console.log("📄 [handleSubmit] Issuing invoice via API:", issuePayload);
+      console.log("📄 [handleSubmit] Issuing invoice...");
 
       const issueResponse = await createTransferMutation.mutateAsync(
         issuePayload
@@ -622,80 +679,60 @@ export const useTransferManagements = () => {
         issueResponse?.invoiceId ||
         issueResponse?.data?.invoiceId;
 
-      if (!invoiceId) {
-        throw new Error("API transfer không trả về invoiceId hợp lệ");
-      }
-
-      if (!isValidMongoId(invoiceId)) {
-        console.error("❌ [handleSubmit] Invalid invoiceId format:", {
-          invoiceId,
-          issueResponse,
-        });
-        toast.error(
-          "invoiceId không hợp lệ. Vui lòng thử lại hoặc kiểm tra backend.",
-          {
-            position: "top-right",
-            duration: 5000,
-          }
-        );
-        setButtonAnimating(false);
-        setShowBlockchainView(false);
-        setTransferProgress(0);
-        setTransferStatus("error");
-        console.groupEnd();
-        return;
+      if (!invoiceId || !isValidMongoId(invoiceId)) {
+        throw new Error("API không trả về invoiceId hợp lệ");
       }
 
       const invoiceTokenIds = Array.isArray(invoiceCandidate?.tokenIds)
         ? invoiceCandidate.tokenIds.map((id) => String(id))
-        : tokenIds.map((id) => String(id));
+        : tokenIds;
 
-      const normalizedInvoice = {
-        id: invoiceId,
-        invoiceNumber:
-          invoiceCandidate?.invoiceNumber ||
-          issueResponse?.invoiceNumber ||
-          issueResponse?.data?.invoiceNumber ||
-          "",
-        status: (invoiceCandidate?.status || "issued").toLowerCase(),
-        tokenIds: invoiceTokenIds,
-      };
+      console.log("✅ [handleSubmit] Invoice issued:", invoiceId);
 
-      setPendingInvoice(normalizedInvoice);
+      // Transfer on blockchain
+      console.log("⛓️ [handleSubmit] Starting blockchain transfer...");
 
-      console.log("🧾 [handleSubmit] Invoice issued:", normalizedInvoice);
-
-      // ✅ FIX Bug #6, #8: Enhanced blockchain transfer with validation
       const onchainHash = await handleBlockchainTransfer(
-        normalizedInvoice.id,
+        invoiceId,
         distributorAddress,
-        normalizedInvoice.tokenIds
+        invoiceTokenIds
       );
 
-      // ✅ FIX Bug #8: Validate transaction hash before setting
       if (!onchainHash || !isValidTxHash(onchainHash)) {
         throw new Error(
           "Transaction hash không hợp lệ hoặc không nhận được từ blockchain"
         );
       }
 
-      setTransactionHashInput(onchainHash);
-      setTransferStatus("awaiting-save");
-      setShowBlockchainView(false);
-      setButtonAnimating(false);
-      setButtonDone(false);
+      console.log("✅ [handleSubmit] Blockchain transfer complete:", onchainHash);
 
-      toast.info(
-        "Giao dịch on-chain đã hoàn tất. Vui lòng lưu transaction để cập nhật invoice.",
-        { position: "top-center", duration: 5000 }
+      // 🆕 AUTO SAVE: Automatically save transaction
+      console.log("💾 [handleSubmit] Starting auto-save...");
+
+      const saveSuccess = await autoSaveTransaction(
+        invoiceId,
+        invoiceTokenIds,
+        onchainHash
       );
+
+      if (!saveSuccess) {
+        // Save failed but blockchain succeeded
+        // User needs to contact support with transaction hash
+        console.warn(
+          "⚠️ [handleSubmit] Auto-save failed but blockchain succeeded"
+        );
+        
+        setButtonAnimating(false);
+        setShowBlockchainView(false);
+      } else {
+        // Complete success
+        console.log("✅ [handleSubmit] Complete success!");
+        setButtonDone(true);
+      }
     } catch (error) {
       console.error("❌ [handleSubmit] Error:", error);
 
-      if (!isMountedRef.current) {
-        console.groupEnd();
-        return;
-      }
+      if (!isMountedRef.current) return;
 
       const errorMessage =
         error.response?.data?.message || error.message || "Lỗi không xác định";
@@ -709,188 +746,21 @@ export const useTransferManagements = () => {
       setTransferProgress(0);
       setTransferStatus("error");
     }
+  }, [
+    buttonAnimating,
+    formData,
+    availableTokenIds,
+    selectedDistributor,
+    selectedProduction,
+    createTransferMutation,
+    handleBlockchainTransfer,
+    autoSaveTransaction,
+  ]);
 
-    console.groupEnd();
-  };
-
-  // ✅ FIX Bug #6, #9: Enhanced blockchain transfer with proper cleanup
-  const handleBlockchainTransfer = async (
-    invoiceId,
-    distributorAddress,
-    tokenIds
-  ) => {
-    console.group("⛓️ [handleBlockchainTransfer] START");
-
-    setTransferProgress(0.2);
-    setTransferStatus("preparing");
-
-    // ✅ FIX Bug #9: Clear existing interval before creating new one
-    if (transferProgressIntervalRef.current) {
-      clearInterval(transferProgressIntervalRef.current);
-      transferProgressIntervalRef.current = null;
-    }
-
-    try {
-      if (!isMountedRef.current) {
-        console.groupEnd();
-        return null;
-      }
-
-      setTransferProgress(0.3);
-      const currentWallet = await getCurrentWalletAddress();
-
-      console.log("🔍 [handleBlockchainTransfer] Wallet check:", {
-        currentWallet,
-        userWallet: user?.walletAddress,
-        match:
-          currentWallet.toLowerCase() === user?.walletAddress?.toLowerCase(),
-      });
-
-      if (
-        user?.walletAddress &&
-        currentWallet.toLowerCase() !== user.walletAddress.toLowerCase()
-      ) {
-        toast.error(
-          `Ví hiện tại (${currentWallet.slice(0, 6)}...${currentWallet.slice(
-            -4
-          )}) không khớp với ví manufacturer (${user.walletAddress.slice(
-            0,
-            6
-          )}...${user.walletAddress.slice(-4)})`,
-          { position: "top-right", duration: 6000 }
-        );
-        throw new Error("Wrong wallet connected");
-      }
-
-      if (!isMountedRef.current) {
-        console.groupEnd();
-        return null;
-      }
-
-      setTransferProgress(0.4);
-      setTransferStatus("transferring");
-
-      console.log(
-        "🚀 [handleBlockchainTransfer] Starting NFT transfer on blockchain:",
-        {
-          tokenIds,
-          distributorAddress,
-          from: currentWallet,
-        }
-      );
-
-      // BƯỚC 1: Gọi smart contract để transfer NFT
-      const transferPromise = transferNFTToDistributor(
-        tokenIds,
-        distributorAddress
-      );
-
-      // ✅ FIX Bug #9: Improved interval cleanup
-      transferProgressIntervalRef.current = setInterval(() => {
-        if (!isMountedRef.current) {
-          if (transferProgressIntervalRef.current) {
-            clearInterval(transferProgressIntervalRef.current);
-            transferProgressIntervalRef.current = null;
-          }
-          return;
-        }
-        setTransferProgress((prev) =>
-          prev < 0.8 ? Math.min(prev + 0.01, 0.8) : prev
-        );
-      }, 100);
-
-      // Chờ transaction được ký và confirm trên blockchain
-      const onchain = await transferPromise;
-
-      console.log(
-        "✅ [handleBlockchainTransfer] NFT transferred on blockchain:",
-        {
-          transactionHash: onchain.transactionHash,
-          blockNumber: onchain.blockNumber,
-          status: onchain.status,
-        }
-      );
-
-      if (!isMountedRef.current) {
-        console.groupEnd();
-        return null;
-      }
-
-      // ✅ FIX Bug #6: Validate transaction result
-      if (!onchain || !onchain.transactionHash) {
-        throw new Error(
-          "Transaction failed: No transaction hash returned from blockchain"
-        );
-      }
-
-      // Check if transaction was successful (status = 1 means success)
-      if (onchain.status === 0 || onchain.status === false) {
-        throw new Error(
-          "Transaction reverted on blockchain. Please check your wallet and try again."
-        );
-      }
-
-      if (transferProgressIntervalRef.current) {
-        clearInterval(transferProgressIntervalRef.current);
-        transferProgressIntervalRef.current = null;
-      }
-
-      setTransferProgress(1);
-      setTransferStatus("completed");
-
-      return onchain.transactionHash;
-    } catch (error) {
-      console.error("❌ [handleBlockchainTransfer] Error:", error);
-
-      // ✅ FIX Bug #9: Ensure cleanup on error
-      if (transferProgressIntervalRef.current) {
-        clearInterval(transferProgressIntervalRef.current);
-        transferProgressIntervalRef.current = null;
-      }
-
-      if (!isMountedRef.current) {
-        console.groupEnd();
-        return null;
-      }
-
-      setTransferStatus("error");
-      setTransferProgress(0);
-      setShowBlockchainView(false);
-      setButtonAnimating(false);
-      setButtonDone(false);
-
-      let errorMessage = "Có lỗi xảy ra khi chuyển NFT";
-
-      if (error.code === 4001) {
-        errorMessage = "Bạn đã từ chối giao dịch trong MetaMask";
-      } else if (error.message?.includes("insufficient funds")) {
-        errorMessage = "Không đủ gas fee để thực hiện giao dịch";
-      } else if (error.message?.includes("Wrong wallet")) {
-        errorMessage = "Vui lòng kết nối đúng ví manufacturer";
-      } else if (error.message?.includes("reverted")) {
-        errorMessage = "Giao dịch bị revert trên blockchain. Vui lòng kiểm tra lại.";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      toast.error(errorMessage, {
-        position: "top-right",
-        duration: 6000,
-      });
-
-      throw error;
-    } finally {
-      console.groupEnd();
-    }
-  };
-
-  const handleCloseDialog = () => {
-    console.log("🔒 [handleCloseDialog] Closing and resetting...");
-
-    // ✅ FIX Bug #9: Comprehensive cleanup
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
+  const handleCloseDialog = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
 
     if (transferProgressIntervalRef.current) {
@@ -913,124 +783,33 @@ export const useTransferManagements = () => {
     setButtonAnimating(false);
     setButtonDone(false);
     setLoadingTokens(false);
-    setPendingInvoice(null);
-    setTransactionHashInput("");
-    setSaveTransferLoading(false);
-  };
-
-  const handleSaveTransfer = async () => {
-    if (!pendingInvoice) {
-      toast.error("Không tìm thấy invoice để lưu transaction", {
-        position: "top-right",
-      });
-      return;
-    }
-
-    if ((pendingInvoice.status || "").toLowerCase() !== "issued") {
-      toast.error("Invoice chưa ở trạng thái 'issued'", {
-        position: "top-right",
-      });
-      return;
-    }
-
-    if (!isValidTxHash(transactionHashInput)) {
-      toast.error("Transaction hash không hợp lệ (0x + 64 ký tự hex)", {
-        position: "top-right",
-      });
-      return;
-    }
-
-    setSaveTransferLoading(true);
-    setTransferStatus("saving");
-
-    try {
-      await saveTransferTransactionMutation.mutateAsync({
-        invoiceId: pendingInvoice.id,
-        tokenIds: pendingInvoice.tokenIds,
-        transactionHash: transactionHashInput.trim(),
-      });
-
-      toast.success(
-        "Lưu transaction thành công. Invoice đã chuyển sang 'sent'.",
-        {
-          position: "top-right",
-        }
-      );
-
-      handleCloseDialog();
-      refetchProductions();
-    } catch (error) {
-      console.error("❌ [handleSaveTransfer] Error:", error);
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Lỗi không xác định";
-      toast.error(message, {
-        position: "top-right",
-        duration: 5000,
-      });
-      setTransferStatus("awaiting-save");
-    } finally {
-      if (isMountedRef.current) {
-        setSaveTransferLoading(false);
-      }
-    }
-  };
-
-  const formatDate = (dateValue) => {
-    if (!dateValue) {
-      return "Chưa có";
-    }
-    const date = new Date(dateValue);
-    return isNaN(date.getTime())
-      ? "Không hợp lệ"
-      : date.toLocaleDateString("vi-VN");
-  };
-
-  const safeDistributors = Array.isArray(distributors) ? distributors : [];
-  const selectedDistributor = safeDistributors.find(
-    (d) =>
-      d._id === formData.distributorId ||
-      d.id === formData.distributorId ||
-      d.userId === formData.distributorId
-  );
-
-  const isSaveTransferReady =
-    !!pendingInvoice &&
-    (pendingInvoice.status || "").toLowerCase() === "issued" &&
-    isValidTxHash(transactionHashInput);
+  }, []);
 
   return {
     productions,
     loading,
-    loadingProgress,
+    distributors,
+    selectedDistributor,
     showDialog,
     selectedProduction,
     availableTokenIds,
     loadingTokens,
     buttonAnimating,
-    setButtonAnimating,
     buttonDone,
-    setButtonDone,
     showBlockchainView,
-    setShowBlockchainView,
     transferProgress,
-    setTransferProgress,
     transferStatus,
-    setTransferStatus,
     formData,
     setFormData,
     handleSelectProduction,
     handleSubmit,
     handleCloseDialog,
     formatDate,
-    safeDistributors,
-    selectedDistributor,
-    pendingInvoice,
-    transactionHashInput,
-    setTransactionHashInput,
-    handleSaveTransfer,
-    saveTransferLoading,
-    isSaveTransferReady,
+    getStatusInfo,
+    setButtonAnimating,
+    setButtonDone,
+    setShowBlockchainView,
+    setTransferProgress,
+    setTransferStatus,
   };
 };
