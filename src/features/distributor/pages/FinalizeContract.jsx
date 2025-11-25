@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import DashboardLayout from "../../shared/components/DashboardLayout";
@@ -9,6 +9,8 @@ import { useDistributorContractDetail, useFinalizeContractAndMint } from "../api
 import { signMessageWithMetaMask } from "../../utils/web3Helper";
 import { toast } from "sonner";
 import { contractStatusColor, contractStatusLabel } from "../hooks/useContracts";
+import { useQuery } from "@tanstack/react-query";
+import api from "../../utils/api";
 
 export default function FinalizeContract() {
   const { contractId } = useParams();
@@ -31,7 +33,73 @@ export default function FinalizeContract() {
   const { mutateAsync: finalizeContract } =
     useFinalizeContractAndMint();
 
-  const contract = contractResponse?.data?.data;
+  const rawContract =
+    contractResponse?.data?.data ||
+    contractResponse?.data ||
+    null;
+
+  const contract = rawContract
+    ? {
+        ...rawContract,
+        _id: rawContract._id || rawContract.id || contractId,
+        pharmacyId:
+          rawContract.pharmacyId ||
+          rawContract.pharmacy?._id ||
+          rawContract.pharmacy?.id ||
+          null,
+        pharmacyWalletAddress:
+          rawContract.pharmacyWalletAddress ||
+          rawContract.pharmacyAddress ||
+          rawContract.pharmacyWallet ||
+          null,
+        pharmacyName:
+          rawContract.pharmacy?.businessName ||
+          rawContract.pharmacy?.name ||
+          rawContract.pharmacyName ||
+          rawContract.pharmacyId ||
+          "N/A",
+      }
+    : null;
+
+  const {
+    data: pharmaciesResponse,
+    isLoading: loadingPharmacies,
+  } = useQuery({
+    queryKey: ["pharmaciesForFinalize"],
+    queryFn: async () => {
+      const response = await api.get("/distributor/pharmacies");
+      return response.data;
+    },
+    enabled: !!contract && !contract.pharmacyWalletAddress,
+  });
+
+  const fallbackPharmacyInfo = useMemo(() => {
+    if (!contract || contract.pharmacyWalletAddress) {
+      return null;
+    }
+    const pharmacies = pharmaciesResponse?.data?.pharmacies || [];
+    return (
+      pharmacies.find(
+        (item) =>
+          item._id === contract.pharmacyId ||
+          item.id === contract.pharmacyId ||
+          item._id === contract.pharmacyName
+      ) || null
+    );
+  }, [contract, pharmaciesResponse]);
+
+  const resolvedPharmacyWallet =
+    contract?.pharmacyWalletAddress ||
+    fallbackPharmacyInfo?.walletAddress ||
+    fallbackPharmacyInfo?.wallet ||
+    null;
+
+  const resolvedPharmacyName =
+    contract?.pharmacyName ||
+    fallbackPharmacyInfo?.businessName ||
+    fallbackPharmacyInfo?.name ||
+    fallbackPharmacyInfo?._id ||
+    "N/A";
 
   const handleFinalize = async () => {
     try {
@@ -47,9 +115,14 @@ export default function FinalizeContract() {
       }
 
       // Step 2: Finalize contract and mint NFT
+      const pharmacyAddress = resolvedPharmacyWallet;
+      if (!pharmacyAddress) {
+        throw new Error("Không tìm thấy địa chỉ ví của Pharmacy trong hợp đồng");
+      }
+
       const result = await finalizeContract({
         contractId: contractId,
-        pharmacyAddress: contract.pharmacyWalletAddress,
+        pharmacyAddress,
         distributorSignature: signatureResult.signature,
         distributorAddress: signatureResult.address,
         signedMessage: signatureResult.message,
@@ -146,7 +219,7 @@ export default function FinalizeContract() {
           </Descriptions.Item>
 
           <Descriptions.Item label="Nhà thuốc">
-            {contract.pharmacy?.businessName || contract.pharmacy?.name || "N/A"}
+            {resolvedPharmacyName}
           </Descriptions.Item>
 
           <Descriptions.Item label="Trạng thái">
@@ -157,13 +230,15 @@ export default function FinalizeContract() {
 
           <Descriptions.Item label="Wallet Distributor">
             <span className="font-mono text-xs">
-              {contract.distributorWalletAddress}
+              {contract.distributorWalletAddress ||
+                contract.distributorAddress ||
+                "N/A"}
             </span>
           </Descriptions.Item>
 
           <Descriptions.Item label="Wallet Pharmacy">
             <span className="font-mono text-xs">
-              {contract.pharmacyWalletAddress}
+              {resolvedPharmacyWallet || "N/A"}
             </span>
           </Descriptions.Item>
 
@@ -194,9 +269,11 @@ export default function FinalizeContract() {
             </Descriptions.Item>
           )}
 
-          <Descriptions.Item label="Ngày tạo">
-            {new Date(contract.createdAt).toLocaleString("vi-VN")}
-          </Descriptions.Item>
+          {contract.createdAt && (
+            <Descriptions.Item label="Ngày tạo">
+              {new Date(contract.createdAt).toLocaleString("vi-VN")}
+            </Descriptions.Item>
+          )}
         </Descriptions>
 
         {/* Info Box */}

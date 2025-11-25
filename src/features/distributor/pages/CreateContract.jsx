@@ -9,7 +9,10 @@ import { useNavigate } from "react-router-dom";
 import { useCreateContractRequest } from "../apis/contract";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../utils/api";
-import { signMessageWithMetaMask } from "../../utils/web3Helper";
+import {
+  signMessageWithMetaMask,
+  distributorCreateContractOnChain,
+} from "../../utils/web3Helper";
 import { toast } from "sonner";
 
 export default function CreateContract() {
@@ -85,6 +88,26 @@ export default function CreateContract() {
     try {
       setLoading(true);
 
+      const selectedPharmacy = pharmacies.find(
+        (pharmacy) =>
+          pharmacy?._id === values.pharmacyId ||
+          pharmacy?.id === values.pharmacyId ||
+          pharmacy?.pharmacyId === values.pharmacyId
+      );
+
+      if (!selectedPharmacy) {
+        throw new Error("Không tìm thấy thông tin nhà thuốc đã chọn");
+      }
+
+      const pharmacyWallet =
+        selectedPharmacy.walletAddress ||
+        selectedPharmacy.wallet ||
+        selectedPharmacy.address;
+
+      if (!pharmacyWallet) {
+        throw new Error("Nhà thuốc chưa cấu hình địa chỉ ví");
+      }
+
       // Step 1: Get MetaMask signature
       const signatureResult = await signMessageWithMetaMask(
         "Tạo yêu cầu hợp đồng với nhà thuốc"
@@ -94,7 +117,12 @@ export default function CreateContract() {
         throw new Error("Không thể lấy chữ ký từ MetaMask");
       }
 
-      // Step 2: Create contract request
+      // Step 2: Tạo hợp đồng trên blockchain
+      const blockchainResult = await distributorCreateContractOnChain(
+        pharmacyWallet
+      );
+
+      // Step 3: Lưu thông tin hợp đồng vào backend
       const result = await createContract({
         pharmacyId: values.pharmacyId,
         contractFileUrl: uploadedFileUrl,
@@ -102,6 +130,9 @@ export default function CreateContract() {
         distributorSignature: signatureResult.signature,
         distributorAddress: signatureResult.address,
         signedMessage: signatureResult.message,
+        pharmacyAddress: pharmacyWallet,
+        blockchainTxHash: blockchainResult.transactionHash,
+        blockchainEvent: blockchainResult.event,
       });
 
       toast.success("Tạo yêu cầu hợp đồng thành công!");

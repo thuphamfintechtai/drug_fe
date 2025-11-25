@@ -9,7 +9,10 @@ import {
   usePharmacyContractDetail,
   useConfirmContract,
 } from "../../distributor/apis/contract";
-import { signMessageWithMetaMask } from "../../utils/web3Helper";
+import {
+  signMessageWithMetaMask,
+  pharmacyConfirmContractOnChain,
+} from "../../utils/web3Helper";
 import { toast } from "sonner";
 import {
   contractStatusColor,
@@ -55,13 +58,31 @@ export default function ConfirmContract() {
         throw new Error("Không thể lấy chữ ký từ MetaMask");
       }
 
-      // Step 2: Confirm contract (send signature to backend for verification)
+      const distributorAddress =
+        contract.distributorWalletAddress ||
+        contract.distributorAddress ||
+        contract.distributor?.walletAddress;
+
+      if (!distributorAddress) {
+        throw new Error(
+          "Không tìm thấy địa chỉ ví của nhà phân phối trong hợp đồng"
+        );
+      }
+
+      // Step 2: Confirm on-chain
+      const blockchainResult = await pharmacyConfirmContractOnChain(
+        distributorAddress
+      );
+
+      // Step 3: Confirm contract via backend (for persistence & auditing)
       const result = await confirmContract({
         contractId: contractId,
-        distributorAddress: contract.distributorWalletAddress,
+        distributorAddress,
         pharmacySignature: signature.signature,
         pharmacyAddress: signature.address,
         signedMessage: signature.message,
+        blockchainTxHash: blockchainResult.transactionHash,
+        blockchainEvent: blockchainResult.event,
       });
 
       toast.success("Xác nhận hợp đồng thành công!");

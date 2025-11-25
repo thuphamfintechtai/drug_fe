@@ -1144,6 +1144,121 @@ export const getCurrentAccount = getCurrentWalletAddress;
  * @param {string} message - Message to sign
  * @returns {Promise<Object>} - Signature and private key
  */
+export const pharmacyConfirmContractOnChain = async (distributorAddress) => {
+  try {
+    if (!ethers.isAddress(distributorAddress)) {
+      throw new Error("Địa chỉ distributor không hợp lệ");
+    }
+
+    const contract = await getNFTContract();
+    const tx = await contract.pharmacyConfirmTheContract(distributorAddress);
+    const receipt = await tx.wait();
+
+    let eventData = null;
+    try {
+      const iface = new ethers.Interface(nftABI.abi);
+      for (const log of receipt.logs || []) {
+        try {
+          const parsed = iface.parseLog(log);
+          if (parsed?.name === "pharmacySignTheContractEvent") {
+            eventData = {
+              pharmacyAddress: parsed.args?.[0],
+              distributorAddress: parsed.args?.[1],
+              timestamp: parsed.args?.[2]?.toString(),
+            };
+            break;
+          }
+        } catch (err) {
+          // ignore unrelated logs
+        }
+      }
+    } catch (err) {
+      console.warn("Không thể parse log pharmacySignTheContractEvent:", err);
+    }
+
+    if (!eventData) {
+      throw new Error(
+        "Không nhận được sự kiện pharmacySignTheContractEvent từ blockchain"
+      );
+    }
+
+    return {
+      transactionHash: receipt.hash || tx.hash,
+      blockNumber: receipt.blockNumber,
+      gasUsed: receipt.gasUsed?.toString(),
+      event: eventData,
+    };
+  } catch (error) {
+    console.error("Error confirming contract on-chain:", error);
+    const message =
+      error?.reason ||
+      error?.data?.message ||
+      error?.error?.message ||
+      error?.message ||
+      "Không thể xác nhận hợp đồng trên blockchain.";
+    throw new Error(message);
+  }
+};
+
+export const distributorCreateContractOnChain = async (pharmacyAddress) => {
+  try {
+    if (!ethers.isAddress(pharmacyAddress)) {
+      throw new Error("Địa chỉ pharmacy không hợp lệ");
+    }
+
+    const contract = await getNFTContract();
+    const tx = await contract.distributorCreateAContract(pharmacyAddress);
+    const receipt = await tx.wait();
+
+    let eventData = null;
+    try {
+      const iface = new ethers.Interface(nftABI.abi);
+      for (const log of receipt.logs || []) {
+        try {
+          const parsed = iface.parseLog(log);
+          if (parsed?.name === "distributorSignTheContractEvent") {
+            eventData = {
+              distributorAddress: parsed.args?.[0],
+              pharmacyAddress: parsed.args?.[1],
+              timestamp: parsed.args?.[2]?.toString(),
+            };
+            break;
+          }
+        } catch (err) {
+          // Ignore unrelated logs
+        }
+      }
+    } catch (err) {
+      console.warn(
+        "Không thể parse log distributorSignTheContractEvent:",
+        err
+      );
+    }
+
+    if (!eventData) {
+      throw new Error(
+        "Không nhận được sự kiện distributorSignTheContractEvent từ blockchain"
+      );
+    }
+
+    return {
+      transactionHash: receipt.hash || tx.hash,
+      blockNumber: receipt.blockNumber,
+      gasUsed: receipt.gasUsed?.toString(),
+      event: eventData,
+    };
+  } catch (error) {
+    console.error("Error creating contract on-chain:", error);
+    const message =
+      error?.reason ||
+      error?.data?.message ||
+      error?.error?.message ||
+      error?.message ||
+      "Không thể tạo hợp đồng trên blockchain.";
+    throw new Error(message);
+  }
+};
+
 export const signMessageWithMetaMask = async (message) => {
   try {
     if (!window.ethereum) {
@@ -1181,6 +1296,8 @@ export default {
   getNFTTokenURI,
   getNFTTrackingHistory,
   transferNFTToDistributor,
+  distributorCreateContractOnChain,
+  pharmacyConfirmContractOnChain,
   isMetaMaskInstalled,
   isWalletConnected,
   connectWallet,
