@@ -1173,18 +1173,27 @@ export const useTransferToPharmacy = () => {
 
             const finalizeResult = await finalizeDistributorPharmacyContract(pharmacyAddress);
             
-            console.log("✅ [handleSubmit] Contract đã được finalize:", {
-              transactionHash: finalizeResult.transactionHash,
-              blockNumber: finalizeResult.blockNumber,
-            });
+            // ✅ Nếu contract đã được finalize trước đó, vẫn tiếp tục
+            if (finalizeResult.alreadyFinalized) {
+              console.log("ℹ️ [handleSubmit] Contract đã được finalize trước đó, tiếp tục...");
+              toast.info("Contract đã được finalize trước đó, tiếp tục transfer NFT...", {
+                position: "top-right",
+                duration: 2000,
+              });
+            } else {
+              console.log("✅ [handleSubmit] Contract đã được finalize:", {
+                transactionHash: finalizeResult.transactionHash,
+                blockNumber: finalizeResult.blockNumber,
+              });
 
-            toast.success("Contract đã được finalize!", {
-              position: "top-right",
-              duration: 2000,
-            });
+              toast.success("Contract đã được finalize!", {
+                position: "top-right",
+                duration: 2000,
+              });
 
-            // Đợi một chút để transaction được confirm
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+              // Đợi một chút để transaction được confirm
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
           } catch (finalizeError) {
             // Nếu pharmacy chưa approve, hiển thị thông báo rõ ràng và dừng lại
             if (finalizeError.message?.includes("Pharmacy has not approved") || 
@@ -1222,13 +1231,23 @@ export const useTransferToPharmacy = () => {
               return; // Dừng lại, không tiếp tục transfer NFT
             }
             
-            // Nếu contract đã được finalize rồi, tiếp tục
+            // ✅ Nếu contract đã được finalize rồi hoặc các lỗi khác, vẫn tiếp tục
+            // (có thể contract đã được finalize trước đó nhưng bị lỗi khác khi check)
             if (finalizeError.message?.includes("already finalized") || 
-                finalizeError.message?.includes("đã được finalize")) {
+                finalizeError.message?.includes("đã được finalize") ||
+                finalizeError.message?.includes("Contract is already finalized")) {
               console.log("ℹ️ [handleSubmit] Contract đã được finalize, tiếp tục...");
+              toast.info("Contract đã được finalize trước đó, tiếp tục transfer NFT...", {
+                position: "top-right",
+                duration: 2000,
+              });
             } else {
-              console.warn("⚠️ [handleSubmit] Lỗi khi finalize contract:", finalizeError.message);
+              console.warn("⚠️ [handleSubmit] Lỗi khi finalize contract (có thể đã được finalize trước đó):", finalizeError.message);
               // Vẫn tiếp tục thử transfer NFT, có thể contract đã được finalize trước đó
+              toast.warning("Có lỗi khi finalize contract, nhưng sẽ thử tiếp tục transfer NFT...", {
+                position: "top-right",
+                duration: 3000,
+              });
             }
           }
         } catch (contractError) {

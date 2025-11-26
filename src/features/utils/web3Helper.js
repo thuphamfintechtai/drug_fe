@@ -733,6 +733,53 @@ export const finalizeDistributorPharmacyContract = async (pharmacyAddress) => {
 
     console.log("📝 [finalizeDistributorPharmacyContract] Đang finalize contract với pharmacy:", pharmacyAddress);
 
+    // ✅ Kiểm tra contract existence và status TRƯỚC KHI gọi transaction
+    const contractData = await contract.distributorPharmacyContracts(
+      signerAddress,
+      pharmacyAddress
+    );
+
+    // Kiểm tra contract có tồn tại không
+    if (!contractData.exists) {
+      throw new Error(
+        `❌ Contract chưa được tạo!\n\n` +
+        `Không tìm thấy contract giữa distributor ${signerAddress} và pharmacy ${pharmacyAddress}.\n\n` +
+        `Vui lòng tạo contract trước khi finalize.`
+      );
+    }
+
+    // ✅ Kiểm tra đã finalized chưa (TRƯỚC KHI gọi transaction để tránh tốn gas)
+    if (contractData.distributorFinalized) {
+      console.log("ℹ️ [finalizeDistributorPharmacyContract] Contract đã được finalize rồi, bỏ qua...");
+      return {
+        success: true,
+        alreadyFinalized: true,
+        message: "Contract đã được finalize trước đó",
+        contractData: {
+          distributor: signerAddress,
+          pharmacy: pharmacyAddress,
+          distributorFinalized: true,
+          pharmacyApproved: contractData.pharmacyApproved,
+        }
+      };
+    }
+
+    // ✅ Kiểm tra pharmacy đã approve chưa
+    if (!contractData.pharmacyApproved) {
+      throw new Error(
+        `⚠️ Pharmacy chưa approve contract!\n\n` +
+        `Contract giữa distributor và pharmacy cần được pharmacy approve trước khi distributor có thể finalize.\n\n` +
+        `Flow đúng:\n` +
+        `1. Distributor tạo contract ✅\n` +
+        `2. Pharmacy approve contract ⚠️ (đang thiếu bước này)\n` +
+        `3. Distributor finalize contract\n` +
+        `4. Sau đó mới transfer NFT\n\n` +
+        `Giải pháp:\n` +
+        `- Yêu cầu pharmacy (${pharmacyAddress}) approve contract trước\n` +
+        `- Hoặc liên hệ backend team để tự động approve`
+      );
+    }
+
     // Call distributorFinalizeAndMint(pharmacyAddress)
     const tx = await contract.distributorFinalizeAndMint(pharmacyAddress);
 
@@ -747,13 +794,20 @@ export const finalizeDistributorPharmacyContract = async (pharmacyAddress) => {
       success: true,
       transactionHash: tx.hash,
       blockNumber: receipt.blockNumber,
+      gasUsed: receipt.gasUsed.toString(), // ✅ Thêm thông tin gas
+      contractData: {
+        distributor: signerAddress,
+        pharmacy: pharmacyAddress,
+        distributorFinalized: true,
+        pharmacyApproved: true,
+      }
     };
   } catch (error) {
-    console.error("Error finalizing distributor-pharmacy contract:", error);
+    console.error("❌ [finalizeDistributorPharmacyContract] Error:", error);
     
     // Friendly error messages
     if (error?.code === "ACTION_REJECTED" || error?.code === 4001) {
-      throw new Error("User rejected the transaction");
+      throw new Error("User đã từ chối transaction");
     }
     
     if (error?.code === "CALL_EXCEPTION") {
@@ -763,26 +817,16 @@ export const finalizeDistributorPharmacyContract = async (pharmacyAddress) => {
         error.message?.match(/revert\s+"?([^"]+)"?/)?.[1] ||
         "unknown reason";
       
-      // Handle specific errors
-      if (reason.includes("Pharmacy has not approved") || reason.includes("not approved")) {
-        throw new Error(
-          `⚠️ Pharmacy chưa approve contract!\n\n` +
-          `Contract giữa distributor và pharmacy cần được pharmacy approve trước khi distributor có thể finalize.\n\n` +
-          `Flow đúng:\n` +
-          `1. Distributor tạo contract (nếu chưa có)\n` +
-          `2. Pharmacy approve contract\n` +
-          `3. Distributor finalize contract\n` +
-          `4. Sau đó mới transfer NFT\n\n` +
-          `Giải pháp:\n` +
-          `- Yêu cầu pharmacy approve contract trước\n` +
-          `- Hoặc liên hệ backend team để tự động approve\n\n` +
-          `Lỗi chi tiết: ${reason}`
-        );
-      }
-      
       throw new Error(
-        `Contract call exception (reverted). Reason: ${reason}`
+        `❌ Transaction bị revert!\n\n` +
+        `Lý do: ${reason}\n\n` +
+        `Nếu lỗi vẫn tiếp diễn, vui lòng liên hệ support.`
       );
+    }
+    
+    // ✅ Re-throw error nếu đã format rồi (từ các check ở trên)
+    if (error.message?.includes('⚠️') || error.message?.includes('❌')) {
+      throw error;
     }
     
     throw new Error(error?.message || "Failed to finalize contract");
