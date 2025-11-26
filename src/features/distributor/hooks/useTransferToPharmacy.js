@@ -1404,8 +1404,10 @@ export const useTransferToPharmacy = () => {
           tokenIds: selectedTokenIds,
         });
 
-        const saveBody = saveResponse?.data ?? saveResponse;
-        if (!saveBody?.success) {
+        // saveTransferTransaction đã trả về response.data nên không cần bóc thêm .data
+        const saveBody = saveResponse;
+
+        if (saveBody?.success === false) {
           throw new Error(saveBody?.message || "Lỗi khi lưu transaction hash");
         }
 
