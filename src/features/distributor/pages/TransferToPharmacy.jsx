@@ -200,9 +200,16 @@ export default function TransferToPharmacy() {
                           <div className="flex items-center justify-center">
                             <button
                               onClick={() => handleSelectDistribution(dist)}
-                              className="px-4 py-2 border-2 border-[#3db6d9] bg-white !text-[#3db6d9] rounded-full font-semibold hover:bg-[#3db6d9] hover:!text-white hover:shadow-md hover:shadow-[#3db6d9]/40 transition-all duration-200"
+                              disabled={dist.transferToPharmacy === true}
+                              className={`px-4 py-2 rounded-full font-semibold transition-all duration-200 ${
+                                dist.transferToPharmacy === true
+                                  ? "border-2 border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed"
+                                  : "border-2 border-[#3db6d9] bg-white !text-[#3db6d9] hover:bg-[#3db6d9] hover:!text-white hover:shadow-md hover:shadow-[#3db6d9]/40"
+                              }`}
                             >
-                              Chuyển cho NT
+                              {dist.transferToPharmacy === true
+                                ? "Đã chuyển cho NT"
+                                : "Chuyển cho NT"}
                             </button>
                           </div>
                         </td>
