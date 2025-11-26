@@ -16,7 +16,7 @@ import {
   getCurrentAccount,
   finalizeDistributorPharmacyContract,
   createDistributorPharmacyContract,
-  distributorTransferToPharmacyOnChain,
+  transferNFTToPharmacy,
 } from "../../utils/web3Helper";
 
 // ✅ VALIDATION FUNCTIONS
@@ -1242,7 +1242,7 @@ export const useTransferToPharmacy = () => {
           duration: 4000,
         });
 
-        transferResult = await distributorTransferToPharmacyOnChain(
+        transferResult = await transferNFTToPharmacy(
           selectedTokenIds,
           transferAmounts,
           pharmacyAddress
