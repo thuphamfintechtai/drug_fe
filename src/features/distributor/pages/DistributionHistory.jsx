@@ -178,12 +178,17 @@ export default function DistributionHistory() {
 
                   {/* Summary Chips */}
                   <div className="px-5 pb-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-600">Đơn hàng:</span>
-                      <span className="font-mono text-slate-800">
-                        {item.manufacturerInvoice?.invoiceNumber || "N/A"}
-                      </span>
-                    </div>
+                    {/* Đơn hàng: chỉ hiển thị khi có dữ liệu, không show N/A */}
+                    {(item.manufacturerInvoice?.invoiceNumber ||
+                      item.invoiceNumber) && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-600">Đơn hàng:</span>
+                        <span className="font-mono text-slate-800">
+                          {item.manufacturerInvoice?.invoiceNumber ||
+                            item.invoiceNumber}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <span className="text-slate-600">Số lượng:</span>
                       <span className="font-semibold text-slate-800">

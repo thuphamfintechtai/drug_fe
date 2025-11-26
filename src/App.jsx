@@ -391,6 +391,15 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+        {/* Chi tiết hợp đồng: dùng cùng component với trang finalize để hiển thị thông tin */}
+        <Route
+          path="/distributor/contracts/:contractId"
+          element={
+            <ProtectedRoute allowedRoles={["distributor"]}>
+              <DistributorFinalizeContract />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/distributor/contracts/:contractId/finalize"
           element={

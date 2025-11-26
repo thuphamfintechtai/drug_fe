@@ -59,6 +59,73 @@ export const useDistributionHistory = () => {
     };
   }, [page, search, status]);
 
+  // Chuẩn hóa cấu trúc distribution từ nhiều dạng response khác nhau
+  const normalizeDistributionItem = (item = {}) => {
+    // Chuẩn hóa thông tin manufacturer
+    let baseManufacturer =
+      item.fromManufacturer ||
+      item.manufacturer ||
+      (item.manufacturerName
+        ? { name: item.manufacturerName }
+        : item.manufacturerId
+        ? { name: item.manufacturerId }
+        : null);
+
+    let manufacturerObj = null;
+    if (baseManufacturer && typeof baseManufacturer === "object") {
+      const fullName =
+        baseManufacturer.fullName ||
+        baseManufacturer.name ||
+        baseManufacturer.username ||
+        null;
+      const username =
+        baseManufacturer.username ||
+        baseManufacturer.name ||
+        baseManufacturer.fullName ||
+        null;
+
+      manufacturerObj = {
+        ...baseManufacturer,
+        fullName,
+        username,
+      };
+    } else if (typeof baseManufacturer === "string") {
+      manufacturerObj = {
+        fullName: baseManufacturer,
+        username: baseManufacturer,
+      };
+    }
+
+    // Chuẩn hóa thông tin invoice từ root nếu thiếu manufacturerInvoice
+    const manufacturerInvoice =
+      item.manufacturerInvoice ||
+      (item.invoiceNumber
+        ? {
+            invoiceNumber: item.invoiceNumber,
+            invoiceDate: item.invoiceDate || item.createdAt || item.distributionDate,
+          }
+        : undefined);
+
+    const distributedQuantity =
+      item.distributedQuantity ??
+      item.quantity ??
+      (Array.isArray(item.tokenIds) ? item.tokenIds.length : undefined);
+
+    const distributionDate =
+      item.distributionDate || item.receivedAt || item.createdAt || null;
+
+    return {
+      ...item,
+      _id: item._id || item.id,
+      fromManufacturer: manufacturerObj || item.fromManufacturer || null,
+      manufacturer: manufacturerObj || item.manufacturer || null,
+      manufacturerInvoice,
+      distributedQuantity,
+      distributionDate,
+      status: item.status || "confirmed",
+    };
+  };
+
   const loadData = async () => {
     const filtersChanged =
       filtersRef.current.page !== page ||
@@ -88,18 +155,39 @@ export const useDistributionHistory = () => {
         progressIntervalRef.current = null;
       }
 
-      if (response?.success) {
-        setItems(response.data?.distributions || []);
-        setPagination(
-          response.data?.pagination || {
+      if (response) {
+        const nextItemsRaw =
+          response.data?.distributions ??
+          response.data?.data?.distributions ??
+          response.distributions ??
+          response.data ??
+          (Array.isArray(response) ? response : []);
+
+        const normalizedItems = Array.isArray(nextItemsRaw)
+          ? nextItemsRaw.map((item) => normalizeDistributionItem(item))
+          : [];
+
+        setItems(normalizedItems);
+
+        const nextPagination =
+          response.data?.pagination ??
+          response.data?.data?.pagination ??
+          response.pagination ?? {
             page: 1,
             limit: 10,
-            total: 0,
-            pages: 0,
-          }
-        );
+            total: normalizedItems.length,
+            pages: 1,
+          };
+
+        setPagination(nextPagination);
       } else {
         setItems([]);
+        setPagination({
+          page: 1,
+          limit: 10,
+          total: 0,
+          pages: 0,
+        });
       }
 
       // Chỉ chạy progress animation khi initial load

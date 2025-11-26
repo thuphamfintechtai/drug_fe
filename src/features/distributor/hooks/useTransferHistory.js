@@ -42,14 +42,13 @@ export const useTransferHistory = () => {
     }
   }, [search]);
 
+  const unwrap = (payload) => payload?.data ?? payload;
+
   useEffect(() => {
-    if (transferHistoryData?.data) {
-      processData(transferHistoryData.data);
-    } else if (
-      transferHistoryData === null ||
-      transferHistoryData === undefined
-    ) {
-      // Reset khi không có data
+    const response = unwrap(transferHistoryData);
+    if (response) {
+      processData(response);
+    } else if (response === null || response === undefined) {
       setItems([]);
       setPagination({
         page: 1,
@@ -89,13 +88,41 @@ export const useTransferHistory = () => {
   }, [queryLoading, isInitialLoad, items.length]);
 
   const processData = (responseData) => {
-    if (responseData?.success) {
-      const data = responseData.data || {};
-      const invoices = Array.isArray(data.invoices) ? data.invoices : [];
-      const distributions = Array.isArray(data.distributions)
-        ? data.distributions
+    const successFlag =
+      responseData?.success !== false ||
+      Array.isArray(responseData?.data) ||
+      Array.isArray(responseData);
+
+    if (successFlag) {
+      const payload =
+        responseData?.data ||
+        responseData?.payload ||
+        responseData ||
+        {};
+
+      const normalized =
+        payload?.data && !Array.isArray(payload?.data?.invoices)
+          ? payload.data
+          : payload;
+
+      const invoices = Array.isArray(normalized?.invoices)
+        ? normalized.invoices
+        : Array.isArray(normalized)
+        ? normalized
         : [];
-      const source = invoices.length ? invoices : distributions;
+
+      const distributions = Array.isArray(normalized?.distributions)
+        ? normalized.distributions
+        : [];
+
+      const source =
+        invoices.length > 0
+          ? invoices
+          : distributions.length > 0
+          ? distributions
+          : Array.isArray(normalized)
+          ? normalized
+          : [];
 
       const mapped = source.map((row) => {
         // Xử lý pharmacy - có thể là object hoặc string ID
@@ -109,7 +136,18 @@ export const useTransferHistory = () => {
           }
         }
         pharmacy =
-          pharmacy || row.pharmacy || row.commercialInvoice?.toPharmacy || null;
+          pharmacy ||
+          row.pharmacy ||
+          row.commercialInvoice?.toPharmacy ||
+          (row.pharmacyId
+            ? {
+                _id: row.pharmacyId,
+                id: row.pharmacyId,
+                name: row.pharmacyName || row.pharmacyId,
+                fullName: row.pharmacyName || row.pharmacyId,
+                walletAddress: row.pharmacyWalletAddress,
+              }
+            : null);
 
         // Lấy thông tin từ commercialInvoice nếu có
         const commercialInvoice = row.commercialInvoice || {};
@@ -126,7 +164,7 @@ export const useTransferHistory = () => {
           row.receivedQuantity ??
           row.quantity ??
           commercialInvoice.quantity ??
-          0;
+          (Array.isArray(row.tokenIds) ? row.tokenIds.length : 0);
 
         // Lấy dates
         const createdAt = row.createdAt || commercialInvoice.createdAt;
@@ -134,13 +172,18 @@ export const useTransferHistory = () => {
 
         // Lấy invoice number
         const invoiceNumber =
-          row.invoiceNumber || commercialInvoice.invoiceNumber;
+          row.invoiceNumber ||
+          commercialInvoice.invoiceNumber ||
+          row.invoiceCode ||
+          row.invoiceId ||
+          row.id;
 
         // Lấy status - ưu tiên status từ distribution
-        const statusRow = row.status || commercialInvoice.status;
+        const statusRow =
+          row.status || commercialInvoice.status || row.invoiceStatus || "pending";
 
         return {
-          _id: row._id,
+          _id: row._id || row.id,
           pharmacy,
           drug: row.drug,
           invoiceNumber,
@@ -156,12 +199,13 @@ export const useTransferHistory = () => {
 
       setItems(mapped);
       setPagination(
-        data.pagination || {
-          page: 1,
-          limit: 10,
-          total: mapped.length,
-          pages: 1,
-        }
+        normalized?.pagination ||
+          payload?.pagination || {
+            page: 1,
+            limit: 10,
+            total: mapped.length,
+            pages: mapped.length ? Math.ceil(mapped.length / 10) : 1,
+          }
       );
     } else {
       setItems([]);

@@ -45,14 +45,16 @@ export const useDashboard = () => {
     refetch: refetchMonthlyTrends,
   } = useDistributorMonthlyTrends(6);
 
-  const stats = statsResponse?.data?.data;
-  const dashboardStats = dashboardResponse?.data?.data;
+  const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
+
+  const stats = unwrap(statsResponse);
+  const dashboardStats = unwrap(dashboardResponse);
 
   console.log("Dashboard Stats Response:", dashboardResponse);
   console.log("Dashboard Stats Data:", dashboardStats);
 
   const chartOneWeekData = useMemo(() => {
-    const data = chartOneWeekResponse?.data?.data;
+    const data = unwrap(chartOneWeekResponse);
     console.log("One Week Response:", chartOneWeekResponse);
     console.log("One Week Data:", data);
     if (!data?.dailyStats) {
@@ -77,7 +79,7 @@ export const useDashboard = () => {
   }, [chartOneWeekResponse]);
 
   const chartTodayYesterdayData = useMemo(() => {
-    const data = chartTodayYesterdayResponse?.data?.data;
+    const data = unwrap(chartTodayYesterdayResponse);
     console.log("Today/Yesterday Response:", chartTodayYesterdayResponse);
     console.log("Today/Yesterday Data:", data);
     if (!data) {
@@ -91,7 +93,7 @@ export const useDashboard = () => {
   }, [chartTodayYesterdayResponse]);
 
   const chartMonthlyData = useMemo(() => {
-    const data = monthlyTrendsResponse?.data?.data;
+    const data = unwrap(monthlyTrendsResponse);
     console.log("Monthly Trends Response:", monthlyTrendsResponse);
     console.log("Monthly Trends Data:", data);
     if (!data?.trends) {
@@ -209,6 +211,7 @@ export const useDashboard = () => {
     handleRefresh,
     isLoading,
     isFetching,
+    displayStats,
     stats,
     dashboardStats,
     chartOneWeekData,

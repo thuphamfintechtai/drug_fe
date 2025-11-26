@@ -57,7 +57,13 @@ const useAuthStore = create(
           try {
             const response = await authService.getCurrentUser();
             if (response.success) {
-              const user = response.data.user;
+              const rawUser = response.data?.user || response.user;
+              const businessProfile =
+                response.data?.businessProfile || response.businessProfile;
+              const user = {
+                ...rawUser,
+                businessProfile: businessProfile || rawUser?.businessProfile,
+              };
               const role = storedRole || user?.role;
               set({
                 user,
