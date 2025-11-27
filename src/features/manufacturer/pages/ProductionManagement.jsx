@@ -97,9 +97,9 @@ export default function ProductionManagement() {
 
     const numValue = parseInt(value);
 
-    // Kiểm tra giới hạn tối đa là 1
-    if (numValue > 1) {
-      value = "1";
+    // Kiểm tra giới hạn tối đa là 1000
+    if (numValue > 1000) {
+      value = "1000";
     }
 
     setFormData({ ...formData, quantity: value });
@@ -499,8 +499,6 @@ export default function ProductionManagement() {
                             : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
                         }`}
                         placeholder="VD: 1"
-                        min="1"
-                        max="1"
                       />
                       <div className="text-xs text-cyan-600 mt-1">
                         Sẽ mint {formData.quantity || 0} NFT (1 NFT = 1 hộp
