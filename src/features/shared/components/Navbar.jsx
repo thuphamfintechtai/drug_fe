@@ -149,7 +149,7 @@ export default function Navbar() {
                 Nhà phân phối (Dashboard)
               </motion.span>
             )}
-            <Link to="/" className="flex items-center gap-3 group">
+            <Link onClick={() => window.location.href = "/"} className="flex items-center gap-3 group">
               <motion.span
                 className="font-bold text-xl !text-white drop-shadow-md tracking-tight"
                 whileHover={{
