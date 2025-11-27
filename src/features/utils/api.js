@@ -14,7 +14,7 @@ const getApiBaseUrl = () => {
   }
 
   // Production: API thật (luôn có /api ở cuối)
-  return "https://drug-be.vercel.app/api";
+  return "https://server-drug.ailusion.io.vn/api";
 };
 
 const api = axios.create({
