@@ -250,7 +250,6 @@ export default function PublicNFTTracking() {
             >
               <motion.div 
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 mb-6"
-                whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
                 <motion.svg 
@@ -294,7 +293,6 @@ export default function PublicNFTTracking() {
         >
           <motion.div 
             className="bg-white rounded-2xl shadow-xl border border-cyan-200/60 p-6 sm:p-8 backdrop-blur-sm relative overflow-hidden"
-            whileHover={{ boxShadow: "0 25px 50px -12px rgba(6, 182, 212, 0.25)" }}
             transition={{ duration: 0.3 }}
           >
             {/* Animated gradient background */}
@@ -314,7 +312,6 @@ export default function PublicNFTTracking() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <motion.div 
                   className="relative flex-1"
-                  whileHover={{ scale: 1.01 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -347,7 +344,6 @@ export default function PublicNFTTracking() {
                 <motion.button
                   onClick={handleSearch}
                   disabled={loading}
-                  whileHover={{ scale: loading ? 1 : 1.05, y: -2 }}
                   whileTap={{ scale: loading ? 1 : 0.95 }}
                   className="relative px-6 sm:px-8 py-4 rounded-xl bg-gradient-to-r from-[#054f67] via-[#077ca3] to-[#00c0e8] text-white font-semibold shadow-lg hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden group"
                 >
@@ -498,7 +494,6 @@ export default function PublicNFTTracking() {
                   <div className="relative z-10 flex items-center gap-3">
                     <motion.div 
                       className="p-2 bg-white/20 rounded-lg backdrop-blur-sm"
-                      whileHover={{ scale: 1.1, rotate: 10 }}
                       transition={{ type: "spring", stiffness: 400, damping: 10 }}
                     >
                       <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -520,7 +515,6 @@ export default function PublicNFTTracking() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <motion.div 
                       className="bg-gradient-to-br from-[#077ca3]/10 to-[#00c0e8]/10 rounded-xl p-5 border border-[#077ca3]/30 hover:shadow-lg transition-all cursor-pointer group"
-                      whileHover={{ scale: 1.03, y: -5 }}
                       transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     >
                       <div className="text-xs font-semibold text-[#054f67] uppercase tracking-wide mb-2 group-hover:text-[#077ca3] transition-colors">Token ID</div>
@@ -537,7 +531,6 @@ export default function PublicNFTTracking() {
 
                     <motion.div 
                       className="bg-gradient-to-br from-[#077ca3]/10 to-[#00c0e8]/10 rounded-xl p-5 border border-[#077ca3]/30 hover:shadow-lg transition-all cursor-pointer group"
-                      whileHover={{ scale: 1.03, y: -5 }}
                       transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     >
                       <div className="text-xs font-semibold text-[#054f67] uppercase tracking-wide mb-2 group-hover:text-[#077ca3] transition-colors">Số Serial</div>
@@ -554,7 +547,6 @@ export default function PublicNFTTracking() {
 
                     <motion.div 
                       className="bg-gradient-to-br from-[#077ca3]/10 to-[#00c0e8]/10 rounded-xl p-5 border border-[#077ca3]/30 hover:shadow-lg transition-all cursor-pointer group sm:col-span-2 lg:col-span-1"
-                      whileHover={{ scale: 1.03, y: -5 }}
                       transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     >
                       <div className="text-xs font-semibold text-[#054f67] uppercase tracking-wide mb-2 group-hover:text-[#077ca3] transition-colors">Tên thuốc</div>
@@ -571,7 +563,6 @@ export default function PublicNFTTracking() {
 
                     <motion.div 
                       className="bg-gradient-to-br from-[#077ca3]/10 to-[#00c0e8]/10 rounded-xl p-5 border border-[#077ca3]/30 hover:shadow-lg transition-all cursor-pointer group"
-                      whileHover={{ scale: 1.03, y: -5 }}
                       transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     >
                       <div className="text-xs font-semibold text-[#054f67] uppercase tracking-wide mb-2 group-hover:text-[#077ca3] transition-colors">Số lô</div>
@@ -588,7 +579,6 @@ export default function PublicNFTTracking() {
 
                     <motion.div 
                       className="bg-gradient-to-br from-[#077ca3]/10 to-[#00c0e8]/10 rounded-xl p-5 border border-[#077ca3]/30 hover:shadow-lg transition-all cursor-pointer group sm:col-span-2"
-                      whileHover={{ scale: 1.03, y: -5 }}
                       transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     >
                       <div className="text-xs font-semibold text-[#054f67] uppercase tracking-wide mb-2 group-hover:text-[#077ca3] transition-colors">Chủ sở hữu hiện tại</div>
@@ -661,7 +651,6 @@ export default function PublicNFTTracking() {
                   <div className="relative z-10 flex items-center gap-3">
                     <motion.div 
                       className="p-2 bg-white/20 rounded-lg backdrop-blur-sm"
-                      whileHover={{ scale: 1.1, rotate: 5 }}
                       transition={{ type: "spring", stiffness: 400, damping: 10 }}
                     >
                       <motion.svg 
@@ -731,7 +720,6 @@ export default function PublicNFTTracking() {
                                 stiffness: 300, 
                                 damping: 20 
                               }}
-                              whileHover={{ scale: 1.2, rotate: 10, boxShadow: "0 0 20px rgba(5, 79, 103, 0.5)" }}
                             >
                               {/* Outer pulse ring */}
                               <motion.div
@@ -791,14 +779,12 @@ export default function PublicNFTTracking() {
                             {/* Content card with enhanced animations */}
                             <motion.div 
                               className="ml-20 bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-cyan-200 p-6 hover:shadow-2xl transition-all duration-300 group cursor-pointer"
-                              whileHover={{ scale: 1.02, x: 10 }}
                               transition={{ type: "spring", stiffness: 300, damping: 20 }}
                             >
                               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
                                 <div className="flex-1">
                                   <motion.h3 
                                     className="text-xl font-bold text-slate-800 mb-1 group-hover:text-[#0891b2] transition-colors"
-                                    whileHover={{ x: 5 }}
                                   >
                                     {step.description || step.stage || "N/A"}
                                   </motion.h3>
@@ -807,7 +793,6 @@ export default function PublicNFTTracking() {
                                       className="w-4 h-4" 
                                       fill="currentColor" 
                                       viewBox="0 0 20 20"
-                                      whileHover={{ rotate: 360 }}
                                       transition={{ duration: 0.5 }}
                                     >
                                       <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
@@ -821,7 +806,6 @@ export default function PublicNFTTracking() {
                                     initial={{ opacity: 0, scale: 0 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ delay: idx * 0.15 + 0.4, type: "spring" }}
-                                    whileHover={{ scale: 1.1, rotate: 3 }}
                                   >
                                     {step.stage}
                                   </motion.span>
@@ -832,7 +816,6 @@ export default function PublicNFTTracking() {
                                 {step.manufacturer && (
                                   <motion.div 
                                     className="flex items-start gap-3 p-3 bg-gradient-to-br from-[#077ca3]/5 to-[#00c0e8]/5 rounded-lg border border-[#077ca3]/20 hover:border-[#077ca3]/40 hover:shadow-md transition-all"
-                                    whileHover={{ x: 5, scale: 1.02 }}
                                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                                   >
                                     <div className="p-2 bg-gradient-to-br from-[#054f67] to-[#077ca3] rounded-lg flex-shrink-0 mt-0.5 shadow-sm">
@@ -854,7 +837,6 @@ export default function PublicNFTTracking() {
                                 {(step.details?.quantity || step.quantity) && (
                                   <motion.div 
                                     className="flex items-start gap-3 p-3 bg-gradient-to-br from-[#00c0e8]/5 to-[#077ca3]/5 rounded-lg border border-[#00c0e8]/20 hover:border-[#00c0e8]/40 hover:shadow-md transition-all"
-                                    whileHover={{ x: 5, scale: 1.02 }}
                                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                                   >
                                     <div className="p-2 bg-gradient-to-br from-[#00c0e8] to-[#077ca3] rounded-lg flex-shrink-0 mt-0.5 shadow-sm">
@@ -867,7 +849,6 @@ export default function PublicNFTTracking() {
                                       <motion.div 
                                         className="font-bold text-slate-800 text-lg"
                                         initial={{ scale: 1 }}
-                                        whileHover={{ scale: 1.1 }}
                                       >
                                         {step.details?.quantity || step.quantity}
                                       </motion.div>
@@ -878,7 +859,6 @@ export default function PublicNFTTracking() {
                                 {step.details?.mfgDate && (
                                   <motion.div 
                                     className="flex items-start gap-3 p-3 bg-gradient-to-br from-[#077ca3]/5 to-[#054f67]/5 rounded-lg border border-[#077ca3]/20 hover:border-[#077ca3]/40 hover:shadow-md transition-all"
-                                    whileHover={{ x: 5, scale: 1.02 }}
                                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                                   >
                                     <div className="p-2 bg-gradient-to-br from-[#077ca3] to-[#054f67] rounded-lg flex-shrink-0 mt-0.5 shadow-sm">
@@ -898,7 +878,6 @@ export default function PublicNFTTracking() {
                                 {step.from && (
                                   <motion.div 
                                     className="flex items-start gap-3 p-3 bg-gradient-to-br from-[#00c0e8]/5 to-[#077ca3]/5 rounded-lg border border-[#00c0e8]/20 hover:border-[#00c0e8]/40 hover:shadow-md transition-all"
-                                    whileHover={{ x: 5, scale: 1.02 }}
                                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                                   >
                                     <div className="p-2 bg-gradient-to-br from-[#00c0e8] to-[#077ca3] rounded-lg flex-shrink-0 mt-0.5 shadow-sm">
@@ -920,7 +899,6 @@ export default function PublicNFTTracking() {
                                 {step.to && (
                                   <motion.div 
                                     className="flex items-start gap-3 p-3 bg-gradient-to-br from-[#077ca3]/5 to-[#054f67]/5 rounded-lg border border-[#077ca3]/20 hover:border-[#077ca3]/40 hover:shadow-md transition-all"
-                                    whileHover={{ x: 5, scale: 1.02 }}
                                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                                   >
                                     <div className="p-2 bg-gradient-to-br from-[#077ca3] to-[#054f67] rounded-lg flex-shrink-0 mt-0.5 shadow-sm">
@@ -1010,7 +988,6 @@ export default function PublicNFTTracking() {
                     <div className="relative z-10 flex items-center gap-3">
                       <motion.div 
                         className="p-2 bg-white/20 rounded-lg backdrop-blur-sm"
-                        whileHover={{ scale: 1.1, rotate: -10 }}
                         transition={{ type: "spring", stiffness: 400, damping: 10 }}
                       >
                         <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
