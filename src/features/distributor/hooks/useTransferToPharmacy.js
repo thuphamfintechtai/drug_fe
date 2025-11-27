@@ -7,7 +7,6 @@ import {
   useDistributorPharmacies,
   useTransferToPharmacy as useTransferToPharmacyMutation,
   useSaveTransferTransaction,
-  useUpdateInvoiceStatus,
 } from "../apis/distributor";
 import api from "../../utils/api";
 import {
@@ -57,21 +56,6 @@ const validateQuantity = (quantity, tokenIdsLength) => {
     return {
       valid: false,
       error: `quantity (${qty}) phải bằng số lượng tokenIds (${tokenIdsLength})`,
-    };
-  }
-
-  return { valid: true };
-};
-
-const validateTransactionHash = (hash) => {
-  if (!hash || typeof hash !== "string") {
-    return { valid: false, error: "transactionHash không hợp lệ" };
-  }
-
-  if (!/^0x[a-fA-F0-9]{64}$/.test(hash)) {
-    return {
-      valid: false,
-      error: "transactionHash phải có định dạng Ethereum hash (0x + 64 hex chars)",
     };
   }
 
@@ -336,7 +320,6 @@ export const useTransferToPharmacy = () => {
 
   const { mutateAsync: transferToPharmacyMutation } = useTransferToPharmacyMutation();
   const { mutateAsync: saveTransferTransaction } = useSaveTransferTransaction();
-  const { mutateAsync: updateInvoiceStatus } = useUpdateInvoiceStatus();
 
   useEffect(() => {
     if (distributionHistoryData) {
@@ -1110,6 +1093,70 @@ export const useTransferToPharmacy = () => {
       }
 
       const transferAmounts = selectedTokenIds.map(() => 1);
+      let finalizedTokenIds = [...selectedTokenIds];
+      let finalizedAmounts = [...transferAmounts];
+      let invoiceId = null;
+
+      toast.info("Đang tạo yêu cầu chuyển giao...", {
+        position: "top-right",
+        duration: 2000,
+      });
+
+      let createResponse;
+      try {
+        createResponse = await transferToPharmacyMutation({
+          ...payload,
+        });
+      } catch (error) {
+        console.error("❌ [handleSubmit] Lỗi khi tạo yêu cầu:", error);
+        const apiError =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Không thể tạo yêu cầu chuyển giao";
+        toast.error(apiError, {
+          position: "top-right",
+          duration: 6000,
+        });
+        setSubmitLoading(false);
+        return;
+      }
+
+      const responseBody = createResponse?.data ?? createResponse;
+      if (responseBody?.success === false) {
+        throw new Error(responseBody?.message || "Không thể tạo yêu cầu chuyển giao");
+      }
+
+      const responseData = responseBody?.data ?? responseBody;
+      const commercialInvoice =
+        responseData?.commercialInvoice ??
+        responseData?.invoice ??
+        responseData;
+
+      invoiceId =
+        commercialInvoice?._id ||
+        commercialInvoice?.id ||
+        commercialInvoice?.invoiceId;
+
+      if (!invoiceId) {
+        toast.error("Không nhận được mã giao dịch từ backend.");
+        setSubmitLoading(false);
+        return;
+      }
+
+      finalizedTokenIds = Array.isArray(commercialInvoice?.tokenIds)
+        ? commercialInvoice.tokenIds.map((id) => String(id))
+        : [...selectedTokenIds];
+
+      finalizedAmounts =
+        Array.isArray(commercialInvoice?.amounts) &&
+        commercialInvoice.amounts.length === finalizedTokenIds.length
+          ? commercialInvoice.amounts
+          : finalizedTokenIds.map(() => 1);
+
+      console.log("✅ [handleSubmit] Đã tạo yêu cầu chuyển giao:", {
+        invoiceId,
+        tokenCount: finalizedTokenIds.length,
+      });
 
       // Hiển thị UI blockchain progress
       setShowDialog(false);
@@ -1143,23 +1190,41 @@ export const useTransferToPharmacy = () => {
               duration: 2000,
             });
 
-            await createDistributorPharmacyContract(pharmacyAddress);
-            console.log("✅ [handleSubmit] Contract đã được tạo");
-            
-            toast.success("Contract đã được tạo!", {
-              position: "top-right",
-              duration: 2000,
-            });
+            const createResult = await createDistributorPharmacyContract(
+              pharmacyAddress
+            );
 
-            // Đợi một chút để transaction được confirm
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-          } catch (createError) {
-            // Nếu contract đã tồn tại, không sao, tiếp tục
-            if (createError.message?.includes("already exists") || 
-                createError.message?.includes("đã tồn tại")) {
-              console.log("ℹ️ [handleSubmit] Contract đã tồn tại, tiếp tục...");
+            if (createResult?.alreadyExists) {
+              console.log("ℹ️ [handleSubmit] Contract đã tồn tại, bỏ qua tạo mới.");
+              toast.info("Contract đã tồn tại, tiếp tục quy trình chuyển giao...", {
+                position: "top-right",
+                duration: 2000,
+              });
             } else {
-              console.warn("⚠️ [handleSubmit] Lỗi khi tạo contract (có thể đã tồn tại):", createError.message);
+              console.log("✅ [handleSubmit] Contract đã được tạo");
+              toast.success("Contract đã được tạo!", {
+                position: "top-right",
+                duration: 2000,
+              });
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+          } catch (createError) {
+            if (
+              createError.message?.includes("already exists") ||
+              createError.message?.includes("đã tồn tại")
+            ) {
+              console.log(
+                "ℹ️ [handleSubmit] Contract đã tồn tại (từ catch), tiếp tục..."
+              );
+              toast.info("Contract đã tồn tại, tiếp tục quy trình...", {
+                position: "top-right",
+                duration: 2000,
+              });
+            } else {
+              console.warn(
+                "⚠️ [handleSubmit] Lỗi khi tạo contract (có thể đã tồn tại):",
+                createError.message
+              );
             }
           }
 
@@ -1262,8 +1327,8 @@ export const useTransferToPharmacy = () => {
         });
 
         transferResult = await transferNFTToPharmacy(
-          selectedTokenIds,
-          transferAmounts,
+          finalizedTokenIds,
+          finalizedAmounts,
           pharmacyAddress
         );
 
@@ -1350,65 +1415,24 @@ export const useTransferToPharmacy = () => {
         duration: 3000,
       });
 
-      // ✅ STEP 5: Lưu dữ liệu vào backend sau khi blockchain thành công
-      toast.info("Đang lưu dữ liệu chuyển giao...", {
+      // ✅ STEP 5: Lưu transaction sau khi blockchain thành công
+      toast.info("Đang lưu thông tin giao dịch...", {
         position: "top-right",
         duration: 2000,
       });
 
-      let response;
-      try {
-        response = await transferToPharmacyMutation({
-          ...payload,
-          blockchainTxHash: transferResult.transactionHash,
-          blockchainEvent: transferResult.event,
-        });
-      } catch (error) {
-        const errorMessage =
-          error?.response?.data?.message || error?.message || "Không thể lưu dữ liệu";
-        toast.error(errorMessage, {
-          position: "top-right",
-          duration: 6000,
-        });
-        setChainStatus("error");
-        setSubmitLoading(false);
-        return;
-      }
-
-      let responseBody = response;
-      if (response?.data && typeof response.data === "object") {
-        responseBody = response.data;
-      }
-      if (responseBody?.success === false) {
-        throw new Error(responseBody?.message || "Không thể tạo invoice");
-      }
-
-      const responseData = responseBody?.data ?? responseBody;
-      const commercialInvoice =
-        responseData?.commercialInvoice ??
-        responseData?.invoice ??
-        responseData;
-
-      invoiceId = commercialInvoice?._id ?? commercialInvoice?.invoiceId;
-
       try {
         const transactionHash = transferResult.transactionHash;
-        const hashValidation = validateTransactionHash(transactionHash);
-        if (!hashValidation.valid) {
-          throw new Error(hashValidation.error);
-        }
-
         const saveResponse = await saveTransferTransaction({
           invoiceId,
           transactionHash,
-          tokenIds: selectedTokenIds,
+          tokenIds: finalizedTokenIds,
+          blockchainEvent: transferResult.event,
         });
 
-        // saveTransferTransaction đã trả về response.data nên không cần bóc thêm .data
-        const saveBody = saveResponse;
-
+        const saveBody = saveResponse?.data ?? saveResponse;
         if (saveBody?.success === false) {
-          throw new Error(saveBody?.message || "Lỗi khi lưu transaction hash");
+          throw new Error(saveBody?.message || "Lưu transaction thất bại");
         }
 
         toast.success("Chuyển giao NFT hoàn tất!", {
@@ -1426,8 +1450,8 @@ export const useTransferToPharmacy = () => {
         });
         await loadData(true);
       } catch (saveError) {
-        console.error("❌ [handleSubmit] Lỗi khi lưu transaction hash:", saveError);
-        toast.error(saveError.message, {
+        console.error("❌ [handleSubmit] Lỗi khi lưu transaction:", saveError);
+        toast.error(saveError?.message || "Không thể lưu transaction", {
           position: "top-right",
           duration: 6000,
         });

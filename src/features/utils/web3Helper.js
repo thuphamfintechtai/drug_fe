@@ -669,6 +669,31 @@ export const createDistributorPharmacyContract = async (pharmacyAddress) => {
 
     const contract = await getNFTContract();
 
+    // Check existing contract status first
+    try {
+      const currentStatus = await contract.distributorPharmacyContract(
+        signerAddress,
+        pharmacyAddress
+      );
+      const statusValue = Number(currentStatus);
+      if (!Number.isNaN(statusValue) && statusValue !== 0) {
+        console.log(
+          "ℹ️ [createDistributorPharmacyContract] Contract đã tồn tại với trạng thái:",
+          statusValue
+        );
+        return {
+          success: true,
+          alreadyExists: true,
+          status: statusValue,
+        };
+      }
+    } catch (statusError) {
+      console.warn(
+        "⚠️ [createDistributorPharmacyContract] Không thể kiểm tra trạng thái contract. Tiếp tục tạo mới...",
+        statusError?.message || statusError
+      );
+    }
+
     console.log("📝 [createDistributorPharmacyContract] Đang tạo contract với pharmacy:", pharmacyAddress);
 
     // Call distributorCreateAContract(pharmacyAddress)
@@ -701,6 +726,17 @@ export const createDistributorPharmacyContract = async (pharmacyAddress) => {
         error.message?.match(/revert\s+"?([^"]+)"?/)?.[1] ||
         "unknown reason";
       
+      if (reason.includes("already exists") || reason.includes("pending")) {
+        console.log(
+          "ℹ️ [createDistributorPharmacyContract] Contract đã tồn tại hoặc đang pending, bỏ qua tạo mới."
+        );
+        return {
+          success: true,
+          alreadyExists: true,
+          statusReason: reason,
+        };
+      }
+
       throw new Error(
         `Contract call exception (reverted). Reason: ${reason}`
       );

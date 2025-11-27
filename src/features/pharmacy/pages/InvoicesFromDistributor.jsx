@@ -172,10 +172,27 @@ export default function InvoicesFromDistributor() {
                           <div>
                             Từ:{" "}
                             <span className="font-medium text-slate-800">
-                              {item.fromDistributor?.fullName ||
+                              {item.distributor?.name ||
+                                item.fromDistributor?.fullName ||
                                 item.fromDistributor?.username ||
+                                item.distributor?.code ||
                                 "N/A"}
+                              {item.distributor?.code && (
+                                <span className="text-slate-500 ml-1">
+                                  ({item.distributor.code})
+                                </span>
+                              )}
                             </span>
+                            {item.distributor?.email && (
+                              <span className="text-slate-500 ml-2">
+                                • {item.distributor.email}
+                              </span>
+                            )}
+                            {item.distributor?.phone && (
+                              <span className="text-slate-500 ml-2">
+                                • {item.distributor.phone}
+                              </span>
+                            )}
                           </div>
                           <div>
                             Số lượng:{" "}
@@ -193,42 +210,50 @@ export default function InvoicesFromDistributor() {
                       </div>
 
                       {item.status === "sent" && (
-                        <button
-                          onClick={() => {
-                            setSelectedInvoice(item);
-                            // Tính số lượng đã được gửi đến
-                            const sentQuantity =
-                              item.quantity ??
-                              item.totalQuantity ??
-                              item.nftQuantity ??
-                              (Array.isArray(item.nfts)
-                                ? item.nfts.length
-                                : Array.isArray(item.items)
-                                ? item.items.length
-                                : 0);
-                            setConfirmForm({
-                              receivedByName: "",
-                              receiptAddressStreet: "",
-                              receiptAddressCity: "",
-                              receiptAddressState: "",
-                              receiptAddressPostalCode: "",
-                              receiptAddressCountry: "Vietnam",
-                              shippingInfo: "",
-                              notes: "",
-                              receivedDate: new Date()
-                                .toISOString()
-                                .split("T")[0],
-                              receivedQuantity:
-                                sentQuantity > 0 ? sentQuantity.toString() : "",
-                            });
-                            setConfirmFormErrors({});
-                            setShowConfirmDialog(true);
-                          }}
-                          disabled={isConfirming}
-                          className="px-6 py-3 rounded-full bg-secondary hover:bg-primary !text-white font-semibold shadow-md hover:shadow-lg transition disabled:opacity-50"
-                        >
-                          Xác nhận nhận hàng
-                        </button>
+                        <>
+                          {item.isPharmaConfirm === true ? (
+                            <div className="px-6 py-3 rounded-full bg-gray-100 text-gray-600 font-semibold border border-gray-300 cursor-not-allowed">
+                              Đã nhận đơn hàng
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setSelectedInvoice(item);
+                                // Tính số lượng đã được gửi đến
+                                const sentQuantity =
+                                  item.quantity ??
+                                  item.totalQuantity ??
+                                  item.nftQuantity ??
+                                  (Array.isArray(item.nfts)
+                                    ? item.nfts.length
+                                    : Array.isArray(item.items)
+                                    ? item.items.length
+                                    : 0);
+                                setConfirmForm({
+                                  receivedByName: "",
+                                  receiptAddressStreet: "",
+                                  receiptAddressCity: "",
+                                  receiptAddressState: "",
+                                  receiptAddressPostalCode: "",
+                                  receiptAddressCountry: "Vietnam",
+                                  shippingInfo: "",
+                                  notes: "",
+                                  receivedDate: new Date()
+                                    .toISOString()
+                                    .split("T")[0],
+                                  receivedQuantity:
+                                    sentQuantity > 0 ? sentQuantity.toString() : "",
+                                });
+                                setConfirmFormErrors({});
+                                setShowConfirmDialog(true);
+                              }}
+                              disabled={isConfirming}
+                              className="px-6 py-3 rounded-full bg-secondary hover:bg-primary !text-white font-semibold shadow-md hover:shadow-lg transition disabled:opacity-50"
+                            >
+                              Xác nhận nhận hàng
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
 
