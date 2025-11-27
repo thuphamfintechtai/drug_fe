@@ -19,7 +19,8 @@ import {
 // CONSTANTS
 // ============================================
 const MAX_BATCH_LENGTH = 30;
-const MAX_QUANTITY = 1;
+// Align with `handleQuantityChange` which caps input at 1000
+const MAX_QUANTITY = 1000;
 const MANUFACTURING_DATE_RANGE_DAYS = 60;
 const MAX_SHELF_LIFE_YEARS = 10;
 
@@ -752,6 +753,7 @@ export const useProductionManagement = () => {
     handleClose,
 
     // Utilities (for UI components)
+    
     getMaxShelfLife: (unit) => SHELF_LIFE_LIMITS[unit] || 10,
     validateShelfLife,
     formatDateMDY,

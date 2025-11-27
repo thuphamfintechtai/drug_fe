@@ -78,6 +78,7 @@ export default function ProductionManagement() {
     // Cho phép rỗng để người dùng có thể xóa
     if (value === "") {
       setFormData({ ...formData, quantity: value });
+
       if (errors.quantity) {
         setErrors({ ...errors, quantity: "" });
       }
@@ -104,9 +105,6 @@ export default function ProductionManagement() {
 
     setFormData({ ...formData, quantity: value });
 
-    if (errors.quantity) {
-      setErrors({ ...errors, quantity: "" });
-    }
   };
 
   const handleManufacturingDateChange = (e) => {

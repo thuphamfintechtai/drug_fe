@@ -853,7 +853,7 @@ export default function UserHome() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-left mt-12"
+              className="text-left mt-24"
             >
               <motion.h1
                 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-[#2176FF] mb-3 sm:mb-4 md:mb-6 leading-tight tracking-tight"
