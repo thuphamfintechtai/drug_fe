@@ -168,6 +168,8 @@ export const useTransferManagements = () => {
   const transferProgressIntervalRef = useRef(null);
   const isMountedRef = useRef(true);
   const abortControllerRef = useRef(null);
+  const savedTransactionHashesRef = useRef(new Set()); // Track saved transaction hashes
+  const isSavingRef = useRef(false); // Track if currently saving to prevent duplicate calls
 
   const {
     data: productionsData,
@@ -513,6 +515,22 @@ export const useTransferManagements = () => {
   // 🆕 AUTO SAVE: Save transaction with retry logic
   const autoSaveTransaction = useCallback(
     async (invoiceId, tokenIds, transactionHash) => {
+      // Check if already saving to prevent duplicate calls
+      if (isSavingRef.current) {
+        console.log("⚠️ [autoSaveTransaction] Already saving, skipping duplicate call");
+        return true; // Already in progress, return success
+      }
+
+      // Check if this transaction hash has already been saved
+      const normalizedHash = transactionHash.trim().toLowerCase();
+      if (savedTransactionHashesRef.current.has(normalizedHash)) {
+        console.log("⚠️ [autoSaveTransaction] Transaction hash already saved, skipping:", normalizedHash);
+        return true; // Already saved, return success
+      }
+
+      // Mark as saving
+      isSavingRef.current = true;
+
       console.log("💾 [autoSaveTransaction] Starting auto-save...", {
         invoiceId,
         tokenIds,
@@ -532,6 +550,12 @@ export const useTransferManagements = () => {
           });
 
           console.log("✅ [autoSaveTransaction] Save successful!");
+
+          // Mark this transaction hash as saved to prevent duplicate calls
+          savedTransactionHashesRef.current.add(normalizedHash);
+
+          // Reset saving flag
+          isSavingRef.current = false;
 
           // Success - update progress to 100%
           setTransferProgress(1);
@@ -572,6 +596,9 @@ export const useTransferManagements = () => {
             // All attempts failed
             console.error("❌ [autoSaveTransaction] All retry attempts failed");
 
+            // Reset saving flag
+            isSavingRef.current = false;
+
             setTransferStatus("error");
 
             const errorMsg =
@@ -595,6 +622,8 @@ export const useTransferManagements = () => {
         }
       }
 
+      // Reset saving flag if we exit the loop without success
+      isSavingRef.current = false;
       return false;
     },
     [saveTransferTransactionMutation, refetchProductions]
@@ -734,6 +763,9 @@ export const useTransferManagements = () => {
 
       if (!isMountedRef.current) return;
 
+      // Reset saving flag on error
+      isSavingRef.current = false;
+
       const errorMessage =
         error.response?.data?.message || error.message || "Lỗi không xác định";
       toast.error("Không thể chuyển giao: " + errorMessage, {
@@ -767,6 +799,9 @@ export const useTransferManagements = () => {
       clearInterval(transferProgressIntervalRef.current);
       transferProgressIntervalRef.current = null;
     }
+
+    // Reset saving flag when closing dialog
+    isSavingRef.current = false;
 
     setShowDialog(false);
     setShowBlockchainView(false);
