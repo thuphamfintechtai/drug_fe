@@ -82,7 +82,10 @@ export const useDashboard = () => {
         dashboardStatsResponse.status === "fulfilled" &&
         dashboardStatsResponse.value.data?.success
       ) {
-        setDashboardStats(dashboardStatsResponse.value.data.data);
+        const dashboardData = dashboardStatsResponse.value.data.data;
+        console.log("Pharmacy Dashboard Stats Response:", dashboardStatsResponse.value);
+        console.log("Pharmacy Dashboard Stats Data:", dashboardData);
+        setDashboardStats(dashboardData);
       }
 
       if (
@@ -92,67 +95,127 @@ export const useDashboard = () => {
         setQualityStats(qualityStatsResponse.value.data.data);
       }
 
-      // Handle oneWeek chart data - ensure it's always an array
+      // Handle oneWeek chart data - process dailyStats (can be object or array)
       if (
         oneWeekResponse.status === "fulfilled" &&
         oneWeekResponse.value.data?.success
       ) {
         const data = oneWeekResponse.value.data.data;
+        console.log("Pharmacy One Week Response:", oneWeekResponse.value);
+        console.log("Pharmacy One Week Data:", data);
         let oneWeekData = [];
-        if (Array.isArray(data)) {
+        
+        // Check if dailyStats is an array (new format)
+        if (Array.isArray(data?.dailyStats)) {
+          oneWeekData = data.dailyStats.map((stat) => {
+            const dateObj = new Date(stat.date);
+            return {
+              sortKey: dateObj.getTime(),
+              date: dateObj.toLocaleDateString("vi-VN", {
+                day: "2-digit",
+                month: "2-digit",
+              }),
+              invoicesReceived: stat.count || 0,
+              quantity: stat.quantity || 0,
+            };
+          });
+          oneWeekData = oneWeekData
+            .sort((a, b) => a.sortKey - b.sortKey)
+            .map(({ sortKey, ...rest }) => rest);
+        }
+        // Check if dailyStats is an object (old format)
+        else if (data?.dailyStats && typeof data.dailyStats === "object") {
+          oneWeekData = Object.entries(data.dailyStats).map(([date, stat]) => {
+            const dateObj = new Date(date);
+            return {
+              sortKey: dateObj.getTime(),
+              date: dateObj.toLocaleDateString("vi-VN", {
+                day: "2-digit",
+                month: "2-digit",
+              }),
+              invoicesReceived: stat.count || 0,
+              quantity: stat.quantity || 0,
+            };
+          });
+          oneWeekData = oneWeekData
+            .sort((a, b) => a.sortKey - b.sortKey)
+            .map(({ sortKey, ...rest }) => rest);
+        }
+        // Fallback: check if data is already an array
+        else if (Array.isArray(data)) {
           oneWeekData = data;
         } else if (data?.data && Array.isArray(data.data)) {
           oneWeekData = data.data;
-        } else if (data?.chart && Array.isArray(data.chart)) {
-          oneWeekData = data.chart;
         }
+        
+        console.log("Pharmacy One Week Formatted Data:", oneWeekData);
         setChartData((prev) => ({
           ...prev,
           oneWeek: oneWeekData,
         }));
       } else {
+        console.log("Pharmacy One Week Response failed:", oneWeekResponse);
         setChartData((prev) => ({ ...prev, oneWeek: [] }));
       }
 
-      // Handle todayYesterday chart data - ensure it's always an array
+      // Handle todayYesterday chart data - format as array
       if (
         todayYesterdayResponse.status === "fulfilled" &&
         todayYesterdayResponse.value.data?.success
       ) {
         const data = todayYesterdayResponse.value.data.data;
+        console.log("Pharmacy Today/Yesterday Response:", todayYesterdayResponse.value);
+        console.log("Pharmacy Today/Yesterday Data:", data);
         let todayYesterdayData = [];
-        if (Array.isArray(data)) {
+        
+        // If data has todayCount and yesterdayCount, format them
+        if (data?.todayCount !== undefined || data?.yesterdayCount !== undefined) {
+          todayYesterdayData = [
+            { name: "Hôm qua", count: data.yesterdayCount || 0 },
+            { name: "Hôm nay", count: data.todayCount || 0 },
+          ];
+        }
+        // Fallback: check if data is already an array
+        else if (Array.isArray(data)) {
           todayYesterdayData = data;
         } else if (data?.data && Array.isArray(data.data)) {
           todayYesterdayData = data.data;
         } else if (data?.chart && Array.isArray(data.chart)) {
           todayYesterdayData = data.chart;
         }
+        
+        console.log("Pharmacy Today/Yesterday Formatted Data:", todayYesterdayData);
         setChartData((prev) => ({
           ...prev,
           todayYesterday: todayYesterdayData,
         }));
       } else {
+        console.log("Pharmacy Today/Yesterday Response failed:", todayYesterdayResponse);
         setChartData((prev) => ({ ...prev, todayYesterday: [] }));
       }
 
-      // Handle monthly chart data - ensure it's always an array
+      // Handle monthly chart data - process trends
       if (
         monthlyResponse.status === "fulfilled" &&
         monthlyResponse.value.data?.success
       ) {
         const data = monthlyResponse.value.data.data;
         let formattedData = [];
-        if (Array.isArray(data)) {
-          formattedData = data;
-        } else if (data?.trends && Array.isArray(data.trends)) {
+        
+        // Check if trends is an array
+        if (data?.trends && Array.isArray(data.trends)) {
           formattedData = data.trends.map((item) => ({
             month: item.month || item.date || "",
-            receipts: item.receipts || item.count || 0,
+            receipts: item.receipts || item.count || item.receiptsReceived || 0,
           }));
+        }
+        // Fallback: check if data is already an array
+        else if (Array.isArray(data)) {
+          formattedData = data;
         } else if (data?.data && Array.isArray(data.data)) {
           formattedData = data.data;
         }
+        
         setChartData((prev) => ({ ...prev, monthly: formattedData }));
       } else {
         setChartData((prev) => ({ ...prev, monthly: [] }));
@@ -176,69 +239,131 @@ export const useDashboard = () => {
 
   const displayStats = dashboardStats || stats;
 
-  const invoiceStatusData =
-    displayStats?.invoicesReceived?.byStatus || displayStats?.invoices?.byStatus
-      ? Object.entries(
-          displayStats.invoicesReceived?.byStatus ||
-            displayStats.invoices?.byStatus
-        )
-          .map(([name, value]) => ({
-            name:
-              name === "draft"
-                ? "Nháp"
-                : name === "issued"
-                ? "Đã phát hành"
-                : name === "sent"
-                ? "Đã nhận"
-                : name === "paid"
-                ? "Đã thanh toán"
-                : name === "cancelled"
-                ? "Đã hủy"
-                : name,
-            value: value || 0,
-          }))
-          .filter((item) => item.value > 0)
-      : [];
+  // Helper function to unwrap nested data
+  const unwrap = (response) => {
+    if (!response) return null;
+    if (response?.data?.data) return response.data.data;
+    if (response?.data) return response.data;
+    return response;
+  };
 
-  const nftStatusData = displayStats?.nfts?.byStatus
-    ? Object.entries(displayStats.nfts.byStatus)
-        .map(([name, value]) => ({
-          name:
-            name === "minted"
-              ? "Đã mint"
-              : name === "transferred"
-              ? "Đã chuyển"
-              : name === "sold"
-              ? "Đã bán"
-              : name === "expired"
-              ? "Hết hạn"
-              : name === "recalled"
-              ? "Thu hồi"
-              : name,
-          value: value || 0,
-        }))
-        .filter((item) => item.value > 0)
-    : [];
+  // Get overview data (similar to distributor dashboard)
+  const overview = displayStats?.overview || {};
 
-  const receiptsStatusData = displayStats?.receipts?.byStatus
-    ? Object.entries(displayStats.receipts.byStatus)
-        .map(([name, value]) => ({
-          name:
-            name === "pending"
-              ? "Chờ xử lý"
-              : name === "received"
-              ? "Đã nhận"
-              : name === "verified"
-              ? "Đã xác minh"
-              : name === "completed"
-              ? "Hoàn tất"
-              : name === "rejected"
-              ? "Từ chối"
-              : name,
-          value: value || 0,
-        }))
-        .filter((item) => item.value > 0)
-    : [];
+  // Invoice status data - check both overview and direct paths
+  const invoiceStatusData = (() => {
+    const byStatus =
+      overview?.invoicesReceived?.byStatus ||
+      displayStats?.invoicesReceived?.byStatus ||
+      displayStats?.invoices?.byStatus ||
+      {};
+    
+    console.log("Pharmacy Invoice Status Data - Overview:", overview);
+    console.log("Pharmacy Invoice Status Data - DisplayStats:", displayStats);
+    console.log("Pharmacy Invoice Status Data - ByStatus:", byStatus);
+    
+    if (!byStatus || Object.keys(byStatus).length === 0) {
+      console.log("No invoice status data found");
+      return [];
+    }
+    
+    const result = Object.entries(byStatus)
+      .map(([name, value]) => ({
+        name:
+          name === "draft"
+            ? "Nháp"
+            : name === "issued"
+            ? "Đã phát hành"
+            : name === "sent"
+            ? "Đã nhận"
+            : name === "paid"
+            ? "Đã thanh toán"
+            : name === "cancelled"
+            ? "Đã hủy"
+            : name === "pending"
+            ? "Chờ xử lý"
+            : name === "confirmed"
+            ? "Đã xác nhận"
+            : name,
+        value: value || 0,
+      }))
+      .filter((item) => item.value > 0);
+    
+    console.log("Pharmacy Invoice Status Data - Result:", result);
+    return result;
+  })();
+
+  // NFT status data
+  const nftStatusData = (() => {
+    const byStatus =
+      overview?.nfts?.byStatus ||
+      displayStats?.nfts?.byStatus ||
+      {};
+    
+    console.log("Pharmacy NFT Status Data - Overview:", overview);
+    console.log("Pharmacy NFT Status Data - DisplayStats:", displayStats);
+    console.log("Pharmacy NFT Status Data - ByStatus:", byStatus);
+    console.log("Pharmacy NFT Status Data - Overview.nfts:", overview?.nfts);
+    console.log("Pharmacy NFT Status Data - DisplayStats.nfts:", displayStats?.nfts);
+    
+    if (!byStatus || Object.keys(byStatus).length === 0) {
+      console.log("No NFT status data found - byStatus is empty or undefined");
+      return [];
+    }
+    
+    const mapped = Object.entries(byStatus)
+      .map(([name, value]) => ({
+        name:
+          name === "minted"
+            ? "Đã mint"
+            : name === "transferred"
+            ? "Đã chuyển"
+            : name === "sold"
+            ? "Đã bán"
+            : name === "expired"
+            ? "Hết hạn"
+            : name === "recalled"
+            ? "Thu hồi"
+            : name,
+        value: value || 0,
+      }));
+    
+    console.log("Pharmacy NFT Status Data - Mapped (before filter):", mapped);
+    
+    const filtered = mapped.filter((item) => item.value > 0);
+    
+    console.log("Pharmacy NFT Status Data - Filtered (after filter):", filtered);
+    
+    return filtered;
+  })();
+
+  // Receipts status data
+  const receiptsStatusData = (() => {
+    const byStatus =
+      overview?.receipts?.byStatus ||
+      displayStats?.receipts?.byStatus ||
+      {};
+    
+    if (!byStatus || Object.keys(byStatus).length === 0) return [];
+    
+    return Object.entries(byStatus)
+      .map(([name, value]) => ({
+        name:
+          name === "pending"
+            ? "Chờ xử lý"
+            : name === "received"
+            ? "Đã nhận"
+            : name === "verified"
+            ? "Đã xác minh"
+            : name === "completed"
+            ? "Hoàn tất"
+            : name === "rejected"
+            ? "Từ chối"
+            : name,
+        value: value || 0,
+      }))
+      .filter((item) => item.value > 0);
+  })();
 
   return {
     stats,

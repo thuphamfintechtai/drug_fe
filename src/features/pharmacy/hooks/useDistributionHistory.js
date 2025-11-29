@@ -82,14 +82,32 @@ export const useDistributionHistory = () => {
 
       if (response?.success) {
         const responseData = response.data || {};
+        console.log("Distribution History Response:", response);
+        console.log("Distribution History Data:", responseData);
+        
         const history =
+          responseData.receipts ||
           responseData.history ||
           responseData.distributions ||
           responseData.items ||
           (Array.isArray(responseData) ? responseData : []);
+        
+        console.log("Distribution History - Extracted history:", history);
+        
         setItems(Array.isArray(history) ? history : []);
+        
+        // Handle pagination - check if count exists for total
+        const total = responseData.count || responseData.total || (Array.isArray(history) ? history.length : 0);
+        const currentPage = page || 1;
+        const limit = 10;
+        
         setPagination(
-          responseData.pagination || { page: 1, limit: 10, total: 0, pages: 0 }
+          responseData.pagination || {
+            page: currentPage,
+            limit: limit,
+            total: total,
+            pages: Math.ceil(total / limit),
+          }
         );
       } else {
         setItems([]);
