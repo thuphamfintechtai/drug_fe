@@ -202,9 +202,7 @@ export default function PublicDrugInfo() {
                       {drug.tradeName || drug.genericName || "N/A"}
                     </h3>
                     {drug.genericName && drug.tradeName && (
-                      <p className="text-sm text-white mt-1">
-                        {drug.genericName}
-                      </p>
+                      <p className="text-sm text-white mt-1">{drug.atcCode}</p>
                     )}
                   </div>
                 </div>
