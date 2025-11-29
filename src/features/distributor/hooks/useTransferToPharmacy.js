@@ -308,7 +308,7 @@ export const useTransferToPharmacy = () => {
     isLoading: pharmaciesLoading,
     error: pharmaciesError,
     refetch: refetchPharmacies
-  } = useDistributorPharmacies();
+  } = useDistributorPharmacies({ signed: true });
 
   useEffect(() => {
     if (distributionHistoryData) {

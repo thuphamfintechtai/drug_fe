@@ -114,7 +114,11 @@ export const useDistributorPharmacies = (params = {}) => {
   return useQuery({
     queryKey: ["getPharmacies", params],
     queryFn: async () => {
-      const response = await api.get("/distributor/pharmacies", { params });
+      // Nếu có params.signed, gọi endpoint /available với signed=true
+      // Nếu không có params, gọi endpoint /available mặc định
+      const endpoint = "/distributor/pharmacies/available";
+      const queryParams = params.signed ? { signed: true } : {};
+      const response = await api.get(endpoint, { params: queryParams });
       return response.data;
     },
   });
