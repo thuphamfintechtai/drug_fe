@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { usePharmacyContracts as usePharmacyContractsQuery } from "../../distributor/apis/contract";
 import { useNavigate } from "react-router-dom";
 import { Tag, Button, Empty } from "antd";
@@ -35,12 +35,28 @@ export const contractStatusLabel = (status) => {
 export const usePharmacyContracts = () => {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   const {
     data: contractsResponse,
     isLoading: loading,
     refetch: fetchData,
   } = usePharmacyContractsQuery();
+
+  // Update loading progress when loading state changes
+  useEffect(() => {
+    if (loading) {
+      const interval = setInterval(() => {
+        setLoadingProgress((prev) =>
+          prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
+        );
+      }, 50);
+      return () => clearInterval(interval);
+    } else {
+      setLoadingProgress(1);
+      setTimeout(() => setLoadingProgress(0), 500);
+    }
+  }, [loading]);
 
   const contracts = useMemo(() => {
     const data = contractsResponse?.data;
@@ -106,26 +122,6 @@ export const usePharmacyContracts = () => {
         ),
       },
       {
-        title: "Blockchain",
-        dataIndex: "blockchainStatus",
-        key: "blockchainStatus",
-        render: (status) => (
-          <span className="text-sm">
-            {status || "Chưa tạo"}
-          </span>
-        ),
-      },
-      {
-        title: "Token ID",
-        dataIndex: "tokenId",
-        key: "tokenId",
-        render: (tokenId) => (
-          <span className="font-mono text-sm">
-            {tokenId ? `#${tokenId}` : "-"}
-          </span>
-        ),
-      },
-      {
         title: "Ký bởi Distributor",
         dataIndex: "distributorSignedAt",
         key: "distributorSignedAt",
@@ -179,6 +175,7 @@ export const usePharmacyContracts = () => {
 
   return {
     loading,
+    loadingProgress,
     contracts,
     filteredContracts,
     searchText,

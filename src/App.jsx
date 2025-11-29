@@ -71,7 +71,6 @@ const PharmacyDrugs = lazy(() => import("./features/pharmacy/pages").then(m => (
 const PharmacyNFTTracking = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyNFTTracking })));
 const PharmacyProfile = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyProfile })));
 const PharmacyContracts = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyContracts })));
-const PharmacyConfirmContract = lazy(() => import("./features/pharmacy/pages").then(m => ({ default: m.PharmacyConfirmContract })));
 
 // Lazy load Shared pages
 const UserHome = lazy(() => import("./features/shared/page/index").then(m => ({ default: m.UserHome })));
@@ -463,14 +462,6 @@ function AppContent() {
           element={
             <ProtectedRoute allowedRoles={["pharmacy"]}>
               <PharmacyContracts />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pharmacy/contracts/:contractId/confirm"
-          element={
-            <ProtectedRoute allowedRoles={["pharmacy"]}>
-              <PharmacyConfirmContract />
             </ProtectedRoute>
           }
         />

@@ -66,6 +66,8 @@ export default function PublicNFTTracking() {
     try {
       const response = await api.get(`/public/Tracking/${tokenId.trim()}`);
       if (response.data.success) {
+        console.log("NFT Tracking Response:", response.data.data);
+        console.log("Current Owner:", response.data.data?.nft?.currentOwner);
         setJourney(response.data.data);
         setSearchParams({ tokenId: tokenId.trim() });
         toast.success("Tra cứu thành công!");
@@ -660,13 +662,16 @@ export default function PublicNFTTracking() {
                           Chủ sở hữu hiện tại
                         </div>
                         <div className="text-sm font-semibold text-[#4BADD1] truncate">
-                          {journey.nft?.currentOwner &&
-                          typeof journey.nft.currentOwner === "object"
-                            ? journey.nft.currentOwner.fullName ||
-                              journey.nft.currentOwner.username ||
-                              journey.nft.currentOwner.name ||
-                              "N/A"
-                            : journey.nft?.currentOwner || "N/A"}
+                          {(() => {
+                            const owner = journey.nft?.currentOwner;
+                            if (!owner) return "N/A";
+                            
+                            if (typeof owner === "object" && owner !== null) {
+                              return owner.fullName || owner.name || owner.username || owner.email || "N/A";
+                            }
+                            
+                            return owner || "N/A";
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -832,12 +837,30 @@ export default function PublicNFTTracking() {
                                     {tx.toUserAddress}
                                   </div>
                                 </div>
+                                {tx.fromUserType && (
+                                  <div>
+                                    <span className="text-slate-500">From Type:</span>
+                                    <div className="font-mono break-all text-slate-800">
+                                      {tx.fromUserType}
+                                    </div>
+                                  </div>
+                                )}
+                                {tx.toUserType && (
+                                  <div>
+                                    <span className="text-slate-500">To Type:</span>
+                                    <div className="font-mono break-all text-slate-800">
+                                      {tx.toUserType}
+                                    </div>
+                                  </div>
+                                )}
                                 {tx.receivedTimestamp && (
                                   <div className="text-slate-600 mt-1">
                                     <span className="font-semibold">
                                       Timestamp:
                                     </span>{" "}
-                                    {tx.receivedTimestamp}
+                                    {typeof tx.receivedTimestamp === 'number' 
+                                      ? new Date(tx.receivedTimestamp * 1000).toLocaleString("vi-VN")
+                                      : tx.receivedTimestamp}
                                   </div>
                                 )}
                               </div>
@@ -1162,6 +1185,102 @@ export default function PublicNFTTracking() {
                                       </div>
                                     )}
 
+                                    {step.distributor && (
+                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-[#4BADD1]/5 to-[#4BADD1]/5 border border-[#4BADD1]/20">
+                                        <div className="p-2 bg-[#4BADD1] text-white rounded-lg flex-shrink-0">
+                                          <svg
+                                            className="w-5 h-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                                            />
+                                          </svg>
+                                        </div>
+                                        <div>
+                                          <div className="text-xs text-[#4BADD1] mb-1">
+                                            Nhà phân phối
+                                          </div>
+                                          <div className="font-semibold text-slate-800">
+                                            {typeof step.distributor === "object" &&
+                                            step.distributor !== null
+                                              ? step.distributor.fullName ||
+                                                step.distributor.username ||
+                                                step.distributor.name ||
+                                                JSON.stringify(step.distributor)
+                                              : step.distributor}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {step.pharmacy && (
+                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-[#4BADD1]/5 to-[#4BADD1]/5 border border-[#4BADD1]/20">
+                                        <div className="p-2 bg-[#4BADD1] text-white rounded-lg flex-shrink-0">
+                                          <svg
+                                            className="w-5 h-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                            />
+                                          </svg>
+                                        </div>
+                                        <div>
+                                          <div className="text-xs text-[#4BADD1] mb-1">
+                                            Nhà thuốc
+                                          </div>
+                                          <div className="font-semibold text-slate-800">
+                                            {typeof step.pharmacy === "object" &&
+                                            step.pharmacy !== null
+                                              ? step.pharmacy.fullName ||
+                                                step.pharmacy.username ||
+                                                step.pharmacy.name ||
+                                                JSON.stringify(step.pharmacy)
+                                              : step.pharmacy}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {(step.details?.receivedQuantity !== undefined) && (
+                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-[#4BADD1]/5 to-[#4BADD1]/5 border border-[#4BADD1]/30">
+                                        <div className="p-2 bg-[#4BADD1] text-white rounded-lg flex-shrink-0">
+                                          <svg
+                                            className="w-5 h-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            />
+                                          </svg>
+                                        </div>
+                                        <div>
+                                          <div className="text-xs text-[#4BADD1] mb-1">
+                                            Số lượng đã nhận
+                                          </div>
+                                          <div className="font-bold text-slate-800 text-lg">
+                                            {step.details.receivedQuantity}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
                                     {step.transactionHash && (
                                       <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
                                         <div className="p-2 bg-slate-700 text-white rounded-lg flex-shrink-0">
@@ -1186,6 +1305,68 @@ export default function PublicNFTTracking() {
                                           <div className="font-mono text-xs text-slate-700 truncate">
                                             {step.transactionHash}
                                           </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {step.details?.status && (
+                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200">
+                                        <div className="p-2 bg-emerald-500 text-white rounded-lg flex-shrink-0">
+                                          <svg
+                                            className="w-5 h-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            />
+                                          </svg>
+                                        </div>
+                                        <div>
+                                          <div className="text-xs text-emerald-600 mb-1">
+                                            Trạng thái chi tiết
+                                          </div>
+                                          <div className="font-semibold text-slate-800 capitalize">
+                                            {step.details.status}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {step.supplyChainCompleted !== undefined && (
+                                      <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
+                                        <div className={`p-1.5 rounded-full ${step.supplyChainCompleted ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                                          <svg
+                                            className="w-4 h-4 text-white"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            {step.supplyChainCompleted ? (
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M5 13l4 4L19 7"
+                                              />
+                                            ) : (
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                              />
+                                            )}
+                                          </svg>
+                                        </div>
+                                        <div className="text-sm font-semibold text-slate-800">
+                                          {step.supplyChainCompleted 
+                                            ? "Chuỗi cung ứng đã hoàn tất" 
+                                            : "Chuỗi cung ứng chưa hoàn tất"}
                                         </div>
                                       </div>
                                     )}

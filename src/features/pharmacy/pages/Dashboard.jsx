@@ -176,73 +176,24 @@ export default function PharmacyDashboard() {
                     <div
                       className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
                       style={{
-                        background: `linear-gradient(to right, ${COLORS.purple}, ${COLORS.pink})`,
+                        background: `linear-gradient(to right, ${COLORS.emerald}, ${COLORS.green})`,
                       }}
                     />
                     <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        Chuỗi cung ứng
-                      </div>
-                      <div className="text-3xl font-bold text-purple-600">
-                        {displayStats?.overview?.completedSupplyChains ||
-                          displayStats?.supplyChain?.completed ||
+                      <div className="text-sm text-slate-600 mb-1">Đã nhận</div>
+                      <div className="text-3xl font-bold text-emerald-600">
+                        {displayStats?.overview?.invoicesReceived?.byStatus?.sent ||
+                          displayStats?.invoicesReceived?.byStatus?.sent ||
+                          displayStats?.invoices?.byStatus?.sent ||
                           0}
                       </div>
                       <div className="text-xs text-slate-500 mt-2">
-                        Hoàn tất:{" "}
-                        {displayStats?.supplyChain?.completionRate || "0"}%
+                        Đã xác nhận
                       </div>
                     </div>
                   </div>
                 </div>
               </motion.div>
-
-              {/* Quality Stats Card */}
-              {qualityStats && (
-                <motion.div
-                  variants={fadeUp}
-                  initial="hidden"
-                  animate="show"
-                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
-                >
-                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
-                    Chất lượng sản phẩm
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-emerald-50 rounded-lg">
-                      <div className="text-sm text-emerald-600 mb-2">
-                        Tỷ lệ đạt
-                      </div>
-                      <div className="text-3xl font-bold text-emerald-600">
-                        {qualityStats.qualityChecks?.passRate || "0"}%
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Đã kiểm tra: {qualityStats.qualityChecks?.total || 0}
-                      </div>
-                    </div>
-                    <div className="text-center p-4 bg-red-50 rounded-lg">
-                      <div className="text-sm text-red-600 mb-2">Hết hạn</div>
-                      <div className="text-3xl font-bold text-red-600">
-                        {qualityStats.expiration?.expired || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Sản phẩm
-                      </div>
-                    </div>
-                    <div className="text-center p-4 bg-amber-50 rounded-lg">
-                      <div className="text-sm text-amber-600 mb-2">
-                        Sắp hết hạn
-                      </div>
-                      <div className="text-3xl font-bold text-amber-600">
-                        {qualityStats.expiration?.expiringSoon || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Trong 30 ngày
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
 
               {/* Charts Row 1: Line Chart (7 days) and Bar Chart (Today vs Yesterday) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -512,113 +463,6 @@ export default function PharmacyDashboard() {
                     </ResponsiveContainer>
                   </motion.div>
                 )}
-
-              {/* Detailed Statistics Cards */}
-              <motion.div variants={fadeUp} initial="hidden" animate="show">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">
-                  Chi tiết đơn hàng
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  <Link
-                    to="/pharmacy/invoices?status=pending"
-                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
-                  >
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.amber}, ${COLORS.orange})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        Chờ nhận
-                      </div>
-                      <div className="text-3xl font-bold text-amber-600">
-                        {displayStats?.overview?.invoicesReceived?.byStatus?.draft ||
-                          displayStats?.invoicesReceived?.byStatus?.draft ||
-                          displayStats?.invoices?.byStatus?.draft ||
-                          0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Đang chờ
-                      </div>
-                    </div>
-                  </Link>
-
-                  <Link
-                    to="/pharmacy/invoices?status=received"
-                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
-                  >
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.emerald}, ${COLORS.green})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">Đã nhận</div>
-                      <div className="text-3xl font-bold text-emerald-600">
-                        {displayStats?.overview?.invoicesReceived?.byStatus?.sent ||
-                          displayStats?.invoicesReceived?.byStatus?.sent ||
-                          displayStats?.invoices?.byStatus?.sent ||
-                          0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Đã xác nhận
-                      </div>
-                    </div>
-                  </Link>
-
-                  <Link
-                    to="/pharmacy/invoices?status=paid"
-                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
-                  >
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.green}, ${COLORS.emerald})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        Đã thanh toán
-                      </div>
-                      <div className="text-3xl font-bold text-green-600">
-                        {displayStats?.overview?.invoicesReceived?.byStatus?.paid ||
-                          displayStats?.invoicesReceived?.byStatus?.paid ||
-                          displayStats?.invoices?.byStatus?.paid ||
-                          0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Hoàn tất
-                      </div>
-                    </div>
-                  </Link>
-
-                  <Link
-                    to="/pharmacy/distribution-history"
-                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
-                  >
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.purple}, ${COLORS.pink})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        Tổng phân phối
-                      </div>
-                      <div className="text-3xl font-bold text-purple-600">
-                        {displayStats?.transfers?.total || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Giao dịch
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-              </motion.div>
             </div>
           )}
         </div>
