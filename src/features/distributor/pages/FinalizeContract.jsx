@@ -6,7 +6,7 @@ import { navigationItems } from "../constants/navigationItems";
 import { Button, Spin, Descriptions, Tag, Alert } from "antd";
 import { CardUI } from "../../shared/components/ui/cardUI";
 import { useDistributorContractDetail, useFinalizeContractAndMint } from "../apis/contract";
-import { signMessageWithMetaMask } from "../../utils/web3Helper";
+import { signMessageWithMetaMask, finalizeDistributorPharmacyContract } from "../../utils/web3Helper";
 import { toast } from "sonner";
 import { contractStatusColor, contractStatusLabel } from "../hooks/useContracts";
 import { useQuery } from "@tanstack/react-query";
@@ -114,18 +114,41 @@ export default function FinalizeContract() {
         throw new Error("Không thể lấy chữ ký từ MetaMask");
       }
 
-      // Step 2: Finalize contract and mint NFT
+      // Step 2: Resolve pharmacy address
       const pharmacyAddress = resolvedPharmacyWallet;
       if (!pharmacyAddress) {
         throw new Error("Không tìm thấy địa chỉ ví của Pharmacy trong hợp đồng");
       }
 
+      // Step 3: Finalize contract and mint NFT on blockchain
+      toast.info("Đang finalize hợp đồng và mint NFT trên blockchain...", {
+        position: "top-right",
+        duration: 3000,
+      });
+
+      const blockchainResult = await finalizeDistributorPharmacyContract(pharmacyAddress);
+
+      if (!blockchainResult.success) {
+        throw new Error(blockchainResult.message || "Không thể finalize hợp đồng trên blockchain");
+      }
+
+      // Nếu contract đã được finalize trước đó, vẫn tiếp tục
+      if (blockchainResult.alreadyFinalized) {
+        console.log("⚠️ [handleFinalize] Contract đã được finalize trước đó, tiếp tục...");
+      } else {
+        toast.success("Finalize hợp đồng và mint NFT trên blockchain thành công!", {
+          position: "top-right",
+          duration: 2000,
+        });
+      }
+
+      // Step 4: Call API to save transaction and tokenId
       const result = await finalizeContract({
         contractId: contractId,
-        pharmacyAddress,
-        distributorSignature: signatureResult.signature,
-        distributorAddress: signatureResult.address,
-        signedMessage: signatureResult.message,
+        pharmacyAddress: pharmacyAddress,
+        tokenId: blockchainResult.tokenId,
+        transactionHash: blockchainResult.transactionHash,
+        distributorPrivateKey: null, // Không cần private key
       });
 
       toast.success("Ký hợp đồng và Mint NFT thành công!");

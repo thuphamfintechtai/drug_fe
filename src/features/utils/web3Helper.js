@@ -769,14 +769,22 @@ export const finalizeDistributorPharmacyContract = async (pharmacyAddress) => {
 
     console.log("📝 [finalizeDistributorPharmacyContract] Đang finalize contract với pharmacy:", pharmacyAddress);
 
-    // ✅ Kiểm tra contract existence và status TRƯỚC KHI gọi transaction
-    const contractData = await contract.distributorPharmacyContracts(
-      signerAddress,
-      pharmacyAddress
-    );
+    // ✅ Kiểm tra contract status TRƯỚC KHI gọi transaction
+    // contractStatus: 0 = NOT_CREATED, 1 = PENDING, 2 = APPROVED, 3 = SIGNED
+    let contractStatus;
+    try {
+      contractStatus = await contract.distributorPharmacyContract(
+        signerAddress,
+        pharmacyAddress
+      );
+      contractStatus = Number(contractStatus);
+    } catch (statusError) {
+      console.warn("⚠️ [finalizeDistributorPharmacyContract] Không thể kiểm tra trạng thái contract:", statusError);
+      contractStatus = 0; // NOT_CREATED
+    }
 
-    // Kiểm tra contract có tồn tại không
-    if (!contractData.exists) {
+    // Kiểm tra contract có tồn tại không (status !== 0)
+    if (contractStatus === 0) {
       throw new Error(
         `❌ Contract chưa được tạo!\n\n` +
         `Không tìm thấy contract giữa distributor ${signerAddress} và pharmacy ${pharmacyAddress}.\n\n` +
@@ -784,9 +792,9 @@ export const finalizeDistributorPharmacyContract = async (pharmacyAddress) => {
       );
     }
 
-    // ✅ Kiểm tra đã finalized chưa (TRƯỚC KHI gọi transaction để tránh tốn gas)
-    if (contractData.distributorFinalized) {
-      console.log("ℹ️ [finalizeDistributorPharmacyContract] Contract đã được finalize rồi, bỏ qua...");
+    // ✅ Kiểm tra đã finalized chưa (status === 3 = SIGNED)
+    if (contractStatus === 3) {
+      console.log("ℹ️ [finalizeDistributorPharmacyContract] Contract đã được finalize rồi (SIGNED), bỏ qua...");
       return {
         success: true,
         alreadyFinalized: true,
@@ -794,16 +802,17 @@ export const finalizeDistributorPharmacyContract = async (pharmacyAddress) => {
         contractData: {
           distributor: signerAddress,
           pharmacy: pharmacyAddress,
-          distributorFinalized: true,
-          pharmacyApproved: contractData.pharmacyApproved,
+          status: contractStatus,
         }
       };
     }
 
-    // ✅ Kiểm tra pharmacy đã approve chưa
-    if (!contractData.pharmacyApproved) {
+    // ✅ Kiểm tra pharmacy đã approve chưa (status === 2 = APPROVED)
+    if (contractStatus !== 2) {
+      const statusText = contractStatus === 1 ? "PENDING" : "UNKNOWN";
       throw new Error(
         `⚠️ Pharmacy chưa approve contract!\n\n` +
+        `Contract hiện tại có trạng thái: ${statusText} (cần APPROVED = 2)\n\n` +
         `Contract giữa distributor và pharmacy cần được pharmacy approve trước khi distributor có thể finalize.\n\n` +
         `Flow đúng:\n` +
         `1. Distributor tạo contract ✅\n` +
@@ -826,11 +835,43 @@ export const finalizeDistributorPharmacyContract = async (pharmacyAddress) => {
 
     console.log("✅ [finalizeDistributorPharmacyContract] Contract đã được finalize:", receipt);
 
+    // Parse event distributorFinalizeAndMintEvent để lấy tokenId
+    const iface = new ethers.Interface(nftABI.abi);
+    let eventData = null;
+
+    for (const log of receipt.logs || []) {
+      try {
+        const parsed = iface.parseLog(log);
+        if (parsed?.name === "distributorFinalizeAndMintEvent") {
+          // Event structure: distributorFinalizeAndMintEvent(address indexed distributorAddress, uint256 tokenId, uint256 timespan)
+          eventData = {
+            distributorAddress: parsed.args?.distributorAddress || parsed.args?.[0],
+            tokenId: parsed.args?.tokenId?.toString() || parsed.args?.[1]?.toString(),
+            timestamp: parsed.args?.timespan?.toString() || parsed.args?.[2]?.toString(),
+          };
+          break;
+        }
+      } catch (err) {
+        // Not the event we're looking for, continue
+      }
+    }
+
+    if (!eventData) {
+      throw new Error(
+        "Không nhận được sự kiện distributorFinalizeAndMintEvent từ blockchain"
+      );
+    }
+
     return {
       success: true,
       transactionHash: tx.hash,
       blockNumber: receipt.blockNumber,
-      gasUsed: receipt.gasUsed.toString(), // ✅ Thêm thông tin gas
+      gasUsed: receipt.gasUsed.toString(),
+      tokenId: eventData.tokenId,
+      event: {
+        name: "distributorFinalizeAndMintEvent",
+        args: eventData,
+      },
       contractData: {
         distributor: signerAddress,
         pharmacy: pharmacyAddress,
