@@ -43,11 +43,10 @@ export const useDrugInfo = () => {
         params: { atcCode: searchTerm.trim() },
       });
 
-      const data = response.data?.data || response.data;
-      console.log("Drug search response:", data);
+      const responseData = response.data;
 
-      if (data.success || data.drug || data.drugs) {
-        let drugsData = data.data || data.drug || data.drugs || data;
+      if (responseData?.success) {
+        let drugsData = responseData.data;
 
         // Xử lý nhiều trường hợp response
         if (Array.isArray(drugsData)) {
@@ -64,7 +63,33 @@ export const useDrugInfo = () => {
           if (
             drugsData.tradeName ||
             drugsData.atcCode ||
-            drugsData.genericName
+            drugsData.genericName ||
+            drugsData.drugName
+          ) {
+            setDrugs([drugsData]);
+          } else {
+            setDrugs([]);
+          }
+        } else {
+          setDrugs([]);
+        }
+
+        setSearchParams({ search: searchTerm.trim(), type: searchType });
+      } else if (responseData?.drug || responseData?.drugs) {
+        let drugsData =
+          responseData.drug ||
+          responseData.drugs ||
+          responseData.data ||
+          responseData;
+
+        if (Array.isArray(drugsData)) {
+          setDrugs(drugsData);
+        } else if (drugsData && typeof drugsData === "object") {
+          if (
+            drugsData.tradeName ||
+            drugsData.atcCode ||
+            drugsData.genericName ||
+            drugsData.drugName
           ) {
             setDrugs([drugsData]);
           } else {
@@ -77,7 +102,7 @@ export const useDrugInfo = () => {
         setSearchParams({ search: searchTerm.trim(), type: searchType });
       } else {
         setDrugs([]);
-        setError(data.message || response.data?.message || "Không tìm thấy thông tin thuốc");
+        setError(responseData?.message || "Không tìm thấy thông tin thuốc");
       }
     } catch (error) {
       console.error("Lỗi khi tìm kiếm thuốc:", error);

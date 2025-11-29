@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { isValidObjectId } from "../../auth/utils/isValidObjectId";
 import api from "../../utils/api";
@@ -28,17 +28,20 @@ export const useDistributionHistory = () => {
   const drugId = searchParams.get("drugId") || "";
   const status = searchParams.get("status") || "";
 
-  const updateFilter = (next) => {
-    const nextParams = new URLSearchParams(searchParams);
-    Object.entries(next).forEach(([k, v]) => {
-      if (v === "" || v === undefined || v === null) {
-        nextParams.delete(k);
-      } else {
-        nextParams.set(k, String(v));
-      }
-    });
-    setSearchParams(nextParams);
-  };
+  const updateFilter = useCallback(
+    (next) => {
+      const nextParams = new URLSearchParams(searchParams);
+      Object.entries(next).forEach(([k, v]) => {
+        if (v === "" || v === undefined || v === null) {
+          nextParams.delete(k);
+        } else {
+          nextParams.set(k, String(v));
+        }
+      });
+      setSearchParams(nextParams);
+    },
+    [searchParams, setSearchParams]
+  );
 
   useEffect(() => {
     const invalidParams = {};
@@ -73,7 +76,7 @@ export const useDistributionHistory = () => {
     if (Object.keys(invalidParams).length > 0) {
       updateFilter(invalidParams);
     }
-  }, [distributorId, pharmacyId, drugId]);
+  }, [distributorId, pharmacyId, drugId, updateFilter]);
 
   const navigationItems = useMemo(
     () => [
@@ -88,7 +91,7 @@ export const useDistributionHistory = () => {
     []
   );
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     setLoadingProgress(0);
@@ -117,12 +120,24 @@ export const useDistributionHistory = () => {
       }
 
       const response = await api.get("/admin/distribution/history", { params });
-      const data = response.data?.data || response.data;
+      const responseData = response.data;
 
-      if (data.success || data.distributions) {
-        setItems(data.data?.distributions || data.distributions || []);
-        setPagination(response.data.pagination);
+      // Xử lý nhiều format response
+      let itemsData = [];
+      let paginationData = {
+        page: page,
+        limit: 20,
+        total: 0,
+        pages: 0,
+      };
+
+      if (responseData?.success && responseData?.data) {
+        itemsData = responseData.data.distributionHistory || [];
+        paginationData = responseData.data.pagination || paginationData;
       }
+
+      setItems(itemsData);
+      setPagination(paginationData);
     } catch (e) {
       const errorMessage =
         e?.response?.data?.message || e?.message || "Không thể tải dữ liệu";
@@ -193,7 +208,7 @@ export const useDistributionHistory = () => {
       setLoading(false);
       setTimeout(() => setLoadingProgress(0), 500);
     }
-  };
+  }, [page, distributorId, pharmacyId, drugId, status, updateFilter]);
 
   useEffect(() => {
     load();
@@ -203,7 +218,7 @@ export const useDistributionHistory = () => {
         progressIntervalRef.current = null;
       }
     };
-  }, [page, distributorId, pharmacyId, drugId, status]);
+  }, [load]);
 
   const handleSearch = () => {
     const errors = {};

@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import api from "../../utils/api";
 
@@ -41,7 +41,7 @@ export const useAdminDrugs = () => {
     []
   );
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     setLoadingProgress(0);
@@ -71,14 +71,19 @@ export const useAdminDrugs = () => {
         api.get("/admin/drugs/statistics"),
       ]);
 
-      const drugsData = drugsRes.data?.data || drugsRes.data;
-      const items = Array.isArray(drugsData.drugs) ? drugsData.drugs : [];
-      const paginationData = drugsData.pagination || {
+      const responseData = drugsRes.data;
+      let items = [];
+      let paginationData = {
         page: page,
         limit: 10,
-        total: items.length,
-        pages: Math.ceil(items.length / 10),
+        total: 0,
+        pages: 0,
       };
+
+      if (responseData?.success && Array.isArray(responseData.data)) {
+        items = responseData.data;
+        paginationData = responseData.pagination || paginationData;
+      }
 
       setItems(items);
       setPagination(paginationData);
@@ -128,7 +133,7 @@ export const useAdminDrugs = () => {
       setLoading(false);
       setTimeout(() => setLoadingProgress(0), 500);
     }
-  };
+  }, [page, search, status, manufacturerId]);
 
   useEffect(() => {
     load();
@@ -138,7 +143,7 @@ export const useAdminDrugs = () => {
         progressIntervalRef.current = null;
       }
     };
-  }, [page, search, status, manufacturerId]);
+  }, [load]);
 
   const handleSearch = () => {
     updateFilter({ search: searchInput, page: 1 });
@@ -181,5 +186,10 @@ export const useAdminDrugs = () => {
     handleSearch,
     handleClearSearch,
     updateFilter,
+    searchInput,
+    setSearchInput,
+    status,
+    page,
+    translateStatus,
   };
 };

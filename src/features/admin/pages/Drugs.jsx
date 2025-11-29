@@ -37,7 +37,7 @@ export default function AdminDrugs() {
       {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
           <div className="w-full max-w-2xl">
-            <TruckLoader height={72} progress={loadingProgress} showTrack />
+            <TruckLoader height={48} progress={loadingProgress} showTrack />
           </div>
           <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
@@ -232,7 +232,7 @@ export default function AdminDrugs() {
             )}
 
           {/* Table */}
-          <div className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden mb-6">
+          <div className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden mb-6">
             {error ? (
               <div className="p-6 text-red-600">{error}</div>
             ) : items.length === 0 ? (
@@ -332,29 +332,22 @@ export default function AdminDrugs() {
             <div className="text-sm text-slate-600">
               Hiển thị {items.length} / {pagination?.total || 0} thuốc
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-end gap-2 mt-4">
               <button
                 disabled={page <= 1}
                 onClick={() => updateFilter({ page: page - 1 })}
                 className={`px-3 py-2 rounded-xl ${
                   page <= 1
-                    ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "bg-white/90 border border-[#90e0ef55] hover:bg-[#f5fcff]"
+                    ? "bg-slate-200 text-slate-400"
+                    : "bg-white border !border-primary hover:bg-[#f5fcff]"
                 }`}
               >
                 Trước
               </button>
-              <span className="text-sm text-slate-700">
-                Trang {page} / {pagination?.pages || 1}
-              </span>
+              <span className="text-sm text-slate-700">Trang {page}</span>
               <button
-                disabled={page >= (pagination?.pages || 1)}
                 onClick={() => updateFilter({ page: page + 1 })}
-                className={`px-3 py-2 rounded-xl ${
-                  page >= pagination.pages
-                    ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    : "!text-white bg-linear-to-r from-secondary to-primary shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
-                }`}
+                className="px-3 py-2 rounded-xl !text-white bg-linear-to-r from-secondary to-primary shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
               >
                 Sau
               </button>

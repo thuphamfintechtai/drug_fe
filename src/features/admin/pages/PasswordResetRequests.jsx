@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckLoader from "../../shared/components/TruckLoader";
 import usePasswordResetRequest from "../hooks/usePasswordResetRequest";
@@ -24,6 +25,9 @@ export default function PasswordResetRequests() {
     rejectReason,
     setRejectReason,
   } = usePasswordResetRequest();
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [tempRejectReason, setTempRejectReason] = useState("");
   const fadeUp = {
     hidden: { opacity: 0, y: 16, filter: "blur(6px)" },
     show: {
@@ -149,7 +153,7 @@ export default function PasswordResetRequests() {
 
                       <button
                         onClick={() => openDetailModal(item)}
-                        className="px-4 py-2 rounded-full border border-cyan-200 text-[#003544] hover:bg-[#90e0ef22] transition text-sm"
+                        className="px-4 py-2 rounded-full border border-primary text-[#003544] hover:bg-[#90e0ef22] transition text-sm"
                       >
                         Chi tiết
                       </button>
@@ -206,214 +210,394 @@ export default function PasswordResetRequests() {
 
           {/* Detail Modal */}
           {showDetailModal && selectedItem && (
-            <div
-              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            <motion.div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={() => setShowDetailModal(false)}
             >
-              <div
-                className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              <motion.div
+                className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="sticky top-0 bg-secondary !text-white p-6 rounded-t-2xl">
-                  <h3 className="text-2xl font-bold">
-                    Chi tiết yêu cầu reset mật khẩu
-                  </h3>
+                {/* Header */}
+                <div className="bg-gradient-to-r from-primary to-secondary border-b border-primary/20 px-6 py-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold text-white">
+                        Chi tiết yêu cầu reset mật khẩu
+                      </h3>
+                      <p className="text-sm text-white/80 mt-1">
+                        ID: {selectedItem.id || selectedItem._id}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowDetailModal(false)}
+                      className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
 
-                <div className="p-6 space-y-4">
-                  {/* User info */}
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <h4 className="font-semibold text-slate-800 mb-3">
-                      Thông tin người dùng
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Tên:</span>
-                        <span className="font-medium text-slate-800">
-                          {selectedItem.user?.fullName ||
-                            selectedItem.user?.username}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Email:</span>
-                        <span className="font-medium text-slate-800">
-                          {selectedItem.user?.email}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Vai trò:</span>
-                        <span className="font-medium text-slate-800">
-                          {getRoleName(selectedItem.user?.role)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Wallet:</span>
-                        <span className="font-mono text-xs text-slate-800">
-                          {selectedItem.user?.walletAddress || "Chưa có"}
-                        </span>
+                {/* Content */}
+                <div className="overflow-y-auto flex-1 p-6 space-y-6">
+                  {/* Thông tin người dùng */}
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="bg-gradient-to-r from-primary to-secondary border-b border-primary/20 px-6 py-4">
+                      <h4 className="text-base font-semibold text-white">
+                        Thông tin người dùng
+                      </h4>
+                    </div>
+                    <div className="p-6">
+                      <div className="space-y-0 divide-y divide-slate-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 first:pt-0">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
+                            Tên
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {selectedItem.user?.fullName ||
+                              selectedItem.user?.username ||
+                              "N/A"}
+                          </div>
+                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
+                            Email
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {selectedItem.user?.email || "N/A"}
+                          </div>
+                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
+                            Vai trò
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {getRoleName(selectedItem.user?.role)}
+                          </div>
+                        </div>
+                        {selectedItem.user?.walletAddress && (
+                          <div className="flex flex-col sm:flex-row sm:items-start py-4 last:pb-0">
+                            <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0 sm:pt-1">
+                              Wallet Address
+                            </div>
+                            <div className="text-sm font-semibold text-slate-800 font-mono break-all flex-1">
+                              {selectedItem.user.walletAddress}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Verification info */}
+                  {/* Thông tin xác thực */}
                   {selectedItem.verificationInfo && (
-                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                      <h4 className="font-semibold text-slate-800 mb-3">
-                        Thông tin xác thực
-                      </h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-slate-600">License No:</span>
-                          <span className="font-mono text-slate-800">
-                            {selectedItem.verificationInfo.licenseNo}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-600">Tax Code:</span>
-                          <span className="font-mono text-slate-800">
-                            {selectedItem.verificationInfo.taxCode}
-                          </span>
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                      <div className="bg-gradient-to-r from-primary to-secondary border-b border-primary/20 px-6 py-4">
+                        <h4 className="text-base font-semibold text-white">
+                          Thông tin xác thực
+                        </h4>
+                      </div>
+                      <div className="p-6">
+                        <div className="space-y-0 divide-y divide-slate-200">
+                          {selectedItem.verificationInfo.licenseNo && (
+                            <div className="flex flex-col sm:flex-row sm:items-center py-4 first:pt-0">
+                              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
+                                License No
+                              </div>
+                              <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                                {selectedItem.verificationInfo.licenseNo}
+                              </div>
+                            </div>
+                          )}
+                          {selectedItem.verificationInfo.taxCode && (
+                            <div className="flex flex-col sm:flex-row sm:items-center py-4 last:pb-0">
+                              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
+                                Tax Code
+                              </div>
+                              <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                                {selectedItem.verificationInfo.taxCode}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Request info */}
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <h4 className="font-semibold text-slate-800 mb-3">
-                      Thông tin yêu cầu
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Trạng thái:</span>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                            selectedItem.status
-                          )}`}
-                        >
-                          {selectedItem.status === "pending"
-                            ? "Đang chờ"
-                            : selectedItem.status === "approved"
-                            ? "Đã duyệt"
-                            : selectedItem.status === "rejected"
-                            ? "Đã từ chối"
-                            : selectedItem.status}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Yêu cầu lúc:</span>
-                        <span className="font-medium text-slate-800">
-                          {new Date(selectedItem.createdAt).toLocaleString(
-                            "vi-VN"
-                          )}
-                        </span>
-                      </div>
-                      {selectedItem.expiresAt && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-600">Hết hạn:</span>
-                          <span
-                            className={`font-medium ${
-                              new Date() > new Date(selectedItem.expiresAt)
-                                ? "text-red-600"
-                                : "text-slate-800"
-                            }`}
-                          >
-                            {new Date(selectedItem.expiresAt).toLocaleString(
+                  {/* Thông tin yêu cầu */}
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="bg-gradient-to-r from-primary to-secondary border-b border-primary/20 px-6 py-4">
+                      <h4 className="text-base font-semibold text-white">
+                        Thông tin yêu cầu
+                      </h4>
+                    </div>
+                    <div className="p-6">
+                      <div className="space-y-0 divide-y divide-slate-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 first:pt-0">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
+                            Trạng thái
+                          </div>
+                          <div className="flex-1">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
+                                selectedItem.status
+                              )}`}
+                            >
+                              {selectedItem.status === "pending"
+                                ? "Đang chờ"
+                                : selectedItem.status === "approved"
+                                ? "Đã duyệt"
+                                : selectedItem.status === "rejected"
+                                ? "Đã từ chối"
+                                : selectedItem.status}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
+                            Yêu cầu lúc
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {new Date(selectedItem.createdAt).toLocaleString(
                               "vi-VN"
                             )}
-                            {new Date() > new Date(selectedItem.expiresAt) &&
-                              " (Đã hết hạn)"}
-                          </span>
+                          </div>
                         </div>
-                      )}
-                      {selectedItem.ipAddress && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-600">IP Address:</span>
-                          <span className="font-mono text-xs text-slate-800">
-                            {selectedItem.ipAddress}
-                          </span>
-                        </div>
-                      )}
+                        {selectedItem.expiresAt && (
+                          <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                            <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
+                              Hết hạn
+                            </div>
+                            <div
+                              className={`text-base font-semibold flex-1 ${
+                                new Date() > new Date(selectedItem.expiresAt)
+                                  ? "text-red-600"
+                                  : "text-slate-800"
+                              }`}
+                            >
+                              {new Date(selectedItem.expiresAt).toLocaleString(
+                                "vi-VN"
+                              )}
+                              {new Date() > new Date(selectedItem.expiresAt) &&
+                                " (Đã hết hạn)"}
+                            </div>
+                          </div>
+                        )}
+                        {selectedItem.ipAddress && (
+                          <div className="flex flex-col sm:flex-row sm:items-center py-4 last:pb-0">
+                            <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
+                              IP Address
+                            </div>
+                            <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                              {selectedItem.ipAddress}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Actions */}
                   {selectedItem.status === "pending" && (
-                    <div className="space-y-3">
-                      <div className="flex gap-3">
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                      <div className="flex flex-col sm:flex-row gap-3">
                         <button
                           disabled={
                             actionLoading ||
                             new Date() > new Date(selectedItem.expiresAt)
                           }
-                          onClick={() => handleApprove(selectedItem._id)}
-                          className="flex-1 px-4 py-3 rounded-xl !text-white bg-secondary shadow hover:shadow-emerald-200/60 disabled:opacity-60 disabled:cursor-not-allowed font-medium"
+                          onClick={() => setShowApproveModal(true)}
+                          className="flex-1 px-6 py-3.5 rounded-xl !text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed transition font-semibold flex items-center justify-center gap-2"
                         >
-                          {actionLoading
-                            ? "Đang xử lý..."
-                            : "Duyệt & Gửi mật khẩu mới"}
+                          <span className="text-xl">✓</span>
+                          <span>Duyệt & Gửi mật khẩu mới</span>
                         </button>
-                      </div>
-
-                      <div className="space-y-2">
-                        <input
-                          value={rejectReason}
-                          onChange={(e) => setRejectReason(e.target.value)}
-                          placeholder="Nhập lý do từ chối (bắt buộc)"
-                          className="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-red-400"
-                        />
                         <button
                           disabled={actionLoading}
-                          onClick={() => handleReject(selectedItem._id)}
-                          className="w-full px-4 py-3 rounded-xl !text-white bg-gradient-to-r from-rose-500 to-red-600 shadow hover:shadow-rose-200/60 disabled:opacity-60 font-medium"
+                          onClick={() => {
+                            setTempRejectReason(rejectReason || "");
+                            setShowRejectModal(true);
+                          }}
+                          className="flex-1 px-6 py-3.5 rounded-xl !text-white bg-gradient-to-r from-rose-500 to-red-600 shadow-lg hover:shadow-xl disabled:opacity-60 transition font-semibold flex items-center justify-center gap-2"
                         >
-                          {actionLoading ? "Đang xử lý..." : "Từ chối yêu cầu"}
+                          <span className="text-xl">✕</span>
+                          <span>Từ chối</span>
                         </button>
                       </div>
                     </div>
                   )}
 
+                  {/* Status messages */}
                   {selectedItem.status === "approved" &&
                     selectedItem.reviewedAt && (
                       <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-                        <div className="text-sm text-emerald-700">
-                          Đã duyệt lúc:{" "}
-                          {new Date(selectedItem.reviewedAt).toLocaleString(
-                            "vi-VN"
-                          )}
-                        </div>
-                        <div className="text-sm text-emerald-600 mt-1">
-                          Mật khẩu mới đã được gửi đến email người dùng.
+                        <div className="flex items-start gap-3">
+                          <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-white text-xs">✓</span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-semibold text-emerald-700">
+                              Đã duyệt lúc:{" "}
+                              {new Date(selectedItem.reviewedAt).toLocaleString(
+                                "vi-VN"
+                              )}
+                            </div>
+                            <div className="text-sm text-emerald-600 mt-1">
+                              Mật khẩu mới đã được gửi đến email người dùng.
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
 
                   {selectedItem.status === "rejected" && (
                     <div className="bg-red-50 rounded-xl p-4 border border-red-200">
-                      <div className="text-sm text-red-700">
-                        Đã từ chối lúc:{" "}
-                        {new Date(selectedItem.reviewedAt).toLocaleString(
-                          "vi-VN"
-                        )}
-                      </div>
-                      {selectedItem.rejectionReason && (
-                        <div className="text-sm text-red-600 mt-1">
-                          Lý do: {selectedItem.rejectionReason}
+                      <div className="flex items-start gap-3">
+                        <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shrink-0 mt-0.5">
+                          <span className="text-white text-xs">✕</span>
                         </div>
-                      )}
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-red-700">
+                            Đã từ chối lúc:{" "}
+                            {selectedItem.reviewedAt &&
+                              new Date(selectedItem.reviewedAt).toLocaleString(
+                                "vi-VN"
+                              )}
+                          </div>
+                          {selectedItem.rejectionReason && (
+                            <div className="text-sm text-red-600 mt-1">
+                              Lý do: {selectedItem.rejectionReason}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
-
-                  <button
-                    onClick={() => setShowDetailModal(false)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
-                  >
-                    Đóng
-                  </button>
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           )}
+
+          {/* Approve Confirmation Modal */}
+          <AnimatePresence>
+            {showApproveModal && selectedItem && (
+              <motion.div
+                className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowApproveModal(false)}
+              >
+                <motion.div
+                  className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                      <span className="text-2xl text-emerald-600">✓</span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-800">
+                        Xác nhận duyệt yêu cầu
+                      </h3>
+                      <p className="text-sm text-slate-600">
+                        Bạn có chắc chắn muốn duyệt và gửi mật khẩu mới?
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={() => setShowApproveModal(false)}
+                      className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleApprove(selectedItem.id || selectedItem._id);
+                        setShowApproveModal(false);
+                      }}
+                      disabled={actionLoading}
+                      className="flex-1 px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-lg hover:shadow-xl disabled:opacity-60 transition font-semibold"
+                    >
+                      {actionLoading ? "Đang xử lý..." : "Xác nhận duyệt"}
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Reject Modal */}
+          <AnimatePresence>
+            {showRejectModal && selectedItem && (
+              <motion.div
+                className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setTempRejectReason("");
+                }}
+              >
+                <motion.div
+                  className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Lý do từ chối <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={tempRejectReason}
+                      onChange={(e) => setTempRejectReason(e.target.value)}
+                      placeholder="Nhập lý do từ chối yêu cầu này..."
+                      rows={4}
+                      className="w-full border-2 border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition resize-none"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setShowRejectModal(false);
+                        setTempRejectReason("");
+                      }}
+                      className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (tempRejectReason.trim()) {
+                          setRejectReason(tempRejectReason);
+                          handleReject(selectedItem.id || selectedItem._id);
+                          setShowRejectModal(false);
+                          setTempRejectReason("");
+                        }
+                      }}
+                      disabled={actionLoading || !tempRejectReason.trim()}
+                      className="flex-1 px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-rose-500 to-red-600 shadow-lg hover:shadow-xl disabled:opacity-60 transition font-semibold"
+                    >
+                      {actionLoading ? "Đang xử lý..." : "Xác nhận từ chối"}
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       )}
     </DashboardLayout>

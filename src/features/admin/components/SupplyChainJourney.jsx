@@ -70,7 +70,7 @@ function ProofBlock({ proof }) {
       : proof.receivedBy?.name || proof.receivedBy?.username || null;
 
   return (
-    <div className="mt-4 rounded-lg border border-card-primary bg-emerald-50 p-4">
+    <div className="mt-4 rounded-lg border border-card-primary  p-4">
       <h5 className="text-sm font-semibold text-emerald-700 mb-2">
         Thông tin xác nhận
       </h5>
@@ -266,7 +266,7 @@ function renderStatistics(stats) {
 export default function SupplyChainJourney({ journey, isLoading }) {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-8 mt-8">
         <TruckLoader height={48} showTrack progress={0.6} />
       </div>
     );
@@ -283,34 +283,49 @@ export default function SupplyChainJourney({ journey, isLoading }) {
   const { batchInfo, statistics, timeline, nfts } = journey;
 
   return (
-    <div className="mt-6 border-t border-slate-200 pt-6 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <InfoRow label="Nhà sản xuất" value={batchInfo?.manufacturer?.name} />
-        <InfoRow
-          label="Mã số giấy phép"
-          value={batchInfo?.manufacturer?.licenseNo}
-        />
-        <InfoRow label="Ngày sản xuất" value={formatDate(batchInfo?.mfgDate)} />
-        <InfoRow label="Hạn dùng" value={formatDate(batchInfo?.expDate)} />
-        <InfoRow
-          label="Tổng số lượng"
-          value={formatNumber(batchInfo?.quantity)}
-        />
-        <InfoRow
-          label="Tx Blockchain"
-          value={shortenTx(batchInfo?.chainTxHash)}
-          mono
-          link={
-            batchInfo?.chainTxHash
-              ? `https://sepolia.etherscan.io/tx/${batchInfo.chainTxHash}`
-              : undefined
-          }
-        />
+    <div className="mt-6 space-y-6">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6">
+        <h4 className="text-base font-semibold text-slate-800 mb-4">
+          Thông tin lô hàng
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <InfoRow label="Nhà sản xuất" value={batchInfo?.manufacturer?.name} />
+          <InfoRow
+            label="Mã số giấy phép"
+            value={batchInfo?.manufacturer?.licenseNo}
+          />
+          <InfoRow
+            label="Ngày sản xuất"
+            value={formatDate(batchInfo?.mfgDate)}
+          />
+          <InfoRow label="Hạn dùng" value={formatDate(batchInfo?.expDate)} />
+          <InfoRow
+            label="Tổng số lượng"
+            value={formatNumber(batchInfo?.quantity)}
+          />
+          <InfoRow
+            label="Tx Blockchain"
+            value={shortenTx(batchInfo?.chainTxHash)}
+            mono
+            link={
+              batchInfo?.chainTxHash
+                ? `https://sepolia.etherscan.io/tx/${batchInfo.chainTxHash}`
+                : undefined
+            }
+          />
+        </div>
       </div>
 
-      {renderStatistics(statistics)}
+      {statistics && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6">
+          <h4 className="text-base font-semibold text-slate-800 mb-4">
+            Thống kê
+          </h4>
+          {renderStatistics(statistics)}
+        </div>
+      )}
 
-      <div>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6">
         <h4 className="text-base font-semibold text-slate-800 mb-4">
           Timeline chuỗi cung ứng
         </h4>
@@ -345,7 +360,7 @@ export default function SupplyChainJourney({ journey, isLoading }) {
                     </div>
                   </div>
                   <div className="flex-1 pb-6">
-                    <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                    <div className="bg-white rounded-xl border border-slate-200 p-4">
                       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                         <div className="flex items-center gap-3">
                           <span
@@ -383,53 +398,77 @@ export default function SupplyChainJourney({ journey, isLoading }) {
         </div>
       </div>
 
-      <div>
-        <h4 className="text-base font-semibold text-slate-800 mb-3">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6">
+        <h4 className="text-base font-semibold text-slate-800 mb-4">
           Danh sách NFT (tối đa 10)
         </h4>
         {(!nfts || nfts.length === 0) && (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-            Chưa có NFT nào được ghi nhận cho lô hàng này.
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
+            <div className="text-4xl mb-2">🎫</div>
+            <p className="text-sm text-slate-500">
+              Chưa có NFT nào được ghi nhận cho lô hàng này.
+            </p>
           </div>
         )}
         {nfts && nfts.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-100 text-slate-600">
-                <tr>
-                  <th className="px-4 py-2 text-left font-medium">Token ID</th>
-                  <th className="px-4 py-2 text-left font-medium">Serial</th>
-                  <th className="px-4 py-2 text-left font-medium">
-                    Trạng thái
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium">
-                    Chủ sở hữu
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 bg-white">
-                {nfts.slice(0, 10).map((nft) => (
-                  <tr key={nft.tokenId}>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-700">
-                      {nft.tokenId}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-700">
-                      {nft.serialNumber}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {translateStatus(nft.status)}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {nft.currentOwner?.username ||
-                        nft.currentOwner?.email ||
-                        "—"}
-                    </td>
+          <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm bg-white">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-gradient-to-r from-primary to-secondary">
+                  <tr>
+                    <th className="px-6 py-3.5 text-left font-semibold text-white text-xs uppercase tracking-wide">
+                      Token ID
+                    </th>
+                    <th className="px-6 py-3.5 text-left font-semibold text-white text-xs uppercase tracking-wide">
+                      Serial
+                    </th>
+                    <th className="px-6 py-3.5 text-left font-semibold text-white text-xs uppercase tracking-wide">
+                      Trạng thái
+                    </th>
+                    <th className="px-6 py-3.5 text-left font-semibold text-white text-xs uppercase tracking-wide">
+                      Chủ sở hữu
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {nfts.slice(0, 10).map((nft) => (
+                    <tr
+                      key={nft.tokenId}
+                      className="hover:bg-slate-50 transition-colors"
+                    >
+                      <td className="px-6 py-4 font-mono text-xs text-slate-800 font-semibold">
+                        {nft.tokenId}
+                      </td>
+                      <td className="px-6 py-4 font-mono text-xs text-slate-700">
+                        {nft.serialNumber}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            nft.status === "minted"
+                              ? "bg-blue-50 text-blue-700 border border-blue-200"
+                              : nft.status === "transferred"
+                              ? "bg-purple-50 text-purple-700 border border-purple-200"
+                              : nft.status === "sold"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : "bg-slate-50 text-slate-600 border border-slate-200"
+                          }`}
+                        >
+                          {translateStatus(nft.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-slate-700 font-medium">
+                        {nft.currentOwner?.username ||
+                          nft.currentOwner?.email ||
+                          "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             {nfts.length > 10 && (
-              <div className="text-xs text-slate-500 mt-2">
+              <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-600">
                 Hiển thị 10 NFT gần nhất trong tổng số{" "}
                 {formatNumber(nfts.length)}.
               </div>

@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import api from "../../utils/api";
 
@@ -36,7 +36,7 @@ export default function usePasswordResetRequest() {
     []
   );
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     setLoadingProgress(0);
@@ -55,10 +55,25 @@ export default function usePasswordResetRequest() {
       const response = await api.get("/auth/password-reset-requests", {
         params,
       });
-      const data = response.data?.data || response.data;
-      const items = data.requests || data.data?.requests || [];
-      setItems(items);
-      setPagination(pagination);
+      const responseData = response.data;
+
+      // Xử lý nhiều format response
+      let itemsData = [];
+      let paginationData = {
+        page: page,
+        limit: 10,
+        total: 0,
+        pages: 0,
+      };
+
+      if (responseData?.success && responseData?.data) {
+        if (Array.isArray(responseData.data)) {
+          itemsData = responseData.data;
+        }
+      }
+
+      setItems(itemsData);
+      setPagination(paginationData);
     } catch (e) {
       setError(e?.response?.data?.message || "Không thể tải dữ liệu");
     } finally {
@@ -102,7 +117,7 @@ export default function usePasswordResetRequest() {
       setLoading(false);
       setTimeout(() => setLoadingProgress(0), 500);
     }
-  };
+  }, [page, status]);
 
   useEffect(() => {
     load();
@@ -112,7 +127,7 @@ export default function usePasswordResetRequest() {
         progressIntervalRef.current = null;
       }
     };
-  }, [page, status]);
+  }, [load]);
 
   const updateFilter = (next) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -220,8 +235,10 @@ export default function usePasswordResetRequest() {
     loadingProgress,
     selectedItem,
     showDetailModal,
+    setShowDetailModal,
     actionLoading,
     rejectReason,
+    setRejectReason,
     navigationItems,
     updateFilter,
     handleApprove,
@@ -229,5 +246,7 @@ export default function usePasswordResetRequest() {
     openDetailModal,
     getRoleName,
     getStatusColor,
+    page,
+    status,
   };
 }
