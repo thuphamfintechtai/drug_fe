@@ -512,8 +512,9 @@ export default function DashboardLayout({
         <motion.main
           className="p-6"
           variants={fadeUp}
-          initial="hidden"
-          animate="show"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
         >
           {metrics.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

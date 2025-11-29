@@ -57,25 +57,47 @@ export const useDashboard = () => {
     const data = unwrap(chartOneWeekResponse);
     console.log("One Week Response:", chartOneWeekResponse);
     console.log("One Week Data:", data);
-    if (!data?.dailyStats) {
-      console.log("No dailyStats found");
-      return null;
+    
+    // Kiểm tra nếu dailyStats là mảng (format mới)
+    if (Array.isArray(data?.dailyStats)) {
+      const formatted = data.dailyStats.map((stat) => {
+        const dateObj = new Date(stat.date);
+        return {
+          sortKey: dateObj.getTime(),
+          date: dateObj.toLocaleDateString("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+          }),
+          invoicesReceived: stat.count || 0,
+          quantity: stat.quantity || 0,
+        };
+      });
+      return formatted
+        .sort((a, b) => a.sortKey - b.sortKey)
+        .map(({ sortKey, ...rest }) => rest);
     }
-    const formatted = Object.entries(data.dailyStats).map(([date, stat]) => {
-      const dateObj = new Date(date);
-      return {
-        sortKey: dateObj.getTime(),
-        date: dateObj.toLocaleDateString("vi-VN", {
-          day: "2-digit",
-          month: "2-digit",
-        }),
-        invoicesReceived: stat.count || 0,
-        quantity: stat.quantity || 0,
-      };
-    });
-    return formatted
-      .sort((a, b) => a.sortKey - b.sortKey)
-      .map(({ sortKey, ...rest }) => rest);
+    
+    // Fallback cho format cũ (object)
+    if (data?.dailyStats && typeof data.dailyStats === 'object') {
+      const formatted = Object.entries(data.dailyStats).map(([date, stat]) => {
+        const dateObj = new Date(date);
+        return {
+          sortKey: dateObj.getTime(),
+          date: dateObj.toLocaleDateString("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+          }),
+          invoicesReceived: stat.count || 0,
+          quantity: stat.quantity || 0,
+        };
+      });
+      return formatted
+        .sort((a, b) => a.sortKey - b.sortKey)
+        .map(({ sortKey, ...rest }) => rest);
+    }
+    
+    console.log("No dailyStats found");
+    return null;
   }, [chartOneWeekResponse]);
 
   const chartTodayYesterdayData = useMemo(() => {
@@ -148,70 +170,113 @@ export const useDashboard = () => {
   };
 
   const displayStats = dashboardStats || stats;
+  const overview = displayStats?.overview || displayStats;
 
-  const invoiceStatusData =
-    displayStats?.invoicesReceived?.byStatus || displayStats?.invoices?.byStatus
-      ? Object.entries(
-          displayStats.invoicesReceived?.byStatus ||
-            displayStats.invoices?.byStatus
-        ).map(([name, value]) => ({
-          name:
-            name === "pending"
-              ? "Chờ nhận"
-              : name === "sent"
-              ? "Đã nhận"
-              : name === "paid"
-              ? "Đã thanh toán"
-              : name,
-          value: value || 0,
-        }))
-      : [];
+  console.log("Display Stats:", displayStats);
+  console.log("Overview:", overview);
+  console.log("Invoices Received:", overview?.invoicesReceived);
+  console.log("Invoices:", overview?.invoices);
+  console.log("Transfers to Pharmacy:", overview?.transfersToPharmacy);
+  console.log("Distributions:", overview?.distributions);
+
+  const invoiceStatusData = useMemo(() => {
+    const byStatus = overview?.invoicesReceived?.byStatus || overview?.invoices?.byStatus || displayStats?.invoicesReceived?.byStatus || displayStats?.invoices?.byStatus;
+    console.log("Invoice byStatus:", byStatus);
+    if (!byStatus || typeof byStatus !== 'object') {
+      console.log("No invoice byStatus found");
+      return [];
+    }
+    const data = Object.entries(byStatus)
+      .map(([name, value]) => ({
+        name:
+          name === "draft"
+            ? "Nháp"
+            : name === "pending"
+            ? "Chờ nhận"
+            : name === "issued"
+            ? "Đã phát hành"
+            : name === "confirmed"
+            ? "Đã xác nhận"
+            : name === "sent"
+            ? "Đã nhận"
+            : name === "delivered"
+            ? "Đã giao"
+            : name === "paid"
+            ? "Đã thanh toán"
+            : name === "cancelled"
+            ? "Đã hủy"
+            : name,
+        value: Number(value) || 0,
+      }))
+      .filter(item => item.value > 0); // Chỉ hiển thị các mục có giá trị > 0
+    console.log("Invoice Status Data:", data);
+    return data;
+  }, [overview, displayStats]);
 
   // Prepare transfer to pharmacy status data
-  const transferStatusData = displayStats?.transfersToPharmacy?.byStatus
-    ? Object.entries(displayStats.transfersToPharmacy.byStatus).map(
-        ([name, value]) => ({
-          name:
-            name === "draft"
-              ? "Nháp"
-              : name === "sent"
-              ? "Đã gửi"
-              : name === "paid"
-              ? "Đã thanh toán"
-              : name,
-          value: value || 0,
-        })
-      )
-    : // Keep all items, even if value is 0
-      [];
+  const transferStatusData = useMemo(() => {
+    const byStatus = overview?.transfersToPharmacy?.byStatus || displayStats?.transfersToPharmacy?.byStatus;
+    console.log("Transfer byStatus:", byStatus);
+    if (!byStatus || typeof byStatus !== 'object') {
+      console.log("No transfer byStatus found");
+      return [];
+    }
+    const data = Object.entries(byStatus)
+      .map(([name, value]) => ({
+        name:
+          name === "draft"
+            ? "Nháp"
+            : name === "issued"
+            ? "Đã phát hành"
+            : name === "sent"
+            ? "Đã gửi"
+            : name === "paid"
+            ? "Đã thanh toán"
+            : name === "cancelled"
+            ? "Đã hủy"
+            : name,
+        value: Number(value) || 0,
+      }))
+      .filter(item => item.value > 0); // Chỉ hiển thị các mục có giá trị > 0
+    console.log("Transfer Status Data:", data);
+    return data;
+  }, [overview, displayStats]);
 
   // Prepare distribution status data
-  const distributionStatusData = displayStats?.distributions?.byStatus
-    ? Object.entries(displayStats.distributions.byStatus).map(
-        ([name, value]) => ({
-          name:
-            name === "pending"
-              ? "Chờ xử lý"
-              : name === "confirmed"
-              ? "Đã xác nhận"
-              : name === "delivered"
-              ? "Đã giao"
-              : name === "in_transit"
-              ? "Đang vận chuyển"
-              : name === "rejected"
-              ? "Từ chối"
-              : name,
-          value: value || 0,
-        })
-      )
-    : // Keep all items, even if value is 0
-      [];
+  const distributionStatusData = useMemo(() => {
+    const byStatus = overview?.distributions?.byStatus || displayStats?.distributions?.byStatus;
+    console.log("Distribution byStatus:", byStatus);
+    if (!byStatus || typeof byStatus !== 'object') {
+      console.log("No distribution byStatus found");
+      return [];
+    }
+    const data = Object.entries(byStatus)
+      .map(([name, value]) => ({
+        name:
+          name === "pending"
+            ? "Chờ xử lý"
+            : name === "confirmed"
+            ? "Đã xác nhận"
+            : name === "delivered"
+            ? "Đã giao"
+            : name === "in_transit"
+            ? "Đang vận chuyển"
+            : name === "rejected"
+            ? "Từ chối"
+            : name,
+        value: Number(value) || 0,
+      }))
+      .filter(item => item.value > 0); // Chỉ hiển thị các mục có giá trị > 0
+    console.log("Distribution Status Data:", data);
+    return data;
+  }, [overview, displayStats]);
   return {
     isRefreshing,
     handleRefresh,
     isLoading,
     isFetching,
     displayStats,
+    overview,
     stats,
     dashboardStats,
     chartOneWeekData,

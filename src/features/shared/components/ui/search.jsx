@@ -31,7 +31,10 @@ export const Search = memo(function Search({
 
   useEffect(() => {
     if (!isInputFocused) {
-      setFilteredSuggestions((prev) => (prev.length ? [] : prev));
+      setFilteredSuggestions((prev) => {
+        if (prev.length === 0) return prev;
+        return [];
+      });
       setShowSuggestions(false);
       return;
     }
@@ -56,7 +59,10 @@ export const Search = memo(function Search({
       });
       setShowSuggestions(next.length > 0);
     } else {
-      setFilteredSuggestions((prev) => (prev.length ? [] : prev));
+      setFilteredSuggestions((prev) => {
+        if (prev.length === 0) return prev;
+        return [];
+      });
       setShowSuggestions(false);
     }
   }, [searchInput, data, getSearchText, matchFunction, isInputFocused]);

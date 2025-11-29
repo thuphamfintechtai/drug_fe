@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import { navigationItems } from "../constants/navigationItems";
 import { useDistributions } from "../hooks/useDistributions.jsx";
@@ -23,16 +24,86 @@ export default function Distributions() {
     handleSubmitConfirm,
   } = useDistributions();
 
-  const handleSearch = (searchValue = null) => {
+  const handleSearch = useCallback((searchValue = null) => {
     const term = (searchValue !== null ? searchValue : searchText)
       .trim()
       .toLowerCase();
     setSearchText(term);
-  };
+  }, [searchText, setSearchText]);
 
-  const handleClearSearch = () => {
+  const handleClearSearch = useCallback(() => {
     setSearchText("");
-  };
+  }, [setSearchText]);
+
+  const getSearchText = useCallback((item) => {
+    const drug =
+      item.drug || item.proofOfProduction?.drug || item.nftInfo?.drug;
+    const drugName =
+      drug?.name || drug?.tradeName || item.drugName || "";
+    return (
+      item.invoiceNumber ||
+      item.code ||
+      drugName ||
+      item.verificationCode ||
+      ""
+    );
+  }, []);
+
+  const matchFunction = useCallback((item, searchLower) => {
+    const drug =
+      item.drug || item.proofOfProduction?.drug || item.nftInfo?.drug;
+    const drugName = (
+      drug?.name ||
+      drug?.tradeName ||
+      item.drugName ||
+      ""
+    ).toLowerCase();
+    const invoiceNumber = (item.invoiceNumber || item.code || "").toLowerCase();
+    const verificationCode = (
+      item.verificationCode || ""
+    ).toLowerCase();
+    const manufacturerId = (item.manufacturerId || "").toLowerCase();
+    const drugId = (item.drugId || "").toLowerCase();
+    return (
+      invoiceNumber.includes(searchLower) ||
+      drugName.includes(searchLower) ||
+      verificationCode.includes(searchLower) ||
+      manufacturerId.includes(searchLower) ||
+      drugId.includes(searchLower)
+    );
+  }, []);
+
+  const getDisplayText = useCallback((item, searchLower) => {
+    const drug =
+      item.drug || item.proofOfProduction?.drug || item.nftInfo?.drug;
+    const drugName = (
+      drug?.name ||
+      drug?.tradeName ||
+      item.drugName ||
+      ""
+    ).toLowerCase();
+    const invoiceNumber = (item.invoiceNumber || item.code || "").toLowerCase();
+    const verificationCode = (
+      item.verificationCode || ""
+    ).toLowerCase();
+    if (invoiceNumber.includes(searchLower)) {
+      return item.invoiceNumber || item.code || "";
+    }
+    if (drugName.includes(searchLower)) {
+      return drug?.name || drug?.tradeName || item.drugName || "";
+    }
+    if (verificationCode.includes(searchLower)) {
+      return item.verificationCode || "";
+    }
+    return (
+      item.invoiceNumber ||
+      item.code ||
+      drug?.name ||
+      drug?.tradeName ||
+      item.drugName ||
+      ""
+    );
+  }, []);
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
@@ -67,73 +138,9 @@ export default function Distributions() {
             handleClearSearch={handleClearSearch}
             placeholder="Tìm kiếm theo mã đơn, tên thuốc, mã xác minh..."
             data={data}
-            getSearchText={(item) => {
-              const drug =
-                item.drug || item.proofOfProduction?.drug || item.nftInfo?.drug;
-              const drugName =
-                drug?.name || drug?.tradeName || item.drugName || "";
-              return (
-                item.invoiceNumber ||
-                item.code ||
-                drugName ||
-                item.verificationCode ||
-                ""
-              );
-            }}
-            matchFunction={(item, searchLower) => {
-              const drug =
-                item.drug || item.proofOfProduction?.drug || item.nftInfo?.drug;
-              const drugName = (
-                drug?.name ||
-                drug?.tradeName ||
-                item.drugName ||
-                ""
-              ).toLowerCase();
-              const invoiceNumber = (item.invoiceNumber || item.code || "").toLowerCase();
-              const verificationCode = (
-                item.verificationCode || ""
-              ).toLowerCase();
-              const manufacturerId = (item.manufacturerId || "").toLowerCase();
-              const drugId = (item.drugId || "").toLowerCase();
-              return (
-                invoiceNumber.includes(searchLower) ||
-                drugName.includes(searchLower) ||
-                verificationCode.includes(searchLower) ||
-                manufacturerId.includes(searchLower) ||
-                drugId.includes(searchLower)
-              );
-            }}
-            getDisplayText={(item, searchLower) => {
-              const drug =
-                item.drug || item.proofOfProduction?.drug || item.nftInfo?.drug;
-              const drugName = (
-                drug?.name ||
-                drug?.tradeName ||
-                item.drugName ||
-                ""
-              ).toLowerCase();
-              const invoiceNumber = (item.invoiceNumber || item.code || "").toLowerCase();
-              const verificationCode = (
-                item.verificationCode || ""
-              ).toLowerCase();
-              if (invoiceNumber.includes(searchLower)) {
-                return item.invoiceNumber || item.code || "";
-              }
-              if (drugName.includes(searchLower)) {
-                return drug?.name || drug?.tradeName || item.drugName || "";
-              }
-              if (verificationCode.includes(searchLower)) {
-                return item.verificationCode || "";
-              }
-              return (
-                item.invoiceNumber ||
-                item.code ||
-                drug?.name ||
-                drug?.tradeName ||
-                item.drugName ||
-                ""
-              );
-            }}
+            getSearchText={getSearchText}
+            matchFunction={matchFunction}
+            getDisplayText={getDisplayText}
             enableAutoSearch={false}
           />
         </div>

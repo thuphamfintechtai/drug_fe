@@ -29,6 +29,7 @@ export default function DistributorDashboard() {
     isRefreshing,
     isFetching,
     displayStats,
+    overview,
     chartOneWeekData,
     chartTodayYesterdayData,
     chartMonthlyData,
@@ -499,7 +500,8 @@ export default function DistributorDashboard() {
                         Chờ nhận
                       </div>
                       <div className="text-3xl font-bold text-amber-600">
-                        {displayStats?.invoicesReceived?.byStatus?.pending ||
+                        {overview?.invoicesReceived?.byStatus?.pending ||
+                          displayStats?.invoicesReceived?.byStatus?.pending ||
                           displayStats?.invoices?.byStatus?.pending ||
                           0}
                       </div>
@@ -517,7 +519,8 @@ export default function DistributorDashboard() {
                     <div className="p-5 pt-7 text-center">
                       <div className="text-sm text-slate-600 mb-1">Đã nhận</div>
                       <div className="text-3xl font-bold text-emerald-600">
-                        {displayStats?.invoicesReceived?.byStatus?.sent ||
+                        {overview?.invoicesReceived?.byStatus?.sent ||
+                          displayStats?.invoicesReceived?.byStatus?.sent ||
                           displayStats?.invoices?.byStatus?.sent ||
                           0}
                       </div>
@@ -537,7 +540,8 @@ export default function DistributorDashboard() {
                         Đã thanh toán
                       </div>
                       <div className="text-3xl font-bold text-green-600">
-                        {displayStats?.invoicesReceived?.byStatus?.paid ||
+                        {overview?.invoicesReceived?.byStatus?.paid ||
+                          displayStats?.invoicesReceived?.byStatus?.paid ||
                           displayStats?.invoices?.byStatus?.paid ||
                           0}
                       </div>
@@ -557,7 +561,9 @@ export default function DistributorDashboard() {
                         Đã gửi NT
                       </div>
                       <div className="text-3xl font-bold text-cyan-600">
-                        {displayStats?.transfersToPharmacy?.byStatus?.sent || 0}
+                        {overview?.transfersToPharmacy?.byStatus?.sent ||
+                          displayStats?.transfersToPharmacy?.byStatus?.sent ||
+                          0}
                       </div>
                       <div className="text-xs text-slate-500 mt-2">Sent</div>
                     </div>

@@ -64,19 +64,21 @@ export const useDistributions = () => {
   } = useDistributorDistributions();
   const { mutateAsync: confirmDistributionMutation } = useConfirmDistribution();
 
-  const data = Array.isArray(distributionsData?.data)
-    ? distributionsData.data.map(item => ({
-        ...item,
-        _id: item._id || item.id, // Normalize _id field
-      }))
-    : Array.isArray(distributionsData?.data?.data)
-    ? distributionsData.data.data.map(item => ({
-        ...item,
-        _id: item._id || item.id,
-      }))
-    : distributionsData?.data
-    ? [{ ...distributionsData.data, _id: distributionsData.data._id || distributionsData.data.id }]
-    : [];
+  const data = useMemo(() => {
+    return Array.isArray(distributionsData?.data)
+      ? distributionsData.data.map(item => ({
+          ...item,
+          _id: item._id || item.id, // Normalize _id field
+        }))
+      : Array.isArray(distributionsData?.data?.data)
+      ? distributionsData.data.data.map(item => ({
+          ...item,
+          _id: item._id || item.id,
+        }))
+      : distributionsData?.data
+      ? [{ ...distributionsData.data, _id: distributionsData.data._id || distributionsData.data.id }]
+      : [];
+  }, [distributionsData]);
 
   useEffect(() => {
     if (!searchText.trim()) {
