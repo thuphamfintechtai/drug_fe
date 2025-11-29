@@ -327,7 +327,7 @@ export const useInvoicesFromDistributor = () => {
           ? selectedInvoice.items.length
           : 0);
 
-       const requestData = {
+      const requestData = {
          // Backend yêu cầu `invoiceId` là id của hóa đơn (ví dụ: 69287a60fc56f2e342d126f4)
          // nên ưu tiên dùng `id`, sau đó fallback sang `_id` hoặc `invoiceId` nếu có
          invoiceId:

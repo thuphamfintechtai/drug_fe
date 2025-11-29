@@ -123,6 +123,14 @@ export const useTransferToPharmacy = () => {
 
     const batchNumber = item.batchNumber || item._batchNumber || undefined;
 
+    // ✅ NEW: Extract availableNFTs and availableTokenIds from API response
+    const availableNFTs = typeof item.availableNFTs === 'number' ? item.availableNFTs : 0;
+    const availableTokenIds = Array.isArray(item.availableTokenIds) && item.availableTokenIds.length > 0
+      ? item.availableTokenIds.map((id) => String(id))
+      : (availableNFTs > 0 && Array.isArray(tokenIds) && tokenIds.length > 0
+          ? tokenIds.slice(0, availableNFTs)
+          : []);
+
     return {
       ...item,
       _id: item._id || item.id || item.distributionId,
@@ -143,6 +151,8 @@ export const useTransferToPharmacy = () => {
         item?.invoice?._drugId,
       distributedQuantity: quantity,
       tokenIds,
+      availableNFTs, // ✅ NEW: Available NFTs for transfer
+      availableTokenIds, // ✅ NEW: Available token IDs for transfer
       distributionDate:
         item.distributionDate || item.receivedAt || item.createdAt || null,
       chainTxHash: item.chainTxHash || item._chainTxHash || undefined,
@@ -767,10 +777,20 @@ export const useTransferToPharmacy = () => {
         }
       }
 
+      // ✅ NEW: Use availableTokenIds if available, otherwise use tokenIds
+      const finalAvailableNFTs = enrichedDistribution.availableNFTs ?? 0;
+      const finalAvailableTokenIds = Array.isArray(enrichedDistribution.availableTokenIds) && enrichedDistribution.availableTokenIds.length > 0
+        ? enrichedDistribution.availableTokenIds
+        : (finalAvailableNFTs > 0 && Array.isArray(tokenIds) && tokenIds.length > 0
+            ? tokenIds.slice(0, finalAvailableNFTs)
+            : tokenIds);
+
       const distributionWithTokens = {
         ...enrichedDistribution,
         drugId: resolveDrugId(enrichedDistribution),
         tokenIds,
+        availableNFTs: finalAvailableNFTs,
+        availableTokenIds: finalAvailableTokenIds,
         distributedQuantity:
           enrichedDistribution.distributedQuantity ??
           (Array.isArray(tokenIds) ? tokenIds.length : undefined),
@@ -780,15 +800,15 @@ export const useTransferToPharmacy = () => {
         id: distributionWithTokens._id,
         drugId: distributionWithTokens.drugId,
         tokenIds: distributionWithTokens.tokenIds,
+        availableNFTs: distributionWithTokens.availableNFTs,
+        availableTokenIds: distributionWithTokens.availableTokenIds,
         quantity: distributionWithTokens.distributedQuantity,
       });
 
       setSelectedDistribution(distributionWithTokens);
       setFormData({
         pharmacyId: "",
-        quantity: distributionWithTokens.distributedQuantity
-          ? distributionWithTokens.distributedQuantity.toString()
-          : "",
+        quantity: finalAvailableNFTs > 0 ? "1" : "",
         notes: "",
       });
 
@@ -858,21 +878,25 @@ export const useTransferToPharmacy = () => {
       return;
     }
 
-    const tokenIds = selectedDistribution.tokenIds || [];
+    // ✅ NEW: Use availableTokenIds instead of tokenIds
+    const availableTokenIds = selectedDistribution.availableTokenIds || [];
+    const availableNFTs = selectedDistribution.availableNFTs ?? 0;
 
-    if (tokenIds.length === 0) {
+    // ✅ CRITICAL: Check if there are any available NFTs before proceeding
+    if (availableNFTs === 0 || availableTokenIds.length === 0) {
       toast.error(
-        "Không tìm thấy NFT tokens. Vui lòng chọn lô hàng khác hoặc liên hệ quản trị viên.",
+        "Không còn NFT khả dụng để chuyển. Vui lòng chọn lô hàng khác.",
         {
           position: "top-right",
           duration: 5000,
         }
       );
+      setSubmitLoading(false);
       return;
     }
 
     // ✅ VALIDATE TOKENIDS: Không rỗng, không trùng lặp
-    const tokenIdsValidation = validateTokenIds(tokenIds);
+    const tokenIdsValidation = validateTokenIds(availableTokenIds);
     if (!tokenIdsValidation.valid) {
       toast.error(tokenIdsValidation.error, {
         position: "top-right",
@@ -886,25 +910,20 @@ export const useTransferToPharmacy = () => {
 
     const validatedTokenIds = tokenIdsValidation.tokenIds;
 
-    // ✅ VALIDATE QUANTITY: Nếu có quantity, phải bằng tokenIds.length
-    const requestedQty = formData.quantity ? parseInt(formData.quantity) : validatedTokenIds.length;
-    const quantityValidation = validateQuantity(requestedQty, validatedTokenIds.length);
-    if (!quantityValidation.valid) {
-      toast.error(quantityValidation.error, {
+    // ✅ VALIDATE QUANTITY: Phải có quantity và không được vượt quá availableNFTs
+    const requestedQty = formData.quantity ? parseInt(formData.quantity) : 0;
+    
+    if (isNaN(requestedQty) || requestedQty <= 0) {
+      toast.error("Vui lòng nhập số lượng hợp lệ (từ 1 trở lên)", {
         position: "top-right",
-        duration: 5000,
+        duration: 4000,
       });
       return;
     }
 
-    // ✅ VALIDATE QUANTITY RANGE: Không được vượt quá số lượng có sẵn
-    if (
-      isNaN(requestedQty) ||
-      requestedQty <= 0 ||
-      requestedQty > selectedDistribution.distributedQuantity
-    ) {
+    if (requestedQty > availableNFTs) {
       toast.error(
-        `Số lượng không hợp lệ. Vui lòng nhập từ 1 đến ${selectedDistribution.distributedQuantity}`,
+        `Số lượng không hợp lệ. Vui lòng nhập từ 1 đến ${availableNFTs} NFT khả dụng`,
         {
           position: "top-right",
           duration: 4000,
@@ -913,6 +932,7 @@ export const useTransferToPharmacy = () => {
       return;
     }
 
+    // ✅ NEW: Only take the number of token IDs that user requested from availableTokenIds
     const selectedTokenIds = validatedTokenIds.slice(0, requestedQty);
 
     if (selectedTokenIds.length < requestedQty) {
@@ -1063,11 +1083,45 @@ export const useTransferToPharmacy = () => {
         return;
       }
 
+      // ✅ NEW: Calculate invoice amounts based on amount (requestedQty)
+      const amount = requestedQty; // Số lượng NFT người dùng nhập
+      const invoiceDate = new Date().toISOString();
+      
+      // ✅ NEW: Get availableTokenIds from selectedDistribution and take only the amount requested
+      const availableTokenIdsForTransfer = selectedDistribution.availableTokenIds || [];
+      const tokenIdsToSend = availableTokenIdsForTransfer.slice(0, amount);
+      
+      if (tokenIdsToSend.length !== amount) {
+        toast.error(
+          `Không đủ NFT khả dụng. Chỉ có ${tokenIdsToSend.length} NFT khả dụng trong khi yêu cầu ${amount}`,
+          {
+            position: "top-right",
+            duration: 5000,
+          }
+        );
+        setSubmitLoading(false);
+        return;
+      }
+      
+      // TODO: These values might need to come from drug info or backend
+      // For now, using default values - backend should calculate these
+      const unitPrice = 0; // Backend will calculate
+      const totalAmount = 0; // Backend will calculate (amount * unitPrice)
+      const vatRate = 10; // Default VAT rate 10%
+      const vatAmount = 0; // Backend will calculate (totalAmount * vatRate / 100)
+      const finalAmount = 0; // Backend will calculate (totalAmount + vatAmount)
+
       const payload = {
         pharmacyId: formData.pharmacyId,
         drugId: resolvedDrugId,
-        tokenIds: selectedTokenIds,
-        quantity: selectedTokenIds.length,
+        amount: amount, // ✅ NEW: Số lượng NFT người dùng nhập
+        tokenIds: tokenIdsToSend, // ✅ NEW: Gửi kèm tokenIds từ availableTokenIds để backend biết chính xác token nào cần chuyển
+        invoiceDate: invoiceDate, // ✅ NEW: Thời gian tạo invoice
+        unitPrice: unitPrice, // ✅ NEW: Giá đơn vị (backend sẽ tính)
+        totalAmount: totalAmount, // ✅ NEW: Tổng tiền (backend sẽ tính)
+        vatRate: vatRate, // ✅ NEW: Thuế VAT (%)
+        vatAmount: vatAmount, // ✅ NEW: Số tiền VAT (backend sẽ tính)
+        finalAmount: finalAmount, // ✅ NEW: Tổng tiền cuối cùng (backend sẽ tính)
         notes: formData.notes || undefined,
       };
 

@@ -61,17 +61,28 @@ export default function TransferToPharmacy() {
     record?.id ||
     "N/A";
 
-  const getQuantityValue = (record) => {
+  // ✅ NEW: Get total quantity (tổng số NFT nhận được)
+  const getTotalQuantityValue = (record) => {
     const value =
-      record?.distributedQuantity ??
       record?.quantity ??
+      record?.distributedQuantity ??
       (Array.isArray(record?.tokenIds) ? record.tokenIds.length : undefined);
     return typeof value === "number" ? value : undefined;
   };
 
-  const getQuantityDisplay = (record) => {
-    const value = getQuantityValue(record);
+  const getTotalQuantityDisplay = (record) => {
+    const value = getTotalQuantityValue(record);
     return typeof value === "number" ? value : "N/A";
+  };
+
+  // ✅ NEW: Get available NFTs (NFT khả dụng)
+  const getAvailableNFTs = (record) => {
+    return typeof record?.availableNFTs === "number" ? record.availableNFTs : 0;
+  };
+
+  const getAvailableNFTsDisplay = (record) => {
+    const value = getAvailableNFTs(record);
+    return value;
   };
 
   const getDateDisplay = (value) =>
@@ -164,6 +175,9 @@ export default function TransferToPharmacy() {
                         Số lượng NFT
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                        NFT khả dụng
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                         Ngày nhận
                       </th>
                       <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
@@ -187,30 +201,47 @@ export default function TransferToPharmacy() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="font-semibold text-gray-800">
-                            {getQuantityDisplay(dist)}
+                            {getTotalQuantityDisplay(dist)}
                           </span>
                           <span className="text-xs text-slate-500 ml-1">
                             NFT
                           </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {getAvailableNFTs(dist) === 0 ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                              {getAvailableNFTsDisplay(dist)} NFT
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                              {getAvailableNFTsDisplay(dist)} NFT
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-slate-700 text-sm">
                           {getDateDisplay(dist.distributionDate)}
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex items-center justify-center">
-                            <button
-                              onClick={() => handleSelectDistribution(dist)}
-                              disabled={dist.transferToPharmacy === true}
-                              className={`px-4 py-2 rounded-full font-semibold transition-all duration-200 ${
-                                dist.transferToPharmacy === true
-                                  ? "border-2 border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed"
-                                  : "border-2 border-[#3db6d9] bg-white !text-[#3db6d9] hover:bg-[#3db6d9] hover:!text-white hover:shadow-md hover:shadow-[#3db6d9]/40"
-                              }`}
-                            >
-                              {dist.transferToPharmacy === true
-                                ? "Đã chuyển cho NT"
-                                : "Chuyển cho NT"}
-                            </button>
+                            {dist.transferToPharmacy === true && getAvailableNFTs(dist) === 0 ? (
+                              <div className="px-4 py-2 rounded-full font-semibold border-2 border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed">
+                                Đã chuyển hết
+                              </div>
+                            ) : getAvailableNFTs(dist) === 0 ? (
+                              <div className="px-4 py-2 rounded-full font-semibold border-2 border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed">
+                                Đã chuyển hết
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleSelectDistribution(dist)}
+                                disabled={false}
+                                className="px-4 py-2 rounded-full font-semibold transition-all duration-200 border-2 border-[#3db6d9] bg-white !text-[#3db6d9] hover:bg-[#3db6d9] hover:!text-white hover:shadow-md hover:shadow-[#3db6d9]/40"
+                              >
+                                {dist.transferToPharmacy === true
+                                  ? "Chuyển tiếp cho NT"
+                                  : "Chuyển cho NT"}
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -293,7 +324,17 @@ export default function TransferToPharmacy() {
                       <div className="flex justify-between">
                         <span className="text-slate-600">Tổng số NFT:</span>
                         <span className="font-bold text-orange-700">
-                            {getQuantityDisplay(selectedDistribution)}
+                            {getTotalQuantityDisplay(selectedDistribution)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">NFT khả dụng:</span>
+                        <span className={`font-bold ${
+                          getAvailableNFTs(selectedDistribution) === 0 
+                            ? "text-red-700" 
+                            : "text-green-700"
+                        }`}>
+                            {getAvailableNFTsDisplay(selectedDistribution)}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -425,13 +466,21 @@ export default function TransferToPharmacy() {
                       onChange={(e) =>
                         setFormData({ ...formData, quantity: e.target.value })
                       }
-                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition"
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition disabled:bg-gray-100 disabled:cursor-not-allowed"
                       placeholder="Nhập số lượng"
                       min="1"
-                    max={getQuantityValue(selectedDistribution)}
+                      max={getAvailableNFTs(selectedDistribution)}
+                      disabled={getAvailableNFTs(selectedDistribution) === 0}
                     />
-                    <div className="text-xs text-cyan-600 mt-1">
-                      Tối đa: {getQuantityDisplay(selectedDistribution)} NFT
+                    <div className={`text-xs mt-1 ${
+                      getAvailableNFTs(selectedDistribution) === 0 
+                        ? "text-red-600" 
+                        : "text-cyan-600"
+                    }`}>
+                      {getAvailableNFTs(selectedDistribution) === 0 
+                        ? "⚠️ Không còn NFT khả dụng để chuyển"
+                        : `Tối đa: ${getAvailableNFTs(selectedDistribution)} NFT khả dụng`
+                      }
                     </div>
                   </div>
 
@@ -460,16 +509,22 @@ export default function TransferToPharmacy() {
                 </div>
 
                 <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end">
-                  <TruckAnimationButton
-                    onClick={handleSubmit}
-                    disabled={submitLoading}
-                    buttonState={submitLoading ? "uploading" : "idle"}
-                    defaultText="Xác nhận chuyển giao"
-                    uploadingText="Đang xử lý..."
-                    successText="Hoàn thành"
-                    animationMode="infinite"
-                    animationDuration={3}
-                  />
+                  {getAvailableNFTs(selectedDistribution) === 0 ? (
+                    <div className="px-6 py-3 rounded-full bg-gray-100 text-gray-600 font-semibold border border-gray-300 cursor-not-allowed">
+                      Đã chuyển hết
+                    </div>
+                  ) : (
+                    <TruckAnimationButton
+                      onClick={handleSubmit}
+                      disabled={submitLoading || getAvailableNFTs(selectedDistribution) === 0}
+                      buttonState={submitLoading ? "uploading" : "idle"}
+                      defaultText="Xác nhận chuyển giao"
+                      uploadingText="Đang xử lý..."
+                      successText="Hoàn thành"
+                      animationMode="infinite"
+                      animationDuration={3}
+                    />
+                  )}
                 </div>
               </div>
             </div>
