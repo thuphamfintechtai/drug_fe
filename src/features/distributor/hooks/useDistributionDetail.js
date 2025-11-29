@@ -22,36 +22,67 @@ export const useDistributionDetail = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/distributor/distributions/${id}`);
+      // Thử dùng API invoice detail trước (vì đây là invoice từ NSX)
+      let response;
+      try {
+        response = await api.get(`/distributor/invoices/${id}/detail`);
+      } catch (invoiceError) {
+        // Nếu không được, thử API distribution detail
+        console.log("Invoice detail API failed, trying distribution detail API");
+        response = await api.get(`/distributor/distributions/${id}`);
+      }
+      
       const res = response.data?.data || response.data;
       const detail = res?.data?.data ? res.data.data : res?.data || res || null;
+      
+      console.log("Distribution Detail Response:", response.data);
+      console.log("Distribution Detail Data:", detail);
+      
+      if (!detail) {
+        console.error("No detail data found in response");
+        throw new Error("Không tìm thấy dữ liệu");
+      }
+      
       setData(detail);
       if (detail) {
+        const currentStatus = detail.status || detail._status || "pending";
         form.setFieldsValue({
-          status: detail.status || "pending",
+          status: currentStatus,
           notes: detail.notes || "",
         });
       }
     } catch (error) {
       console.error("Fetch detail error:", error);
-      toast.error("Không xem được chi tiết lô hàng");
-      navigate(-1);
+      const errorMessage = error?.response?.data?.message || error?.message || "Không xem được chi tiết lô hàng";
+      toast.error(errorMessage);
+      setTimeout(() => {
+        navigate(-1);
+      }, 2000);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    load();
+    if (id) {
+      load();
+    }
   }, [id]);
 
   const onConfirm = async () => {
+    if (!id) {
+      toast.error("Không tìm thấy ID đơn hàng!");
+      return;
+    }
     try {
-      await confirmDistributionMutation.mutateAsync(id);
+      // Gửi payload với invoiceId
+      await confirmDistributionMutation.mutateAsync({ invoiceId: id });
       toast.success("Đã xác nhận nhận hàng!");
       load();
-    } catch {
-      toast.error("Xác nhận thất bại");
+    } catch (error) {
+      console.error("Confirm error:", error);
+      const errorMessage = error?.response?.data?.message || error?.message || "Xác nhận thất bại";
+      toast.error(errorMessage);
     }
   };
 

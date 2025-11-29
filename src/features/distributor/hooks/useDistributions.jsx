@@ -331,6 +331,7 @@ export const useDistributions = () => {
                 onClick={() =>
                   navigate(`/distributor/distributions/${recordId}`)
                 }
+                className="rounded-lg border-gray-300 hover:border-primary hover:text-primary transition-colors"
               >
                 Chi tiết
               </Button>
@@ -339,6 +340,7 @@ export const useDistributions = () => {
                   size="small"
                   type="primary"
                   onClick={() => onConfirm(record)}
+                  className="rounded-lg bg-primary hover:bg-secondary border-0 transition-colors"
                 >
                   Xác nhận nhận
                 </Button>

@@ -1,18 +1,21 @@
 import { useCallback } from "react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import { navigationItems } from "../constants/navigationItems";
 import { useDistributions } from "../hooks/useDistributions.jsx";
-import { Spin, Table } from "antd";
+import TruckLoader from "../../shared/components/TruckLoader";
+import TruckAnimationButton from "../../shared/components/TruckAnimationButton";
 import { Search } from "../../shared/components/ui/search";
 import { CardUI } from "../../shared/components/ui/cardUI";
 
 export default function Distributions() {
+  const navigate = useNavigate();
   const {
     loading,
     filteredData,
     searchText,
     setSearchText,
-    columns,
     data,
     showConfirmDialog,
     selectedRecord,
@@ -22,14 +25,28 @@ export default function Distributions() {
     confirmFormErrors,
     handleCloseConfirmDialog,
     handleSubmitConfirm,
+    onConfirm,
   } = useDistributions();
 
-  const handleSearch = useCallback((searchValue = null) => {
-    const term = (searchValue !== null ? searchValue : searchText)
-      .trim()
-      .toLowerCase();
-    setSearchText(term);
-  }, [searchText, setSearchText]);
+  const fadeUp = {
+    hidden: { opacity: 0, y: 16, filter: "blur(6px)" },
+    show: {
+      opacity: 1,
+      y: 0,
+      filter: "blur(0px)",
+      transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+    },
+  };
+
+  const handleSearch = useCallback(
+    (searchValue = null) => {
+      const term = (searchValue !== null ? searchValue : searchText)
+        .trim()
+        .toLowerCase();
+      setSearchText(term);
+    },
+    [searchText, setSearchText]
+  );
 
   const handleClearSearch = useCallback(() => {
     setSearchText("");
@@ -38,8 +55,7 @@ export default function Distributions() {
   const getSearchText = useCallback((item) => {
     const drug =
       item.drug || item.proofOfProduction?.drug || item.nftInfo?.drug;
-    const drugName =
-      drug?.name || drug?.tradeName || item.drugName || "";
+    const drugName = drug?.name || drug?.tradeName || item.drugName || "";
     return (
       item.invoiceNumber ||
       item.code ||
@@ -59,9 +75,7 @@ export default function Distributions() {
       ""
     ).toLowerCase();
     const invoiceNumber = (item.invoiceNumber || item.code || "").toLowerCase();
-    const verificationCode = (
-      item.verificationCode || ""
-    ).toLowerCase();
+    const verificationCode = (item.verificationCode || "").toLowerCase();
     const manufacturerId = (item.manufacturerId || "").toLowerCase();
     const drugId = (item.drugId || "").toLowerCase();
     return (
@@ -83,9 +97,7 @@ export default function Distributions() {
       ""
     ).toLowerCase();
     const invoiceNumber = (item.invoiceNumber || item.code || "").toLowerCase();
-    const verificationCode = (
-      item.verificationCode || ""
-    ).toLowerCase();
+    const verificationCode = (item.verificationCode || "").toLowerCase();
     if (invoiceNumber.includes(searchLower)) {
       return item.invoiceNumber || item.code || "";
     }
@@ -105,59 +117,257 @@ export default function Distributions() {
     );
   }, []);
 
+  const getManufacturerDisplay = (record) => {
+    return (
+      record?.manufacturerName ||
+      record?.manufacturer?.fullName ||
+      record?.manufacturer?.name ||
+      record?.manufacturer?.username ||
+      record?.fromManufacturer?.fullName ||
+      record?.fromManufacturer?.username ||
+      record?.manufacturerId ||
+      "N/A"
+    );
+  };
+
+  const getInvoiceDisplay = (record) => {
+    return record?.invoiceNumber || record?.code || record?._id || "N/A";
+  };
+
+  const getDrugDisplay = (record) => {
+    const drug =
+      record?.drug || record?.proofOfProduction?.drug || record?.nftInfo?.drug;
+    return drug?.name || drug?.tradeName || record?.drugName || "N/A";
+  };
+
+  const getQuantityDisplay = (record) => {
+    return record?.quantity || record?.distributedQuantity || "N/A";
+  };
+
+  const getDateDisplay = (value) =>
+    value ? new Date(value).toLocaleDateString("vi-VN") : "N/A";
+
+  const getStatusDisplay = (record) => {
+    const status = (record?.status || "").toLowerCase();
+    if (status === "confirmed" || record?.isConfirmed) {
+      return { text: "Đã xác nhận", color: "green" };
+    }
+    if (status === "sent") {
+      return { text: "Đã nhận", color: "blue" };
+    }
+    if (status === "issued") {
+      return { text: "Đã phát hành", color: "cyan" };
+    }
+    if (status === "pending") {
+      return { text: "Chờ xác nhận", color: "orange" };
+    }
+    if (status === "cancelled") {
+      return { text: "Đã hủy", color: "red" };
+    }
+    return { text: "Chờ xác nhận", color: "yellow" };
+  };
+
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <CardUI
-        title="Đơn hàng nhận từ Nhà sản xuất"
-        subtitle="Quản lý và xác nhận các đơn hàng nhận từ nhà sản xuất dược phẩm"
-        icon={
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-6 h-6 text-[#00a3c4]"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-            />
-          </svg>
-        }
-      />
-
-      {/* Search */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex-1">
-          <Search
-            searchInput={searchText}
-            setSearchInput={setSearchText}
-            handleSearch={handleSearch}
-            handleClearSearch={handleClearSearch}
-            placeholder="Tìm kiếm theo mã đơn, tên thuốc, mã xác minh..."
-            data={data}
-            getSearchText={getSearchText}
-            matchFunction={matchFunction}
-            getDisplayText={getDisplayText}
-            enableAutoSearch={false}
-          />
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={50} showTrack />
+          </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tải dữ liệu...</div>
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-        <Spin spinning={loading}>
-          <Table
-            columns={columns}
-            dataSource={filteredData}
-            rowKey={(record) => record._id || record.id}
-            pagination={{ pageSize: 10, showSizeChanger: true }}
-            scroll={{ x: 1000 }}
+      ) : (
+        <div className="space-y-6">
+          <CardUI
+            title="Đơn hàng nhận từ Nhà sản xuất"
+            subtitle="Quản lý và xác nhận các đơn hàng nhận từ nhà sản xuất dược phẩm"
+            content={{
+              title: "Quy trình xác nhận",
+              step1: {
+                title: "Kiểm tra đơn hàng",
+                description:
+                  "Xem danh sách các đơn hàng đã được gửi từ manufacturer",
+              },
+              step2: {
+                title: "Xác nhận nhận hàng",
+                description:
+                  "Nhập thông tin người nhận, địa chỉ giao hàng và số lượng thực nhận",
+              },
+              step3: {
+                title: "Cập nhật trạng thái",
+                description:
+                  "Hệ thống cập nhật trạng thái đơn hàng và lưu thông tin vào blockchain",
+              },
+              step4: {
+                title: "Sẵn sàng chuyển tiếp",
+                description:
+                  "Đơn hàng đã xác nhận có thể được chuyển tiếp cho pharmacy",
+              },
+            }}
           />
-        </Spin>
-      </div>
+
+          {/* Search */}
+          <motion.div
+            className="bg-white rounded-2xl border border-card-primary shadow-sm p-6"
+            variants={fadeUp}
+            initial="hidden"
+            animate="show"
+          >
+            <Search
+              searchInput={searchText}
+              setSearchInput={setSearchText}
+              handleSearch={handleSearch}
+              handleClearSearch={handleClearSearch}
+              placeholder="Tìm kiếm theo mã đơn, tên thuốc, mã xác minh..."
+              data={data}
+              getSearchText={getSearchText}
+              matchFunction={matchFunction}
+              getDisplayText={getDisplayText}
+              enableAutoSearch={false}
+            />
+          </motion.div>
+
+          {/* Table */}
+          <motion.div
+            className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden"
+            variants={fadeUp}
+            initial="hidden"
+            animate="show"
+          >
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-slate-800">
+                Danh sách đơn hàng
+              </h2>
+            </div>
+
+            {filteredData.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="text-5xl mb-4">📦</div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">
+                  Chưa có đơn hàng nào
+                </h3>
+                <p className="text-slate-600">
+                  Không tìm thấy đơn hàng phù hợp với từ khóa tìm kiếm
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead className="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                        Mã đơn hàng
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                        Từ Manufacturer
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                        Tên thuốc
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                        Số lượng
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                        Ngày gửi
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                        Trạng thái
+                      </th>
+                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                        Hành động
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredData.map((record, index) => {
+                      const status = getStatusDisplay(record);
+                      const recordId = record._id || record.id;
+                      const currentStatus = (record?.status || "").toLowerCase();
+                      const canConfirm = (currentStatus === "sent" || currentStatus === "pending") && !record?.isConfirmed;
+                      const isConfirmed = currentStatus === "confirmed" || record?.isConfirmed;
+                      
+                      return (
+                        <tr
+                          key={record._id || index}
+                          className="hover:bg-gray-50 transition-colors cursor-pointer"
+                          onClick={(e) => {
+                            // Không navigate nếu click vào button
+                            if (e.target.closest('button')) {
+                              return;
+                            }
+                            navigate(`/distributor/distributions/${recordId}`);
+                          }}
+                        >
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">
+                              {getInvoiceDisplay(record)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 font-semibold text-[#003544]">
+                            {getManufacturerDisplay(record)}
+                          </td>
+                          <td className="px-6 py-4 text-slate-700">
+                            {getDrugDisplay(record)}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="font-semibold text-gray-800">
+                              {getQuantityDisplay(record)}
+                            </span>
+                            <span className="text-xs text-slate-500 ml-1">
+                              NFT
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-slate-700 text-sm">
+                            {getDateDisplay(record.createdAt || record.sentDate)}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                status.color === "green"
+                                  ? "bg-green-100 text-green-700 border border-green-200"
+                                  : status.color === "blue"
+                                  ? "bg-blue-100 text-blue-700 border border-blue-200"
+                                  : status.color === "cyan"
+                                  ? "bg-cyan-100 text-cyan-700 border border-cyan-200"
+                                  : status.color === "orange"
+                                  ? "bg-orange-100 text-orange-700 border border-orange-200"
+                                  : status.color === "red"
+                                  ? "bg-red-100 text-red-700 border border-red-200"
+                                  : "bg-yellow-100 text-yellow-700 border border-yellow-200"
+                              }`}
+                            >
+                              {status.text}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex items-center justify-center">
+                              {canConfirm ? (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onConfirm && onConfirm(record);
+                                  }}
+                                  className="px-4 py-2 rounded-full font-semibold transition-all duration-200 border-2 border-[#3db6d9] bg-white !text-[#3db6d9] hover:bg-[#3db6d9] hover:!text-white hover:shadow-md hover:shadow-[#3db6d9]/40"
+                                >
+                                  Xác nhận nhận
+                                </button>
+                              ) : isConfirmed ? (
+                                <span className="px-4 py-2 rounded-full font-semibold border-2 border-gray-300 text-gray-500 bg-gray-50">
+                                  Đã nhận
+                                </span>
+                              ) : null}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
 
       {/* Confirm Receipt Dialog */}
       {showConfirmDialog && selectedRecord && (
@@ -170,36 +380,70 @@ export default function Distributions() {
             onClick={(e) => e.stopPropagation()}
           >
             <style>{`
-              .custom-scroll { scrollbar-width: thin; -ms-overflow-style: none; }
-              .custom-scroll::-webkit-scrollbar { width: 6px; }
-              .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
-              .custom-scroll::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
-              .custom-scroll::-webkit-scrollbar-thumb:hover { background: #555; }
+              .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+              .custom-scroll::-webkit-scrollbar { width: 0; height: 0; }
+              .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+              .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
             `}</style>
 
             {/* Header */}
-            <div className="bg-gradient-to-r from-primary to-secondary px-8 py-6 rounded-t-3xl flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold !text-white">
-                  Xác nhận nhận hàng
-                </h2>
-                <p className="text-gray-100 text-sm">
-                  Đơn: {selectedRecord.invoiceNumber || selectedRecord.code || "N/A"}
-                </p>
+            <div className="bg-gradient-to-r from-secondary to-primary px-8 py-6 rounded-t-3xl">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold !text-white">
+                    Xác nhận nhận hàng
+                  </h2>
+                  <p className="text-cyan-100 text-sm">
+                    Đơn: {getInvoiceDisplay(selectedRecord)}
+                  </p>
+                </div>
+                <button
+                  onClick={handleCloseConfirmDialog}
+                  className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition"
+                >
+                  ✕
+                </button>
               </div>
-              <button
-                onClick={handleCloseConfirmDialog}
-                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition"
-              >
-                ✕
-              </button>
             </div>
 
-            <div className="p-8 space-y-6">
+            <div className="p-8 space-y-4 relative max-h-[500px] overflow-auto hide-scrollbar">
+              {/* Thông tin đơn hàng */}
+              <div className="bg-cyan-50 rounded-xl p-4 border border-card-primary">
+                <div className="font-bold text-cyan-800 mb-3">
+                  Thông tin đơn hàng:
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Mã đơn:</span>
+                    <span className="font-mono font-medium">
+                      {getInvoiceDisplay(selectedRecord)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Từ:</span>
+                    <span className="font-medium">
+                      {getManufacturerDisplay(selectedRecord)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Tên thuốc:</span>
+                    <span className="font-medium">
+                      {getDrugDisplay(selectedRecord)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Số lượng gửi:</span>
+                    <span className="font-bold text-orange-700">
+                      {getQuantityDisplay(selectedRecord)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Người nhận */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Người nhận hàng
+                  Người nhận hàng *
                 </label>
                 <input
                   value={confirmForm.receivedBy}
@@ -213,12 +457,6 @@ export default function Distributions() {
                         ...confirmForm,
                         receivedBy: value,
                       });
-                      if (confirmFormErrors.receivedBy) {
-                        setConfirmFormErrors({
-                          ...confirmFormErrors,
-                          receivedBy: "",
-                        });
-                      }
                     }
                   }}
                   placeholder="Họ và tên người nhận"
@@ -230,34 +468,41 @@ export default function Distributions() {
                   }`}
                 />
                 {confirmFormErrors.receivedBy && (
-                  <p className="mt-1 text-xs text-red-600">{confirmFormErrors.receivedBy}</p>
+                  <p className="mt-1 text-xs text-red-600">
+                    {confirmFormErrors.receivedBy}
+                  </p>
                 )}
-                <div className="mt-4">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Chức vụ (tuỳ chọn)
-                  </label>
-                  <input
-                    value={confirmForm.receivedByTitle}
-                    onChange={(e) =>
-                      setConfirmForm({
-                        ...confirmForm,
-                        receivedByTitle: e.target.value.replace(/[^a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]/g, "").slice(0, 50),
-                      })
-                    }
-                    placeholder="VD: Kho vận"
-                    maxLength={50}
-                    className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150"
-                  />
-                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Chức vụ (tuỳ chọn)
+                </label>
+                <input
+                  value={confirmForm.receivedByTitle}
+                  onChange={(e) =>
+                    setConfirmForm({
+                      ...confirmForm,
+                      receivedByTitle: e.target.value
+                        .replace(/[^a-zA-ZÀ-ỹĂăÂâÊêÔôƠơƯưĐđ\s]/g, "")
+                        .slice(0, 50),
+                    })
+                  }
+                  placeholder="VD: Kho vận"
+                  maxLength={50}
+                  className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition"
+                />
               </div>
 
               {/* Địa chỉ giao hàng */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Địa chỉ giao hàng</h3>
+                <h3 className="text-sm font-semibold text-gray-800 mb-3">
+                  Địa chỉ giao hàng
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Đường/Phố <span className="text-red-500">*</span>
+                      Đường/Phố *
                     </label>
                     <input
                       value={confirmForm.deliveryAddress.street}
@@ -269,28 +514,24 @@ export default function Distributions() {
                             street: e.target.value.slice(0, 200),
                           },
                         });
-                        if (confirmFormErrors.deliveryAddressStreet) {
-                          setConfirmFormErrors({
-                            ...confirmFormErrors,
-                            deliveryAddressStreet: "",
-                          });
-                        }
                       }}
                       placeholder="Số nhà, đường..."
                       maxLength={200}
-                      className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                      className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition ${
                         confirmFormErrors.deliveryAddressStreet
                           ? "border-red-500 focus:ring-red-500"
                           : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
                       }`}
                     />
                     {confirmFormErrors.deliveryAddressStreet && (
-                      <p className="mt-1 text-xs text-red-600">{confirmFormErrors.deliveryAddressStreet}</p>
+                      <p className="mt-1 text-xs text-red-600">
+                        {confirmFormErrors.deliveryAddressStreet}
+                      </p>
                     )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Thành phố <span className="text-red-500">*</span>
+                      Thành phố *
                     </label>
                     <input
                       value={confirmForm.deliveryAddress.city}
@@ -302,64 +543,20 @@ export default function Distributions() {
                             city: e.target.value.slice(0, 100),
                           },
                         });
-                        if (confirmFormErrors.deliveryAddressCity) {
-                          setConfirmFormErrors({
-                            ...confirmFormErrors,
-                            deliveryAddressCity: "",
-                          });
-                        }
                       }}
                       placeholder="TP/Huyện"
                       maxLength={100}
-                      className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                      className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition ${
                         confirmFormErrors.deliveryAddressCity
                           ? "border-red-500 focus:ring-red-500"
                           : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
                       }`}
                     />
                     {confirmFormErrors.deliveryAddressCity && (
-                      <p className="mt-1 text-xs text-red-600">{confirmFormErrors.deliveryAddressCity}</p>
+                      <p className="mt-1 text-xs text-red-600">
+                        {confirmFormErrors.deliveryAddressCity}
+                      </p>
                     )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Tỉnh/Thành phố
-                    </label>
-                    <input
-                      value={confirmForm.deliveryAddress.state}
-                      onChange={(e) => {
-                        setConfirmForm({
-                          ...confirmForm,
-                          deliveryAddress: {
-                            ...confirmForm.deliveryAddress,
-                            state: e.target.value.slice(0, 100),
-                          },
-                        });
-                      }}
-                      placeholder="Tỉnh/Thành phố"
-                      maxLength={100}
-                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 focus:ring-gray-400 hover:border-gray-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Mã bưu điện
-                    </label>
-                    <input
-                      value={confirmForm.deliveryAddress.postalCode}
-                      onChange={(e) => {
-                        setConfirmForm({
-                          ...confirmForm,
-                          deliveryAddress: {
-                            ...confirmForm.deliveryAddress,
-                            postalCode: e.target.value.slice(0, 10),
-                          },
-                        });
-                      }}
-                      placeholder="Mã bưu điện"
-                      maxLength={10}
-                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 focus:ring-gray-400 hover:border-gray-400"
-                    />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -378,7 +575,7 @@ export default function Distributions() {
                       }}
                       placeholder="Quốc gia"
                       maxLength={100}
-                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 focus:ring-gray-400 hover:border-gray-400"
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition"
                     />
                   </div>
                 </div>
@@ -386,7 +583,9 @@ export default function Distributions() {
 
               {/* Thông tin vận chuyển */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Thông tin vận chuyển</h3>
+                <h3 className="text-sm font-semibold text-gray-800 mb-3">
+                  Thông tin vận chuyển
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -405,7 +604,7 @@ export default function Distributions() {
                       }}
                       placeholder="VD: Viettel Post, EMS..."
                       maxLength={100}
-                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 focus:ring-gray-400 hover:border-gray-400"
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition"
                     />
                   </div>
                   <div>
@@ -425,7 +624,7 @@ export default function Distributions() {
                       }}
                       placeholder="Mã vận đơn"
                       maxLength={50}
-                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 focus:ring-gray-400 hover:border-gray-400"
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition"
                     />
                   </div>
                 </div>
@@ -447,12 +646,12 @@ export default function Distributions() {
                         distributionDate: e.target.value,
                       });
                     }}
-                    className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 focus:ring-gray-400 hover:border-gray-400 bg-white"
+                    className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition bg-white"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Số lượng nhận <span className="text-red-500">*</span>
+                    Số lượng nhận *
                   </label>
                   <input
                     type="number"
@@ -483,22 +682,21 @@ export default function Distributions() {
                         ...confirmForm,
                         distributedQuantity: value,
                       });
-                      // Error sẽ được clear trong hook
                     }}
-                    className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition-all duration-150 ${
+                    className={`w-full border-2 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:shadow-sm transition ${
                       confirmFormErrors.distributedQuantity
                         ? "border-red-500 focus:ring-red-500"
                         : "border-gray-300 focus:ring-gray-400 hover:border-gray-400"
                     }`}
                   />
                   {confirmFormErrors.distributedQuantity && (
-                    <p className="mt-1 text-xs text-red-600">{confirmFormErrors.distributedQuantity}</p>
-                  )}
-                  {selectedRecord?.quantity && (
-                    <p className="mt-2 text-sm text-blue-500">
-                      (Tối đa: {selectedRecord.quantity} - số lượng đã được gửi đến)
+                    <p className="mt-1 text-xs text-red-600">
+                      {confirmFormErrors.distributedQuantity}
                     </p>
                   )}
+                  <div className="text-xs text-cyan-600 mt-1">
+                    Tối đa: {getQuantityDisplay(selectedRecord)} NFT
+                  </div>
                 </div>
               </div>
 
@@ -517,28 +715,31 @@ export default function Distributions() {
                     })
                   }
                   maxLength={500}
-                  className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-150 focus:ring-gray-400"
+                  className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none hover:border-gray-400 hover:shadow-sm transition"
                   placeholder="Ghi chú thêm..."
                 />
+              </div>
+
+              <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
+                <div className="text-sm text-yellow-800">
+                  ⚠️ Sau khi xác nhận, thông tin nhận hàng sẽ được lưu vào hệ
+                  thống và không thể chỉnh sửa.
+                </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="px-8 py-6 border-t border-gray-300 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
-              <button
-                onClick={handleCloseConfirmDialog}
-                disabled={isConfirming}
-                className="px-5 py-2.5 rounded-full border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-all duration-200 font-medium disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
+            <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end">
+              <TruckAnimationButton
                 onClick={handleSubmitConfirm}
                 disabled={isConfirming}
-                className="px-6 py-2.5 rounded-full bg-primary !text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
-              >
-                {isConfirming ? "Đang xử lý..." : "Xác nhận nhận hàng"}
-              </button>
+                buttonState={isConfirming ? "uploading" : "idle"}
+                defaultText="Xác nhận nhận hàng"
+                uploadingText="Đang xử lý..."
+                successText="Hoàn thành"
+                animationMode="infinite"
+                animationDuration={3}
+              />
             </div>
           </div>
         </div>
