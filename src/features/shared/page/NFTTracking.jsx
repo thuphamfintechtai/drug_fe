@@ -388,7 +388,7 @@ export default function PublicNFTTracking() {
               </div>
 
               <motion.div
-                className="mt-4 flex items-start gap-2 text-sm text-primary bg-primary/10 rounded-lg p-3 border border-primary/30"
+                className="mt-4 flex items-start gap-2 text-sm text-primary bg-secondary/10 rounded-lg p-3 border border-primary/30"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
@@ -599,6 +599,125 @@ export default function PublicNFTTracking() {
                   </div>
                 </div>
               </motion.div>
+
+              {journey.nft?.drug && (
+                <motion.div
+                  variants={itemVariants}
+                  className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl overflow-hidden"
+                >
+                  <div className="bg-gradient-to-r from-primary to-secondary px-6 sm:px-8 py-4 text-white flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <svg
+                        className="w-6 h-6"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold">
+                      Thông tin chi tiết thuốc
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0 divide-y divide-slate-200">
+                      {journey.nft.drug.genericName && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 first:pt-0 md:first:pt-4 md:pr-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Tên hoạt chất
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {journey.nft.drug.genericName}
+                          </div>
+                        </div>
+                      )}
+                      {journey.nft.drug.atcCode && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pl-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Mã ATC
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                            {journey.nft.drug.atcCode}
+                          </div>
+                        </div>
+                      )}
+                      {journey.nft.drug.dosageForm && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pr-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Dạng bào chế
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {journey.nft.drug.dosageForm}
+                          </div>
+                        </div>
+                      )}
+                      {journey.nft.drug.strength && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pl-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Hàm lượng
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {journey.nft.drug.strength}
+                          </div>
+                        </div>
+                      )}
+                      {journey.nft.drug.packaging && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pr-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Quy cách đóng gói
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {journey.nft.drug.packaging}
+                          </div>
+                        </div>
+                      )}
+                      {journey.nft.mfgDate && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pl-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Ngày sản xuất
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {new Date(journey.nft.mfgDate).toLocaleDateString(
+                              "vi-VN"
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {journey.nft.expDate && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pr-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Hạn sử dụng
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {new Date(journey.nft.expDate).toLocaleDateString(
+                              "vi-VN"
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {journey.nft.drug.manufacturer && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 last:pb-0 md:pl-0 md:col-span-2 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Nhà sản xuất
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {typeof journey.nft.drug.manufacturer ===
+                              "object" && journey.nft.drug.manufacturer !== null
+                              ? journey.nft.drug.manufacturer.name ||
+                                journey.nft.drug.manufacturer.fullName ||
+                                JSON.stringify(journey.nft.drug.manufacturer)
+                              : journey.nft.drug.manufacturer}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
 
               {/* Layout */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1397,124 +1516,6 @@ export default function PublicNFTTracking() {
               </div>
 
               {/* Detailed drug info */}
-              {journey.nft?.drug && (
-                <motion.div
-                  variants={itemVariants}
-                  className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl overflow-hidden"
-                >
-                  <div className="bg-gradient-to-r from-primary to-secondary px-6 sm:px-8 py-4 text-white flex items-center gap-3">
-                    <div className="p-2 bg-white/20 rounded-lg">
-                      <svg
-                        className="w-6 h-6"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold">
-                      Thông tin chi tiết thuốc
-                    </h3>
-                  </div>
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0 divide-y divide-slate-200">
-                      {journey.nft.drug.genericName && (
-                        <div className="flex flex-col sm:flex-row sm:items-center py-4 first:pt-0 md:first:pt-4 md:pr-0 gap-4">
-                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
-                            Tên hoạt chất
-                          </div>
-                          <div className="text-base font-semibold text-slate-800 flex-1">
-                            {journey.nft.drug.genericName}
-                          </div>
-                        </div>
-                      )}
-                      {journey.nft.drug.atcCode && (
-                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pl-0 gap-4">
-                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
-                            Mã ATC
-                          </div>
-                          <div className="text-base font-semibold text-slate-800 font-mono flex-1">
-                            {journey.nft.drug.atcCode}
-                          </div>
-                        </div>
-                      )}
-                      {journey.nft.drug.dosageForm && (
-                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pr-0 gap-4">
-                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
-                            Dạng bào chế
-                          </div>
-                          <div className="text-base font-semibold text-slate-800 flex-1">
-                            {journey.nft.drug.dosageForm}
-                          </div>
-                        </div>
-                      )}
-                      {journey.nft.drug.strength && (
-                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pl-0 gap-4">
-                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
-                            Hàm lượng
-                          </div>
-                          <div className="text-base font-semibold text-slate-800 flex-1">
-                            {journey.nft.drug.strength}
-                          </div>
-                        </div>
-                      )}
-                      {journey.nft.drug.packaging && (
-                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pr-0 gap-4">
-                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
-                            Quy cách đóng gói
-                          </div>
-                          <div className="text-base font-semibold text-slate-800 flex-1">
-                            {journey.nft.drug.packaging}
-                          </div>
-                        </div>
-                      )}
-                      {journey.nft.mfgDate && (
-                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pl-0 gap-4">
-                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
-                            Ngày sản xuất
-                          </div>
-                          <div className="text-base font-semibold text-slate-800 flex-1">
-                            {new Date(journey.nft.mfgDate).toLocaleDateString(
-                              "vi-VN"
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      {journey.nft.expDate && (
-                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pr-0 gap-4">
-                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
-                            Hạn sử dụng
-                          </div>
-                          <div className="text-base font-semibold text-slate-800 flex-1">
-                            {new Date(journey.nft.expDate).toLocaleDateString(
-                              "vi-VN"
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      {journey.nft.drug.manufacturer && (
-                        <div className="flex flex-col sm:flex-row sm:items-center py-4 last:pb-0 md:pl-0 md:col-span-2 gap-4">
-                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
-                            Nhà sản xuất
-                          </div>
-                          <div className="text-base font-semibold text-slate-800 flex-1">
-                            {typeof journey.nft.drug.manufacturer ===
-                              "object" && journey.nft.drug.manufacturer !== null
-                              ? journey.nft.drug.manufacturer.name ||
-                                journey.nft.drug.manufacturer.fullName ||
-                                JSON.stringify(journey.nft.drug.manufacturer)
-                              : journey.nft.drug.manufacturer}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>

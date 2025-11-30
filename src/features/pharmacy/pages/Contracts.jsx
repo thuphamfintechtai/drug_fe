@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckLoader from "../../shared/components/TruckLoader";
 import { navigationItems } from "../constants/constant";
-import { contractStatusColor, contractStatusLabel } from "../hooks/useContracts";
+import { contractStatusLabel } from "../hooks/useContracts";
 import { useContractsPage } from "../hooks/useContractsPage";
 import { Search } from "../../shared/components/ui/search";
 
@@ -68,153 +68,195 @@ export default function PharmacyContracts() {
       ) : (
         <div className="space-y-6">
           {/* Banner */}
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 mb-6">
-            <h1 className="text-xl font-semibold text-[#007b91]">
-              Hợp đồng với Nhà phân phối
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Xem và xác nhận các hợp đồng từ nhà phân phối
-            </p>
-          </div>
+          <motion.section
+            className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-r from-primary to-secondary"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="relative px-6 py-8 md:px-10 md:py-12 !text-white">
+              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm mb-2">
+                Hợp đồng với Nhà phân phối
+              </h1>
+              <p className="!text-white/90">
+                Xem và xác nhận các hợp đồng từ nhà phân phối
+              </p>
+            </div>
+          </motion.section>
 
-      {/* Search */}
-      <motion.div
-            className="rounded-2xl bg-white border border-card-primary shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
+          {/* Search */}
+          <motion.div
+            className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6"
+            variants={fadeUp}
+            initial="hidden"
+            animate="show"
+          >
             <div className="flex flex-col md:flex-row gap-3 md:items-end">
-        <div className="flex-1">
-                <label className="block text-sm text-[#003544]/70 mb-1">
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Tìm kiếm
                 </label>
-          <Search
-            searchInput={searchText}
-            setSearchInput={setSearchText}
-            handleSearch={handleSearch}
-            handleClearSearch={handleClearSearch}
-            placeholder="Tìm kiếm theo mã hợp đồng, tên file..."
-            data={filteredContracts}
-            getSearchText={(item) => item.id || item.contractFileName || ""}
-            matchFunction={(item, searchLower) => {
-              const id = (item.id || "").toLowerCase();
-              const fileName = (item.contractFileName || "").toLowerCase();
-              return id.includes(searchLower) || fileName.includes(searchLower);
-            }}
-            getDisplayText={(item) => item.contractFileName || item.id}
-            enableAutoSearch={false}
-          />
+                <Search
+                  searchInput={searchText}
+                  setSearchInput={setSearchText}
+                  handleSearch={handleSearch}
+                  handleClearSearch={handleClearSearch}
+                  placeholder="Tìm kiếm theo mã hợp đồng, tên file..."
+                  data={filteredContracts}
+                  getSearchText={(item) =>
+                    item.id || item.contractFileName || ""
+                  }
+                  matchFunction={(item, searchLower) => {
+                    const id = (item.id || "").toLowerCase();
+                    const fileName = (
+                      item.contractFileName || ""
+                    ).toLowerCase();
+                    return (
+                      id.includes(searchLower) || fileName.includes(searchLower)
+                    );
+                  }}
+                  getDisplayText={(item) => item.contractFileName || item.id}
+                  enableAutoSearch={false}
+                />
               </div>
-        </div>
-      </motion.div>
+            </div>
+          </motion.div>
 
-      {/* Content */}
-      <motion.div
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-            className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden"
+          {/* Content */}
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="show"
+            className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden"
           >
             {filteredContracts.length === 0 ? (
-              <div className="p-16 flex flex-col items-center justify-center text-gray-400">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-12 h-12 mb-3 opacity-60"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                <p className="text-gray-500 text-sm">
+              <div className="p-16 flex flex-col items-center justify-center">
+                <div className="p-4 bg-gradient-to-br from-slate-100 to-slate-50 rounded-2xl mb-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-16 h-16 text-slate-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-slate-700 mb-2">
+                  {searchText ? "Không tìm thấy kết quả" : "Chưa có hợp đồng"}
+                </h3>
+                <p className="text-slate-500 text-sm">
                   {searchText
-                    ? "Không tìm thấy hợp đồng phù hợp với từ khóa tìm kiếm"
-                    : "Không có dữ liệu"}
+                    ? "Không có hợp đồng nào phù hợp với từ khóa tìm kiếm của bạn"
+                    : "Các hợp đồng từ nhà phân phối sẽ hiển thị ở đây"}
                 </p>
               </div>
             ) : (
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
                       <tr>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                        <th className="px-6 py-4 text-left text-sm font-bold text-slate-700 uppercase tracking-wide">
                           Mã hợp đồng
                         </th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                        <th className="px-6 py-4 text-left text-sm font-bold text-slate-700 uppercase tracking-wide">
                           Tên file
                         </th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                        <th className="px-6 py-4 text-left text-sm font-bold text-slate-700 uppercase tracking-wide">
                           URL hợp đồng
                         </th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                        <th className="px-6 py-4 text-left text-sm font-bold text-slate-700 uppercase tracking-wide">
                           Trạng thái
                         </th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                        <th className="px-6 py-4 text-left text-sm font-bold text-slate-700 uppercase tracking-wide">
                           Ngày tạo
                         </th>
-                        <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">
+                        <th className="px-6 py-4 text-center text-sm font-bold text-slate-700 uppercase tracking-wide">
                           Thao tác
                         </th>
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-slate-100">
                       {paginatedContracts.map((contract) => (
                         <tr
                           key={contract.id}
-                          className="hover:bg-gray-50 transition-colors cursor-pointer"
+                          className="hover:bg-gradient-to-r hover:from-slate-50/50 hover:to-white transition-all duration-200 cursor-pointer group"
                           onClick={() => handleRowClick(contract)}
                         >
-                          <td className="px-6 py-4 font-medium text-gray-800">
-                            <span className="font-mono text-sm" title={contract.id}>
+                          <td className="px-6 py-4">
+                            <span
+                              className="font-mono text-sm font-semibold text-slate-800 group-hover:text-primary transition-colors"
+                              title={contract.id}
+                            >
                               {contract.id?.substring(0, 8)}...
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-gray-600">
-                            {contract.contractFileName || "N/A"}
+                          <td className="px-6 py-4">
+                            <span className="text-slate-700 font-medium">
+                              {contract.contractFileName || "N/A"}
+                            </span>
                           </td>
-                          <td className="px-6 py-4 text-gray-600">
+                          <td className="px-6 py-4">
                             {contract.contractFileUrl ? (
                               <a
                                 href={contract.contractFileUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-500 hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center gap-1 text-primary hover:text-secondary font-medium transition-colors group/link"
                               >
+                                <svg
+                                  className="w-4 h-4 group-hover/link:translate-x-0.5 transition-transform"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                  />
+                                </svg>
                                 Xem file
                               </a>
                             ) : (
-                              "N/A"
+                              <span className="text-slate-400">N/A</span>
                             )}
                           </td>
                           <td className="px-6 py-4">
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                              className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold shadow-sm ${
                                 contract.status === "pending"
-                                  ? "bg-orange-50 text-orange-600 border border-orange-100"
-                                  : contract.status === "approved" || contract.status === "confirmed"
-                                  ? "bg-blue-50 text-blue-600 border border-blue-100"
+                                  ? "bg-gradient-to-r from-orange-50 to-amber-50 text-orange-700 border border-orange-200"
+                                  : contract.status === "approved" ||
+                                    contract.status === "confirmed"
+                                  ? "bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 border border-blue-200"
                                   : contract.status === "signed"
-                                  ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                  ? "bg-gradient-to-r from-primary/10 to-secondary/10 text-primary border border-primary/20"
                                   : contract.status === "rejected"
-                                  ? "bg-rose-50 text-rose-600 border border-rose-100"
-                                  : "bg-gray-50 text-gray-600 border border-gray-100"
+                                  ? "bg-gradient-to-r from-rose-50 to-red-50 text-rose-700 border border-rose-200"
+                                  : "bg-gradient-to-r from-gray-50 to-slate-50 text-gray-700 border border-gray-200"
                               }`}
                             >
                               {contractStatusLabel(contract.status)}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-gray-600">
-                            {contract.createdAt
-                              ? new Date(contract.createdAt).toLocaleDateString("vi-VN")
-                              : "N/A"}
+                          <td className="px-6 py-4">
+                            <span className="text-slate-600">
+                              {contract.createdAt
+                                ? new Date(
+                                    contract.createdAt
+                                  ).toLocaleDateString("vi-VN")
+                                : "N/A"}
+                            </span>
                           </td>
                           <td className="px-6 py-4 text-center">
                             {contract.status === "pending" ? (
@@ -223,8 +265,21 @@ export default function PharmacyContracts() {
                                   e.stopPropagation();
                                   openConfirmDialog(contract);
                                 }}
-                                className="px-4 py-2 border-2 border-secondary rounded-full font-semibold !text-white bg-secondary hover:!text-white hover:bg-secondary transition-all duration-200"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                               >
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
+                                </svg>
                                 Xác nhận
                               </button>
                             ) : (
@@ -233,8 +288,27 @@ export default function PharmacyContracts() {
                                   e.stopPropagation();
                                   handleRowClick(contract);
                                 }}
-                                className="px-4 py-2 border-2 border-gray-300 rounded-full font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 hover:!text-gray-700 transition-all duration-200"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-slate-700 bg-gradient-to-r from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md transition-all duration-200"
                               >
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                  />
+                                </svg>
                                 Chi tiết
                               </button>
                             )}
@@ -247,32 +321,44 @@ export default function PharmacyContracts() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-                    <div className="text-sm text-gray-600">
-                      Hiển thị {startIndex + 1}-{Math.min(endIndex, totalItems)} của {totalItems} hợp đồng
+                  <div className="flex items-center justify-between px-6 py-5 border-t-2 border-slate-200 bg-gradient-to-r from-slate-50/50 to-white">
+                    <div className="text-sm font-medium text-slate-600">
+                      Hiển thị{" "}
+                      <span className="font-bold text-slate-800">
+                        {startIndex + 1}
+                      </span>{" "}
+                      -{" "}
+                      <span className="font-bold text-slate-800">
+                        {Math.min(endIndex, totalItems)}
+                      </span>{" "}
+                      của{" "}
+                      <span className="font-bold text-slate-800">
+                        {totalItems}
+                      </span>{" "}
+                      hợp đồng
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <button
                         disabled={currentPage <= 1}
                         onClick={() => setCurrentPage(currentPage - 1)}
-                        className={`px-3 py-2 rounded-xl text-sm ${
+                        className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                           currentPage <= 1
-                            ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                            : "bg-white border border-gray-200 hover:bg-gray-50 text-gray-700"
+                            ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                            : "bg-white border-2 border-slate-200 hover:border-primary hover:bg-primary/5 text-slate-700 hover:text-primary shadow-sm hover:shadow-md"
                         }`}
                       >
                         Trước
                       </button>
-                      <span className="text-sm text-gray-700 px-3">
+                      <span className="text-sm font-semibold text-slate-700 px-4">
                         Trang {currentPage} / {totalPages}
                       </span>
                       <button
                         disabled={currentPage >= totalPages}
                         onClick={() => setCurrentPage(currentPage + 1)}
-                        className={`px-3 py-2 rounded-xl text-sm ${
+                        className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                           currentPage >= totalPages
-                            ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                            : "bg-secondary hover:bg-primary text-white font-medium transition"
+                            ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                            : "bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary text-white shadow-lg hover:shadow-xl transform hover:scale-105"
                         }`}
                       >
                         Sau
@@ -282,7 +368,7 @@ export default function PharmacyContracts() {
                 )}
               </>
             )}
-      </motion.div>
+          </motion.div>
 
           {/* Detail Dialog */}
           {showDetailDialog && selectedContract && (
@@ -321,7 +407,9 @@ export default function PharmacyContracts() {
                       <div className="flex flex-col items-center gap-4">
                         <div className="w-12 h-12 border-4 border-gray-200 rounded-full" />
                         <div className="w-12 h-12 border-4 border-[#4BADD1] rounded-full border-t-transparent animate-spin absolute" />
-                        <p className="text-sm text-gray-600 mt-16">Đang tải chi tiết hợp đồng...</p>
+                        <p className="text-sm text-gray-600 mt-16">
+                          Đang tải chi tiết hợp đồng...
+                        </p>
                       </div>
                     </div>
                   ) : (
@@ -336,7 +424,9 @@ export default function PharmacyContracts() {
                               Mã hợp đồng
                             </label>
                             <div className="font-mono text-sm text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                              {contractDetail?.id || contractDetail?._id || selectedContract.id}
+                              {contractDetail?.id ||
+                                contractDetail?._id ||
+                                selectedContract.id}
                             </div>
                           </div>
 
@@ -349,16 +439,20 @@ export default function PharmacyContracts() {
                                 className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${
                                   contractDetail?.status === "pending"
                                     ? "bg-orange-50 text-orange-600 border border-orange-100"
-                                    : contractDetail?.status === "approved" || contractDetail?.status === "confirmed"
+                                    : contractDetail?.status === "approved" ||
+                                      contractDetail?.status === "confirmed"
                                     ? "bg-blue-50 text-blue-600 border border-blue-100"
                                     : contractDetail?.status === "signed"
-                                    ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                    ? "bg-primary/10 text-primary border border-primary/20"
                                     : contractDetail?.status === "rejected"
                                     ? "bg-rose-50 text-rose-600 border border-rose-100"
                                     : "bg-gray-50 text-gray-600 border border-gray-100"
                                 }`}
                               >
-                                {contractStatusLabel(contractDetail?.status || selectedContract.status)}
+                                {contractStatusLabel(
+                                  contractDetail?.status ||
+                                    selectedContract.status
+                                )}
                               </span>
                             </div>
                           </div>
@@ -368,7 +462,9 @@ export default function PharmacyContracts() {
                               Tên file
                             </label>
                             <div className="text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                              {contractDetail?.contractFileName || selectedContract.contractFileName || "N/A"}
+                              {contractDetail?.contractFileName ||
+                                selectedContract.contractFileName ||
+                                "N/A"}
                             </div>
                           </div>
 
@@ -377,9 +473,13 @@ export default function PharmacyContracts() {
                               File hợp đồng
                             </label>
                             <div className="text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                              {contractDetail?.contractFileUrl || selectedContract.contractFileUrl ? (
+                              {contractDetail?.contractFileUrl ||
+                              selectedContract.contractFileUrl ? (
                                 <a
-                                  href={contractDetail?.contractFileUrl || selectedContract.contractFileUrl}
+                                  href={
+                                    contractDetail?.contractFileUrl ||
+                                    selectedContract.contractFileUrl
+                                  }
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:underline"
@@ -409,7 +509,9 @@ export default function PharmacyContracts() {
                               Wallet Distributor
                             </label>
                             <div className="font-mono text-xs text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200 break-all">
-                              {contractDetail?.distributorWalletAddress || contractDetail?.distributorAddress || "-"}
+                              {contractDetail?.distributorWalletAddress ||
+                                contractDetail?.distributorAddress ||
+                                "-"}
                             </div>
                           </div>
 
@@ -418,7 +520,9 @@ export default function PharmacyContracts() {
                               Wallet Pharmacy
                             </label>
                             <div className="font-mono text-xs text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200 break-all">
-                              {contractDetail?.pharmacyWalletAddress || contractDetail?.pharmacyAddress || "-"}
+                              {contractDetail?.pharmacyWalletAddress ||
+                                contractDetail?.pharmacyAddress ||
+                                "-"}
                             </div>
                           </div>
 
@@ -427,7 +531,7 @@ export default function PharmacyContracts() {
                               <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Token ID
                               </label>
-                              <div className="font-mono font-bold text-green-600 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                              <div className="font-mono font-bold text-primary bg-gray-50 rounded-lg p-3 border border-gray-200">
                                 #{contractDetail.tokenId}
                               </div>
                             </div>
@@ -456,8 +560,12 @@ export default function PharmacyContracts() {
                               Ký bởi Distributor
                             </label>
                             <div className="text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                              {contractDetail?.distributorSignedAt || selectedContract.distributorSignedAt
-                                ? new Date(contractDetail?.distributorSignedAt || selectedContract.distributorSignedAt).toLocaleString("vi-VN")
+                              {contractDetail?.distributorSignedAt ||
+                              selectedContract.distributorSignedAt
+                                ? new Date(
+                                    contractDetail?.distributorSignedAt ||
+                                      selectedContract.distributorSignedAt
+                                  ).toLocaleString("vi-VN")
                                 : "Chưa ký"}
                             </div>
                           </div>
@@ -467,8 +575,12 @@ export default function PharmacyContracts() {
                               Ký bởi Pharmacy
                             </label>
                             <div className="text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                              {contractDetail?.pharmacySignedAt || selectedContract.pharmacySignedAt
-                                ? new Date(contractDetail?.pharmacySignedAt || selectedContract.pharmacySignedAt).toLocaleString("vi-VN")
+                              {contractDetail?.pharmacySignedAt ||
+                              selectedContract.pharmacySignedAt
+                                ? new Date(
+                                    contractDetail?.pharmacySignedAt ||
+                                      selectedContract.pharmacySignedAt
+                                  ).toLocaleString("vi-VN")
                                 : "Chưa ký"}
                             </div>
                           </div>
@@ -478,8 +590,12 @@ export default function PharmacyContracts() {
                               Ngày tạo
                             </label>
                             <div className="text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                              {contractDetail?.createdAt || selectedContract.createdAt
-                                ? new Date(contractDetail?.createdAt || selectedContract.createdAt).toLocaleString("vi-VN")
+                              {contractDetail?.createdAt ||
+                              selectedContract.createdAt
+                                ? new Date(
+                                    contractDetail?.createdAt ||
+                                      selectedContract.createdAt
+                                  ).toLocaleString("vi-VN")
                                 : "N/A"}
                             </div>
                           </div>
@@ -490,7 +606,9 @@ export default function PharmacyContracts() {
                                 Ngày cập nhật
                               </label>
                               <div className="text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                {new Date(contractDetail.updatedAt).toLocaleString("vi-VN")}
+                                {new Date(
+                                  contractDetail.updatedAt
+                                ).toLocaleString("vi-VN")}
                               </div>
                             </div>
                           )}
@@ -501,18 +619,31 @@ export default function PharmacyContracts() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 py-6 border-t border-gray-300 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
+                <div className="px-8 py-6 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-white rounded-b-3xl flex justify-end gap-3">
                   <button
                     onClick={closeDetailDialog}
-                    className="px-6 py-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition"
+                    className="px-6 py-3 rounded-xl bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-700 font-semibold shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     Đóng
                   </button>
                   {selectedContract.status === "pending" && (
                     <button
                       onClick={handleConfirmFromDetail}
-                      className="px-6 py-2.5 rounded-full bg-primary !text-white font-medium shadow-md hover:shadow-lg transition-all duration-200"
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                     >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
                       Xác nhận hợp đồng
                     </button>
                   )}
@@ -538,8 +669,12 @@ export default function PharmacyContracts() {
                 {/* Header */}
                 <div className="bg-gradient-to-r from-primary to-secondary px-8 py-6 rounded-t-3xl flex justify-between items-center">
                   <div>
-                    <h2 className="text-2xl font-bold !text-white">Xác nhận hợp đồng</h2>
-                    <p className="text-gray-100 text-sm">Mã: {selectedContract.id}</p>
+                    <h2 className="text-2xl font-bold !text-white">
+                      Xác nhận hợp đồng
+                    </h2>
+                    <p className="text-gray-100 text-sm">
+                      Mã: {selectedContract.id}
+                    </p>
                   </div>
 
                   <button
@@ -553,7 +688,6 @@ export default function PharmacyContracts() {
 
                 {/* Body */}
                 <div className="p-8 space-y-6 max-h-[65vh] overflow-auto custom-scroll">
-                  
                   {/* Info Box */}
                   <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-4">
                     <div className="flex items-start gap-3">
@@ -572,11 +706,16 @@ export default function PharmacyContracts() {
                       </svg>
 
                       <div className="text-sm text-primary">
-                        <p className="font-semibold mb-1">Lưu ý khi xác nhận:</p>
+                        <p className="font-semibold mb-1">
+                          Lưu ý khi xác nhận:
+                        </p>
                         <ul className="list-disc list-inside space-y-1 text-primary/90">
                           <li>Bạn cần kết nối MetaMask để ký hợp đồng</li>
                           <li>Giao dịch sẽ được ghi nhận trên blockchain</li>
-                          <li>Hợp đồng sẽ chuyển sang trạng thái "Đã xác nhận"</li>
+                          <li>
+                            Hợp đồng sẽ chuyển sang trạng thái &quot;Đã xác
+                            nhận&quot;
+                          </li>
                         </ul>
                       </div>
                     </div>
@@ -588,19 +727,22 @@ export default function PharmacyContracts() {
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-10 h-10 border-4 border-gray-200 rounded-full" />
                         <div className="w-10 h-10 border-4 border-[#4BADD1] rounded-full border-t-transparent animate-spin absolute" />
-                        <p className="text-sm text-gray-600 mt-12">Đang tải thông tin...</p>
+                        <p className="text-sm text-gray-600 mt-12">
+                          Đang tải thông tin...
+                        </p>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-4">
-
                       {/* Mã hợp đồng */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Mã hợp đồng
                         </label>
                         <div className="font-mono text-sm text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                          {confirmContractDetail?.id || confirmContractDetail?._id || selectedContract.id}
+                          {confirmContractDetail?.id ||
+                            confirmContractDetail?._id ||
+                            selectedContract.id}
                         </div>
                       </div>
 
@@ -610,7 +752,9 @@ export default function PharmacyContracts() {
                           Tên file
                         </label>
                         <div className="text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                          {confirmContractDetail?.contractFileName || selectedContract.contractFileName || "N/A"}
+                          {confirmContractDetail?.contractFileName ||
+                            selectedContract.contractFileName ||
+                            "N/A"}
                         </div>
                       </div>
 
@@ -620,16 +764,23 @@ export default function PharmacyContracts() {
                           File hợp đồng
                         </label>
                         <div className="text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200 break-all">
-                          {confirmContractDetail?.contractFileUrl || selectedContract.contractFileUrl ? (
+                          {confirmContractDetail?.contractFileUrl ||
+                          selectedContract.contractFileUrl ? (
                             <a
-                              href={confirmContractDetail?.contractFileUrl || selectedContract.contractFileUrl}
+                              href={
+                                confirmContractDetail?.contractFileUrl ||
+                                selectedContract.contractFileUrl
+                              }
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:underline"
                             >
-                              {confirmContractDetail?.contractFileUrl || selectedContract.contractFileUrl}
+                              {confirmContractDetail?.contractFileUrl ||
+                                selectedContract.contractFileUrl}
                             </a>
-                          ) : "N/A"}
+                          ) : (
+                            "N/A"
+                          )}
                         </div>
                       </div>
 
@@ -678,38 +829,58 @@ export default function PharmacyContracts() {
                           Ngày tạo
                         </label>
                         <div className="text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                          {confirmContractDetail?.createdAt || selectedContract.createdAt
-                            ? new Date(confirmContractDetail?.createdAt || selectedContract.createdAt).toLocaleString("vi-VN")
+                          {confirmContractDetail?.createdAt ||
+                          selectedContract.createdAt
+                            ? new Date(
+                                confirmContractDetail?.createdAt ||
+                                  selectedContract.createdAt
+                              ).toLocaleString("vi-VN")
                             : "N/A"}
                         </div>
                       </div>
-
                     </div>
                   )}
 
                   {/* Footer */}
-                  <div className="pt-6 border-t border-gray-300 bg-gray-50 rounded-b-3xl flex justify-end gap-3 mt-2">
+                  <div className="pt-6 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-white rounded-b-3xl flex justify-end gap-3 mt-2">
                     <button
                       onClick={closeConfirmDialog}
                       disabled={isConfirming}
-                      className="px-6 py-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition disabled:opacity-50"
+                      className="px-6 py-3 rounded-xl bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-700 font-semibold shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Hủy
                     </button>
 
                     <button
                       onClick={handleConfirmContract}
-                      disabled={isConfirming || loadingConfirmDetail}
-                      className="px-6 py-2.5 rounded-full bg-primary !text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
+                      disabled={isConfirming}
+                      className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-primary via-secondary to-primary hover:from-secondary hover:via-primary hover:to-secondary shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95 relative overflow-hidden group"
                     >
+                      <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></span>
                       {isConfirming ? (
                         <>
-                          <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor"
-                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                          <svg
+                            className="animate-spin h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
                           </svg>
-                          Đang xác nhận...
+                          <span className="relative z-10">
+                            Đang xác nhận...
+                          </span>
                         </>
                       ) : loadingConfirmDetail ? (
                         <>
@@ -721,11 +892,25 @@ export default function PharmacyContracts() {
                           Đang tải...
                         </>
                       ) : (
-                        "Xác nhận & Ký"
+                        <>
+                          <svg
+                            className="w-5 h-5 relative z-10"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                            />
+                          </svg>
+                          <span className="relative z-10">Xác nhận & Ký</span>
+                        </>
                       )}
                     </button>
                   </div>
-
                 </div>
               </div>
             </div>

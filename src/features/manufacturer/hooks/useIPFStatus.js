@@ -1,5 +1,6 @@
 /* eslint-disable no-undef */
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import api from "../../utils/api";
 
@@ -131,5 +132,23 @@ export const useIPFStatus = () => {
       text: status || "Không rõ",
       cls: "bg-slate-50 text-slate-700 border-slate-200",
     };
+  };
+
+  return {
+    items,
+    loading,
+    loadingProgress,
+    loadStatus,
+    getStatusBadge,
+    formatDate,
+    pageItems,
+    pageSize,
+    total,
+    totalPages,
+    currentPage,
+    start,
+    navigate,
+    setPageSize,
+    setPage,
   };
 };

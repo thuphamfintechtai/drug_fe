@@ -3,8 +3,7 @@ import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckLoader from "../../shared/components/TruckLoader";
 import { useNFTTracking } from "../hooks/useNFTTracking";
 import { navigationItems } from "../constants/constant";
-
-export default function PharmacyNFTTracking() {
+export default function AdminNftTracking() {
   const {
     nftId,
     setNftId,
@@ -154,9 +153,9 @@ export default function PharmacyNFTTracking() {
                         </div>
                         <div className="text-base font-semibold text-slate-800 font-mono flex-1">
                           {data?.nft?.tokenId
-                            ? short(String(data.nft.tokenId))
+                            ? String(data.nft.tokenId)
                             : nftId
-                            ? short(String(nftId))
+                            ? String(nftId)
                             : "N/A"}
                         </div>
                       </div>
@@ -165,8 +164,9 @@ export default function PharmacyNFTTracking() {
                           Nhà sản xuất
                         </div>
                         <div className="text-base font-semibold text-slate-800 flex-1">
-                          {data?.manufacturerInvoice?.fromManufacturer
-                            ?.fullName ||
+                          {data?.supplyChain?.manufacturer?.name ||
+                            data?.manufacturerInvoice?.fromManufacturer
+                              ?.fullName ||
                             data?.nft?.proofOfProduction?.manufacturer
                               ?.fullName ||
                             data?.nft?.owner?.fullName ||
@@ -227,32 +227,35 @@ export default function PharmacyNFTTracking() {
                           Nhà phân phối
                         </div>
                         <div className="text-base font-semibold text-slate-800 flex-1">
-                          {(() => {
-                            const commercialDistributor =
-                              data?.commercialInvoice?.fromDistributor;
-                            if (commercialDistributor) {
-                              if (typeof commercialDistributor === "object") {
-                                return (
-                                  commercialDistributor.fullName ||
-                                  commercialDistributor.name ||
-                                  "N/A"
-                                );
+                          {data?.supplyChain?.distributor?.name ||
+                            (() => {
+                              const commercialDistributor =
+                                data?.commercialInvoice?.fromDistributor;
+                              if (commercialDistributor) {
+                                if (typeof commercialDistributor === "object") {
+                                  return (
+                                    commercialDistributor.fullName ||
+                                    commercialDistributor.name ||
+                                    "N/A"
+                                  );
+                                }
                               }
-                            }
-                            const manufacturerDistributor =
-                              data?.manufacturerInvoice?.toDistributor;
-                            if (manufacturerDistributor) {
-                              if (typeof manufacturerDistributor === "object") {
-                                return (
-                                  manufacturerDistributor.fullName ||
-                                  manufacturerDistributor.name ||
-                                  "N/A"
-                                );
+                              const manufacturerDistributor =
+                                data?.manufacturerInvoice?.toDistributor;
+                              if (manufacturerDistributor) {
+                                if (
+                                  typeof manufacturerDistributor === "object"
+                                ) {
+                                  return (
+                                    manufacturerDistributor.fullName ||
+                                    manufacturerDistributor.name ||
+                                    "N/A"
+                                  );
+                                }
+                                return "N/A";
                               }
                               return "N/A";
-                            }
-                            return "N/A";
-                          })()}
+                            })()}
                         </div>
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center py-4">
@@ -260,8 +263,27 @@ export default function PharmacyNFTTracking() {
                           Nhà thuốc
                         </div>
                         <div className="text-base font-semibold text-slate-800 flex-1">
-                          {data?.commercialInvoice?.toPharmacy?.fullName ||
-                            "N/A"}
+                          {(() => {
+                            // Lấy từ supplyChain.pharmacies (mảng, lấy phần tử cuối cùng vì đó là nhà thuốc hiện tại)
+                            if (
+                              data?.supplyChain?.pharmacies &&
+                              Array.isArray(data.supplyChain.pharmacies) &&
+                              data.supplyChain.pharmacies.length > 0
+                            ) {
+                              const lastPharmacy =
+                                data.supplyChain.pharmacies[
+                                  data.supplyChain.pharmacies.length - 1
+                                ];
+                              return lastPharmacy.name || "N/A";
+                            }
+                            // Fallback về các đường dẫn cũ
+                            return (
+                              data?.commercialInvoice?.toPharmacy?.fullName ||
+                              data?.nft?.currentOwner?.fullName ||
+                              data?.nft?.currentOwner?.name ||
+                              "N/A"
+                            );
+                          })()}
                         </div>
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center py-4">
@@ -280,9 +302,26 @@ export default function PharmacyNFTTracking() {
                           Chủ sở hữu hiện tại
                         </div>
                         <div className="text-base font-semibold text-slate-800 flex-1">
-                          {data?.nft?.owner?.fullName ||
-                            data?.nft?.owner?.username ||
-                            "N/A"}
+                          {(() => {
+                            const owner = data?.nft?.currentOwner;
+                            if (!owner) {
+                              return (
+                                data?.nft?.owner?.fullName ||
+                                data?.nft?.owner?.username ||
+                                "N/A"
+                              );
+                            }
+                            if (typeof owner === "object" && owner !== null) {
+                              return (
+                                owner.fullName ||
+                                owner.name ||
+                                owner.username ||
+                                owner.email ||
+                                "N/A"
+                              );
+                            }
+                            return owner || "N/A";
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -310,14 +349,6 @@ export default function PharmacyNFTTracking() {
                           <div className="text-sm font-semibold text-slate-800 font-mono break-all flex-1">
                             {data.nft.contractAddress}
                           </div>
-                          <div className="text-sm font-medium text-slate-800">
-                            {data.supplyChain.manufacturer.name || "N/A"}
-                          </div>
-                          {data.supplyChain.manufacturer.email && (
-                            <div className="text-xs text-slate-600 mt-1">
-                              {data.supplyChain.manufacturer.email}
-                            </div>
-                          )}
                         </div>
                       )}
                       {data?.nft?.chainTxHash && (
@@ -335,14 +366,6 @@ export default function PharmacyNFTTracking() {
                               {data.nft.chainTxHash}
                             </a>
                           </div>
-                          <div className="text-sm font-medium text-slate-800">
-                            {data.supplyChain.distributor.name || "N/A"}
-                          </div>
-                          {data.supplyChain.distributor.email && (
-                            <div className="text-xs text-slate-600 mt-1">
-                              {data.supplyChain.distributor.email}
-                            </div>
-                          )}
                         </div>
                       )}
                       {data?.nft?.ipfsUrl && (

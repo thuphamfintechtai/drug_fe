@@ -147,51 +147,6 @@ export default function AdminDashboard() {
 
           <div className="space-y-8">
             {/* Alerts Card */}
-            {alertsStats && (
-              <motion.div
-                variants={fadeUp}
-                initial="hidden"
-                animate="show"
-                className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200 shadow-sm p-6"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-amber-800 mb-2">
-                      Cảnh báo hệ thống
-                    </h3>
-                    <p className="text-amber-700 text-sm">
-                      Tổng số cảnh báo: {alertsStats.alerts?.totalAlerts || 0}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-amber-600">
-                        {alertsStats.alerts?.expired || 0}
-                      </div>
-                      <div className="text-xs text-amber-700">Hết hạn</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-orange-600">
-                        {alertsStats.alerts?.expiringSoon || 0}
-                      </div>
-                      <div className="text-xs text-amber-700">Sắp hết hạn</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-red-600">
-                        {alertsStats.alerts?.recalled || 0}
-                      </div>
-                      <div className="text-xs text-amber-700">Thu hồi</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {alertsStats.alerts?.pendingActions || 0}
-                      </div>
-                      <div className="text-xs text-amber-700">Chờ xử lý</div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
 
             {/* Charts Row 1: User Role and Registration Status Pie Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

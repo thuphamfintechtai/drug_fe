@@ -57,11 +57,7 @@ export default function Distributions() {
       item.drug || item.proofOfProduction?.drug || item.nftInfo?.drug;
     const drugName = drug?.name || drug?.tradeName || item.drugName || "";
     return (
-      item.invoiceNumber ||
-      item.code ||
-      drugName ||
-      item.verificationCode ||
-      ""
+      item.invoiceNumber || item.code || drugName || item.verificationCode || ""
     );
   }, []);
 
@@ -189,7 +185,7 @@ export default function Distributions() {
                   "Xem danh sách các đơn hàng đã được gửi từ manufacturer",
               },
               step2: {
-                title: "Xác nhận nhận hàng",
+                title: "Xác nhận hàng",
                 description:
                   "Nhập thông tin người nhận, địa chỉ giao hàng và số lượng thực nhận",
               },
@@ -282,17 +278,23 @@ export default function Distributions() {
                     {filteredData.map((record, index) => {
                       const status = getStatusDisplay(record);
                       const recordId = record._id || record.id;
-                      const currentStatus = (record?.status || "").toLowerCase();
-                      const canConfirm = (currentStatus === "sent" || currentStatus === "pending") && !record?.isConfirmed;
-                      const isConfirmed = currentStatus === "confirmed" || record?.isConfirmed;
-                      
+                      const currentStatus = (
+                        record?.status || ""
+                      ).toLowerCase();
+                      const canConfirm =
+                        (currentStatus === "sent" ||
+                          currentStatus === "pending") &&
+                        !record?.isConfirmed;
+                      const isConfirmed =
+                        currentStatus === "confirmed" || record?.isConfirmed;
+
                       return (
                         <tr
                           key={record._id || index}
                           className="hover:bg-gray-50 transition-colors cursor-pointer"
                           onClick={(e) => {
                             // Không navigate nếu click vào button
-                            if (e.target.closest('button')) {
+                            if (e.target.closest("button")) {
                               return;
                             }
                             navigate(`/distributor/distributions/${recordId}`);
@@ -318,11 +320,13 @@ export default function Distributions() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-slate-700 text-sm">
-                            {getDateDisplay(record.createdAt || record.sentDate)}
+                            {getDateDisplay(
+                              record.createdAt || record.sentDate
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <span
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                              className={`w-25 flex justify-center text-center items-center px-3 py-1 rounded-full text-xs font-semibold ${
                                 status.color === "green"
                                   ? "bg-green-100 text-green-700 border border-green-200"
                                   : status.color === "blue"
@@ -347,12 +351,12 @@ export default function Distributions() {
                                     e.stopPropagation();
                                     onConfirm && onConfirm(record);
                                   }}
-                                  className="px-4 py-2 rounded-full font-semibold transition-all duration-200 border-2 border-[#3db6d9] bg-white !text-[#3db6d9] hover:bg-[#3db6d9] hover:!text-white hover:shadow-md hover:shadow-[#3db6d9]/40"
+                                  className=" w-35 px-6 py-2 rounded-full font-semibold transition-all duration-200 border-2 border-[#3db6d9] bg-white !text-[#3db6d9] hover:bg-[#3db6d9] hover:!text-white hover:shadow-md hover:shadow-[#3db6d9]/40"
                                 >
-                                  Xác nhận nhận
+                                  Xác nhận
                                 </button>
                               ) : isConfirmed ? (
-                                <span className="px-4 py-2 rounded-full font-semibold border-2 border-gray-300 text-gray-500 bg-gray-50">
+                                <span className="w-35 px-4 py-2 rounded-full font-semibold border-2 border-gray-300 text-gray-500 bg-gray-50">
                                   Đã nhận
                                 </span>
                               ) : null}
@@ -391,7 +395,7 @@ export default function Distributions() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold !text-white">
-                    Xác nhận nhận hàng
+                    Xác nhận hàng
                   </h2>
                   <p className="text-cyan-100 text-sm">
                     Đơn: {getInvoiceDisplay(selectedRecord)}
@@ -734,7 +738,7 @@ export default function Distributions() {
                 onClick={handleSubmitConfirm}
                 disabled={isConfirming}
                 buttonState={isConfirming ? "uploading" : "idle"}
-                defaultText="Xác nhận nhận hàng"
+                defaultText="Xác nhận hàng"
                 uploadingText="Đang xử lý..."
                 successText="Hoàn thành"
                 animationMode="infinite"

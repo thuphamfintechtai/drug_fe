@@ -77,22 +77,6 @@ export default function TransferManagement() {
           <CardUI
             title="Chuyển giao cho nhà phân phối"
             subtitle="Chọn lô sản xuất và distributor để chuyển quyền sở hữu NFT - Hệ thống tự động lưu sau khi chuyển"
-            icon={
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-6 h-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 7h18M5 10h14M4 14h16M6 18h12"
-                />
-              </svg>
-            }
             content={{
               title: "Quy trình chuyển giao (Tự động)",
               step1: {
@@ -192,7 +176,7 @@ export default function TransferManagement() {
                           </td>
                           <td className="px-6 py-4">
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 w-24 justify-center rounded-full text-xs font-semibold border ${statusInfo.className}`}
+                              className={`inline-flex items-center px-3 py-1 whitespace-nowrap rounded-full text-xs font-semibold border ${statusInfo.className}`}
                             >
                               {statusInfo.label}
                             </span>
@@ -349,12 +333,6 @@ export default function TransferManagement() {
                         </div>
                       </>
                     )}
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">IPFS Hash:</span>
-                      <span className="font-mono text-xs text-slate-700 break-all">
-                        {selectedProduction.ipfsHash?.slice(0, 20)}...
-                      </span>
-                    </div>
                   </div>
                 </div>
 
@@ -419,18 +397,6 @@ export default function TransferManagement() {
                           <span className="text-slate-600">Mã số thuế:</span>{" "}
                           <span className="font-medium">
                             {selectedDistributor.taxCode || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-600">Quốc gia:</span>{" "}
-                          <span className="font-medium">
-                            {selectedDistributor.country || "N/A"}
-                          </span>
-                        </div>
-                        <div className="md:col-span-2">
-                          <span className="text-slate-600">Địa chỉ:</span>{" "}
-                          <span className="font-medium">
-                            {selectedDistributor.address || "N/A"}
                           </span>
                         </div>
                         <div className="md:col-span-2">

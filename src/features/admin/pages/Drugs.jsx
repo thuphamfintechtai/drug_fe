@@ -85,7 +85,7 @@ export default function AdminDrugs() {
                     handleSearch();
                   }
                 }}
-                placeholder="Tìm theo tên thương mại, tên hoạt chất, mã ATC..."
+                placeholder="Tìm theo tên hoạt chất, mã ATC..."
                 className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
               />
               {searchInput && (
