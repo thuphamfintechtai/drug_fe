@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import api from "../../utils/api";
+import { toast } from "sonner";
 
 export default function usePasswordResetRequest() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -145,14 +146,6 @@ export default function usePasswordResetRequest() {
   };
 
   const handleApprove = async (resetRequestId) => {
-    if (
-      !confirm(
-        "Bạn có chắc chắn muốn duyệt yêu cầu này? Mật khẩu mới sẽ được gửi đến email người dùng."
-      )
-    ) {
-      return;
-    }
-
     setActionLoading(true);
     setError("");
     try {
@@ -160,14 +153,22 @@ export default function usePasswordResetRequest() {
         `/auth/password-reset-requests/${resetRequestId}/approve`
       );
       if (response.data.success) {
-        alert(
-          "Duyệt yêu cầu thành công! Mật khẩu mới đã được gửi đến email người dùng."
+        toast.success(
+          "Duyệt yêu cầu thành công! Mật khẩu mới đã được gửi đến email người dùng.",
+          {
+            duration: 5000,
+          }
         );
         setShowDetailModal(false);
-        load();
+        window.location.reload();
       }
     } catch (e) {
-      alert(e?.response?.data?.message || "Không thể duyệt yêu cầu");
+      toast.error(
+        e?.response?.data?.message || "Không thể duyệt yêu cầu",
+        {
+          duration: 5000,
+        }
+      );
     } finally {
       setActionLoading(false);
     }

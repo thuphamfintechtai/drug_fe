@@ -515,7 +515,7 @@ export default function PasswordResetRequests() {
                   <div className="flex gap-3 mt-6">
                     <button
                       onClick={() => setShowApproveModal(false)}
-                      className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition"
+                      className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition "
                     >
                       Hủy
                     </button>
@@ -525,7 +525,7 @@ export default function PasswordResetRequests() {
                         setShowApproveModal(false);
                       }}
                       disabled={actionLoading}
-                      className="flex-1 px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-lg hover:shadow-xl disabled:opacity-60 transition font-semibold"
+                      className="flex-1 px-4 py-2.5 rounded-xl !text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-lg hover:shadow-xl disabled:opacity-60 transition font-semibold"
                     >
                       {actionLoading ? "Đang xử lý..." : "Xác nhận duyệt"}
                     </button>
