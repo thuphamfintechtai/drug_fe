@@ -1022,7 +1022,7 @@ export default function UserHome() {
                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        Nhập mã lô, mã serial hoặc NFT ID
+                        Quét mã QR, hoặc upload ảnh QR để tra cứu thông tin thuốc
                       </p>
 
                       <div className="space-y-3">
