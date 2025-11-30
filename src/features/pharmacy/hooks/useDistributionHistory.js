@@ -219,8 +219,32 @@ export const useDistributionHistory = () => {
       expired: "Hết hạn",
       sent: "Đã gửi",
       paid: "Đã thanh toán",
+      verified: "Đã xác minh",
+      verifying: "Đang xác minh",
+      cancelled: "Đã hủy",
+      rejected: "Đã từ chối",
+      processing: "Đang xử lý",
+      completed: "Hoàn thành",
+      delivered: "Đã giao hàng",
+      shipping: "Đang vận chuyển",
+      approved: "Đã phê duyệt",
+      waiting: "Đang chờ",
+      active: "Đang hoạt động",
+      inactive: "Không hoạt động",
     };
-    return statusMap[status] || status;
+    if (statusMap[status]) {
+      return statusMap[status];
+    }
+    if (typeof status === "string" && status.trim()) {
+      const formatted = status
+        .split("_")
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        )
+        .join(" ");
+      return formatted;
+    }
+    return "Chưa xác định";
   };
 
   const extractName = (entity, fallback = "Không có") => {

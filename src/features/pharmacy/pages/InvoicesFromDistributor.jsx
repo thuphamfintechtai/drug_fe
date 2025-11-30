@@ -51,29 +51,60 @@ export default function InvoicesFromDistributor() {
       ) : (
         <div className="space-y-6">
           {/* Banner */}
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 mb-6">
-            <h1 className="text-xl font-semibold text-[#007b91]">
-              Đơn hàng từ nhà phân phối
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Xem và xác nhận nhận hàng từ distributor
-            </p>
-          </div>
+          <motion.section
+            className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-r from-primary to-secondary"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Decorative background elements */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -mr-32 -mt-32"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full -ml-24 -mb-24"></div>
+            </div>
+
+            <div className="relative px-6 py-8 md:px-10 md:py-10 lg:py-12 flex flex-col items-center text-center">
+              <div className="mb-3 flex items-center justify-center">
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-8 h-8 md:w-10 md:h-10 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight drop-shadow-sm mb-3 !text-white">
+                Đơn hàng từ nhà phân phối
+              </h1>
+              <p className="text-base md:text-lg !text-white/90 max-w-2xl leading-relaxed">
+                Xem và xác nhận nhận hàng từ distributor
+              </p>
+            </div>
+          </motion.section>
 
           {/* Filters */}
           <motion.div
-            className="rounded-2xl bg-white border border-card-primary shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-5"
             variants={fadeUp}
             initial="hidden"
             animate="show"
+            className="flex flex-col md:flex-row gap-4 md:items-end mb-5"
           >
-            <div className="flex flex-col md:flex-row gap-3 md:items-end">
-              <div className="flex-1">
-                <label className="block text-sm text-[#003544]/70 mb-1">
-                  Tìm kiếm
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+            <div className="flex-1">
+              <label className="block text-sm text-slate-600 mb-2 font-medium">
+                Tìm kiếm
+              </label>
+              <div className="relative flex items-stretch gap-0">
+                <div className="relative flex-1">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="w-5 h-5"
@@ -97,37 +128,35 @@ export default function InvoicesFromDistributor() {
                       updateFilter({ search: localSearch, page: 1 })
                     }
                     placeholder="Tìm theo số đơn, ghi chú..."
-                    className="w-full h-12 pl-11 pr-40 rounded-full border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+                    className="w-full h-14 pl-12 pr-4 rounded-l-xl border-2 border-r-0 border-slate-300 bg-white text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition text-base"
                   />
-                  <button
-                    onClick={() =>
-                      updateFilter({ search: localSearch, page: 1 })
-                    }
-                    className="absolute right-1 top-1 bottom-1 px-6 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition"
-                  >
-                    Tìm Kiếm
-                  </button>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm text-[#003544]/70 mb-1">
-                  Trạng thái
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) =>
-                    updateFilter({ status: e.target.value, page: 1 })
-                  }
-                  className="h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+                <button
+                  onClick={() => updateFilter({ search: localSearch, page: 1 })}
+                  className="h-14 px-6 rounded-r-xl border-2 border-l-0 border-slate-300 !text-white bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition font-semibold whitespace-nowrap"
                 >
-                  <option value="">Tất cả</option>
-                  <option value="pending">Đang chờ</option>
-                  <option value="sent">Đã gửi</option>
-                  <option value="received">Đã nhận</option>
-                  <option value="confirmed">Đã xác nhận</option>
-                  <option value="paid">Đã thanh toán</option>
-                </select>
+                  Tìm kiếm
+                </button>
               </div>
+            </div>
+            <div>
+              <label className="block text-sm text-slate-600 mb-2 font-medium">
+                Trạng thái
+              </label>
+              <select
+                value={status}
+                onChange={(e) =>
+                  updateFilter({ status: e.target.value, page: 1 })
+                }
+                className="h-14 rounded-xl border-2 border-slate-300 bg-white text-slate-700 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition font-medium min-w-[180px]"
+              >
+                <option value="">Tất cả</option>
+                <option value="pending">Đang chờ</option>
+                <option value="sent">Đã gửi</option>
+                <option value="received">Đã nhận</option>
+                <option value="confirmed">Đã xác nhận</option>
+                <option value="paid">Đã thanh toán</option>
+              </select>
             </div>
           </motion.div>
 
@@ -242,7 +271,9 @@ export default function InvoicesFromDistributor() {
                                     .toISOString()
                                     .split("T")[0],
                                   receivedQuantity:
-                                    sentQuantity > 0 ? sentQuantity.toString() : "",
+                                    sentQuantity > 0
+                                      ? sentQuantity.toString()
+                                      : "",
                                 });
                                 setConfirmFormErrors({});
                                 setShowConfirmDialog(true);

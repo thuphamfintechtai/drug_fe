@@ -46,55 +46,76 @@ export default function AdminNftTracking() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="relative px-6 py-8 md:px-10 md:py-12 !text-white">
-              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm mb-2">
+            {/* Decorative background elements */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -mr-32 -mt-32"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full -ml-24 -mb-24"></div>
+            </div>
+
+            <div className="relative px-6 py-8 md:px-10 md:py-10 lg:py-12 flex flex-col items-center text-center">
+              <div className="mb-3 flex items-center justify-center">
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-8 h-8 md:w-10 md:h-10 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight drop-shadow-sm mb-3 !text-white">
                 Tra cứu NFT
               </h1>
-              <p className="!text-white/90">
+              <p className="text-base md:text-lg !text-white/90 max-w-2xl leading-relaxed">
                 Theo dõi hành trình thuốc qua NFT ID
               </p>
             </div>
           </motion.section>
 
           {/* Search */}
-          <motion.div
-            className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6"
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-          >
-            <div className="max-w-3xl mx-auto">
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-5 h-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
-                    />
-                  </svg>
-                </span>
+          <motion.div variants={fadeUp} initial="hidden" animate="show">
+            <div className="w-full">
+              <div className="relative flex items-stretch gap-0">
+                <div className="relative flex-1">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
+                      />
+                    </svg>
+                  </span>
 
-                <input
-                  type="text"
-                  value={nftId}
-                  onChange={(e) => setNftId(e.target.value)}
-                  placeholder="Nhập NFT ID để tra cứu..."
-                  className="w-full h-14 pl-12 pr-36 rounded-xl border-2 border-slate-300 bg-white text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition text-base"
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                />
+                  <input
+                    type="text"
+                    value={nftId}
+                    onChange={(e) => setNftId(e.target.value)}
+                    placeholder="Nhập NFT ID để tra cứu..."
+                    className="w-full h-14 pl-12 pr-4 rounded-l-xl border-2 border-r-0 border-slate-300 bg-white text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition text-base"
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  />
+                </div>
 
                 <button
                   onClick={handleSearch}
                   disabled={loading || !nftId.trim()}
-                  className="absolute right-2 top-2 bottom-2 px-6 rounded-xl !text-white bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-14 px-6 rounded-r-xl border-2 border-l-0 border-slate-300 !text-white bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                 >
                   {loading ? "Đang tra cứu..." : "Tìm kiếm"}
                 </button>
