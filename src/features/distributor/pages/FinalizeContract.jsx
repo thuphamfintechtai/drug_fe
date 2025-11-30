@@ -243,33 +243,37 @@ export default function FinalizeContract() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="relative px-6 py-8 md:px-10 md:py-12 !text-white">
-            <div className="flex items-center gap-4 mb-3">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+          {/* Decorative background elements */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -mr-32 -mt-32"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full -ml-24 -mb-24"></div>
+          </div>
+
+          <div className="relative px-6 py-8 md:px-10 md:py-10 lg:py-12 flex flex-col items-center text-center">
+            <div className="mb-3 flex items-center justify-center">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="w-8 h-8"
+                  className="w-8 h-8 md:w-10 md:h-10 text-white"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  strokeWidth={2}
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
                     d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
                   />
                 </svg>
               </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm mb-2">
-                  Ký Hợp đồng & Mint NFT
-                </h1>
-                <p className="!text-white/90">
-                  Xác nhận lần cuối và mint NFT hợp đồng trên blockchain
-                </p>
-              </div>
             </div>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight drop-shadow-sm mb-3 !text-white">
+              Ký Hợp đồng & Mint NFT
+            </h1>
+            <p className="text-base md:text-lg !text-white/90 max-w-2xl leading-relaxed">
+              Xác nhận lần cuối và mint NFT hợp đồng trên blockchain
+            </p>
           </div>
         </motion.section>
 
@@ -277,14 +281,14 @@ export default function FinalizeContract() {
           variants={fadeUp}
           initial="hidden"
           animate="show"
-          className="bg-white rounded-2xl border border-slate-200 shadow-lg p-8 w-full"
+          className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 w-full"
         >
           {!canFinalize && (
-            <div className="mb-6 p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-yellow-100 rounded-lg">
+            <div className="mb-6 p-5 bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl">
+              <div className="flex items-start gap-4">
+                <div className="p-2.5 bg-yellow-100 rounded-xl shrink-0">
                   <svg
-                    className="w-5 h-5 text-yellow-600"
+                    className="w-6 h-6 text-yellow-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -298,10 +302,10 @@ export default function FinalizeContract() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-yellow-900 mb-1">
+                  <h4 className="font-bold text-yellow-900 mb-2 text-lg">
                     Không thể ký hợp đồng
                   </h4>
-                  <p className="text-sm text-yellow-800">
+                  <p className="text-sm text-yellow-800 leading-relaxed">
                     {contract.status === "pending"
                       ? "Hợp đồng đang chờ Pharmacy xác nhận"
                       : contract.status === "signed"
@@ -314,9 +318,9 @@ export default function FinalizeContract() {
           )}
 
           {/* Contract Info Card */}
-          <div className="bg-gradient-to-br from-slate-50 to-white rounded-xl border-2 border-slate-200 overflow-hidden mb-6">
+          <div className="bg-gradient-to-br from-slate-50 to-white rounded-xl border-2 border-slate-200 overflow-hidden mb-6 shadow-sm">
             <div className="bg-gradient-to-r from-primary to-secondary px-6 py-4 border-b border-primary/20">
-              <h2 className="text-lg font-semibold !text-white flex items-center gap-2">
+              <h2 className="text-lg font-bold !text-white flex items-center gap-2">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -333,28 +337,28 @@ export default function FinalizeContract() {
                 Thông tin Hợp đồng
               </h2>
             </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center py-3 border-b border-slate-100">
-                  <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+            <div className="p-6 md:p-8">
+              <div className="space-y-0">
+                <div className="flex flex-col sm:flex-row sm:items-center py-4 border-b border-slate-200">
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                     Mã hợp đồng
                   </div>
-                  <div className="text-base text-slate-800 font-mono flex-1">
+                  <div className="text-base text-slate-800 font-mono flex-1 break-all">
                     {contract._id}
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center py-3 border-b border-slate-100">
-                  <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                <div className="flex flex-col sm:flex-row sm:items-center py-4 border-b border-slate-200">
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                     Tên file
                   </div>
-                  <div className="text-base text-slate-800 flex-1">
+                  <div className="text-base text-slate-800 flex-1 break-words">
                     {contract.contractFileName || "N/A"}
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center py-3 border-b border-slate-100">
-                  <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                <div className="flex flex-col sm:flex-row sm:items-center py-4 border-b border-slate-200">
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                     Nhà thuốc
                   </div>
                   <div className="text-base text-slate-800 flex-1">
@@ -362,13 +366,13 @@ export default function FinalizeContract() {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center py-3 border-b border-slate-100">
-                  <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                <div className="flex flex-col sm:flex-row sm:items-center py-4 border-b border-slate-200">
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                     Trạng thái
                   </div>
                   <div className="flex-1">
                     <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                      className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${
                         contractStatusColor(contract.status) === "green"
                           ? "bg-green-100 text-green-700 border border-green-200"
                           : contractStatusColor(contract.status) === "blue"
@@ -383,8 +387,8 @@ export default function FinalizeContract() {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-start py-3 border-b border-slate-100">
-                  <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0 sm:pt-1">
+                <div className="flex flex-col sm:flex-row sm:items-start py-4 border-b border-slate-200">
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider w-full sm:w-48 shrink-0 mb-1 sm:mb-0 sm:pt-1">
                     Wallet Distributor
                   </div>
                   <div className="text-sm text-slate-800 font-mono break-all flex-1">
@@ -392,8 +396,8 @@ export default function FinalizeContract() {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-start py-3 border-b border-slate-100">
-                  <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0 sm:pt-1">
+                <div className="flex flex-col sm:flex-row sm:items-start py-4 border-b border-slate-200">
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider w-full sm:w-48 shrink-0 mb-1 sm:mb-0 sm:pt-1">
                     Wallet Pharmacy
                   </div>
                   <div className="text-sm text-slate-800 font-mono break-all flex-1">
@@ -402,8 +406,8 @@ export default function FinalizeContract() {
                 </div>
 
                 {contract.pharmacySignedAt && (
-                  <div className="flex flex-col sm:flex-row sm:items-center py-3 border-b border-slate-100">
-                    <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center py-4 border-b border-slate-200">
+                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Pharmacy đã ký lúc
                     </div>
                     <div className="text-base text-slate-800 flex-1">
@@ -415,12 +419,12 @@ export default function FinalizeContract() {
                 )}
 
                 {contract.tokenId && (
-                  <div className="flex flex-col sm:flex-row sm:items-center py-3 border-b border-slate-100">
-                    <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center py-4 border-b border-slate-200">
+                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Token ID
                     </div>
                     <div className="flex-1">
-                      <span className="inline-flex items-center px-3 py-1.5 rounded-lg font-mono font-bold text-green-700 bg-green-50 border border-green-200">
+                      <span className="inline-flex items-center px-4 py-2 rounded-lg font-mono font-bold text-green-700 bg-green-50 border border-green-200 shadow-sm">
                         #{contract.tokenId}
                       </span>
                     </div>
@@ -428,8 +432,8 @@ export default function FinalizeContract() {
                 )}
 
                 {contract.blockchainTxHash && (
-                  <div className="flex flex-col sm:flex-row sm:items-start py-3 border-b border-slate-100">
-                    <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0 sm:pt-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start py-4 border-b border-slate-200">
+                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider w-full sm:w-48 shrink-0 mb-1 sm:mb-0 sm:pt-1">
                       Transaction Hash
                     </div>
                     <div className="text-sm text-slate-800 font-mono break-all flex-1">
@@ -437,7 +441,7 @@ export default function FinalizeContract() {
                         href={`https://sepolia.etherscan.io/tx/${contract.blockchainTxHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary hover:text-secondary hover:underline"
+                        className="text-primary hover:text-secondary hover:underline transition-colors"
                       >
                         {contract.blockchainTxHash}
                       </a>
@@ -446,8 +450,8 @@ export default function FinalizeContract() {
                 )}
 
                 {contract.createdAt && (
-                  <div className="flex flex-col sm:flex-row sm:items-center py-3">
-                    <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Ngày tạo
                     </div>
                     <div className="text-sm text-slate-800 flex-1">
@@ -544,11 +548,11 @@ export default function FinalizeContract() {
 
           {/* Info Box */}
           {canFinalize && (
-            <div className="bg-gradient-to-r from-emerald-50 to-cyan-50 border-2 border-emerald-200 rounded-xl p-5 mb-6">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-emerald-500 rounded-lg flex-shrink-0">
+            <div className="bg-gradient-to-br from-emerald-50 via-green-50 to-cyan-50 border-2 border-emerald-200 rounded-xl p-5 md:p-6 mb-6 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl flex-shrink-0">
                   <svg
-                    className="w-5 h-5 text-white"
+                    className="w-6 h-6 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -562,7 +566,7 @@ export default function FinalizeContract() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-emerald-900 mb-2 text-lg">
+                  <h4 className="font-bold text-emerald-900 mb-2 text-lg">
                     Sẵn sàng ký hợp đồng
                   </h4>
                   <p className="text-sm text-emerald-800 leading-relaxed">
@@ -575,11 +579,11 @@ export default function FinalizeContract() {
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-4 pt-6 border-t border-slate-200">
+          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-200">
             <button
               type="button"
               onClick={() => navigate("/distributor/contracts")}
-              className="flex-1 px-6 py-3.5 rounded-xl bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-700 font-semibold shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full sm:flex-1 px-6 py-3 rounded-xl bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-700 font-semibold shadow-sm hover:shadow-md transition-all duration-200"
             >
               Quay lại
             </button>
@@ -588,7 +592,7 @@ export default function FinalizeContract() {
                 type="button"
                 onClick={handleFinalize}
                 disabled={loading}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-white bg-gradient-to-r from-primary via-secondary to-primary hover:from-secondary hover:via-primary hover:to-secondary shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+                className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></span>
                 {loading ? (
@@ -615,9 +619,9 @@ export default function FinalizeContract() {
                     <span className="relative z-10">Đang xử lý...</span>
                   </>
                 ) : (
-                  <span className="flex items-center gap-2 relative z-10 !text-white">
+                  <>
                     <svg
-                      className="w-5 h-5"
+                      className="w-5 h-5 relative z-10"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -629,8 +633,8 @@ export default function FinalizeContract() {
                         d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
                       />
                     </svg>
-                    <span>Ký & Mint NFT</span>
-                  </span>
+                    <span className="relative z-10">Ký & Mint NFT</span>
+                  </>
                 )}
               </button>
             )}

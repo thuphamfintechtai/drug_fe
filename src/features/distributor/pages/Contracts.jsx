@@ -120,6 +120,27 @@ export default function Contracts() {
             initial="hidden"
             animate="show"
           >
+            <style>{`
+              .scrollbar-thin {
+                scrollbar-width: thin;
+                scrollbar-color: #cbd5e1 #f1f5f9;
+              }
+              .scrollbar-thin::-webkit-scrollbar {
+                height: 8px;
+                width: 8px;
+              }
+              .scrollbar-thin::-webkit-scrollbar-track {
+                background: #f1f5f9;
+                border-radius: 4px;
+              }
+              .scrollbar-thin::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 4px;
+              }
+              .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+              }
+            `}</style>
             <div className="flex justify-between items-center px-6 py-4 bg-gray-50 border-b border-gray-100">
               <h2 className="text-xl font-bold text-slate-800">
                 Danh sách hợp đồng
@@ -185,49 +206,54 @@ export default function Contracts() {
                 )}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead className="bg-gray-50 border-b border-gray-100">
-                    <tr>
-                      {columns.map((col, index) => (
-                        <th
-                          key={index}
-                          className="px-6 py-4 text-left text-sm font-semibold text-gray-700"
-                          style={{
-                            textAlign: col.align || "left",
-                            width: col.width || "auto",
-                          }}
-                        >
-                          {col.title}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {filteredContracts.map((record, rowIndex) => (
-                      <tr
-                        key={record._id || rowIndex}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        {columns.map((col, colIndex) => (
-                          <td
-                            key={colIndex}
-                            className="px-6 py-4"
-                            style={{ textAlign: col.align || "left" }}
+              <div className="w-full overflow-x-auto scrollbar-thin">
+                <div className="inline-block min-w-full">
+                  <table
+                    className="w-full border-collapse"
+                    style={{ minWidth: "1000px" }}
+                  >
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        {columns.map((col, index) => (
+                          <th
+                            key={index}
+                            className="px-6 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                            style={{
+                              textAlign: col.align || "left",
+                              width: col.width || "auto",
+                            }}
                           >
-                            {col.render
-                              ? col.render(
-                                  record[col.dataIndex],
-                                  record,
-                                  rowIndex
-                                )
-                              : record[col.dataIndex] || "N/A"}
-                          </td>
+                            {col.title}
+                          </th>
                         ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-100">
+                      {filteredContracts.map((record, rowIndex) => (
+                        <tr
+                          key={record._id || rowIndex}
+                          className="hover:bg-slate-50 transition-colors duration-150"
+                        >
+                          {columns.map((col, colIndex) => (
+                            <td
+                              key={colIndex}
+                              className="px-6 py-4 whitespace-nowrap"
+                              style={{ textAlign: col.align || "left" }}
+                            >
+                              {col.render
+                                ? col.render(
+                                    record[col.dataIndex],
+                                    record,
+                                    rowIndex
+                                  )
+                                : record[col.dataIndex] || "N/A"}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </motion.div>

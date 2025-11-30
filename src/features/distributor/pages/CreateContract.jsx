@@ -121,33 +121,37 @@ export default function CreateContract() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="relative px-6 py-8 md:px-10 md:py-12 !text-white">
-            <div className="flex items-center gap-4 mb-3">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+          {/* Decorative background elements */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -mr-32 -mt-32"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full -ml-24 -mb-24"></div>
+          </div>
+
+          <div className="relative px-6 py-8 md:px-10 md:py-10 lg:py-12 flex flex-col items-center text-center">
+            <div className="mb-3 flex items-center justify-center">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="w-8 h-8"
+                  className="w-8 h-8 md:w-10 md:h-10 text-white"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  strokeWidth={2}
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
               </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm mb-2">
-                  Tạo Yêu cầu Hợp đồng
-                </h1>
-                <p className="!text-white/90">
-                  Upload hợp đồng và chọn nhà thuốc để gửi yêu cầu ký hợp đồng
-                </p>
-              </div>
             </div>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight drop-shadow-sm mb-3 !text-white">
+              Tạo Yêu cầu Hợp đồng
+            </h1>
+            <p className="text-base md:text-lg !text-white/90 max-w-2xl leading-relaxed">
+              Upload hợp đồng và chọn nhà thuốc để gửi yêu cầu ký hợp đồng
+            </p>
           </div>
         </motion.section>
 
@@ -155,85 +159,158 @@ export default function CreateContract() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-white rounded-2xl border border-slate-200 shadow-lg p-8 max-w-3xl mx-auto"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
         >
-          <Spin spinning={loading}>
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={handleSubmit}
-              className="space-y-6"
-            >
-              {/* Pharmacy Selection */}
-              <Form.Item
-                label={
-                  <span className="text-sm font-semibold text-slate-700">
-                    Chọn Nhà thuốc
-                  </span>
-                }
-                name="pharmacyId"
-                rules={[{ required: true, message: "Vui lòng chọn nhà thuốc" }]}
+          {/* Form Section */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8">
+            <Spin spinning={loading}>
+              <Form
+                form={form}
+                layout="vertical"
+                onFinish={handleSubmit}
+                className="space-y-6"
               >
-                <Select
-                  placeholder="Chọn nhà thuốc"
-                  size="large"
-                  loading={loadingPharmacies}
-                  showSearch
-                  className="rounded-xl"
-                  filterOption={(input, option) =>
-                    (option?.label ?? "")
-                      .toLowerCase()
-                      .includes(input.toLowerCase())
+                {/* Pharmacy Selection */}
+                <Form.Item
+                  label={
+                    <span className="text-sm font-semibold text-slate-700">
+                      Chọn Nhà thuốc <span className="text-red-500">*</span>
+                    </span>
                   }
-                  options={pharmacies.map((pharmacy) => ({
-                    value: pharmacy._id,
-                    label: pharmacy.businessName || pharmacy.name,
-                  }))}
-                />
-              </Form.Item>
-
-              {/* File Upload */}
-              <Form.Item
-                label={
-                  <span className="text-sm font-semibold text-slate-700">
-                    Upload Hợp đồng (PDF/Word)
-                  </span>
-                }
-                required
-                help={
-                  <span className="text-xs text-slate-500">
-                    Chỉ chấp nhận file PDF hoặc Word (DOC, DOCX)
-                  </span>
-                }
-              >
-                <Upload
-                  fileList={fileList}
-                  onChange={handleFileChange}
-                  accept=".pdf,.doc,.docx"
-                  maxCount={1}
-                  beforeUpload={() => false} // Ngăn upload tự động, sẽ upload khi submit form
-                  onRemove={() => {
-                    setSelectedFile(null);
-                  }}
-                  className="w-full"
+                  name="pharmacyId"
+                  rules={[
+                    { required: true, message: "Vui lòng chọn nhà thuốc" },
+                  ]}
                 >
-                  <Button
-                    icon={<UploadOutlined />}
+                  <Select
+                    placeholder="Chọn nhà thuốc"
                     size="large"
-                    block
-                    className="h-12 rounded-xl border-2 border-dashed border-primary/30 hover:border-primary hover:bg-primary/5 transition-all"
-                  >
-                    <span className="font-semibold">Chọn file hợp đồng</span>
-                  </Button>
-                </Upload>
-              </Form.Item>
+                    loading={loadingPharmacies}
+                    showSearch
+                    className="rounded-xl !h-14"
+                    filterOption={(input, option) =>
+                      (option?.label ?? "")
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                    options={pharmacies.map((pharmacy) => ({
+                      value: pharmacy._id,
+                      label: pharmacy.businessName || pharmacy.name,
+                    }))}
+                  />
+                </Form.Item>
 
-              {/* Info Box */}
-              <div className=" border-2 border-secondary rounded-xl p-5">
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="p-2 bg-secondary rounded-lg">
+                {/* File Upload */}
+                <Form.Item
+                  label={
+                    <span className="text-sm font-semibold text-slate-700">
+                      Upload Hợp đồng (PDF/Word){" "}
+                      <span className="text-red-500">*</span>
+                    </span>
+                  }
+                  required
+                  help={
+                    <span className="text-xs text-slate-500">
+                      Chỉ chấp nhận file PDF hoặc Word (DOC, DOCX)
+                    </span>
+                  }
+                >
+                  <Upload
+                    fileList={fileList}
+                    onChange={handleFileChange}
+                    accept=".pdf,.doc,.docx"
+                    maxCount={1}
+                    beforeUpload={() => false}
+                    onRemove={() => {
+                      setSelectedFile(null);
+                    }}
+                    className="w-full"
+                  >
+                    <Button
+                      icon={<UploadOutlined />}
+                      size="large"
+                      block
+                      className="h-14 rounded-xl border-2 border-dashed border-slate-300 hover:border-primary hover:bg-primary/5 transition-all font-semibold"
+                    >
+                      <span>Chọn file hợp đồng</span>
+                    </Button>
+                  </Upload>
+                </Form.Item>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigate("/distributor/contracts");
+                    }}
+                    className="w-full sm:flex-1 px-6 py-3 rounded-xl bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-700 font-semibold shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+                  >
+                    <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></span>
+                    {loading ? (
+                      <>
+                        <svg
+                          className="animate-spin h-5 w-5 relative z-10"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        <span className="relative z-10">Đang xử lý...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-5 h-5 relative z-10"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                          />
+                        </svg>
+                        <span className="relative z-10">Tạo yêu cầu & Ký</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </Form>
+            </Spin>
+          </div>
+
+          {/* Info Box Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="bg-gradient-to-br from-primary/5 via-secondary/5 to-primary/5 border-2 border-primary/20 rounded-xl p-5 md:p-6 h-full sticky top-6">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-xl shrink-0">
                     <svg
-                      className="w-5 h-5 text-white"
+                      className="w-6 h-6 text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -246,108 +323,47 @@ export default function CreateContract() {
                       />
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-primary mb-3 text-lg">
-                      Quy trình ký hợp đồng
-                    </h4>
-                    <ol className="space-y-2.5 text-sm text-slate-700">
-                      <li className="flex items-start gap-2">
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold">
-                          1
-                        </span>
-                        <span>
-                          Distributor upload hợp đồng và ký bằng MetaMask
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold">
-                          2
-                        </span>
-                        <span>Pharmacy nhận và xem xét hợp đồng</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold">
-                          3
-                        </span>
-                        <span>Pharmacy xác nhận và ký bằng MetaMask</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold">
-                          4
-                        </span>
-                        <span>
-                          Distributor ký lần cuối và Mint NFT hợp đồng
-                        </span>
-                      </li>
-                    </ol>
-                  </div>
+                  <h4 className="font-bold text-slate-800 text-lg">
+                    Quy trình ký hợp đồng
+                  </h4>
                 </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-4 pt-6 border-t border-slate-200">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    navigate("/distributor/contracts");
-                  }}
-                  className="flex-1 px-6 py-3.5 rounded-xl bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-700 font-semibold shadow-sm hover:shadow-md transition-all duration-200 relative z-10 hover:scale-[1.02] active:scale-[0.98] cursor-pointer w-full flex items-center justify-center"
-                >
-                  <span>Hủy</span>
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-white bg-gradient-to-r from-primary via-secondary to-primary hover:from-secondary hover:via-primary hover:to-secondary shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative z-10 overflow-hidden group"
-                >
-                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></span>
-                  {loading ? (
-                    <>
-                      <svg
-                        className="animate-spin h-5 w-5 relative z-10"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      <span className="relative z-10">Đang xử lý...</span>
-                    </>
-                  ) : (
-                    <span className="flex items-center gap-2 !text-white">
-                      <svg
-                        className="w-5 h-5 relative z-10"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2.5}
-                          d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                        />
-                      </svg>
-                      <span className="relative z-10">Tạo yêu cầu & Ký</span>
+                <ol className="space-y-4 text-sm text-slate-700">
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs font-bold shadow-md">
+                      1
                     </span>
-                  )}
-                </button>
+                    <span className="pt-1.5">
+                      Distributor upload hợp đồng và ký bằng MetaMask
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs font-bold shadow-md">
+                      2
+                    </span>
+                    <span className="pt-1.5">
+                      Pharmacy nhận và xem xét hợp đồng
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs font-bold shadow-md">
+                      3
+                    </span>
+                    <span className="pt-1.5">
+                      Pharmacy xác nhận và ký bằng MetaMask
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs font-bold shadow-md">
+                      4
+                    </span>
+                    <span className="pt-1.5">
+                      Distributor ký lần cuối và Mint NFT hợp đồng
+                    </span>
+                  </li>
+                </ol>
               </div>
-            </Form>
-          </Spin>
+            </div>
+          </div>
         </motion.div>
       </div>
     </DashboardLayout>
