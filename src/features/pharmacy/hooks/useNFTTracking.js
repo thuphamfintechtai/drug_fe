@@ -82,13 +82,12 @@ export const useNFTTracking = () => {
     setError("");
     setData(null);
     try {
-      const response = await api.get(`/pharmacy/track/${nftId.trim()}`);
-      const data = response.data?.data || response.data;
-      if (data && (data.success || data.nftId || data.tokenId)) {
-        setData(data.data || data);
+      const response = await api.get(`/public/Tracking/${nftId.trim()}`);
+      if (response.data?.success && response.data?.data) {
+        setData(response.data.data);
       } else {
         setError(
-          data?.message || response.data?.message || "Không tìm thấy NFT này"
+          response.data?.message || "Không tìm thấy NFT này"
         );
       }
     } catch (e2) {

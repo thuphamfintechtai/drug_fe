@@ -132,181 +132,328 @@ export default function PharmacyNFTTracking() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                   <div className="space-y-2">
-                    <div className="text-slate-500">NFT ID</div>
-                    <div className="font-mono text-cyan-700">
-                      {data?.nft?.tokenId
-                        ? short(String(data.nft.tokenId))
-                        : nftId
-                        ? short(String(nftId))
-                        : "N/A"}
-                    </div>
-                    <div className="text-slate-500 mt-4">Nhà sản xuất</div>
-                    <div className="font-medium">
-                      {data?.manufacturerInvoice?.fromManufacturer?.fullName ||
-                        data?.nft?.proofOfProduction?.manufacturer?.fullName ||
-                        data?.nft?.owner?.fullName ||
-                        "N/A"}
-                    </div>
-                    <div className="text-slate-500 mt-4">Ngày sản xuất</div>
-                    <div className="font-medium">
-                      {formatDate(
-                        data?.nft?.mfgDate ||
-                          data?.nft?.proofOfProduction?.mfgDate
-                      )}
-                    </div>
-                    <div className="text-slate-500 mt-4">Số lô</div>
-                    <div className="font-medium">
-                      {data?.nft?.batchNumber ||
-                        data?.nft?.proofOfProduction?.batchNumber ||
-                        "N/A"}
+                    <div className="text-slate-500">Token ID</div>
+                    <div className="font-mono text-cyan-700 font-semibold">
+                      #{data?.nft?.tokenId || nftId || "N/A"}
                     </div>
                     <div className="text-slate-500 mt-4">Số serial</div>
                     <div className="font-mono">
                       {data?.nft?.serialNumber || "N/A"}
                     </div>
+                    <div className="text-slate-500 mt-4">Số lô</div>
+                    <div className="font-medium">
+                      {data?.nft?.batchNumber || "N/A"}
+                    </div>
+                    <div className="text-slate-500 mt-4">Ngày sản xuất</div>
+                    <div className="font-medium">
+                      {formatDate(data?.nft?.mfgDate)}
+                    </div>
+                    <div className="text-slate-500 mt-4">Hạn sử dụng</div>
+                    <div className="font-medium">
+                      {formatDate(data?.nft?.expDate)}
+                    </div>
+                    <div className="text-slate-500 mt-4">Trạng thái</div>
+                    <div className="font-medium">
+                      <span className="px-2 py-1 rounded-full text-xs bg-emerald-50 text-emerald-600 border border-emerald-100">
+                        {data?.nft?.status || "N/A"}
+                      </span>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <div className="text-slate-500">Tên thuốc</div>
                     <div className="font-medium">
-                      {data?.nft?.drug?.tradeName ||
-                        data?.nft?.drug?.genericName ||
-                        "N/A"}
+                      {data?.nft?.drug?.tradeName || "N/A"}
+                    </div>
+                    <div className="text-slate-500 mt-4">Tên hoạt chất</div>
+                    <div className="font-medium">
+                      {data?.nft?.drug?.genericName || "N/A"}
                     </div>
                     <div className="text-slate-500 mt-4">Mã ATC</div>
                     <div className="font-mono">
                       {data?.nft?.drug?.atcCode || "N/A"}
                     </div>
-                    <div className="text-slate-500 mt-4">Nhà phân phối</div>
+                    <div className="text-slate-500 mt-4">Dạng bào chế</div>
                     <div className="font-medium">
-                      {(() => {
-                        // Kiểm tra commercialInvoice trước (hóa đơn thương mại)
-                        const commercialDistributor =
-                          data?.commercialInvoice?.fromDistributor;
-                        if (commercialDistributor) {
-                          if (typeof commercialDistributor === "object") {
-                            return (
-                              commercialDistributor.fullName ||
-                              commercialDistributor.name ||
-                              "N/A"
-                            );
-                          }
-                        }
-                        // Kiểm tra manufacturerInvoice (hóa đơn từ NSX)
-                        const manufacturerDistributor =
-                          data?.manufacturerInvoice?.toDistributor;
-                        if (manufacturerDistributor) {
-                          if (typeof manufacturerDistributor === "object") {
-                            return (
-                              manufacturerDistributor.fullName ||
-                              manufacturerDistributor.name ||
-                              "N/A"
-                            );
-                          }
-                          // Nếu là ID string, có thể hiển thị ID hoặc "N/A"
-                          return "N/A";
-                        }
-                        return "N/A";
-                      })()}
+                      {data?.nft?.drug?.dosageForm || "N/A"}
                     </div>
-                    <div className="text-slate-500 mt-4">Nhà thuốc</div>
+                    <div className="text-slate-500 mt-4">Hàm lượng</div>
                     <div className="font-medium">
-                      {data?.commercialInvoice?.toPharmacy?.fullName || "N/A"}
+                      {data?.nft?.drug?.strength || "N/A"}
                     </div>
-                    <div className="text-slate-500 mt-4">Hạn sử dụng</div>
+                    <div className="text-slate-500 mt-4">Quy cách đóng gói</div>
                     <div className="font-medium">
-                      {formatDate(
-                        data?.nft?.expDate ||
-                          data?.nft?.proofOfProduction?.expDate
-                      )}
+                      {data?.nft?.drug?.packaging || "N/A"}
                     </div>
                     <div className="text-slate-500 mt-4">
                       Chủ sở hữu hiện tại
                     </div>
                     <div className="font-medium">
-                      {data?.nft?.owner?.fullName ||
-                        data?.nft?.owner?.username ||
-                        "N/A"}
+                      {(() => {
+                        const owner = data?.nft?.currentOwner;
+                        if (!owner) return "N/A";
+                        if (typeof owner === "object" && owner !== null) {
+                          return owner.fullName || owner.name || owner.username || owner.email || "N/A";
+                        }
+                        return owner || "N/A";
+                      })()}
                     </div>
                   </div>
                 </div>
 
-                {/* Thông tin bổ sung */}
-                {(data?.nft?.chainTxHash ||
-                  data?.nft?.ipfsUrl ||
-                  data?.nft?.contractAddress) && (
+                {/* Chuỗi cung ứng */}
+                {data?.supplyChain && (
                   <div className="mt-6 pt-6 border-t border-slate-200">
                     <h3 className="text-sm font-semibold text-slate-700 mb-3">
-                      Thông tin Blockchain
+                      Chuỗi cung ứng
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                      {data?.nft?.contractAddress && (
-                        <div>
-                          <div className="text-slate-500">Contract Address</div>
-                          <div className="font-mono text-slate-700 break-all">
-                            {data.nft.contractAddress}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {data.supplyChain.manufacturer && (
+                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                          <div className="text-xs font-semibold text-blue-800 mb-2">
+                            Nhà sản xuất
                           </div>
+                          <div className="text-sm font-medium text-slate-800">
+                            {data.supplyChain.manufacturer.name || "N/A"}
+                          </div>
+                          {data.supplyChain.manufacturer.email && (
+                            <div className="text-xs text-slate-600 mt-1">
+                              {data.supplyChain.manufacturer.email}
+                            </div>
+                          )}
                         </div>
                       )}
-                      {data?.nft?.chainTxHash && (
-                        <div>
-                          <div className="text-slate-500">Transaction Hash</div>
-                          <div className="font-mono text-slate-700 break-all">
-                            {short(data.nft.chainTxHash)}
+                      {data.supplyChain.distributor && (
+                        <div className="bg-cyan-50 rounded-lg p-4 border border-cyan-200">
+                          <div className="text-xs font-semibold text-cyan-800 mb-2">
+                            Nhà phân phối
                           </div>
+                          <div className="text-sm font-medium text-slate-800">
+                            {data.supplyChain.distributor.name || "N/A"}
+                          </div>
+                          {data.supplyChain.distributor.email && (
+                            <div className="text-xs text-slate-600 mt-1">
+                              {data.supplyChain.distributor.email}
+                            </div>
+                          )}
                         </div>
                       )}
-                      {data?.nft?.ipfsUrl && (
-                        <div className="md:col-span-2">
-                          <div className="text-slate-500">IPFS URL</div>
-                          <a
-                            href={data.nft.ipfsUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="font-mono text-cyan-600 hover:text-cyan-700 break-all"
-                          >
-                            {data.nft.ipfsUrl}
-                          </a>
+                      {data.supplyChain.pharmacy && (
+                        <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
+                          <div className="text-xs font-semibold text-emerald-800 mb-2">
+                            Nhà thuốc
+                          </div>
+                          <div className="text-sm font-medium text-slate-800">
+                            {data.supplyChain.pharmacy.name || "N/A"}
+                          </div>
+                          {data.supplyChain.pharmacy.email && (
+                            <div className="text-xs text-slate-600 mt-1">
+                              {data.supplyChain.pharmacy.email}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                   </div>
                 )}
 
+                {/* Hành trình phân phối */}
+                {data?.journey && Array.isArray(data.journey) && data.journey.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-slate-200">
+                    <h3 className="text-sm font-semibold text-slate-700 mb-4">
+                      Hành trình phân phối ({data.journey.length} bước)
+                    </h3>
+                    <div className="space-y-4">
+                      {data.journey.map((step, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-slate-50 rounded-lg p-4 border border-slate-200"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h4 className="font-semibold text-slate-800">
+                                {step.description || step.stage || `Bước ${idx + 1}`}
+                              </h4>
+                              <div className="text-xs text-slate-500 mt-1">
+                                {step.date
+                                  ? new Date(step.date).toLocaleString("vi-VN")
+                                  : "N/A"}
+                              </div>
+                            </div>
+                            {step.stage && (
+                              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-cyan-50 text-cyan-700 border border-cyan-200 capitalize">
+                                {step.stage}
+                              </span>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                            {step.from && (
+                              <div>
+                                <span className="text-slate-500">Từ:</span>
+                                <span className="font-medium ml-1 text-slate-800">
+                                  {typeof step.from === "object" && step.from !== null
+                                    ? step.from.fullName || step.from.name || step.from.username || "N/A"
+                                    : step.from}
+                                </span>
+                              </div>
+                            )}
+                            {step.to && (
+                              <div>
+                                <span className="text-slate-500">Đến:</span>
+                                <span className="font-medium ml-1 text-slate-800">
+                                  {typeof step.to === "object" && step.to !== null
+                                    ? step.to.fullName || step.to.name || step.to.username || "N/A"
+                                    : step.to}
+                                </span>
+                              </div>
+                            )}
+                            {step.distributor && (
+                              <div>
+                                <span className="text-slate-500">Nhà phân phối:</span>
+                                <span className="font-medium ml-1 text-slate-800">
+                                  {typeof step.distributor === "object" && step.distributor !== null
+                                    ? step.distributor.fullName || step.distributor.name || "N/A"
+                                    : step.distributor}
+                                </span>
+                              </div>
+                            )}
+                            {step.pharmacy && (
+                              <div>
+                                <span className="text-slate-500">Nhà thuốc:</span>
+                                <span className="font-medium ml-1 text-slate-800">
+                                  {typeof step.pharmacy === "object" && step.pharmacy !== null
+                                    ? step.pharmacy.fullName || step.pharmacy.name || "N/A"
+                                    : step.pharmacy}
+                                </span>
+                              </div>
+                            )}
+                            {step.invoiceNumber && (
+                              <div>
+                                <span className="text-slate-500">Số hóa đơn:</span>
+                                <span className="font-mono ml-1 text-slate-800">
+                                  {step.invoiceNumber}
+                                </span>
+                              </div>
+                            )}
+                            {step.details?.quantity && (
+                              <div>
+                                <span className="text-slate-500">Số lượng:</span>
+                                <span className="font-semibold ml-1 text-slate-800">
+                                  {step.details.quantity}
+                                </span>
+                              </div>
+                            )}
+                            {step.details?.receivedQuantity !== undefined && (
+                              <div>
+                                <span className="text-slate-500">Số lượng nhận:</span>
+                                <span className="font-semibold ml-1 text-slate-800">
+                                  {step.details.receivedQuantity}
+                                </span>
+                              </div>
+                            )}
+                            {step.status && (
+                              <div>
+                                <span className="text-slate-500">Trạng thái:</span>
+                                <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-emerald-50 text-emerald-600 border border-emerald-100 capitalize">
+                                  {step.status}
+                                </span>
+                              </div>
+                            )}
+                            {step.supplyChainCompleted !== undefined && (
+                              <div>
+                                <span className="text-slate-500">Chuỗi cung ứng:</span>
+                                <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
+                                  step.supplyChainCompleted
+                                    ? "bg-green-50 text-green-600 border border-green-100"
+                                    : "bg-yellow-50 text-yellow-600 border border-yellow-100"
+                                }`}>
+                                  {step.supplyChainCompleted ? "Đã hoàn tất" : "Chưa hoàn tất"}
+                                </span>
+                              </div>
+                            )}
+                            {step.details?.invoiceId && (
+                              <div className="md:col-span-2">
+                                <span className="text-slate-500">Mã hóa đơn:</span>
+                                <span className="font-mono ml-1 text-slate-800 text-xs break-all">
+                                  {step.details.invoiceId}
+                                </span>
+                              </div>
+                            )}
+                            {step.details?.proofId && (
+                              <div className="md:col-span-2">
+                                <span className="text-slate-500">Mã chứng từ:</span>
+                                <span className="font-mono ml-1 text-slate-800 text-xs break-all">
+                                  {step.details.proofId}
+                                </span>
+                              </div>
+                            )}
+                            {step.details?.receiptId && (
+                              <div className="md:col-span-2">
+                                <span className="text-slate-500">Mã biên lai:</span>
+                                <span className="font-mono ml-1 text-slate-800 text-xs break-all">
+                                  {step.details.receiptId}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Lịch sử blockchain */}
                 {data?.blockchainHistory &&
+                  Array.isArray(data.blockchainHistory) &&
                   data.blockchainHistory.length > 0 && (
                     <div className="mt-6 pt-6 border-t border-slate-200">
                       <h3 className="text-sm font-semibold text-slate-700 mb-3">
-                        Lịch sử giao dịch ({data.blockchainHistory.length})
+                        Lịch sử giao dịch blockchain ({data.blockchainHistory.length})
                       </h3>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {data.blockchainHistory.map((tx, idx) => (
                           <div
                             key={idx}
-                            className="bg-slate-50 rounded-lg p-3 text-xs"
+                            className="bg-slate-50 rounded-lg p-4 border border-slate-200"
                           >
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="text-xs font-semibold text-slate-700 mb-2">
+                              Giao dịch #{idx + 1}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                               <div>
                                 <span className="text-slate-500">Từ:</span>
-                                <span className="font-mono ml-1">
-                                  {short(tx.fromUserAddress)}
-                                </span>
+                                <div className="font-mono text-slate-800 break-all mt-1">
+                                  {tx.fromUserAddress || "N/A"}
+                                </div>
                               </div>
                               <div>
                                 <span className="text-slate-500">Đến:</span>
-                                <span className="font-mono ml-1">
-                                  {short(tx.toUserAddress)}
-                                </span>
+                                <div className="font-mono text-slate-800 break-all mt-1">
+                                  {tx.toUserAddress || "N/A"}
+                                </div>
                               </div>
+                              {tx.fromUserType && (
+                                <div>
+                                  <span className="text-slate-500">From Type:</span>
+                                  <div className="font-mono text-slate-800 break-all mt-1 text-xs">
+                                    {tx.fromUserType}
+                                  </div>
+                                </div>
+                              )}
+                              {tx.toUserType && (
+                                <div>
+                                  <span className="text-slate-500">To Type:</span>
+                                  <div className="font-mono text-slate-800 break-all mt-1 text-xs">
+                                    {tx.toUserType}
+                                  </div>
+                                </div>
+                              )}
                               {tx.receivedTimestamp && (
-                                <div className="col-span-2">
-                                  <span className="text-slate-500">
-                                    Thời gian:
-                                  </span>
-                                  <span className="ml-1">
-                                    {new Date(
-                                      tx.receivedTimestamp * 1000
-                                    ).toLocaleString("vi-VN")}
+                                <div className="md:col-span-2">
+                                  <span className="text-slate-500">Thời gian:</span>
+                                  <span className="ml-1 text-slate-800">
+                                    {typeof tx.receivedTimestamp === 'number'
+                                      ? new Date(tx.receivedTimestamp * 1000).toLocaleString("vi-VN")
+                                      : tx.receivedTimestamp}
                                   </span>
                                 </div>
                               )}
@@ -317,95 +464,7 @@ export default function PharmacyNFTTracking() {
                     </div>
                   )}
 
-                {/* Thông tin hóa đơn */}
-                {(data?.manufacturerInvoice || data?.commercialInvoice) && (
-                  <div className="mt-6 pt-6 border-t border-slate-200">
-                    <h3 className="text-sm font-semibold text-slate-700 mb-3">
-                      Thông tin Hóa đơn
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                      {data?.manufacturerInvoice && (
-                        <div className="bg-blue-50 rounded-lg p-3">
-                          <div className="font-semibold text-blue-800 mb-2">
-                            Hóa đơn từ NSX
-                          </div>
-                          <div>
-                            <span className="text-slate-600">Số HD:</span>
-                            <span className="font-mono ml-1">
-                              {data.manufacturerInvoice.invoiceNumber}
-                            </span>
-                          </div>
-                          {data.manufacturerInvoice.invoiceDate && (
-                            <div className="mt-1">
-                              <span className="text-slate-600">Ngày:</span>
-                              <span className="ml-1">
-                                {formatDate(
-                                  data.manufacturerInvoice.invoiceDate
-                                )}
-                              </span>
-                            </div>
-                          )}
-                          <div className="mt-1">
-                            <span className="text-slate-600">Trạng thái:</span>
-                            <span className="ml-1 capitalize">
-                              {data.manufacturerInvoice.status}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      {data?.commercialInvoice && (
-                        <div className="bg-green-50 rounded-lg p-3">
-                          <div className="font-semibold text-green-800 mb-2">
-                            Hóa đơn thương mại
-                          </div>
-                          <div>
-                            <span className="text-slate-600">Số HD:</span>
-                            <span className="font-mono ml-1">
-                              {data.commercialInvoice.invoiceNumber}
-                            </span>
-                          </div>
-                          {data.commercialInvoice.invoiceDate && (
-                            <div className="mt-1">
-                              <span className="text-slate-600">Ngày:</span>
-                              <span className="ml-1">
-                                {formatDate(data.commercialInvoice.invoiceDate)}
-                              </span>
-                            </div>
-                          )}
-                          <div className="mt-1">
-                            <span className="text-slate-600">Trạng thái:</span>
-                            <span className="ml-1 capitalize">
-                              {data.commercialInvoice.status}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
 
-                <div className="mt-6 flex justify-end gap-3">
-                  {data?.nft?.chainTxHash && (
-                    <a
-                      href={`https://zeroscan.org/tx/${data.nft.chainTxHash}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-6 py-2.5 rounded-full bg-[#3db6d9] hover:bg-[#2fa2c5] !text-white font-medium transition"
-                    >
-                      Xem trên ZeroScan
-                    </a>
-                  )}
-                  {data?.nft?.ipfsUrl && (
-                    <a
-                      href={data.nft.ipfsUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 !text-white font-medium transition"
-                    >
-                      Xem trên IPFS
-                    </a>
-                  )}
-                </div>
               </div>
             </motion.div>
           )}

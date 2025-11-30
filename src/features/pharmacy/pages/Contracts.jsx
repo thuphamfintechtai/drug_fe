@@ -159,7 +159,7 @@ export default function PharmacyContracts() {
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
                           Ngày tạo
                         </th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                        <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">
                           Thao tác
                         </th>
                       </tr>
@@ -216,14 +216,14 @@ export default function PharmacyContracts() {
                               ? new Date(contract.createdAt).toLocaleDateString("vi-VN")
                               : "N/A"}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-4 text-center">
                             {contract.status === "pending" ? (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   openConfirmDialog(contract);
                                 }}
-                                className="px-4 py-2 rounded-lg bg-secondary hover:bg-primary text-white font-medium transition text-sm"
+                                className="px-4 py-2 border-2 border-secondary rounded-full font-semibold !text-white bg-secondary hover:!text-white hover:bg-secondary transition-all duration-200"
                               >
                                 Xác nhận
                               </button>
@@ -233,7 +233,7 @@ export default function PharmacyContracts() {
                                   e.stopPropagation();
                                   handleRowClick(contract);
                                 }}
-                                className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition text-sm"
+                                className="px-4 py-2 border-2 border-gray-300 rounded-full font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 hover:!text-gray-700 transition-all duration-200"
                               >
                                 Chi tiết
                               </button>
@@ -297,37 +297,21 @@ export default function PharmacyContracts() {
                 <style>{`
                   .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
                   .custom-scroll::-webkit-scrollbar { width: 0; height: 0; }
-                  .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-                  .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
                 `}</style>
-                <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <h2 className="text-2xl font-bold !text-white">
-                        Chi tiết hợp đồng
-                      </h2>
-                      <p className="text-cyan-100 text-sm">
-                        Mã: {selectedContract.id}
-                      </p>
-                    </div>
+                <div className="bg-gradient-to-r from-primary to-secondary px-8 py-6 rounded-t-3xl flex justify-between items-center">
+                  <div>
+                    <h2 className="text-2xl font-bold !text-white">
+                      Chi tiết hợp đồng
+                    </h2>
+                    <p className="text-gray-100 text-sm">
+                      Mã: {selectedContract.id}
+                    </p>
                   </div>
                   <button
                     onClick={closeDetailDialog}
-                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white transition"
+                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition"
                   >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    ✕
                   </button>
                 </div>
 
@@ -400,7 +384,7 @@ export default function PharmacyContracts() {
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:underline"
                                 >
-                                  📄 Xem file hợp đồng
+                                  Xem file hợp đồng
                                 </a>
                               ) : (
                                 "N/A"
@@ -514,29 +498,28 @@ export default function PharmacyContracts() {
                       </div>
                     </div>
                   )}
+                </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+                {/* Footer */}
+                <div className="px-8 py-6 border-t border-gray-300 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
+                  <button
+                    onClick={closeDetailDialog}
+                    className="px-6 py-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition"
+                  >
+                    Đóng
+                  </button>
+                  {selectedContract.status === "pending" && (
                     <button
-                      onClick={closeDetailDialog}
-                      className="px-6 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition"
+                      onClick={handleConfirmFromDetail}
+                      className="px-6 py-2.5 rounded-full bg-primary !text-white font-medium shadow-md hover:shadow-lg transition-all duration-200"
                     >
-                      Đóng
+                      Xác nhận hợp đồng
                     </button>
-                    {selectedContract.status === "pending" && (
-                      <button
-                        onClick={handleConfirmFromDetail}
-                        className="px-6 py-2.5 rounded-xl bg-secondary hover:bg-primary text-white font-medium transition"
-                      >
-                        Xác nhận hợp đồng
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
           )}
-
           {/* Confirm Contract Dialog */}
           {showConfirmDialog && selectedContract && (
             <div
@@ -544,52 +527,38 @@ export default function PharmacyContracts() {
               onClick={closeConfirmDialog}
             >
               <div
-                className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll"
+                className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll border border-gray-100"
                 onClick={(e) => e.stopPropagation()}
               >
                 <style>{`
                   .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
                   .custom-scroll::-webkit-scrollbar { width: 0; height: 0; }
-                  .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-                  .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
                 `}</style>
-                <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <h2 className="text-2xl font-bold !text-white">
-                        Xác nhận hợp đồng
-                      </h2>
-                      <p className="text-cyan-100 text-sm">
-                        Mã: {selectedContract.id}
-                      </p>
-                    </div>
+
+                {/* Header */}
+                <div className="bg-gradient-to-r from-primary to-secondary px-8 py-6 rounded-t-3xl flex justify-between items-center">
+                  <div>
+                    <h2 className="text-2xl font-bold !text-white">Xác nhận hợp đồng</h2>
+                    <p className="text-gray-100 text-sm">Mã: {selectedContract.id}</p>
                   </div>
+
                   <button
                     onClick={closeConfirmDialog}
                     disabled={isConfirming}
-                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white transition disabled:opacity-50"
+                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition disabled:opacity-50"
                   >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    ✕
                   </button>
                 </div>
 
-                <div className="p-8 space-y-6">
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                {/* Body */}
+                <div className="p-8 space-y-6 max-h-[65vh] overflow-auto custom-scroll">
+                  
+                  {/* Info Box */}
+                  <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-4">
                     <div className="flex items-start gap-3">
                       <svg
-                        className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
+                        className="w-5 h-5 text-primary mt-0.5 flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -601,9 +570,10 @@ export default function PharmacyContracts() {
                           d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                         />
                       </svg>
-                      <div className="text-sm text-blue-800">
+
+                      <div className="text-sm text-primary">
                         <p className="font-semibold mb-1">Lưu ý khi xác nhận:</p>
-                        <ul className="list-disc list-inside space-y-1 text-blue-700">
+                        <ul className="list-disc list-inside space-y-1 text-primary/90">
                           <li>Bạn cần kết nối MetaMask để ký hợp đồng</li>
                           <li>Giao dịch sẽ được ghi nhận trên blockchain</li>
                           <li>Hợp đồng sẽ chuyển sang trạng thái "Đã xác nhận"</li>
@@ -612,8 +582,9 @@ export default function PharmacyContracts() {
                     </div>
                   </div>
 
+                  {/* Loading */}
                   {loadingConfirmDetail ? (
-                    <div className="flex items-center justify-center py-8">
+                    <div className="flex items-center justify-center py-6">
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-10 h-10 border-4 border-gray-200 rounded-full" />
                         <div className="w-10 h-10 border-4 border-[#4BADD1] rounded-full border-t-transparent animate-spin absolute" />
@@ -622,6 +593,8 @@ export default function PharmacyContracts() {
                     </div>
                   ) : (
                     <div className="space-y-4">
+
+                      {/* Mã hợp đồng */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Mã hợp đồng
@@ -631,6 +604,7 @@ export default function PharmacyContracts() {
                         </div>
                       </div>
 
+                      {/* Tên file */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Tên file
@@ -640,6 +614,7 @@ export default function PharmacyContracts() {
                         </div>
                       </div>
 
+                      {/* File hợp đồng */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           File hợp đồng
@@ -654,12 +629,11 @@ export default function PharmacyContracts() {
                             >
                               {confirmContractDetail?.contractFileUrl || selectedContract.contractFileUrl}
                             </a>
-                          ) : (
-                            "N/A"
-                          )}
+                          ) : "N/A"}
                         </div>
                       </div>
 
+                      {/* Nhà phân phối */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Nhà phân phối
@@ -672,18 +646,20 @@ export default function PharmacyContracts() {
                         </div>
                       </div>
 
+                      {/* Wallet Distributor */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Wallet Distributor
                         </label>
                         <div className="font-mono text-xs text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200 break-all">
-                          {confirmContractDetail?.distributorWalletAddress || 
-                            confirmContractDetail?.distributorAddress ||
-                            confirmContractDetail?.distributor?.walletAddress ||
-                            "-"}
+                          {confirmContractDetail?.distributorWalletAddress ||
+                          confirmContractDetail?.distributorAddress ||
+                          confirmContractDetail?.distributor?.walletAddress ||
+                          "-"}
                         </div>
                       </div>
 
+                      {/* Ngày tạo */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Ngày tạo
@@ -694,43 +670,31 @@ export default function PharmacyContracts() {
                             : "N/A"}
                         </div>
                       </div>
+
                     </div>
                   )}
 
-                  {/* Actions */}
-                  <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+                  {/* Footer */}
+                  <div className="pt-6 border-t border-gray-300 bg-gray-50 rounded-b-3xl flex justify-end gap-3 mt-2">
                     <button
                       onClick={closeConfirmDialog}
                       disabled={isConfirming}
-                      className="px-6 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition disabled:opacity-50"
+                      className="px-6 py-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition disabled:opacity-50"
                     >
                       Hủy
                     </button>
+
                     <button
                       onClick={handleConfirmContract}
                       disabled={isConfirming}
-                      className="px-6 py-2.5 rounded-xl bg-secondary hover:bg-primary text-white font-medium transition disabled:opacity-50 flex items-center gap-2"
+                      className="px-6 py-2.5 rounded-full bg-primary !text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
                     >
                       {isConfirming ? (
                         <>
-                          <svg
-                            className="animate-spin h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            />
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            />
+                          <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                           </svg>
                           Đang xác nhận...
                         </>
@@ -739,6 +703,7 @@ export default function PharmacyContracts() {
                       )}
                     </button>
                   </div>
+
                 </div>
               </div>
             </div>

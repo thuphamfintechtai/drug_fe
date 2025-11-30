@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckLoader from "../../shared/components/TruckLoader";
 import { useDistributionHistory } from "../hooks/useDistributionHistory";
 import { navigationItems } from "../constants/constant";
 export default function DistributionHistory() {
+  const [expandedItems, setExpandedItems] = useState(new Set());
   const {
     items,
     loading,
@@ -31,6 +33,16 @@ export default function DistributionHistory() {
       filter: "blur(0px)",
       transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
     },
+  };
+
+  const toggleItem = (idx) => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(idx)) {
+      newExpanded.delete(idx);
+    } else {
+      newExpanded.add(idx);
+    }
+    setExpandedItems(newExpanded);
   };
 
   return (
@@ -157,152 +169,189 @@ export default function DistributionHistory() {
                 </p>
               </div>
             ) : (
-              items.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden hover:shadow-lg transition"
-                >
-                  {/* Header */}
-                  <div className="p-5 flex items-start justify-between">
-                    <div>
-                      <div className="text-sm text-slate-600">Từ</div>
-                      <h3 className="text-lg font-semibold text-[#003544]">
-                        {item.fromDistributor?.fullName ||
-                          item.fromDistributor?.name ||
-                          item.fromDistributor?.username ||
-                          "Không có"}
-                      </h3>
-                    </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                        item.status
-                      )}`}
+              items.map((item, idx) => {
+                const isExpanded = expandedItems.has(idx);
+                return (
+                  <div
+                    key={idx}
+                    className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden hover:shadow-lg transition"
+                  >
+                    {/* Header - Clickable */}
+                    <div
+                      className="p-5 flex items-start justify-between cursor-pointer"
+                      onClick={() => toggleItem(idx)}
                     >
-                      {translateStatus(item.status)}
-                    </span>
-                  </div>
-
-                  {/* Summary Chips */}
-                  <div className="px-5 pb-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-600">Thuốc:</span>
-                      <span className="font-medium text-slate-800">
-                        {item.drug?.tradeName ||
-                          item.drug?.commercialName ||
-                          item.drugInfo?.commercialName ||
-                          item.drugInfo?.tradeName ||
-                          item.drugName ||
-                          item.drug?.name ||
-                          "Không có"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-600">Số lượng:</span>
-                      <span className="font-semibold text-slate-800">
-                        {item.quantity || item.receivedQuantity || 0} NFT
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-600">Địa chỉ:</span>
-                      <span className="text-slate-800">
-                        {typeof item.deliveryAddress === "object" &&
-                        item.deliveryAddress !== null
-                          ? `${item.deliveryAddress.street || ""}${
-                              item.deliveryAddress.street &&
-                              item.deliveryAddress.city
-                                ? ", "
-                                : ""
-                            }${item.deliveryAddress.city || ""}`.trim() ||
-                            "Chưa có"
-                          : item.deliveryAddress || "Chưa có"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-600">Ngày nhận:</span>
-                      <span className="text-slate-800">
-                        {item.receivedDate
-                          ? new Date(item.receivedDate).toLocaleDateString(
-                              "vi-VN"
-                            )
-                          : item.createdAt
-                          ? new Date(item.createdAt).toLocaleDateString("vi-VN")
-                          : "Chưa có"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Information Panels */}
-                  <div className="px-5 pb-5 space-y-3">
-                    {item.fromDistributor && (
-                      <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
-                        <div className="font-semibold text-slate-800 mb-1">
-                          Thông tin nhà phân phối
-                        </div>
-                        <div className="text-sm text-slate-700">
-                          Tên:{" "}
-                          <span className="font-medium">
-                            {item.fromDistributor.fullName ||
-                              item.fromDistributor.name ||
-                              item.fromDistributor.username ||
-                              "Không có"}
-                          </span>
-                        </div>
-                        {item.fromDistributor.username && (
-                          <div className="text-sm text-slate-700 mt-1">
-                            Tên đăng nhập:{" "}
-                            <span className="font-mono">
-                              {item.fromDistributor.username}
+                      <div className="flex-1">
+                        <div className="text-sm text-slate-600">Từ</div>
+                        <h3 className="text-lg font-semibold text-[#003544]">
+                          {item.fromDistributor?.fullName ||
+                            item.fromDistributor?.name ||
+                            item.fromDistributor?.username ||
+                            "Không có"}
+                        </h3>
+                        {/* Summary Info - Always visible */}
+                        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-600">Thuốc:</span>
+                            <span className="font-medium text-slate-800">
+                              {item.drug?.tradeName ||
+                                item.drug?.commercialName ||
+                                item.drugInfo?.commercialName ||
+                                item.drugInfo?.tradeName ||
+                                item.drugName ||
+                                item.drug?.name ||
+                                "Không có"}
                             </span>
                           </div>
-                        )}
-                        {item.fromDistributor.email && (
-                          <div className="text-sm text-slate-700 mt-1">
-                            Email:{" "}
-                            <span className="font-medium">
-                              {item.fromDistributor.email}
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-600">Số lượng:</span>
+                            <span className="font-semibold text-slate-800">
+                              {item.quantity || item.receivedQuantity || 0} NFT
                             </span>
                           </div>
-                        )}
-                      </div>
-                    )}
-
-                    {item.receivedBy && (
-                      <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
-                        <div className="font-semibold text-slate-800 mb-1">
-                          Người nhận
-                        </div>
-                        <div className="text-sm text-slate-700">
-                          {extractName(item.receivedBy, "—")}
                         </div>
                       </div>
-                    )}
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            item.status
+                          )}`}
+                        >
+                          {translateStatus(item.status)}
+                        </span>
+                        <svg
+                          className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${
+                            isExpanded ? "rotate-180" : ""
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </div>
+                    </div>
 
-                    {(item.transactionHash ||
-                      item.chainTxHash ||
-                      item.receiptTxHash) && (
-                      <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
-                        <div className="font-semibold text-slate-800 mb-1">
-                          Mã giao dịch
-                        </div>
-                        <div className="text-sm text-slate-700 font-mono break-all">
-                          {item.transactionHash ||
+                    {/* Expandable Content */}
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-5 pb-5 space-y-3 border-t border-slate-100 pt-5">
+                          {/* Additional Summary Info */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-600">Địa chỉ:</span>
+                              <span className="text-slate-800">
+                                {typeof item.deliveryAddress === "object" &&
+                                item.deliveryAddress !== null
+                                  ? `${item.deliveryAddress.street || ""}${
+                                      item.deliveryAddress.street &&
+                                      item.deliveryAddress.city
+                                        ? ", "
+                                        : ""
+                                    }${item.deliveryAddress.city || ""}`.trim() ||
+                                    "Chưa có"
+                                  : item.deliveryAddress || "Chưa có"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-600">Ngày nhận:</span>
+                              <span className="text-slate-800">
+                                {item.receivedDate
+                                  ? new Date(item.receivedDate).toLocaleDateString(
+                                      "vi-VN"
+                                    )
+                                  : item.createdAt
+                                  ? new Date(item.createdAt).toLocaleDateString("vi-VN")
+                                  : "Chưa có"}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Information Panels */}
+                          {item.fromDistributor && (
+                            <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
+                              <div className="font-semibold text-slate-800 mb-1">
+                                Thông tin nhà phân phối
+                              </div>
+                              <div className="text-sm text-slate-700">
+                                Tên:{" "}
+                                <span className="font-medium">
+                                  {item.fromDistributor.fullName ||
+                                    item.fromDistributor.name ||
+                                    item.fromDistributor.username ||
+                                    "Không có"}
+                                </span>
+                              </div>
+                              {item.fromDistributor.username && (
+                                <div className="text-sm text-slate-700 mt-1">
+                                  Tên đăng nhập:{" "}
+                                  <span className="font-mono">
+                                    {item.fromDistributor.username}
+                                  </span>
+                                </div>
+                              )}
+                              {item.fromDistributor.email && (
+                                <div className="text-sm text-slate-700 mt-1">
+                                  Email:{" "}
+                                  <span className="font-medium">
+                                    {item.fromDistributor.email}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {item.receivedBy && (
+                            <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
+                              <div className="font-semibold text-slate-800 mb-1">
+                                Người nhận
+                              </div>
+                              <div className="text-sm text-slate-700">
+                                {extractName(item.receivedBy, "—")}
+                              </div>
+                            </div>
+                          )}
+
+                          {(item.transactionHash ||
                             item.chainTxHash ||
-                            item.receiptTxHash}
-                        </div>
-                      </div>
-                    )}
+                            item.receiptTxHash) && (
+                            <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
+                              <div className="font-semibold text-slate-800 mb-1">
+                                Mã giao dịch
+                              </div>
+                              <div className="text-sm text-slate-700 font-mono break-all">
+                                {item.transactionHash ||
+                                  item.chainTxHash ||
+                                  item.receiptTxHash}
+                              </div>
+                            </div>
+                          )}
 
-                    <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
-                      <div className="font-semibold text-slate-800 mb-1">
-                        Ghi chú
-                      </div>
-                      <div className="text-sm text-slate-700">
-                        {formatNotes(item.notes)}
-                      </div>
-                    </div>
+                          <div className="rounded-xl p-4 border border-slate-200 bg-slate-50">
+                            <div className="font-semibold text-slate-800 mb-1">
+                              Ghi chú
+                            </div>
+                            <div className="text-sm text-slate-700">
+                              {formatNotes(item.notes)}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </motion.div>
 
