@@ -469,7 +469,11 @@ export const useTransferManagements = () => {
         setTransferProgress(MAX_PROGRESS_BEFORE_COMPLETION);
         setTransferStatus("completed");
 
-        return onchain.transactionHash;
+        // ✅ Trả về cả transactionHash và receivedTimestamp
+        return {
+          transactionHash: onchain.transactionHash,
+          receivedTimestamp: onchain.receivedTimestamp, // ✅ Thêm receivedTimestamp từ blockchain event
+        };
       } catch (error) {
         console.error("❌ Blockchain transfer error:", error);
 
@@ -514,7 +518,7 @@ export const useTransferManagements = () => {
 
   // 🆕 AUTO SAVE: Save transaction with retry logic
   const autoSaveTransaction = useCallback(
-    async (invoiceId, tokenIds, transactionHash) => {
+    async (invoiceId, tokenIds, transactionHash, receivedTimestamp) => {
       // Check if already saving to prevent duplicate calls
       if (isSavingRef.current) {
         console.log("⚠️ [autoSaveTransaction] Already saving, skipping duplicate call");
@@ -535,6 +539,7 @@ export const useTransferManagements = () => {
         invoiceId,
         tokenIds,
         transactionHash,
+        receivedTimestamp,
       });
 
       setTransferStatus("saving");
@@ -543,10 +548,16 @@ export const useTransferManagements = () => {
         try {
           console.log(`💾 [autoSaveTransaction] Attempt ${attempt}/${AUTO_SAVE_RETRY_ATTEMPTS}`);
 
+          // ✅ Convert receivedTimestamp (seconds) sang milliseconds cho blockchaintimespan
+          // receivedTimestamp từ blockchain là uint256 (seconds), cần convert sang milliseconds
+          const blockchaintimespan = receivedTimestamp 
+            ? String(BigInt(receivedTimestamp) * 1000n)
+            : null;
+
           await saveTransferTransactionMutation.mutateAsync({
             invoiceId,
-            tokenIds,
             transactionHash: transactionHash.trim(),
+            blockchaintimespan: blockchaintimespan, // ✅ Thêm blockchaintimespan từ event
           });
 
           console.log("✅ [autoSaveTransaction] Save successful!");
@@ -721,19 +732,19 @@ export const useTransferManagements = () => {
       // Transfer on blockchain
       console.log("⛓️ [handleSubmit] Starting blockchain transfer...");
 
-      const onchainHash = await handleBlockchainTransfer(
+      const onchainResult = await handleBlockchainTransfer(
         invoiceId,
         distributorAddress,
         invoiceTokenIds
       );
 
-      if (!onchainHash || !isValidTxHash(onchainHash)) {
+      if (!onchainResult || !onchainResult.transactionHash || !isValidTxHash(onchainResult.transactionHash)) {
         throw new Error(
           "Transaction hash không hợp lệ hoặc không nhận được từ blockchain"
         );
       }
 
-      console.log("✅ [handleSubmit] Blockchain transfer complete:", onchainHash);
+      console.log("✅ [handleSubmit] Blockchain transfer complete:", onchainResult);
 
       // 🆕 AUTO SAVE: Automatically save transaction
       console.log("💾 [handleSubmit] Starting auto-save...");
@@ -741,7 +752,8 @@ export const useTransferManagements = () => {
       const saveSuccess = await autoSaveTransaction(
         invoiceId,
         invoiceTokenIds,
-        onchainHash
+        onchainResult.transactionHash,
+        onchainResult.receivedTimestamp // ✅ Truyền receivedTimestamp từ blockchain event
       );
 
       if (!saveSuccess) {

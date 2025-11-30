@@ -1493,11 +1493,17 @@ export const useTransferToPharmacy = () => {
 
       try {
         const transactionHash = transferResult.transactionHash;
+        
+        // ✅ Convert receivedTimestamp (seconds) sang milliseconds cho blockchaintimespan
+        // receivedTimestamp từ blockchain là uint256 (seconds), cần convert sang milliseconds
+        const blockchaintimespan = transferResult.receivedTimestamp 
+          ? String(BigInt(transferResult.receivedTimestamp) * 1000n)
+          : null;
+
         const saveResponse = await saveTransferTransaction({
           invoiceId,
           transactionHash,
-          tokenIds: finalizedTokenIds,
-          blockchainEvent: transferResult.event,
+          blockchaintimespan: blockchaintimespan, // ✅ Thêm blockchaintimespan từ event
         });
 
         const saveBody = saveResponse?.data ?? saveResponse;

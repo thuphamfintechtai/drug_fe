@@ -465,10 +465,35 @@ export const transferNFTToDistributor = async (
 
     const receipt = await tx.wait();
 
+    // Parse event ManufacturerToDistributor để lấy receivedTimestamp
+    const iface = new ethers.Interface(nftABI.abi);
+    let receivedTimestamp = null;
+
+    for (const log of receipt.logs || []) {
+      try {
+        const parsed = iface.parseLog(log);
+        if (parsed?.name === "ManufacturerToDistributor") {
+          // Event structure: ManufacturerToDistributor(address indexed manufacturerAddress, address indexed distributorAddress, uint256[] tokenIds, uint receivedTimestamp)
+          receivedTimestamp = parsed.args?.receivedTimestamp?.toString() || parsed.args?.[3]?.toString();
+          console.log("✅ [transferNFTToDistributor] Parsed event - receivedTimestamp:", receivedTimestamp);
+          break;
+        }
+      } catch (err) {
+        // Not the event we're looking for, continue
+      }
+    }
+
+    if (!receivedTimestamp) {
+      console.warn("⚠️ [transferNFTToDistributor] Không tìm thấy event ManufacturerToDistributor, sử dụng block.timestamp");
+      // Fallback: sử dụng block timestamp nếu không parse được event
+      receivedTimestamp = receipt.timestamp?.toString() || Math.floor(Date.now() / 1000).toString();
+    }
+
     return {
       success: true,
       transactionHash: tx.hash,
       blockNumber: receipt.blockNumber,
+      receivedTimestamp: receivedTimestamp, // ✅ Thêm receivedTimestamp từ event
     };
   } catch (error) {
     console.error("Error transferring NFT:", error);
@@ -608,10 +633,35 @@ export const transferBatchNFTToDistributor = async (
 
     const receipt = await tx.wait();
 
+    // Parse event ManufacturerToDistributor để lấy receivedTimestamp
+    const iface = new ethers.Interface(nftABI.abi);
+    let receivedTimestamp = null;
+
+    for (const log of receipt.logs || []) {
+      try {
+        const parsed = iface.parseLog(log);
+        if (parsed?.name === "ManufacturerToDistributor") {
+          // Event structure: ManufacturerToDistributor(address indexed manufacturerAddress, address indexed distributorAddress, uint256[] tokenIds, uint receivedTimestamp)
+          receivedTimestamp = parsed.args?.receivedTimestamp?.toString() || parsed.args?.[3]?.toString();
+          console.log("✅ [transferBatchNFTToDistributor] Parsed event - receivedTimestamp:", receivedTimestamp);
+          break;
+        }
+      } catch (err) {
+        // Not the event we're looking for, continue
+      }
+    }
+
+    if (!receivedTimestamp) {
+      console.warn("⚠️ [transferBatchNFTToDistributor] Không tìm thấy event ManufacturerToDistributor, sử dụng block.timestamp");
+      // Fallback: sử dụng block timestamp nếu không parse được event
+      receivedTimestamp = receipt.timestamp?.toString() || Math.floor(Date.now() / 1000).toString();
+    }
+
     return {
       success: true,
       transactionHash: tx.hash,
       blockNumber: receipt.blockNumber,
+      receivedTimestamp: receivedTimestamp, // ✅ Thêm receivedTimestamp từ event
     };
   } catch (error) {
     console.error("Error batch transferring NFT:", error);
@@ -1037,10 +1087,43 @@ export const transferNFTToPharmacy = async (
 
     const receipt = await tx.wait();
 
+    // Parse event DistributorToPharmacy để lấy receivedTimestamp
+    const iface = new ethers.Interface(nftABI.abi);
+    let receivedTimestamp = null;
+    let eventData = null;
+
+    for (const log of receipt.logs || []) {
+      try {
+        const parsed = iface.parseLog(log);
+        if (parsed?.name === "DistributorToPharmacy") {
+          // Event structure: DistributorToPharmacy(address indexed distributorAddress, address indexed pharmacyAddress, uint256[] tokenIds, uint receivedTimestamp)
+          receivedTimestamp = parsed.args?.receivedTimestamp?.toString() || parsed.args?.[3]?.toString();
+          eventData = {
+            distributorAddress: parsed.args?.distributorAddress || parsed.args?.[0],
+            pharmacyAddress: parsed.args?.pharmacyAddress || parsed.args?.[1],
+            tokenIds: parsed.args?.tokenIds || parsed.args?.[2],
+            receivedTimestamp: receivedTimestamp,
+          };
+          console.log("✅ [transferNFTToPharmacy] Parsed event - receivedTimestamp:", receivedTimestamp);
+          break;
+        }
+      } catch (err) {
+        // Not the event we're looking for, continue
+      }
+    }
+
+    if (!receivedTimestamp) {
+      console.warn("⚠️ [transferNFTToPharmacy] Không tìm thấy event DistributorToPharmacy, sử dụng block.timestamp");
+      // Fallback: sử dụng block timestamp nếu không parse được event
+      receivedTimestamp = receipt.timestamp?.toString() || Math.floor(Date.now() / 1000).toString();
+    }
+
     return {
       success: true,
       transactionHash: tx.hash,
       blockNumber: receipt.blockNumber,
+      receivedTimestamp: receivedTimestamp, // ✅ Thêm receivedTimestamp từ event
+      event: eventData, // ✅ Thêm event data
     };
   } catch (error) {
     console.error("Error transferring NFT to pharmacy:", error);

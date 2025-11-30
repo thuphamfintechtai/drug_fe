@@ -625,11 +625,16 @@ export const useTransferHistory = () => {
         );
       }
 
+      // ✅ Convert receivedTimestamp (seconds) sang milliseconds cho blockchaintimespan
+      const blockchaintimespan = onchain.receivedTimestamp 
+        ? String(BigInt(onchain.receivedTimestamp) * 1000n)
+        : null;
+
       // Save to backend
       await saveTransferTransactionMutation.mutateAsync({
         invoiceId: item._id || item.invoice?._id,
         transactionHash: onchain.transactionHash,
-        tokenIds,
+        blockchaintimespan: blockchaintimespan, // ✅ Thêm blockchaintimespan từ event
       });
 
       toast.success(" Đã chuyển NFT on-chain và lưu transaction thành công!");
