@@ -21,7 +21,7 @@ export default function usePasswordResetRequest() {
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const page = parseInt(searchParams.get("page") || "1", 10);
-  const status = searchParams.get("status") || "pending";
+  const status = searchParams.get("status") || "";
 
   const navigationItems = useMemo(
     () => [
@@ -50,7 +50,10 @@ export default function usePasswordResetRequest() {
       );
     }, 50);
     try {
-      const params = { page, limit: 10, status };
+      const params = { page, limit: 10 };
+      if (status) {
+        params.status = status;
+      }
 
       const response = await api.get("/auth/password-reset-requests", {
         params,

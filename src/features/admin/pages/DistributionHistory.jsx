@@ -392,6 +392,26 @@ export default function DistributionHistory() {
                             Xác nhận nhận hàng
                           </h4>
                           <div className="space-y-0 divide-y divide-slate-200 p-5">
+                            {item.proof.supplyChainCompleted !== undefined && (
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3 last:pb-0">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                                  Supply chain
+                                </div>
+                                <div className="flex-1">
+                                  <span
+                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                      item.proof.supplyChainCompleted
+                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                                    }`}
+                                  >
+                                    {item.proof.supplyChainCompleted
+                                      ? "Hoàn tất"
+                                      : "Chưa hoàn tất"}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
                             {item.proof.fromDistributor && (
                               <div className="flex flex-col sm:flex-row sm:items-center py-3 first:pt-0">
                                 <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
@@ -466,27 +486,6 @@ export default function DistributionHistory() {
                                   >
                                     {item.proof.receiptTxHash}
                                   </a>
-                                </div>
-                              </div>
-                            )}
-
-                            {item.proof.supplyChainCompleted !== undefined && (
-                              <div className="flex flex-col sm:flex-row sm:items-center py-3 last:pb-0">
-                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
-                                  Supply chain
-                                </div>
-                                <div className="flex-1">
-                                  <span
-                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                      item.proof.supplyChainCompleted
-                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                        : "bg-amber-50 text-amber-700 border border-amber-200"
-                                    }`}
-                                  >
-                                    {item.proof.supplyChainCompleted
-                                      ? "Hoàn tất"
-                                      : "Chưa hoàn tất"}
-                                  </span>
                                 </div>
                               </div>
                             )}

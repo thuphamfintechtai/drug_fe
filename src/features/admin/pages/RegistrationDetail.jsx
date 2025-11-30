@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import DashboardLayout from "../../shared/components/DashboardLayout";
@@ -49,12 +48,6 @@ export default function AdminRegistrationDetail() {
                 Quản trị phê duyệt – minh bạch, chuẩn y tế.
               </p>
             </div>
-            <Link
-              to="/admin/registrations"
-              className="px-6 py-3 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 text-white font-medium transition backdrop-blur-sm"
-            >
-              ← Quay lại
-            </Link>
           </div>
         </div>
       </motion.section>
@@ -300,9 +293,8 @@ export default function AdminRegistrationDetail() {
                 <button
                   disabled={actionLoading}
                   onClick={() => setShowApproveModal(true)}
-                  className="px-8 py-3.5 rounded-xl text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-lg hover:shadow-xl disabled:opacity-60 transition font-semibold text-base flex items-center justify-center gap-2"
+                  className="px-8 py-3.5 rounded-xl text-white bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl disabled:opacity-60 transition font-semibold text-base flex items-center justify-center gap-2"
                 >
-                  <span className="text-xl text-white">✓</span>
                   <span className=" text-white">Duyệt đơn</span>
                 </button>
                 <button
@@ -313,7 +305,6 @@ export default function AdminRegistrationDetail() {
                   }}
                   className="px-8 py-3.5 rounded-xl text-white bg-gradient-to-r from-rose-500 to-red-600 shadow-lg hover:shadow-xl disabled:opacity-60 transition font-semibold text-base flex items-center justify-center gap-2"
                 >
-                  <span className="text-xl text-white">✕</span>
                   <span className=" text-white">Từ chối</span>
                 </button>
               </div>
@@ -366,9 +357,6 @@ export default function AdminRegistrationDetail() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <span className="text-2xl text-emerald-600">✓</span>
-                </div>
                 <div>
                   <h3 className="text-xl font-bold text-slate-800">
                     Xác nhận duyệt đơn
@@ -391,7 +379,7 @@ export default function AdminRegistrationDetail() {
                     setShowApproveModal(false);
                   }}
                   disabled={actionLoading}
-                  className="flex-1 px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-lg hover:shadow-xl disabled:opacity-60 transition font-semibold"
+                  className="flex-1 px-4 py-2.5 rounded-xl !text-white bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl disabled:opacity-60 transition font-semibold"
                 >
                   {actionLoading ? "Đang xử lý..." : "Xác nhận duyệt"}
                 </button>

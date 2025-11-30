@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../../utils/api";
 
 export const useNFTTracking = () => {
@@ -10,6 +10,19 @@ export const useNFTTracking = () => {
   const [pageLoading, setPageLoading] = useState(true);
   const [pageProgress, setPageProgress] = useState(0);
   const pageIntervalRef = useRef(null);
+
+  const navigationItems = useMemo(
+    () => [
+      { path: "/pharmacy", label: "Trang chủ", icon: null, active: false },
+      {
+        path: "/pharmacy/nft-tracking",
+        label: "NFT Tracking",
+        icon: null,
+        active: true,
+      },
+    ],
+    []
+  );
 
   useEffect(() => {
     setPageLoading(true);
@@ -82,15 +95,11 @@ export const useNFTTracking = () => {
     setError("");
     setData(null);
     try {
-      const response = await api.get(`/pharmacy/track/${nftId.trim()}`);
+      const response = await api.get(
+        `/public/Tracking/${encodeURIComponent(nftId.trim())}`
+      );
       const data = response.data?.data || response.data;
-      if (data && (data.success || data.nftId || data.tokenId)) {
-        setData(data.data || data);
-      } else {
-        setError(
-          data?.message || response.data?.message || "Không tìm thấy NFT này"
-        );
-      }
+      setData(data || null);
     } catch (e2) {
       setError(e2?.response?.data?.message || "Không thể tra cứu NFT");
     } finally {
@@ -127,6 +136,7 @@ export const useNFTTracking = () => {
     handleSearch,
     formatDate,
     short,
+    navigationItems,
     setError,
     setData,
   };

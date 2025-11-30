@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckLoader from "../../shared/components/TruckLoader";
 import { useDrugFrom } from "../hooks/usrDrugFrom";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function DrugForm() {
   const {
@@ -49,12 +49,6 @@ export default function DrugForm() {
                 Thông tin đầy đủ về thuốc và chuỗi cung ứng
               </p>
             </div>
-            <Link
-              to="/admin/drugs"
-              className="px-6 py-3 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 text-white font-medium transition backdrop-blur-sm"
-            >
-              ← Quay lại
-            </Link>
           </div>
         </div>
       </motion.section>

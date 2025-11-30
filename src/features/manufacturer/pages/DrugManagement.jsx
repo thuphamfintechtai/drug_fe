@@ -97,7 +97,11 @@ export default function DrugManagement() {
                 const tradeName = (drug.tradeName || "").toLowerCase();
                 const genericName = (drug.genericName || "").toLowerCase();
                 const atc = (drug.atcCode || "").toLowerCase();
-                return tradeName.includes(searchLower) || genericName.includes(searchLower) || atc.includes(searchLower);
+                return (
+                  tradeName.includes(searchLower) ||
+                  genericName.includes(searchLower) ||
+                  atc.includes(searchLower)
+                );
               }}
               getDisplayText={(drug) =>
                 `${drug.tradeName} - ${drug.genericName} (${drug.atcCode})`
@@ -155,9 +159,6 @@ export default function DrugManagement() {
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
                         Trạng thái
                       </th>
-                      <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">
-                        Hành động
-                      </th>
                     </tr>
                   </thead>
 
@@ -196,23 +197,6 @@ export default function DrugManagement() {
                               ? "Hoạt động"
                               : "Không hoạt động"}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => handleEdit(drug)}
-                              className="px-4 py-2 border-2 border-secondary rounded-full font-semibold !text-white bg-secondary hover:!text-white hover:bg-secondary transition-all duration-200"
-                            >
-                              Sửa
-                            </button>
-
-                            <button
-                              onClick={() => handleDelete(drug.id || drug._id)}
-                              className="px-4 py-2 border-2 border-red-500 rounded-full font-semibold !text-white bg-red-500 hover:bg-red-600 hover:!text-white transition-all duration-200"
-                            >
-                              Xóa
-                            </button>
-                          </div>
                         </td>
                       </tr>
                     ))}

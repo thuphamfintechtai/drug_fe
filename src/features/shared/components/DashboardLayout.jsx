@@ -318,7 +318,7 @@ export default function DashboardLayout({
       <aside
         onTransitionEnd={() => setShowLabels(sidebarOpen)}
         className={`fixed left-0 top-0 h-full z-50 !text-white
-        bg-linear-to-b from-[#007b91] to-[#009fbf] shadow-lg
+        bg-linear-to-b from-primary to-secondary shadow-lg
         transition-all duration-200 ease-linear
         ${sidebarOpen ? "w-64" : "w-20"}`}
       >

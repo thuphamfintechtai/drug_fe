@@ -1,4 +1,13 @@
 import PropTypes from "prop-types";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import TruckLoader from "../../shared/components/TruckLoader";
 import {
   formatAddress,
@@ -226,39 +235,114 @@ function renderStatistics(stats) {
     return null;
   }
 
-  const cards = [
-    { label: "Tổng NFT", value: stats.totalNFTs },
-    { label: "Minted", value: stats.nftsByStatus?.minted ?? 0 },
-    { label: "Đã chuyển giao", value: stats.nftsByStatus?.transferred ?? 0 },
-    { label: "Đã bán", value: stats.nftsByStatus?.sold ?? 0 },
-    { label: "Số NPP tham gia", value: stats.distributorsInvolved ?? 0 },
-    { label: "Số Nhà thuốc tham gia", value: stats.pharmaciesInvolved ?? 0 },
+  // Prepare data for line chart
+  const chartData = [
     {
-      label: "Lần chuyển tới NPP",
+      name: "Tổng NFT",
+      value: stats.totalNFTs ?? 0,
+    },
+    {
+      name: "Minted",
+      value: stats.nftsByStatus?.minted ?? 0,
+    },
+    {
+      name: "Đã chuyển giao",
+      value: stats.nftsByStatus?.transferred ?? 0,
+    },
+    {
+      name: "Đã bán",
+      value: stats.nftsByStatus?.sold ?? 0,
+    },
+    {
+      name: "NPP tham gia",
+      value: stats.distributorsInvolved ?? 0,
+    },
+    {
+      name: "Nhà thuốc tham gia",
+      value: stats.pharmaciesInvolved ?? 0,
+    },
+    {
+      name: "Chuyển tới NPP",
       value: stats.transfersToDistributors ?? 0,
     },
     {
-      label: "Lần chuyển tới Nhà thuốc",
+      name: "Chuyển tới Nhà thuốc",
       value: stats.transfersToPharmacies ?? 0,
     },
-    { label: "Chuỗi đã hoàn tất", value: stats.completedSupplyChains ?? 0 },
+    {
+      name: "Chuỗi hoàn tất",
+      value: stats.completedSupplyChains ?? 0,
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-      {cards.map((card) => (
-        <div
-          key={card.label}
-          className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+    <div className="w-full h-96">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart
+          data={chartData}
+          margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
         >
-          <div className="text-xs uppercase tracking-wide text-slate-500">
-            {card.label}
-          </div>
-          <div className="mt-1 text-lg font-semibold text-slate-800">
-            {formatNumber(card.value)}
-          </div>
-        </div>
-      ))}
+          <defs>
+            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#077CA3" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#077CA3" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
+          <XAxis
+            dataKey="name"
+            angle={-45}
+            textAnchor="end"
+            height={100}
+            tick={{ fontSize: 11, fill: "#64748b", fontWeight: 500 }}
+            interval={0}
+            tickLine={{ stroke: "#cbd5e1" }}
+          />
+          <YAxis
+            tick={{ fontSize: 11, fill: "#64748b", fontWeight: 500 }}
+            tickFormatter={(value) => formatNumber(value)}
+            tickLine={{ stroke: "#cbd5e1" }}
+            axisLine={{ stroke: "#e2e8f0" }}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "white",
+              border: "1px solid #e2e8f0",
+              borderRadius: "12px",
+              padding: "12px 16px",
+              boxShadow:
+                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+            }}
+            formatter={(value) => [formatNumber(value), "Giá trị"]}
+            labelStyle={{
+              color: "#1e293b",
+              fontWeight: 600,
+              marginBottom: "4px",
+            }}
+            itemStyle={{
+              color: "#077CA3",
+              fontWeight: 600,
+            }}
+          />
+          <Area
+            type="monotone"
+            dataKey="value"
+            stroke="#077CA3"
+            strokeWidth={3}
+            fill="url(#colorValue)"
+            dot={{ fill: "#077CA3", r: 5, strokeWidth: 2, stroke: "#fff" }}
+            activeDot={{
+              r: 8,
+              strokeWidth: 2,
+              stroke: "#fff",
+              fill: "#054f67",
+            }}
+            name="Giá trị"
+            animationDuration={1000}
+            animationEasing="ease-out"
+          />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }

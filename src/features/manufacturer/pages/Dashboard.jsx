@@ -236,6 +236,115 @@ export default function ManufacturerDashboard() {
                 </div>
               </motion.div>
 
+              <motion.div variants={fadeUp} initial="hidden" animate="show">
+                <h2 className="text-lg font-semibold text-slate-800 mb-4">
+                  Chi tiết NFT & Chuyển giao
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+                  <Link
+                    to="/manufacturer/production-history?status=minted"
+                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                  >
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.blue}, ${COLORS.cyan})`,
+                      }}
+                    />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">
+                        NFT Minted
+                      </div>
+                      <div className="text-3xl font-bold text-blue-600">
+                        {displayStats?.nfts?.byStatus?.minted || 0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Chưa chuyển giao
+                      </div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/manufacturer/production-history?status=transferred"
+                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
+                  >
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.emerald}, ${COLORS.green})`,
+                      }}
+                    />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">
+                        NFT Transferred
+                      </div>
+                      <div className="text-3xl font-bold text-emerald-600">
+                        {displayStats?.nfts?.byStatus?.transferred || 0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Đã chuyển giao
+                      </div>
+                    </div>
+                  </Link>
+
+                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.green}, ${COLORS.emerald})`,
+                      }}
+                    />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">
+                        NFT Sold
+                      </div>
+                      <div className="text-3xl font-bold text-green-600">
+                        {displayStats?.nfts?.byStatus?.sold || 0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Đã bán cho NPP
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.amber}, ${COLORS.orange})`,
+                      }}
+                    />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Pending</div>
+                      <div className="text-3xl font-bold text-amber-600">
+                        {displayStats?.transfers?.byStatus?.pending || 0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Chờ xử lý
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
+                      style={{
+                        background: `linear-gradient(to right, ${COLORS.emerald}, ${COLORS.green})`,
+                      }}
+                    />
+                    <div className="p-5 pt-7 text-center">
+                      <div className="text-sm text-slate-600 mb-1">Paid</div>
+                      <div className="text-3xl font-bold text-emerald-600">
+                        {displayStats?.transfers?.byStatus?.paid || 0}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        Đã thanh toán
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
               {/* Charts Row 1: Line Chart (7 days) and Bar Chart (Today vs Yesterday) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <motion.div
@@ -467,114 +576,6 @@ export default function ManufacturerDashboard() {
               )}
 
               {/* Detailed Statistics Cards */}
-              <motion.div variants={fadeUp} initial="hidden" animate="show">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">
-                  Chi tiết NFT & Chuyển giao
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-                  <Link
-                    to="/manufacturer/production-history?status=minted"
-                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
-                  >
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.blue}, ${COLORS.cyan})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        NFT Minted
-                      </div>
-                      <div className="text-3xl font-bold text-blue-600">
-                        {displayStats?.nfts?.byStatus?.minted || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Chưa chuyển giao
-                      </div>
-                    </div>
-                  </Link>
-
-                  <Link
-                    to="/manufacturer/production-history?status=transferred"
-                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
-                  >
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.emerald}, ${COLORS.green})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        NFT Transferred
-                      </div>
-                      <div className="text-3xl font-bold text-emerald-600">
-                        {displayStats?.nfts?.byStatus?.transferred || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Đã chuyển giao
-                      </div>
-                    </div>
-                  </Link>
-
-                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.green}, ${COLORS.emerald})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        NFT Sold
-                      </div>
-                      <div className="text-3xl font-bold text-green-600">
-                        {displayStats?.nfts?.byStatus?.sold || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Đã bán cho NPP
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.amber}, ${COLORS.orange})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">Pending</div>
-                      <div className="text-3xl font-bold text-amber-600">
-                        {displayStats?.transfers?.byStatus?.pending || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Chờ xử lý
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.emerald}, ${COLORS.green})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">Paid</div>
-                      <div className="text-3xl font-bold text-emerald-600">
-                        {displayStats?.transfers?.byStatus?.paid || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Đã thanh toán
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
             </div>
           ) : (
             <div className="text-center py-20 text-slate-500">

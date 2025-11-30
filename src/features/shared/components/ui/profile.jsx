@@ -12,7 +12,9 @@ const fadeUp = {
 };
 
 export function Profile({ title, subtitle, user, company, roleLabel }) {
-  if (!user) {return null;}
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">
@@ -38,7 +40,7 @@ export function Profile({ title, subtitle, user, company, roleLabel }) {
               <div className="bg-slate-50 rounded-xl p-4">
                 <div className="text-xs text-slate-500 mb-1">Tên đầy đủ</div>
                 <div className="font-semibold text-slate-800">
-                  {user.fullName || "N/A"}
+                  {user.fullName || user.username || "N/A"}
                 </div>
               </div>
               <div className="bg-slate-50 rounded-xl p-4">

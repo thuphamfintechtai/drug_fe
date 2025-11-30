@@ -1,289 +1,539 @@
+import { motion } from "framer-motion";
 import DashboardLayout from "../../shared/components/DashboardLayout";
-import { ipfsToHttp } from "../../utils/ipfsHelper";
-import { getManufacturerNavigationItems } from "../components/manufacturerNavigation";
+import TruckLoader from "../../shared/components/TruckLoader";
 import { useNFTManagement } from "../hooks/useNFTManagement";
-import { useNavigate } from "react-router-dom";
-
-export default function NFTManagement() {
-  const navigate = useNavigate();
+export default function AdminNftTracking() {
   const {
-    nfts,
+    nftId,
+    setNftId,
+    data,
     loading,
-    selectedNFT,
-    showDetailModal,
-    handleViewDetail,
-    setShowDetailModal,
+    error,
+    pageLoading,
+    pageProgress,
+    handleSearch,
+    formatDate,
+    short,
+    navigationItems,
+    setError,
+    setData,
   } = useNFTManagement();
-
-  const getStatusBadge = (status) => {
-    const styles = {
-      minted: "bg-green-100 text-green-800",
-      transferred: "bg-blue-100 text-blue-800",
-      sold: "bg-teal-100 text-teal-800",
-      expired: "bg-red-100 text-red-800",
-      recalled: "bg-orange-100 text-orange-800",
-    };
-
-    const labels = {
-      minted: "✓ Minted",
-      transferred: "→ Transferred",
-      sold: "$ Sold",
-      expired: "⏰ Expired",
-      recalled: "⚠️ Recalled",
-    };
-
-    return (
-      <span
-        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-          styles[status] || styles.minted
-        }`}
-      >
-        {labels[status] || status}
-      </span>
-    );
+  const fadeUp = {
+    hidden: { opacity: 0, y: 16, filter: "blur(6px)" },
+    show: {
+      opacity: 1,
+      y: 0,
+      filter: "blur(0px)",
+      transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+    },
   };
-
-  const navigationItems = getManufacturerNavigationItems();
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-2xl">🎨</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">
-                  Quản lý NFT
-                </h1>
-                <p className="text-sm text-gray-500">Danh sách NFT đã tạo</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-cyan-600">
-                {nfts.length}
-              </div>
-              <div className="text-sm text-gray-500">Tổng NFT</div>
-            </div>
+      {pageLoading ? (
+        <div className="flex flex-col items-center justify-center min-h-[50vh]">
+          <div className="w-full max-w-2xl">
+            <TruckLoader height={72} progress={pageProgress} showTrack />
           </div>
+          <div className="text-lg text-slate-600 mt-6">Đang tra cứu...</div>
         </div>
-
-        {/* NFT Grid */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-          {loading ? (
-            <div className="flex flex-col items-center py-12">
-              <div className="h-12 w-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p className="text-gray-600">Đang tải NFT...</p>
-            </div>
-          ) : nfts.length === 0 ? (
-            <div className="flex flex-col items-center text-center py-12">
-              <div className="w-24 h-24 bg-gradient-to-br from-cyan-100 to-teal-100 rounded-2xl flex items-center justify-center mb-6">
-                <span className="text-5xl">🎨</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">
-                Chưa có NFT nào
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Tạo Proof of Production để mint NFT
+      ) : (
+        <div className="space-y-6">
+          {/* Banner */}
+          <motion.section
+            className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-r from-primary to-secondary"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="relative px-6 py-8 md:px-10 md:py-12 !text-white">
+              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm mb-2">
+                Tra cứu NFT
+              </h1>
+              <p className="!text-white/90">
+                Theo dõi hành trình thuốc qua NFT ID
               </p>
-              <button
-                onClick={() => navigate("/manufacturer/proofs/create")}
-                className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 !text-white rounded-xl font-semibold shadow-lg"
-              >
-                + Tạo Proof mới
-              </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {nfts.map((nft, index) => (
-                <div
-                  key={nft._id || index}
-                  className="bg-gradient-to-br from-cyan-50 to-teal-50 rounded-xl border-2 border-cyan-200 overflow-hidden hover:shadow-xl transition-all duration-300 group cursor-pointer"
-                  onClick={() => handleViewDetail(nft)}
-                >
-                  {/* NFT Image/Icon */}
-                  <div className="h-48 bg-gradient-to-br from-cyan-400 to-teal-600 flex items-center justify-center relative overflow-hidden">
-                    <span className="text-6xl group-hover:scale-110 transition-transform duration-300">
-                      🎨
-                    </span>
-                    <div className="absolute top-3 right-3">
-                      {getStatusBadge(nft.status)}
-                    </div>
-                  </div>
+          </motion.section>
 
-                  {/* NFT Info */}
-                  <div className="p-5">
-                    <div className="mb-3">
-                      <div className="text-xs text-cyan-600 font-semibold mb-1">
-                        Token ID
-                      </div>
-                      <div className="font-mono text-lg font-bold text-gray-800">
-                        #{nft.tokenId}
-                      </div>
-                    </div>
+          {/* Search */}
+          <motion.div
+            className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6"
+            variants={fadeUp}
+            initial="hidden"
+            animate="show"
+          >
+            <div className="max-w-3xl mx-auto">
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
+                    />
+                  </svg>
+                </span>
 
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Batch Number:</span>
-                        <span className="font-semibold text-gray-800">
-                          {nft.batchNumber}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Drug:</span>
-                        <span className="font-semibold text-gray-800 truncate ml-2">
-                          {nft.drug?.tradeName || "N/A"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Quantity:</span>
-                        <span className="font-semibold text-gray-800">
-                          {nft.quantity?.toLocaleString() || 0}
-                        </span>
-                      </div>
-                    </div>
+                <input
+                  type="text"
+                  value={nftId}
+                  onChange={(e) => setNftId(e.target.value)}
+                  placeholder="Nhập NFT ID để tra cứu..."
+                  className="w-full h-14 pl-12 pr-36 rounded-xl border-2 border-slate-300 bg-white text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition text-base"
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                />
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewDetail(nft);
-                      }}
-                      className="mt-4 w-full px-4 py-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 !text-white rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg"
-                    >
-                      Xem chi tiết →
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Detail Modal */}
-      {showDetailModal && selectedNFT && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-cyan-600 to-teal-600 px-8 py-6 rounded-t-3xl">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <span className="text-4xl">🎨</span>
-                  <div>
-                    <h2 className="text-2xl font-bold !text-white">
-                      NFT Details
-                    </h2>
-                    <p className="text-cyan-100 text-sm">
-                      Token ID: #{selectedNFT.tokenId}
-                    </p>
-                  </div>
-                </div>
                 <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center !text-white text-xl"
+                  onClick={handleSearch}
+                  disabled={loading || !nftId.trim()}
+                  className="absolute right-2 top-2 bottom-2 px-6 rounded-xl !text-white bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  ✕
+                  {loading ? "Đang tra cứu..." : "Tìm kiếm"}
                 </button>
               </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-8 space-y-4">
-              <InfoRow label="Token ID" value={selectedNFT.tokenId} />
-              <InfoRow label="Batch Number" value={selectedNFT.batchNumber} />
-              <InfoRow label="Serial Number" value={selectedNFT.serialNumber} />
-              <InfoRow label="Status" value={selectedNFT.status} />
-              <InfoRow
-                label="Drug"
-                value={selectedNFT.drug?.tradeName || "N/A"}
-              />
-              <InfoRow
-                label="Quantity"
-                value={`${selectedNFT.quantity?.toLocaleString() || 0} ${
-                  selectedNFT.unit || "units"
-                }`}
-              />
-              <InfoRow
-                label="Mfg Date"
-                value={
-                  selectedNFT.mfgDate
-                    ? new Date(selectedNFT.mfgDate).toLocaleDateString("vi-VN")
-                    : "N/A"
-                }
-              />
-              <InfoRow
-                label="Exp Date"
-                value={
-                  selectedNFT.expDate
-                    ? new Date(selectedNFT.expDate).toLocaleDateString("vi-VN")
-                    : "N/A"
-                }
-              />
-
-              {selectedNFT.contractAddress && (
-                <div className="pt-2">
-                  <label className="text-sm font-semibold text-gray-600 block mb-2">
-                    Contract Address:
-                  </label>
-                  <code className="block bg-gray-100 rounded-lg p-3 text-xs font-mono break-all">
-                    {selectedNFT.contractAddress}
-                  </code>
-                </div>
-              )}
-
-              {selectedNFT.chainTxHash && (
-                <div className="pt-2">
-                  <label className="text-sm font-semibold text-gray-600 block mb-2">
-                    Transaction Hash:
-                  </label>
-                  <a
-                    href={`https://etherscan.io/tx/${selectedNFT.chainTxHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block bg-gray-100 rounded-lg p-3 text-xs font-mono break-all text-cyan-600 hover:text-cyan-700"
+              {error && (
+                <motion.div
+                  className="mt-6 bg-white rounded-2xl border border-red-200 shadow-sm p-10 text-center"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                >
+                  <div className="text-6xl mb-4">🔍</div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">
+                    Không tìm thấy kết quả
+                  </h3>
+                  <p className="text-slate-600 mb-1">
+                    Không có dữ liệu nào khớp với NFT ID bạn đã nhập.
+                  </p>
+                  <p className="text-slate-500 text-sm mb-6">
+                    Vui lòng kiểm tra lại hoặc thử với mã khác.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setError("");
+                      setData(null);
+                      setNftId("");
+                    }}
+                    className="px-6 py-3 rounded-xl !text-white bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition font-semibold"
                   >
-                    {selectedNFT.chainTxHash}
-                  </a>
+                    Thử lại
+                  </button>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+
+          {data && (
+            <motion.div
+              className="space-y-6"
+              variants={fadeUp}
+              initial="hidden"
+              animate="show"
+            >
+              {/* Thông tin chi tiết thuốc */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-primary to-secondary border-b border-primary/20 px-6 py-4">
+                  <h2 className="text-lg font-semibold !text-white">
+                    Thông tin chi tiết thuốc
+                  </h2>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-0 divide-y divide-slate-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4 first:pt-0">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                          NFT ID
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                          {data?.nft?.tokenId
+                            ? short(String(data.nft.tokenId))
+                            : nftId
+                            ? short(String(nftId))
+                            : "N/A"}
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                          Nhà sản xuất
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 flex-1">
+                          {data?.manufacturerInvoice?.fromManufacturer
+                            ?.fullName ||
+                            data?.nft?.proofOfProduction?.manufacturer
+                              ?.fullName ||
+                            data?.nft?.owner?.fullName ||
+                            "N/A"}
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                          Ngày sản xuất
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 flex-1">
+                          {formatDate(
+                            data?.nft?.mfgDate ||
+                              data?.nft?.proofOfProduction?.mfgDate
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                          Số lô
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 flex-1">
+                          {data?.nft?.batchNumber ||
+                            data?.nft?.proofOfProduction?.batchNumber ||
+                            "N/A"}
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4 last:pb-0">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                          Số serial
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                          {data?.nft?.serialNumber || "N/A"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-0 divide-y divide-slate-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4 first:pt-0">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                          Tên thuốc
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 flex-1">
+                          {data?.nft?.drug?.tradeName ||
+                            data?.nft?.drug?.genericName ||
+                            "N/A"}
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                          Mã ATC
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                          {data?.nft?.drug?.atcCode || "N/A"}
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                          Nhà phân phối
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 flex-1">
+                          {(() => {
+                            const commercialDistributor =
+                              data?.commercialInvoice?.fromDistributor;
+                            if (commercialDistributor) {
+                              if (typeof commercialDistributor === "object") {
+                                return (
+                                  commercialDistributor.fullName ||
+                                  commercialDistributor.name ||
+                                  "N/A"
+                                );
+                              }
+                            }
+                            const manufacturerDistributor =
+                              data?.manufacturerInvoice?.toDistributor;
+                            if (manufacturerDistributor) {
+                              if (typeof manufacturerDistributor === "object") {
+                                return (
+                                  manufacturerDistributor.fullName ||
+                                  manufacturerDistributor.name ||
+                                  "N/A"
+                                );
+                              }
+                              return "N/A";
+                            }
+                            return "N/A";
+                          })()}
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                          Nhà thuốc
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 flex-1">
+                          {data?.commercialInvoice?.toPharmacy?.fullName ||
+                            "N/A"}
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                          Hạn sử dụng
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 flex-1">
+                          {formatDate(
+                            data?.nft?.expDate ||
+                              data?.nft?.proofOfProduction?.expDate
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4 last:pb-0">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                          Chủ sở hữu hiện tại
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 flex-1">
+                          {data?.nft?.owner?.fullName ||
+                            data?.nft?.owner?.username ||
+                            "N/A"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Thông tin Blockchain */}
+              {(data?.nft?.chainTxHash ||
+                data?.nft?.ipfsUrl ||
+                data?.nft?.contractAddress) && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+                  <div className="bg-gradient-to-r from-primary to-secondary border-b border-primary/20 px-6 py-4">
+                    <h3 className="text-base font-semibold !text-white">
+                      Thông tin Blockchain
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="space-y-0 divide-y divide-slate-200">
+                      {data?.nft?.contractAddress && (
+                        <div className="flex flex-col sm:flex-row sm:items-start py-4 first:pt-0">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0 sm:pt-1">
+                            Contract Address
+                          </div>
+                          <div className="text-sm font-semibold text-slate-800 font-mono break-all flex-1">
+                            {data.nft.contractAddress}
+                          </div>
+                        </div>
+                      )}
+                      {data?.nft?.chainTxHash && (
+                        <div className="flex flex-col sm:flex-row sm:items-start py-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0 sm:pt-1">
+                            Transaction Hash
+                          </div>
+                          <div className="text-sm font-semibold text-slate-800 font-mono break-all flex-1">
+                            <a
+                              href={`https://sepolia.etherscan.io/tx/${data.nft.chainTxHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:text-secondary hover:underline"
+                            >
+                              {data.nft.chainTxHash}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                      {data?.nft?.ipfsUrl && (
+                        <div className="flex flex-col sm:flex-row sm:items-start py-4 last:pb-0">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0 sm:pt-1">
+                            IPFS URL
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            <a
+                              href={data.nft.ipfsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono text-xs text-primary hover:text-secondary hover:underline break-all"
+                            >
+                              {data.nft.ipfsUrl}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {selectedNFT.ipfsUrl && (
-                <div className="pt-2">
-                  <a
-                    href={ipfsToHttp(selectedNFT.ipfsUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-cyan-600 hover:text-cyan-700 font-medium flex items-center gap-2"
-                  >
-                    <span>🔗</span> View on IPFS
-                  </a>
+              {/* Lịch sử blockchain */}
+              {data?.blockchainHistory && data.blockchainHistory.length > 0 && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+                  <div className="bg-gradient-to-r from-primary to-secondary border-b border-primary/20 px-6 py-4">
+                    <h3 className="text-base font-semibold !text-white">
+                      Lịch sử giao dịch ({data.blockchainHistory.length})
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="space-y-3">
+                      {data.blockchainHistory.map((tx, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-slate-50 rounded-xl p-4 border border-slate-200"
+                        >
+                          <div className="space-y-0 divide-y divide-slate-200">
+                            <div className="flex flex-col sm:flex-row sm:items-center py-3 first:pt-0">
+                              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                                Từ
+                              </div>
+                              <div className="text-sm font-semibold text-slate-800 font-mono flex-1">
+                                {short(tx.fromUserAddress)}
+                              </div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center py-3">
+                              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                                Đến
+                              </div>
+                              <div className="text-sm font-semibold text-slate-800 font-mono flex-1">
+                                {short(tx.toUserAddress)}
+                              </div>
+                            </div>
+                            {tx.receivedTimestamp && (
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3 last:pb-0">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                                  Thời gian
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                  {new Date(
+                                    tx.receivedTimestamp * 1000
+                                  ).toLocaleString("vi-VN")}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
-            </div>
 
-            {/* Footer */}
-            <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex justify-end">
-              <button
-                onClick={() => setShowDetailModal(false)}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 !text-white font-medium"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
+              {/* Thông tin hóa đơn */}
+              {(data?.manufacturerInvoice || data?.commercialInvoice) && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+                  <div className="bg-gradient-to-r from-primary to-secondary border-b border-primary/20 px-6 py-4">
+                    <h3 className="text-base font-semibold !text-white">
+                      Thông tin Hóa đơn
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div
+                      className={`grid gap-6 ${
+                        data?.manufacturerInvoice && data?.commercialInvoice
+                          ? "grid-cols-1 md:grid-cols-2"
+                          : "grid-cols-1"
+                      }`}
+                    >
+                      {data?.manufacturerInvoice && (
+                        <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                          <h4 className="font-semibold text-slate-800 mb-4 text-base">
+                            Hóa đơn từ NSX
+                          </h4>
+                          <div className="space-y-0 divide-y divide-slate-200">
+                            <div className="flex flex-col sm:flex-row sm:items-center py-3 first:pt-0">
+                              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                                Số HD
+                              </div>
+                              <div className="text-sm font-semibold text-slate-800 font-mono flex-1">
+                                {data.manufacturerInvoice.invoiceNumber}
+                              </div>
+                            </div>
+                            {data.manufacturerInvoice.invoiceDate && (
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                                  Ngày
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                  {formatDate(
+                                    data.manufacturerInvoice.invoiceDate
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            <div className="flex flex-col sm:flex-row sm:items-center py-3 last:pb-0">
+                              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                                Trạng thái
+                              </div>
+                              <div className="flex-1">
+                                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 capitalize">
+                                  {data.manufacturerInvoice.status}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {data?.commercialInvoice && (
+                        <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                          <h4 className="font-semibold text-slate-800 mb-4 text-base">
+                            Hóa đơn thương mại
+                          </h4>
+                          <div className="space-y-0 divide-y divide-slate-200">
+                            <div className="flex flex-col sm:flex-row sm:items-center py-3 first:pt-0">
+                              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                                Số HD
+                              </div>
+                              <div className="text-sm font-semibold text-slate-800 font-mono flex-1">
+                                {data.commercialInvoice.invoiceNumber}
+                              </div>
+                            </div>
+                            {data.commercialInvoice.invoiceDate && (
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                                  Ngày
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                  {formatDate(
+                                    data.commercialInvoice.invoiceDate
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            <div className="flex flex-col sm:flex-row sm:items-center py-3 last:pb-0">
+                              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                                Trạng thái
+                              </div>
+                              <div className="flex-1">
+                                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 capitalize">
+                                  {data.commercialInvoice.status}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              {(data?.nft?.chainTxHash || data?.nft?.ipfsUrl) && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6">
+                  <div className="flex flex-col sm:flex-row gap-3 justify-end">
+                    {data?.nft?.chainTxHash && (
+                      <a
+                        href={`https://sepolia.etherscan.io/tx/${data.nft.chainTxHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-3 rounded-xl !text-white bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition font-semibold flex items-center justify-center gap-2"
+                      >
+                        <span>🔗</span>
+                        <span>Xem trên Etherscan</span>
+                      </a>
+                    )}
+                    {data?.nft?.ipfsUrl && (
+                      <a
+                        href={data.nft.ipfsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-3 rounded-xl !text-white bg-gradient-to-r from-purple-600 to-purple-700 shadow-lg hover:shadow-xl transition font-semibold flex items-center justify-center gap-2"
+                      >
+                        <span>📄</span>
+                        <span>Xem trên IPFS</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
         </div>
       )}
     </DashboardLayout>
   );
 }
-
-// Helper component
-const InfoRow = ({ label, value }) => (
-  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-    <span className="text-sm font-semibold text-gray-600">{label}:</span>
-    <span className="text-sm text-gray-800 font-medium">{value}</span>
-  </div>
-);

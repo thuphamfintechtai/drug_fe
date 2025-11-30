@@ -14,7 +14,6 @@ export default function Navbar() {
   const { theme, toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const dropdownRef = useRef(null);
   const {
     account,
@@ -25,14 +24,6 @@ export default function Navbar() {
     disconnect,
     chainId,
   } = useMetaMask();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   // Đóng dropdown khi click bên ngoài
   useEffect(() => {
@@ -122,13 +113,11 @@ export default function Navbar() {
       animate={{
         y: 0,
         opacity: 1,
-        backgroundColor: scrolled ? "rgba(75, 173, 209, 0.95)" : "#077ca3",
-        backdropFilter: `blur(${scrolled ? 16 : 12}px)`,
+        backgroundColor: "#054f67",
+        backdropFilter: "blur(12px)",
       }}
       transition={{
         default: { duration: 0.6, ease: "easeOut" },
-        backgroundColor: { duration: 0.3, ease: "easeOut" },
-        backdropFilter: { duration: 0.3, ease: "easeOut" },
       }}
       className="fixed top-0 left-0 right-0 z-50 shadow-lg border-b border-[#4BADD1]/30"
     >
@@ -149,7 +138,10 @@ export default function Navbar() {
                 Nhà phân phối (Dashboard)
               </motion.span>
             )}
-            <Link onClick={() => window.location.href = "/"} className="flex items-center gap-3 group">
+            <Link
+              onClick={() => (window.location.href = "/")}
+              className="flex items-center gap-3 group"
+            >
               <motion.span
                 className="font-bold text-xl !text-white drop-shadow-md tracking-tight"
                 whileHover={{

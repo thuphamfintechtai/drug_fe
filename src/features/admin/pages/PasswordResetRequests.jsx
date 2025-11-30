@@ -237,7 +237,7 @@ export default function PasswordResetRequests() {
                     </div>
                     <button
                       onClick={() => setShowDetailModal(false)}
-                      className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition"
+                      className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 !text-white flex items-center justify-center transition"
                     >
                       ✕
                     </button>
@@ -405,7 +405,7 @@ export default function PasswordResetRequests() {
 
                   {/* Actions */}
                   {selectedItem.status === "pending" && (
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                    <div className="bg-white rounded-xl shadow-sm p-6">
                       <div className="flex flex-col sm:flex-row gap-3">
                         <button
                           disabled={
@@ -413,9 +413,8 @@ export default function PasswordResetRequests() {
                             new Date() > new Date(selectedItem.expiresAt)
                           }
                           onClick={() => setShowApproveModal(true)}
-                          className="flex-1 px-6 py-3.5 rounded-xl !text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed transition font-semibold flex items-center justify-center gap-2"
+                          className="flex-1 px-6 py-3.5 rounded-xl !text-white bg-gradient-to-r  from-primary to-secondary shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed transition font-semibold flex items-center justify-center gap-2"
                         >
-                          <span className="text-xl">✓</span>
                           <span>Duyệt & Gửi mật khẩu mới</span>
                         </button>
                         <button
@@ -426,7 +425,6 @@ export default function PasswordResetRequests() {
                           }}
                           className="flex-1 px-6 py-3.5 rounded-xl !text-white bg-gradient-to-r from-rose-500 to-red-600 shadow-lg hover:shadow-xl disabled:opacity-60 transition font-semibold flex items-center justify-center gap-2"
                         >
-                          <span className="text-xl">✕</span>
                           <span>Từ chối</span>
                         </button>
                       </div>
@@ -589,7 +587,7 @@ export default function PasswordResetRequests() {
                         }
                       }}
                       disabled={actionLoading || !tempRejectReason.trim()}
-                      className="flex-1 px-4 py-2.5 rounded-xl text-white bg-gradient-to-r from-rose-500 to-red-600 shadow-lg hover:shadow-xl disabled:opacity-60 transition font-semibold"
+                      className="flex-1 px-4 py-2.5 rounded-xl !text-white bg-gradient-to-r from-rose-500 to-red-600 shadow-lg hover:shadow-xl disabled:opacity-60 transition font-semibold"
                     >
                       {actionLoading ? "Đang xử lý..." : "Xác nhận từ chối"}
                     </button>

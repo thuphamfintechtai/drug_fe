@@ -96,7 +96,7 @@ export default function useNFTTracking() {
     setData(null);
     try {
       const response = await api.get(
-        `/NFTTracking/NFTTracking/${encodeURIComponent(nftId.trim())}`
+        `/public/Tracking/${encodeURIComponent(nftId.trim())}`
       );
       const data = response.data?.data || response.data;
       setData(data || null);

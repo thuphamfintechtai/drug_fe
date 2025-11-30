@@ -1,27 +1,47 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import api from "../../utils/api";
 import Navbar from "../components/Navbar";
 import { toast } from "sonner";
+import manufacturingIcon from "../../../assets/manufacturing.png";
+import packageIcon from "../../../assets/get-Package.png";
 
 // Scroll-animated timeline line
 function TimelineLine({ containerRef }) {
   const lineRef = useRef(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start 0.8", "end 0.2"],
-  });
+  useEffect(() => {
+    const container = containerRef?.current;
+    if (!container) {
+      return;
+    }
 
-  const scaleY = useTransform(scrollYProgress, [0, 1], [0, 1]);
+    const updateScrollProgress = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const totalScroll = scrollHeight - clientHeight;
+      const progress = totalScroll > 0 ? scrollTop / totalScroll : 0;
+      setScrollProgress(progress);
+    };
+
+    container.addEventListener("scroll", updateScrollProgress);
+    updateScrollProgress(); // Initial calculation
+
+    return () => {
+      container.removeEventListener("scroll", updateScrollProgress);
+    };
+  }, [containerRef]);
 
   return (
     <div className="absolute left-6 top-8 bottom-8 w-1 overflow-hidden">
       <motion.div
         ref={lineRef}
-        className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-[#3A9DB8] via-[#4BADD1] to-[#5CC5E0] rounded-full shadow-lg"
-        style={{ scaleY, transformOrigin: "top" }}
+        className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-primary via-secondary to-third rounded-full shadow-lg"
+        style={{
+          scaleY: scrollProgress,
+          transformOrigin: "top",
+        }}
       >
         {/* Shimmer */}
         <motion.div
@@ -31,7 +51,7 @@ function TimelineLine({ containerRef }) {
         />
         {/* Glow */}
         <motion.div
-          className="absolute inset-0 bg-gradient-to-b from-[#5CC5E0]/20 via-transparent to-[#3A9DB8]/20"
+          className="absolute inset-0 bg-gradient-to-b from-third/20 via-transparent to-primary/20"
           animate={{ opacity: [0.3, 0.6, 0.3] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -106,101 +126,88 @@ export default function PublicNFTTracking() {
   };
 
   const getStageIcon = (stage) => {
-    switch (stage?.toLowerCase()) {
-      case "manufactured":
-      case "production":
-        return (
-          <svg
-            className="w-7 h-7"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
-            />
-          </svg>
-        );
-      case "distributed":
-      case "distribution":
-        return (
-          <svg
-            className="w-7 h-7"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6.75m-9.75 0H3.375c-.621 0-1.125-.504-1.125-1.125V8.25c0-.621.504-1.125 1.125-1.125h4.5A1.5 1.5 0 019.5 6h6a1.5 1.5 0 011.5 1.5v9.75c0 .621-.504 1.125-1.125 1.125H15.75m-7.5 0a1.5 1.5 0 003 0m-3 0a1.5 1.5 0 013 0m0 0h.008v.008H8.25V18.75zm6-3h.008v.008H14.25V15.75z"
-            />
-          </svg>
-        );
-      case "pharmacy":
-      case "retail":
-        return (
-          <svg
-            className="w-7 h-7"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-            />
-          </svg>
-        );
-      default:
-        return (
-          <svg
-            className="w-7 h-7"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        );
+    const stageLower = stage?.toLowerCase() || "";
+
+    // Đã nhận hàng - dùng ảnh
+    if (
+      stageLower.includes("received") ||
+      stageLower.includes("đã nhận") ||
+      stageLower.includes("pharmacy_received") ||
+      stageLower.includes("distributor_received")
+    ) {
+      return (
+        <img
+          src={packageIcon}
+          alt="Đã nhận"
+          className="w-7 h-7 object-contain"
+        />
+      );
     }
+
+    // Nhà phân phối - dùng emoji
+    if (
+      stageLower.includes("distributor") ||
+      stageLower.includes("distribution") ||
+      stageLower.includes("distributed") ||
+      stageLower === "transfer_to_distributor"
+    ) {
+      return <span className="text-3xl">🏭</span>;
+    }
+
+    // Nhà thuốc - dùng emoji
+    if (
+      stageLower.includes("pharmacy") ||
+      stageLower.includes("retail") ||
+      stageLower === "transfer_to_pharmacy"
+    ) {
+      return <span className="text-3xl">🏥</span>;
+    }
+
+    // Sản xuất - dùng ảnh
+    if (
+      stageLower.includes("manufactured") ||
+      stageLower.includes("production") ||
+      stageLower.includes("produced")
+    ) {
+      return (
+        <img
+          src={manufacturingIcon}
+          alt="Sản xuất"
+          className="w-7 h-7 object-contain"
+        />
+      );
+    }
+
+    // Mặc định - dùng ảnh đã nhận
+    return (
+      <img src={packageIcon} alt="Đã nhận" className="w-7 h-7 object-contain" />
+    );
   };
 
   const getStageColor = (stage) => {
     switch (stage?.toLowerCase()) {
       case "manufactured":
       case "production":
-        return "from-[#3A9DB8] to-[#4BADD1]";
+        return "from-primary to-secondary";
       case "distributed":
       case "distribution":
-        return "from-[#4BADD1] to-[#5CC5E0]";
+        return "from-secondary to-third";
       case "pharmacy":
       case "retail":
-        return "from-[#5CC5E0] to-[#4BADD1]";
+        return "from-third to-secondary";
       default:
-        return "from-[#3A9DB8] to-[#5CC5E0]";
+        return "from-primary to-third";
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#4BADD1]/5 via-[#4BADD1]/5 to-[#4BADD1]/5">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 mt-16">
         {/* Hero */}
         <motion.section
-          className="relative overflow-hidden rounded-3xl mb-8 sm:mb-12 bg-gradient-to-br from-[#3A9DB8] via-[#4BADD1] to-[#5CC5E0]"
+          className="relative overflow-hidden rounded-3xl mb-8 sm:mb-12 bg-gradient-to-r from-primary to-secondary shadow-2xl"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -217,7 +224,7 @@ export default function PublicNFTTracking() {
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
-            className="absolute bottom-10 left-10 w-40 h-40 bg-[#5CC5E0]/30 rounded-full blur-3xl"
+            className="absolute bottom-10 left-10 w-40 h-40 bg-third/30 rounded-full blur-3xl"
             animate={{ y: [0, 20, 0], scale: [1, 1.15, 1] }}
             transition={{
               duration: 5,
@@ -279,20 +286,16 @@ export default function PublicNFTTracking() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="relative bg-white rounded-2xl shadow-xl border border-[#4BADD1]/40 p-6 sm:p-8 backdrop-blur">
+          <div className="relative bg-white rounded-2xl shadow-xl border-2 border-slate-200 p-6 sm:p-8 backdrop-blur">
             {/* Soft moving gradient */}
-            <motion.div
-              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#4BADD1]/5 via-transparent to-[#4BADD1]/5"
-              animate={{ x: ["-10%", "10%", "-10%"] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            />
+            <motion.div />
 
             <div className="relative z-10">
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <motion.svg
-                      className="w-5 h-5 text-[#4BADD1]"
+                      className="w-5 h-5 text-primary"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -319,14 +322,14 @@ export default function PublicNFTTracking() {
                     onChange={(e) => setTokenId(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                     placeholder="Nhập NFT Token ID..."
-                    className="w-full pl-12 pr-4 py-4 border-2 border-[#4BADD1]/40 rounded-xl text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-[#4BADD1] focus:border-transparent bg-[#4BADD1]/5 hover:bg-white transition-all"
+                    className="w-full pl-12 pr-4 py-4 border-2 border-slate-300 rounded-xl text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white hover:bg-slate-50 transition-all"
                   />
                 </div>
                 <motion.button
                   onClick={handleSearch}
                   disabled={loading}
                   whileTap={{ scale: loading ? 1 : 0.96 }}
-                  className="relative px-6 sm:px-8 py-4 rounded-xl bg-gradient-to-r from-[#3A9DB8] via-[#4BADD1] to-[#5CC5E0] text-white font-semibold shadow-lg hover:shadow-2xl disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden group"
+                  className="relative px-6 sm:px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-semibold shadow-lg hover:shadow-2xl disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden group"
                 >
                   <motion.div
                     className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
@@ -340,7 +343,7 @@ export default function PublicNFTTracking() {
                   />
                   <span className="relative z-10 flex items-center gap-2">
                     {loading ? (
-                      <>
+                      <span className="!text-white flex items-center">
                         <svg
                           className="animate-spin h-5 w-5"
                           fill="none"
@@ -361,9 +364,9 @@ export default function PublicNFTTracking() {
                           />
                         </svg>
                         Đang tìm...
-                      </>
+                      </span>
                     ) : (
-                      <>
+                      <span className="!text-white flex items-center">
                         <svg
                           className="w-5 h-5 group-hover:scale-110 transition-transform"
                           fill="none"
@@ -378,20 +381,20 @@ export default function PublicNFTTracking() {
                           />
                         </svg>
                         Tra cứu
-                      </>
+                      </span>
                     )}
                   </span>
                 </motion.button>
               </div>
 
               <motion.div
-                className="mt-4 flex items-start gap-2 text-sm text-[#4BADD1] bg-[#4BADD1]/10 rounded-lg p-3 border border-[#4BADD1]/30"
+                className="mt-4 flex items-start gap-2 text-sm text-primary bg-primary/10 rounded-lg p-3 border border-primary/30"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
               >
                 <svg
-                  className="w-5 h-5 text-[#4BADD1] flex-shrink-0 mt-0.5"
+                  className="w-5 h-5 text-primary flex-shrink-0 mt-0.5"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -402,7 +405,7 @@ export default function PublicNFTTracking() {
                   />
                 </svg>
                 <span>
-                  <strong className="text-[#4BADD1] font-semibold">Mẹo:</strong>{" "}
+                  <strong className="text-primary font-semibold">Mẹo:</strong>{" "}
                   NFT ID thường được in trên bao bì thuốc hoặc trong hóa đơn mua
                   hàng.
                 </span>
@@ -424,7 +427,7 @@ export default function PublicNFTTracking() {
               <div className="flex flex-col items-center gap-4">
                 <div className="relative">
                   <div className="w-16 h-16 border-4 border-slate-200 rounded-full" />
-                  <div className="absolute top-0 left-0 w-16 h-16 border-4 border-[#4BADD1] rounded-full border-t-transparent animate-spin" />
+                  <div className="absolute top-0 left-0 w-16 h-16 border-4 border-primary rounded-full border-t-transparent animate-spin" />
                 </div>
                 <div>
                   <p className="text-xl font-semibold text-slate-800 mb-1">
@@ -443,15 +446,15 @@ export default function PublicNFTTracking() {
               initial="hidden"
               animate="show"
               exit={{ opacity: 0, scale: 0.96 }}
-              className="bg-gradient-to-br from-[#4BADD1]/10 via-white to-[#4BADD1]/10 rounded-3xl border border-[#4BADD1]/40 p-12 sm:p-16 text-center shadow-lg"
+              className="bg-white rounded-3xl border-2 border-slate-200 p-12 sm:p-16 text-center shadow-lg"
             >
               <motion.div
                 variants={itemVariants}
                 className="flex justify-center mb-6"
               >
-                <div className="p-6 bg-white rounded-2xl shadow-md">
+                <div className="p-6 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl shadow-md">
                   <svg
-                    className="w-16 h-16 sm:w-20 sm:h-20 text-[#4BADD1]"
+                    className="w-16 h-16 sm:w-20 sm:h-20 text-primary"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -467,13 +470,13 @@ export default function PublicNFTTracking() {
               </motion.div>
               <motion.h3
                 variants={itemVariants}
-                className="text-2xl sm:text-3xl font-bold text-[#4BADD1] mb-3"
+                className="text-2xl sm:text-3xl font-bold text-slate-800 mb-3"
               >
                 Bắt đầu tra cứu
               </motion.h3>
               <motion.p
                 variants={itemVariants}
-                className="text-[#4BADD1] max-w-lg mx-auto text-base sm:text-lg"
+                className="text-slate-600 max-w-lg mx-auto text-base sm:text-lg"
               >
                 Nhập NFT Token ID để xem toàn bộ hành trình thuốc từ nhà sản
                 xuất đến nhà thuốc và người dùng cuối.
@@ -524,9 +527,9 @@ export default function PublicNFTTracking() {
               {/* Header summary */}
               <motion.div
                 variants={itemVariants}
-                className="bg-white rounded-3xl border border-[#4BADD1]/40 shadow-xl overflow-hidden"
+                className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl overflow-hidden"
               >
-                <div className="relative bg-gradient-to-r from-[#3A9DB8] via-[#4BADD1] to-[#5CC5E0] px-6 sm:px-8 py-6 text-white">
+                <div className="relative bg-gradient-to-r from-primary to-secondary px-6 sm:px-8 py-6 text-white">
                   <div className="relative z-10 space-y-3">
                     <h2 className="text-2xl sm:text-3xl font-bold">
                       Quy trình phân phối —{" "}
@@ -604,9 +607,9 @@ export default function PublicNFTTracking() {
                   {/* NFT basic info */}
                   <motion.div
                     variants={itemVariants}
-                    className="bg-white rounded-3xl border border-[#4BADD1]/40 shadow-xl overflow-hidden"
+                    className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl overflow-hidden"
                   >
-                    <div className="bg-gradient-to-r from-[#3A9DB8] via-[#4BADD1] to-[#5CC5E0] px-6 sm:px-8 py-4 text-white flex items-center gap-3">
+                    <div className="bg-gradient-to-r from-primary to-secondary px-6 sm:px-8 py-4 text-white flex items-center gap-3">
                       <div className="p-2 bg-white/20 rounded-lg">
                         <svg
                           className="w-6 h-6"
@@ -622,56 +625,66 @@ export default function PublicNFTTracking() {
                       </div>
                       <h3 className="text-lg font-semibold">Thông tin NFT</h3>
                     </div>
-                    <div className="p-6 sm:p-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 rounded-xl p-4 border border-[#4BADD1]/30">
-                        <div className="text-xs font-semibold text-[#4BADD1] uppercase mb-1">
-                          Token ID
+                    <div className="p-6">
+                      <div className="space-y-0 divide-y divide-slate-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 first:pt-0">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Token ID
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                            #{journey.nft?.tokenId || tokenId}
+                          </div>
                         </div>
-                        <div className="text-xl font-bold text-[#4BADD1] font-mono">
-                          #{journey.nft?.tokenId || tokenId}
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Số Serial
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {journey.nft?.serialNumber || "N/A"}
+                          </div>
                         </div>
-                      </div>
-                      <div className="bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 rounded-xl p-4 border border-[#4BADD1]/30">
-                        <div className="text-xs font-semibold text-[#4BADD1] uppercase mb-1">
-                          Số Serial
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Tên thuốc
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {journey.nft?.drug?.tradeName ||
+                              journey.nft?.drug?.genericName ||
+                              "N/A"}
+                          </div>
                         </div>
-                        <div className="text-lg font-semibold text-[#4BADD1]">
-                          {journey.nft?.serialNumber || "N/A"}
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Số lô
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {journey.nft?.batchNumber || "N/A"}
+                          </div>
                         </div>
-                      </div>
-                      <div className="bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 rounded-xl p-4 border border-[#4BADD1]/30 sm:col-span-2">
-                        <div className="text-xs font-semibold text-[#4BADD1] uppercase mb-1">
-                          Tên thuốc
-                        </div>
-                        <div className="text-lg font-semibold text-[#4BADD1]">
-                          {journey.nft?.drug?.tradeName ||
-                            journey.nft?.drug?.genericName ||
-                            "N/A"}
-                        </div>
-                      </div>
-                      <div className="bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 rounded-xl p-4 border border-[#4BADD1]/30">
-                        <div className="text-xs font-semibold text-[#4BADD1] uppercase mb-1">
-                          Số lô
-                        </div>
-                        <div className="text-lg font-semibold text-[#4BADD1]">
-                          {journey.nft?.batchNumber || "N/A"}
-                        </div>
-                      </div>
-                      <div className="bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 rounded-xl p-4 border border-[#4BADD1]/30 sm:col-span-2">
-                        <div className="text-xs font-semibold text-[#4BADD1] uppercase mb-1">
-                          Chủ sở hữu hiện tại
-                        </div>
-                        <div className="text-sm font-semibold text-[#4BADD1] truncate">
-                          {(() => {
-                            const owner = journey.nft?.currentOwner;
-                            if (!owner) return "N/A";
-                            
-                            if (typeof owner === "object" && owner !== null) {
-                              return owner.fullName || owner.name || owner.username || owner.email || "N/A";
-                            }
-                            
-                            return owner || "N/A";
-                          })()}
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 last:pb-0">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Chủ sở hữu hiện tại
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1 truncate">
+                            {(() => {
+                              const owner = journey.nft?.currentOwner;
+                              if (!owner) {
+                                return "N/A";
+                              }
+
+                              if (typeof owner === "object" && owner !== null) {
+                                return (
+                                  owner.fullName ||
+                                  owner.name ||
+                                  owner.username ||
+                                  owner.email ||
+                                  "N/A"
+                                );
+                              }
+
+                              return owner || "N/A";
+                            })()}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -681,9 +694,9 @@ export default function PublicNFTTracking() {
                   {journey.supplyChain && (
                     <motion.div
                       variants={itemVariants}
-                      className="bg-white rounded-3xl border border-[#4BADD1]/40 shadow-xl overflow-hidden"
+                      className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl overflow-hidden"
                     >
-                      <div className="bg-gradient-to-r from-[#3A9DB8] via-[#4BADD1] to-[#5CC5E0] px-6 sm:px-8 py-4 text-white flex items-center gap-3">
+                      <div className="bg-gradient-to-r from-primary to-secondary px-6 sm:px-8 py-4 text-white flex items-center gap-3">
                         <div className="p-2 bg-white/20 rounded-lg">
                           <svg
                             className="w-6 h-6"
@@ -699,12 +712,14 @@ export default function PublicNFTTracking() {
                             />
                           </svg>
                         </div>
-                        <h3 className="text-lg font-semibold">Chuỗi cung ứng</h3>
+                        <h3 className="text-lg font-semibold">
+                          Chuỗi cung ứng
+                        </h3>
                       </div>
                       <div className="p-6 space-y-4 text-sm">
                         {journey.supplyChain.manufacturer && (
-                          <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-[#4BADD1]/5 to-[#4BADD1]/5 border border-[#4BADD1]/20">
-                            <div className="p-2 bg-[#4BADD1] text-white rounded-lg">
+                          <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
+                            <div className="p-2 bg-primary text-white rounded-lg">
                               <svg
                                 className="w-5 h-5"
                                 fill="none"
@@ -730,8 +745,8 @@ export default function PublicNFTTracking() {
                           </div>
                         )}
                         {journey.supplyChain.distributor && (
-                          <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-[#4BADD1]/5 to-[#4BADD1]/5 border border-[#4BADD1]/20">
-                            <div className="p-2 bg-[#4BADD1] text-white rounded-lg">
+                          <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
+                            <div className="p-2 bg-secondary text-white rounded-lg">
                               <svg
                                 className="w-5 h-5"
                                 fill="none"
@@ -793,9 +808,9 @@ export default function PublicNFTTracking() {
                     journey.blockchainHistory.length > 0 && (
                       <motion.div
                         variants={itemVariants}
-                        className="bg-white rounded-3xl border border-[#4BADD1]/40 shadow-xl overflow-hidden"
+                        className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl overflow-hidden"
                       >
-                        <div className="bg-gradient-to-r from-[#3A9DB8] via-[#4BADD1] to-[#5CC5E0] px-6 sm:px-8 py-4 text-white flex items-center gap-3">
+                        <div className="bg-gradient-to-r from-primary to-secondary px-6 sm:px-8 py-4 text-white flex items-center gap-3">
                           <div className="p-2 bg-white/20 rounded-lg">
                             <svg
                               className="w-6 h-6"
@@ -815,13 +830,13 @@ export default function PublicNFTTracking() {
                             Lịch sử blockchain
                           </h3>
                         </div>
-                        <div className="p-6 space-y-4 text-sm">
+                        <div className="p-6 space-y-4 text-sm border border-slate-200">
                           {journey.blockchainHistory.map((tx, idx) => (
                             <div
                               key={idx}
-                              className="p-4 rounded-xl bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 border border-[#4BADD1]/40"
+                              className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 border border-slate-200"
                             >
-                              <div className="font-semibold text-[#4BADD1] mb-2">
+                              <div className="font-semibold text-primary mb-2">
                                 Giao dịch #{idx + 1}
                               </div>
                               <div className="space-y-2 text-xs">
@@ -839,7 +854,9 @@ export default function PublicNFTTracking() {
                                 </div>
                                 {tx.fromUserType && (
                                   <div>
-                                    <span className="text-slate-500">From Type:</span>
+                                    <span className="text-slate-500">
+                                      From Type:
+                                    </span>
                                     <div className="font-mono break-all text-slate-800">
                                       {tx.fromUserType}
                                     </div>
@@ -847,7 +864,9 @@ export default function PublicNFTTracking() {
                                 )}
                                 {tx.toUserType && (
                                   <div>
-                                    <span className="text-slate-500">To Type:</span>
+                                    <span className="text-slate-500">
+                                      To Type:
+                                    </span>
                                     <div className="font-mono break-all text-slate-800">
                                       {tx.toUserType}
                                     </div>
@@ -858,8 +877,10 @@ export default function PublicNFTTracking() {
                                     <span className="font-semibold">
                                       Timestamp:
                                     </span>{" "}
-                                    {typeof tx.receivedTimestamp === 'number' 
-                                      ? new Date(tx.receivedTimestamp * 1000).toLocaleString("vi-VN")
+                                    {typeof tx.receivedTimestamp === "number"
+                                      ? new Date(
+                                          tx.receivedTimestamp * 1000
+                                        ).toLocaleString("vi-VN")
                                       : tx.receivedTimestamp}
                                   </div>
                                 )}
@@ -875,9 +896,9 @@ export default function PublicNFTTracking() {
                 <div className="lg:col-span-2">
                   <motion.div
                     variants={itemVariants}
-                    className="bg-white rounded-3xl border border-[#4BADD1]/40 shadow-xl overflow-hidden"
+                    className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl overflow-hidden"
                   >
-                    <div className="bg-gradient-to-r from-[#3A9DB8] via-[#4BADD1] to-[#5CC5E0] px-6 sm:px-8 py-4 text-white flex items-center gap-3 relative overflow-hidden">
+                    <div className="bg-gradient-to-r from-primary to-secondary px-6 sm:px-8 py-4 text-white flex items-center gap-3 relative overflow-hidden">
                       <motion.div
                         className="absolute inset-0 opacity-25 bg-[radial-gradient(circle_at_20%_50%,white,transparent_60%),radial-gradient(circle_at_80%_50%,white,transparent_60%)]"
                         animate={{
@@ -920,11 +941,14 @@ export default function PublicNFTTracking() {
                       </div>
                     </div>
 
-                    <div className="p-6 sm:p-8">
+                    <div
+                      className="p-6 sm:p-8 max-h-[125vh] overflow-y-auto hide-scrollbar relative"
+                      ref={timelineContainerRef}
+                    >
                       {journey.journey &&
                       Array.isArray(journey.journey) &&
                       journey.journey.length > 0 ? (
-                        <div className="relative" ref={timelineContainerRef}>
+                        <div className="relative">
                           <TimelineLine containerRef={timelineContainerRef} />
                           <div className="space-y-6">
                             {journey.journey.map((step, idx) => (
@@ -939,52 +963,17 @@ export default function PublicNFTTracking() {
                                 }}
                               >
                                 {/* Dot */}
-                                <motion.div
-                                  className={`absolute left-0 w-14 h-14 rounded-full bg-gradient-to-br ${getStageColor(
-                                    step.stage
-                                  )} flex items-center justify-center text-white shadow-xl z-10 border-2 border-white/60`}
-                                  initial={{ scale: 0, opacity: 0 }}
-                                  animate={{ scale: 1, opacity: 1 }}
-                                  transition={{
-                                    delay: idx * 0.12 + 0.1,
-                                    type: "spring",
-                                    stiffness: 260,
-                                    damping: 18,
-                                  }}
-                                >
-                                  <motion.div
-                                    className="absolute inset-0 rounded-full border border-white/40"
-                                    initial={{ opacity: 0.6, scale: 1 }}
-                                    animate={{
-                                      opacity: [0.6, 0],
-                                      scale: [1, 1.7],
-                                    }}
-                                    transition={{
-                                      duration: 2.2,
-                                      repeat: Infinity,
-                                      ease: "easeOut",
-                                    }}
-                                  />
-                                  <motion.div
-                                    className="relative z-10"
-                                    animate={{
-                                      rotate: [0, 4, -4, 0],
-                                    }}
-                                    transition={{
-                                      duration: 4,
-                                      repeat: Infinity,
-                                      ease: "easeInOut",
-                                    }}
-                                  >
+                                <div className="absolute left-0 w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-xl z-10 border-2 border-se">
+                                  <div className="relative z-10">
                                     {getStageIcon(step.stage)}
-                                  </motion.div>
-                                </motion.div>
+                                  </div>
+                                </div>
 
                                 {/* Card */}
-                                <motion.div className="ml-20 bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-[#4BADD1]/40 p-6 hover:shadow-2xl transition-all duration-300 group">
+                                <motion.div className="ml-20 bg-white rounded-2xl border-2 border-slate-200 p-6 hover:shadow-2xl transition-all duration-300 group">
                                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
                                     <div className="flex-1">
-                                      <h4 className="text-lg font-bold text-slate-800 mb-1 group-hover:text-[#4BADD1] transition-colors">
+                                      <h4 className="text-lg font-bold text-slate-800 mb-1 group-hover:text-primary transition-colors">
                                         {step.description ||
                                           step.stage ||
                                           "N/A"}
@@ -1002,9 +991,9 @@ export default function PublicNFTTracking() {
                                           />
                                         </svg>
                                         {step.date
-                                          ? new Date(
-                                              step.date
-                                            ).toLocaleString("vi-VN")
+                                          ? new Date(step.date).toLocaleString(
+                                              "vi-VN"
+                                            )
                                           : "N/A"}
                                       </div>
                                     </div>
@@ -1020,9 +1009,107 @@ export default function PublicNFTTracking() {
                                   </div>
 
                                   <div className="space-y-3 text-sm">
+                                    {step.from && (
+                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/30">
+                                        <div className="p-2 bg-primary text-white rounded-lg flex-shrink-0">
+                                          <svg
+                                            className="w-5 h-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
+                                            />
+                                          </svg>
+                                        </div>
+                                        <div>
+                                          <div className="text-xs text-primary uppercase tracking-wide mb-1">
+                                            Từ
+                                          </div>
+                                          <div className="font-semibold text-slate-800">
+                                            {typeof step.from === "object" &&
+                                            step.from !== null
+                                              ? step.from.fullName ||
+                                                step.from.username ||
+                                                step.from.name ||
+                                                JSON.stringify(step.from)
+                                              : step.from}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {step.to && (
+                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
+                                        <div className="p-2 bg-secondary text-white rounded-lg flex-shrink-0">
+                                          <svg
+                                            className="w-5 h-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"
+                                            />
+                                          </svg>
+                                        </div>
+                                        <div>
+                                          <div className="text-xs text-primary uppercase tracking-wide mb-1">
+                                            Đến
+                                          </div>
+                                          <div className="font-semibold text-slate-800">
+                                            {typeof step.to === "object" &&
+                                            step.to !== null
+                                              ? step.to.fullName ||
+                                                step.to.username ||
+                                                step.to.name ||
+                                                JSON.stringify(step.to)
+                                              : step.to}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {(step.details?.quantity ||
+                                      step.quantity) && (
+                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/30">
+                                        <div className="p-2 bg-secondary text-white rounded-lg flex-shrink-0">
+                                          <svg
+                                            className="w-5 h-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25A1.125 1.125 0 0021.75 6v-1.5A1.125 1.125 0 0020.625 3H3.375A1.125 1.125 0 002.25 4.5V6c0 .621.504 1.125 1.125 1.125z"
+                                            />
+                                          </svg>
+                                        </div>
+                                        <div>
+                                          <div className="text-xs text-primary uppercase tracking-wide mb-1">
+                                            Số lượng
+                                          </div>
+                                          <div className="font-bold text-slate-800 text-lg">
+                                            {step.details?.quantity ||
+                                              step.quantity}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
                                     {step.manufacturer && (
-                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-[#4BADD1]/5 to-[#4BADD1]/5 border border-[#4BADD1]/20">
-                                        <div className="p-2 bg-[#4BADD1] text-white rounded-lg flex-shrink-0">
+                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
+                                        <div className="p-2 bg-primary text-white rounded-lg flex-shrink-0">
                                           <svg
                                             className="w-5 h-5"
                                             fill="none"
@@ -1038,7 +1125,7 @@ export default function PublicNFTTracking() {
                                           </svg>
                                         </div>
                                         <div>
-                                          <div className="text-xs text-[#4BADD1] mb-1">
+                                          <div className="text-xs text-primary uppercase tracking-wide mb-1">
                                             Nhà sản xuất
                                           </div>
                                           <div className="font-semibold text-slate-800">
@@ -1057,137 +1144,9 @@ export default function PublicNFTTracking() {
                                       </div>
                                     )}
 
-                                    {(step.details?.quantity ||
-                                      step.quantity) && (
-                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-[#4BADD1]/5 to-[#4BADD1]/5 border border-[#4BADD1]/30">
-                                        <div className="p-2 bg-[#4BADD1] text-white rounded-lg flex-shrink-0">
-                                          <svg
-                                            className="w-5 h-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25A1.125 1.125 0 0021.75 6v-1.5A1.125 1.125 0 0020.625 3H3.375A1.125 1.125 0 002.25 4.5V6c0 .621.504 1.125 1.125 1.125z"
-                                            />
-                                          </svg>
-                                        </div>
-                                        <div>
-                                          <div className="text-xs text-[#4BADD1] mb-1">
-                                            Số lượng
-                                          </div>
-                                          <div className="font-bold text-slate-800 text-lg">
-                                            {step.details?.quantity ||
-                                              step.quantity}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {step.details?.mfgDate && (
-                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-[#4BADD1]/5 to-[#4BADD1]/5 border border-[#4BADD1]/20">
-                                        <div className="p-2 bg-[#4BADD1] text-white rounded-lg flex-shrink-0">
-                                          <svg
-                                            className="w-5 h-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5A2.25 2.25 0 015.25 5.25h13.5A2.25 2.25 0 0121 7.5v11.25M3 18.75A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75M3 9.75h18"
-                                            />
-                                          </svg>
-                                        </div>
-                                        <div>
-                                          <div className="text-xs text-[#4BADD1] mb-1">
-                                            Ngày sản xuất
-                                          </div>
-                                          <div className="font-semibold text-slate-800">
-                                            {new Date(
-                                              step.details.mfgDate
-                                            ).toLocaleDateString("vi-VN")}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {step.from && (
-                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-[#4BADD1]/5 to-[#4BADD1]/5 border border-[#4BADD1]/30">
-                                        <div className="p-2 bg-[#4BADD1] text-white rounded-lg flex-shrink-0">
-                                          <svg
-                                            className="w-5 h-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
-                                            />
-                                          </svg>
-                                        </div>
-                                        <div>
-                                          <div className="text-xs text-[#4BADD1] mb-1">
-                                            Từ
-                                          </div>
-                                          <div className="font-semibold text-slate-800">
-                                            {typeof step.from === "object" &&
-                                            step.from !== null
-                                              ? step.from.fullName ||
-                                                step.from.username ||
-                                                step.from.name ||
-                                                JSON.stringify(step.from)
-                                              : step.from}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {step.to && (
-                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-[#4BADD1]/5 to-[#4BADD1]/5 border border-[#4BADD1]/20">
-                                        <div className="p-2 bg-[#4BADD1] text-white rounded-lg flex-shrink-0">
-                                          <svg
-                                            className="w-5 h-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"
-                                            />
-                                          </svg>
-                                        </div>
-                                        <div>
-                                          <div className="text-xs text-[#4BADD1] mb-1">
-                                            Đến
-                                          </div>
-                                          <div className="font-semibold text-slate-800">
-                                            {typeof step.to === "object" &&
-                                            step.to !== null
-                                              ? step.to.fullName ||
-                                                step.to.username ||
-                                                step.to.name ||
-                                                JSON.stringify(step.to)
-                                              : step.to}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-
                                     {step.distributor && (
-                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-[#4BADD1]/5 to-[#4BADD1]/5 border border-[#4BADD1]/20">
-                                        <div className="p-2 bg-[#4BADD1] text-white rounded-lg flex-shrink-0">
+                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
+                                        <div className="p-2 bg-secondary text-white rounded-lg flex-shrink-0">
                                           <svg
                                             className="w-5 h-5"
                                             fill="none"
@@ -1203,11 +1162,12 @@ export default function PublicNFTTracking() {
                                           </svg>
                                         </div>
                                         <div>
-                                          <div className="text-xs text-[#4BADD1] mb-1">
+                                          <div className="text-xs text-primary uppercase tracking-wide mb-1">
                                             Nhà phân phối
                                           </div>
                                           <div className="font-semibold text-slate-800">
-                                            {typeof step.distributor === "object" &&
+                                            {typeof step.distributor ===
+                                              "object" &&
                                             step.distributor !== null
                                               ? step.distributor.fullName ||
                                                 step.distributor.username ||
@@ -1220,8 +1180,8 @@ export default function PublicNFTTracking() {
                                     )}
 
                                     {step.pharmacy && (
-                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-[#4BADD1]/5 to-[#4BADD1]/5 border border-[#4BADD1]/20">
-                                        <div className="p-2 bg-[#4BADD1] text-white rounded-lg flex-shrink-0">
+                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
+                                        <div className="p-2 bg-third text-white rounded-lg flex-shrink-0">
                                           <svg
                                             className="w-5 h-5"
                                             fill="none"
@@ -1237,12 +1197,12 @@ export default function PublicNFTTracking() {
                                           </svg>
                                         </div>
                                         <div>
-                                          <div className="text-xs text-[#4BADD1] mb-1">
+                                          <div className="text-xs text-primary uppercase tracking-wide mb-1">
                                             Nhà thuốc
                                           </div>
                                           <div className="font-semibold text-slate-800">
-                                            {typeof step.pharmacy === "object" &&
-                                            step.pharmacy !== null
+                                            {typeof step.pharmacy ===
+                                              "object" && step.pharmacy !== null
                                               ? step.pharmacy.fullName ||
                                                 step.pharmacy.username ||
                                                 step.pharmacy.name ||
@@ -1253,9 +1213,10 @@ export default function PublicNFTTracking() {
                                       </div>
                                     )}
 
-                                    {(step.details?.receivedQuantity !== undefined) && (
-                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-[#4BADD1]/5 to-[#4BADD1]/5 border border-[#4BADD1]/30">
-                                        <div className="p-2 bg-[#4BADD1] text-white rounded-lg flex-shrink-0">
+                                    {step.details?.receivedQuantity !==
+                                      undefined && (
+                                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/30">
+                                        <div className="p-2 bg-secondary text-white rounded-lg flex-shrink-0">
                                           <svg
                                             className="w-5 h-5"
                                             fill="none"
@@ -1271,7 +1232,7 @@ export default function PublicNFTTracking() {
                                           </svg>
                                         </div>
                                         <div>
-                                          <div className="text-xs text-[#4BADD1] mb-1">
+                                          <div className="text-xs text-primary uppercase tracking-wide mb-1">
                                             Số lượng đã nhận
                                           </div>
                                           <div className="font-bold text-slate-800 text-lg">
@@ -1337,9 +1298,16 @@ export default function PublicNFTTracking() {
                                       </div>
                                     )}
 
-                                    {step.supplyChainCompleted !== undefined && (
+                                    {step.supplyChainCompleted !==
+                                      undefined && (
                                       <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
-                                        <div className={`p-1.5 rounded-full ${step.supplyChainCompleted ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                                        <div
+                                          className={`p-1.5 rounded-full ${
+                                            step.supplyChainCompleted
+                                              ? "bg-green-500"
+                                              : "bg-yellow-500"
+                                          }`}
+                                        >
                                           <svg
                                             className="w-4 h-4 text-white"
                                             fill="none"
@@ -1364,17 +1332,17 @@ export default function PublicNFTTracking() {
                                           </svg>
                                         </div>
                                         <div className="text-sm font-semibold text-slate-800">
-                                          {step.supplyChainCompleted 
-                                            ? "Chuỗi cung ứng đã hoàn tất" 
+                                          {step.supplyChainCompleted
+                                            ? "Chuỗi cung ứng đã hoàn tất"
                                             : "Chuỗi cung ứng chưa hoàn tất"}
                                         </div>
                                       </div>
                                     )}
 
                                     {step.notes && (
-                                      <div className="p-4 rounded-lg bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 border border-[#4BADD1]/30">
+                                      <div className="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary/30">
                                         <div className="flex items-start gap-3">
-                                          <div className="p-2 bg-gradient-to-br from-[#4BADD1] to-[#5CC5E0] text-white rounded-lg">
+                                          <div className="p-2 bg-gradient-to-br from-primary to-secondary text-white rounded-lg">
                                             <svg
                                               className="w-5 h-5"
                                               fill="none"
@@ -1389,7 +1357,7 @@ export default function PublicNFTTracking() {
                                               />
                                             </svg>
                                           </div>
-                                          <p className="text-sm text-[#4BADD1] leading-relaxed">
+                                          <p className="text-sm text-primary leading-relaxed">
                                             {step.notes}
                                           </p>
                                         </div>
@@ -1432,9 +1400,9 @@ export default function PublicNFTTracking() {
               {journey.nft?.drug && (
                 <motion.div
                   variants={itemVariants}
-                  className="bg-white rounded-3xl border border-[#4BADD1]/40 shadow-xl overflow-hidden"
+                  className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl overflow-hidden"
                 >
-                  <div className="bg-gradient-to-r from-[#3A9DB8] via-[#4BADD1] to-[#5CC5E0] px-6 sm:px-8 py-4 text-white flex items-center gap-3">
+                  <div className="bg-gradient-to-r from-primary to-secondary px-6 sm:px-8 py-4 text-white flex items-center gap-3">
                     <div className="p-2 bg-white/20 rounded-lg">
                       <svg
                         className="w-6 h-6"
@@ -1452,96 +1420,98 @@ export default function PublicNFTTracking() {
                       Thông tin chi tiết thuốc
                     </h3>
                   </div>
-                  <div className="p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {journey.nft.drug.genericName && (
-                      <div className="rounded-xl p-5 bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 border border-[#4BADD1]/40">
-                        <div className="text-xs font-semibold text-[#4BADD1] uppercase mb-1">
-                          Tên hoạt chất
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0 divide-y divide-slate-200">
+                      {journey.nft.drug.genericName && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 first:pt-0 md:first:pt-4 md:pr-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Tên hoạt chất
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {journey.nft.drug.genericName}
+                          </div>
                         </div>
-                        <div className="text-lg font-bold text-[#4BADD1]">
-                          {journey.nft.drug.genericName}
+                      )}
+                      {journey.nft.drug.atcCode && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pl-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Mã ATC
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                            {journey.nft.drug.atcCode}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {journey.nft.drug.atcCode && (
-                      <div className="rounded-xl p-5 bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 border border-[#4BADD1]/40">
-                        <div className="text-xs font-semibold text-[#4BADD1] uppercase mb-1">
-                          Mã ATC
+                      )}
+                      {journey.nft.drug.dosageForm && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pr-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Dạng bào chế
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {journey.nft.drug.dosageForm}
+                          </div>
                         </div>
-                        <div className="text-lg font-mono font-bold text-[#4BADD1]">
-                          {journey.nft.drug.atcCode}
+                      )}
+                      {journey.nft.drug.strength && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pl-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Hàm lượng
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {journey.nft.drug.strength}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {journey.nft.drug.dosageForm && (
-                      <div className="rounded-xl p-5 bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 border border-[#4BADD1]/40">
-                        <div className="text-xs font-semibold text-[#4BADD1] uppercase mb-1">
-                          Dạng bào chế
+                      )}
+                      {journey.nft.drug.packaging && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pr-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Quy cách đóng gói
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {journey.nft.drug.packaging}
+                          </div>
                         </div>
-                        <div className="text-lg font-bold text-[#4BADD1]">
-                          {journey.nft.drug.dosageForm}
+                      )}
+                      {journey.nft.mfgDate && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pl-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Ngày sản xuất
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {new Date(journey.nft.mfgDate).toLocaleDateString(
+                              "vi-VN"
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {journey.nft.drug.strength && (
-                      <div className="rounded-xl p-5 bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 border border-[#4BADD1]/40">
-                        <div className="text-xs font-semibold text-[#4BADD1] uppercase mb-1">
-                          Hàm lượng
+                      )}
+                      {journey.nft.expDate && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 md:pr-0 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Hạn sử dụng
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {new Date(journey.nft.expDate).toLocaleDateString(
+                              "vi-VN"
+                            )}
+                          </div>
                         </div>
-                        <div className="text-lg font-bold text-[#4BADD1]">
-                          {journey.nft.drug.strength}
+                      )}
+                      {journey.nft.drug.manufacturer && (
+                        <div className="flex flex-col sm:flex-row sm:items-center py-4 last:pb-0 md:pl-0 md:col-span-2 gap-4">
+                          <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                            Nhà sản xuất
+                          </div>
+                          <div className="text-base font-semibold text-slate-800 flex-1">
+                            {typeof journey.nft.drug.manufacturer ===
+                              "object" && journey.nft.drug.manufacturer !== null
+                              ? journey.nft.drug.manufacturer.name ||
+                                journey.nft.drug.manufacturer.fullName ||
+                                JSON.stringify(journey.nft.drug.manufacturer)
+                              : journey.nft.drug.manufacturer}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {journey.nft.drug.packaging && (
-                      <div className="rounded-xl p-5 bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 border border-[#4BADD1]/40">
-                        <div className="text-xs font-semibold text-[#4BADD1] uppercase mb-1">
-                          Quy cách đóng gói
-                        </div>
-                        <div className="text-lg font-bold text-[#4BADD1]">
-                          {journey.nft.drug.packaging}
-                        </div>
-                      </div>
-                    )}
-                    {journey.nft.mfgDate && (
-                      <div className="rounded-xl p-5 bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 border border-[#4BADD1]/40">
-                        <div className="text-xs font-semibold text-[#4BADD1] uppercase mb-1">
-                          Ngày sản xuất
-                        </div>
-                        <div className="text-lg font-bold text-[#4BADD1]">
-                          {new Date(
-                            journey.nft.mfgDate
-                          ).toLocaleDateString("vi-VN")}
-                        </div>
-                      </div>
-                    )}
-                    {journey.nft.expDate && (
-                      <div className="rounded-xl p-5 bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 border border-[#4BADD1]/40">
-                        <div className="text-xs font-semibold text-[#4BADD1] uppercase mb-1">
-                          Hạn sử dụng
-                        </div>
-                        <div className="text-lg font-bold text-[#4BADD1]">
-                          {new Date(
-                            journey.nft.expDate
-                          ).toLocaleDateString("vi-VN")}
-                        </div>
-                      </div>
-                    )}
-                    {journey.nft.drug.manufacturer && (
-                      <div className="rounded-xl p-5 bg-gradient-to-br from-[#4BADD1]/10 to-[#4BADD1]/10 border border-[#4BADD1]/40 sm:col-span-2">
-                        <div className="text-xs font-semibold text-[#4BADD1] uppercase mb-1">
-                          Nhà sản xuất
-                        </div>
-                        <div className="text-lg font-bold text-[#4BADD1]">
-                          {typeof journey.nft.drug.manufacturer === "object" &&
-                          journey.nft.drug.manufacturer !== null
-                            ? journey.nft.drug.manufacturer.name ||
-                              journey.nft.drug.manufacturer.fullName ||
-                              JSON.stringify(journey.nft.drug.manufacturer)
-                            : journey.nft.drug.manufacturer}
-                        </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               )}

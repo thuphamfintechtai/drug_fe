@@ -314,7 +314,7 @@ export default function AdminDrugs() {
                         <td className="px-6 py-4">
                           <Link
                             to={`/admin/drugs/${d._id}`}
-                            className="inline-flex items-center px-4 py-2 border-2 border-[#3db6d9] rounded-full font-semibold !text-[#3db6d9] hover:!text-white hover:bg-[#3db6d9] transition-all duration-200"
+                            className="inline-flex items-center px-4 py-2 border-2 border-primary rounded-full font-semibold !text-primary hover:!text-white hover:bg-primary transition-all duration-200"
                           >
                             Chi tiết
                           </Link>
