@@ -482,7 +482,7 @@ const BlockchainTransferView = memo(function BlockchainTransferView({
         /* TRUCK */
         .truck {
           position: absolute;
-          top: -65px;
+          top: -45px;
           left: 0;
           width: 95px;
           height: auto;

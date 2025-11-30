@@ -82,6 +82,12 @@ export const useContractsPage = () => {
   const handleConfirmContract = async () => {
     if (!selectedContract) return;
 
+    // Kiểm tra nếu đang loading chi tiết hợp đồng
+    if (loadingConfirmDetail) {
+      toast.error("Vui lòng đợi dữ liệu hợp đồng được tải xong");
+      return;
+    }
+
     try {
       setIsConfirming(true);
 
@@ -94,13 +100,19 @@ export const useContractsPage = () => {
         throw new Error("Không thể lấy chữ ký từ MetaMask");
       }
 
+      // Lấy distributorAddress từ confirmContractDetail (đã fetch từ API) hoặc selectedContract
       const distributorAddress =
+        confirmContractDetail?.distributorWalletAddress ||
+        confirmContractDetail?.distributorAddress ||
+        confirmContractDetail?.distributor?.walletAddress ||
         selectedContract.distributorAddress ||
         selectedContract.distributor?.walletAddress;
 
       if (!distributorAddress) {
+        console.error("Contract detail:", confirmContractDetail);
+        console.error("Selected contract:", selectedContract);
         throw new Error(
-          "Không tìm thấy địa chỉ ví của nhà phân phối trong hợp đồng"
+          "Không tìm thấy địa chỉ ví của nhà phân phối trong hợp đồng. Vui lòng kiểm tra lại thông tin hợp đồng."
         );
       }
 

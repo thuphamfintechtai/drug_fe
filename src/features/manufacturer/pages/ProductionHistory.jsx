@@ -39,27 +39,11 @@ export default function ProductionHistory() {
           <CardUI
             title="Lịch sử sản xuất"
             subtitle="Xem tất cả các lô sản xuất và trạng thái chuyển giao NFT"
-            icon={
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-6 h-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 7h18M5 10h14M4 14h16M6 18h12"
-                />
-              </svg>
-            }
           />
 
           {/* Filters */}
           <div className="rounded-2xl bg-white border border-card-primary shadow-sm p-4">
-            <div className="flex flex-col md:flex-row gap-3 md:items-end">
+            <div className="flex flex-col md:flex-row gap-3 md:items-center">
               <div className="flex-1">
                 <Search
                   searchInput={searchInput}
@@ -96,16 +80,13 @@ export default function ProductionHistory() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-slate-600 mb-1">
-                  Trạng thái
-                </label>
                 <div className="relative">
                   <select
                     value={status}
                     onChange={(e) =>
                       updateFilter({ status: e.target.value, page: 1 })
                     }
-                    className="h-12 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-12 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
+                    className="h-11 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-12 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
                   >
                     <option value="">Tất cả</option>
                     <option value="minted">Đã Mint</option>
@@ -213,33 +194,33 @@ export default function ProductionHistory() {
                       <div className="px-5 pb-5 border-t border-slate-200">
                         {/* Top facts */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-sm mt-4">
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                            <div className="text-slate-600 mb-2">
+                          <div className="rounded-lg p-3 border border-slate-200">
+                            <div className="text-slate-700 mb-2">
                               Số lượng sản xuất:{" "}
-                              <span className="font-bold text-purple-700">
+                              <span className="font-semibold text-slate-800">
                                 {item.quantity || 0}
                               </span>
                             </div>
-                            <div className="text-slate-600">
+                            <div className="text-slate-700">
                               ATC Code:{" "}
-                              <span className="font-mono text-cyan-700">
+                              <span className="font-mono text-slate-800">
                                 {item.drug?.atcCode || "N/A"}
                               </span>
                             </div>
                             {item.nftCount !== undefined && (
-                              <div className="text-slate-600 mt-2">
+                              <div className="text-slate-700 mt-2">
                                 Số lượng NFT đã mint:{" "}
-                                <span className="font-bold text-cyan-700">
+                                <span className="font-semibold text-slate-800">
                                   {item.nftCount}
                                 </span>
                               </div>
                             )}
                           </div>
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                            <div className="text-xs text-slate-500 mb-1">
+                          <div className="rounded-lg p-3 border border-slate-200">
+                            <div className="text-xs text-slate-600 mb-1">
                               Trạng thái sản xuất
                             </div>
-                            <div className="font-semibold text-slate-800">
+                            <div className="font-medium text-slate-800">
                               {item.status === "completed" 
                                 ? "Hoàn thành" 
                                 : item.status === "pending"
@@ -251,9 +232,9 @@ export default function ProductionHistory() {
                                 : item.status || "N/A"}
                             </div>
                             {item.transferStatus && (
-                              <div className="text-xs text-slate-500 mt-2">
+                              <div className="text-xs text-slate-600 mt-2">
                                 Trạng thái chuyển giao:{" "}
-                                <span className="font-medium">
+                                <span className="font-medium text-slate-700">
                                   {item.transferStatus === "transferred" 
                                     ? "Đã chuyển" 
                                     : item.transferStatus === "pending"
@@ -267,11 +248,11 @@ export default function ProductionHistory() {
 
                         {/* Dates */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                            <div className="text-xs text-slate-500 mb-1">
+                          <div className="rounded-lg p-3 border border-slate-200">
+                            <div className="text-xs text-slate-600 mb-1">
                               Ngày sản xuất
                             </div>
-                            <div className="font-semibold text-slate-800">
+                            <div className="font-medium text-slate-800">
                               {item.mfgDate
                                 ? new Date(item.mfgDate).toLocaleDateString(
                                     "vi-VN"
@@ -279,11 +260,11 @@ export default function ProductionHistory() {
                                 : "N/A"}
                             </div>
                           </div>
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                            <div className="text-xs text-slate-500 mb-1">
+                          <div className="rounded-lg p-3 border border-slate-200">
+                            <div className="text-xs text-slate-600 mb-1">
                               Hạn sử dụng
                             </div>
-                            <div className="font-semibold text-slate-800">
+                            <div className="font-medium text-slate-800">
                               {item.expDate
                                 ? new Date(item.expDate).toLocaleDateString(
                                     "vi-VN"
@@ -294,8 +275,8 @@ export default function ProductionHistory() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                            <div className="text-xs text-slate-500 mb-1">
+                          <div className="rounded-lg p-3 border border-slate-200">
+                            <div className="text-xs text-slate-600 mb-1">
                               Ngày tạo
                             </div>
                             <div className="font-medium text-slate-700 text-sm">
@@ -306,8 +287,8 @@ export default function ProductionHistory() {
                                 : "N/A"}
                             </div>
                           </div>
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                            <div className="text-xs text-slate-500 mb-1">
+                          <div className="rounded-lg p-3 border border-slate-200">
+                            <div className="text-xs text-slate-600 mb-1">
                               Cập nhật lần cuối
                             </div>
                             <div className="font-medium text-slate-700 text-sm">
@@ -321,11 +302,11 @@ export default function ProductionHistory() {
                         </div>
 
                         {item.chainTxHash && (
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
-                            <div className="font-semibold text-slate-800 mb-1">
+                          <div className="rounded-lg p-3 border border-slate-200 text-sm mb-3">
+                            <div className="font-medium text-slate-800 mb-1">
                               Transaction Hash (Blockchain)
                             </div>
-                            <div className="font-mono text-xs text-slate-700 break-all">
+                            <div className="font-mono text-xs text-slate-600 break-all">
                               {item.chainTxHash}
                             </div>
                             <a
@@ -340,8 +321,8 @@ export default function ProductionHistory() {
                         )}
 
                         {item.notes && (
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm mb-3">
-                            <div className="font-semibold text-slate-800 mb-1">
+                          <div className="rounded-lg p-3 border border-slate-200 text-sm mb-3">
+                            <div className="font-medium text-slate-800 mb-1">
                               Ghi chú:
                             </div>
                             <div className="text-slate-700">{item.notes}</div>

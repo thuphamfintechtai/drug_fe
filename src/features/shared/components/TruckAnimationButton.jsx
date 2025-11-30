@@ -57,7 +57,7 @@ export default function TruckAnimationButton({
         .truck-container {
           position: absolute;
           left: 30%;
-          bottom: 6px;
+          bottom: -2px;
           width: 52px;
           height: 26px;
           transform: translateY(-50%) translateX(-120%);
