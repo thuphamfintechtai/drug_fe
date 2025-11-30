@@ -1054,7 +1054,7 @@ export default function UserHome() {
                         </div> */}
 
                         {/* Action Buttons */}
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                           <button
                             onClick={handleScanQR}
                             className="px-3 py-3 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl transition-all flex flex-col items-center justify-center gap-1 text-xs hover:border-[#077CA3] hover:shadow-md active:scale-95"
