@@ -29,15 +29,12 @@ export default function PublicDrugInfo() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen mt-16 bg-gradient-to-br from-slate-50 via-white to-slate-50">
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-4 py-12">
         <motion.section
-          className="relative overflow-hidden rounded-2xl mb-8 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
-          style={{
-            background: "linear-gradient(135deg, #4BADD1 0%, #2176FF 100%)",
-          }}
+          className="relative overflow-hidden rounded-2xl mb-8 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-r from-primary to-secondary"
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -68,12 +65,12 @@ export default function PublicDrugInfo() {
                   ? "Nhập mã ATC (ví dụ: A01AA01)..."
                   : "Nhập tên thuốc..."
               }
-              className="flex-1 border-2 border-slate-300 bg-white rounded-xl px-5 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-[#4BADD1] focus:border-[#4BADD1] transition"
+              className="flex-1 border-2 border-slate-300 bg-white rounded-xl px-5 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
             />
             <button
               onClick={handleSearch}
               disabled={loading}
-              className="px-8 py-3 rounded-xl !text-white font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 transition"
+              className="px-8 py-3 rounded-xl !text-white font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 transition bg-gradient-to-r from-primary to-secondary"
               style={{ backgroundColor: "#4BADD1" }}
             >
               {loading ? "⏳ Đang tìm..." : "Tìm kiếm"}
@@ -82,13 +79,12 @@ export default function PublicDrugInfo() {
 
           {error && (
             <div
-              className={`mt-4 p-4 rounded-lg text-sm ${
-                requiresAuth
-                  ? "bg-blue-50 border border-blue-200 text-blue-800"
-                  : "bg-amber-50 border border-amber-200 text-amber-800"
+              className={`${
+                requiresAuth &&
+                "bg-blue-50 border border-blue-200 text-blue-800"
               }`}
             >
-              {requiresAuth ? (
+              {requiresAuth && (
                 <div>
                   <div className="flex items-start gap-2 mb-2">
                     <span>🔒</span>
@@ -120,30 +116,7 @@ export default function PublicDrugInfo() {
                     </div>
                   </div>
                 </div>
-              ) : (
-                <span>⚠️ {error}</span>
               )}
-            </div>
-          )}
-
-          {isAuthenticated && (
-            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm flex items-center gap-2">
-              <span></span>
-              <span>
-                Bạn đã đăng nhập với tư cách{" "}
-                <strong>
-                  {user?.role === "system_admin"
-                    ? "Quản trị viên"
-                    : user?.role === "pharma_company"
-                    ? "Nhà sản xuất"
-                    : user?.role === "distributor"
-                    ? "Nhà phân phối"
-                    : user?.role === "pharmacy"
-                    ? "Nhà thuốc"
-                    : "Người dùng"}
-                </strong>
-                . Bạn có thể xem đầy đủ thông tin.
-              </span>
             </div>
           )}
         </motion.div>
@@ -172,19 +145,43 @@ export default function PublicDrugInfo() {
           </motion.div>
         ) : drugs.length === 0 ? (
           <motion.div
-            className="bg-white rounded-2xl border border-red-300 p-10 text-center"
+            className="relative overflow-hidden rounded-2xl border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)]  p-10 text-center"
             variants={fadeUp}
             initial="hidden"
             animate="show"
           >
-            <div className="text-6xl mb-4">❌</div>
-            <h3 className="text-2xl font-bold text-red-600 mb-2">
-              Không tìm thấy
-            </h3>
-            <p className="text-slate-600">
-              Không tìm thấy thông tin thuốc phù hợp. Vui lòng thử lại với từ
-              khóa khác.
-            </p>
+            <div className="absolute inset-0" />
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full  blur-xl animate-float-slow" />
+              <div className="absolute top-8 right-6 w-16 h-8 rounded-fullblur-md rotate-6 animate-float-slower" />
+            </div>
+            <div className="relative">
+              <div className="text-7xl mb-6 animate-bounce-slow">🔍</div>
+              <h3 className="text-3xl font-bold text-slate-800 mb-3 drop-shadow-sm">
+                Không tìm thấy
+              </h3>
+              <p className="text-slate-600 text-lg max-w-md mx-auto leading-relaxed">
+                Không tìm thấy thông tin thuốc phù hợp với từ khóa của bạn. Vui
+                lòng thử lại với từ khóa khác hoặc kiểm tra lại chính tả.
+              </p>
+              <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center items-center">
+                <button
+                  onClick={() => {
+                    setSearchTerm("");
+                    handleSearch();
+                  }}
+                  className="px-6 py-3 rounded-xl !text-white font-semibold shadow-lg hover:shadow-xl transition bg-gradient-to-r from-[#007b91] to-secondary"
+                >
+                  🔄 Thử lại
+                </button>
+                <Link
+                  to="/"
+                  className="px-6 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition bg-white border-2 border-slate-300 text-slate-700 hover:border-[#48cae4] hover:text-[#48cae4]"
+                >
+                  ← Về trang chủ
+                </Link>
+              </div>
+            </div>
           </motion.div>
         ) : (
           <motion.div
@@ -196,67 +193,78 @@ export default function PublicDrugInfo() {
             {drugs.map((drug, idx) => (
               <div
                 key={idx}
-                className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition"
+                className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-primary to-secondary border-b border-primary px-6 py-4">
                   <div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-3">
+                    <h3 className="text-xl font-bold text-white">
                       {drug.tradeName || drug.genericName || "N/A"}
                     </h3>
                     {drug.genericName && drug.tradeName && (
-                      <p className="text-slate-600 mb-2">
-                        <span className="font-semibold">Tên hoạt chất:</span>{" "}
-                        {drug.genericName}
-                      </p>
-                    )}
-                    {drug.atcCode && (
-                      <p className="text-slate-600 mb-2">
-                        <span className="font-semibold">Mã ATC:</span>{" "}
-                        <span className="font-mono">{drug.atcCode}</span>
-                      </p>
-                    )}
-                    {!isAuthenticated && (
-                      <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
-                        🔒 Một số thông tin chi tiết chỉ hiển thị khi đăng nhập
-                      </div>
+                      <p className="text-sm text-white mt-1">{drug.atcCode}</p>
                     )}
                   </div>
+                </div>
 
-                  <div className="space-y-2">
+                <div className="p-6">
+                  <div className="space-y-0 divide-y divide-slate-200">
+                    {drug.genericName && (
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4 first:pt-0">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 flex-shrink-0 mb-1 sm:mb-0">
+                          Tên hoạt chất
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 flex-1">
+                          {drug.genericName}
+                        </div>
+                      </div>
+                    )}
+                    {drug.atcCode && (
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 flex-shrink-0 mb-1 sm:mb-0">
+                          Mã ATC
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                          {drug.atcCode}
+                        </div>
+                      </div>
+                    )}
                     {drug.dosageForm && (
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <div className="text-sm text-slate-500">
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 flex-shrink-0 mb-1 sm:mb-0">
                           Dạng bào chế
                         </div>
-                        <div className="font-semibold text-slate-800">
+                        <div className="text-base font-semibold text-slate-800 flex-1">
                           {drug.dosageForm}
                         </div>
                       </div>
                     )}
                     {drug.strength && (
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <div className="text-sm text-slate-500">Hàm lượng</div>
-                        <div className="font-semibold text-slate-800">
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 flex-shrink-0 mb-1 sm:mb-0">
+                          Hàm lượng
+                        </div>
+                        <div className="text-base font-semibold text-slate-800 flex-1">
                           {drug.strength}
                         </div>
                       </div>
                     )}
                     {drug.packaging && (
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <div className="text-sm text-slate-500">
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 flex-shrink-0 mb-1 sm:mb-0">
                           Quy cách đóng gói
                         </div>
-                        <div className="font-semibold text-slate-800">
+                        <div className="text-base font-semibold text-slate-800 flex-1">
                           {drug.packaging}
                         </div>
                       </div>
                     )}
                     {drug.manufacturer && (
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <div className="text-sm text-slate-500">
+                      <div className="flex flex-col sm:flex-row sm:items-center py-4 last:pb-0">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 flex-shrink-0 mb-1 sm:mb-0">
                           Nhà sản xuất
                         </div>
-                        <div className="font-semibold text-slate-800">
+                        <div className="text-base font-semibold text-slate-800 flex-1">
                           {typeof drug.manufacturer === "object"
                             ? drug.manufacturer.name ||
                               drug.manufacturer.fullName ||
@@ -267,75 +275,6 @@ export default function PublicDrugInfo() {
                     )}
                   </div>
                 </div>
-
-                {/* Thông tin chi tiết chỉ hiển thị khi đã đăng nhập */}
-                {isAuthenticated && (
-                  <div className="mt-4 pt-4 border-t border-slate-200">
-                    <h4 className="font-semibold text-slate-800 mb-3">
-                      Thông tin chi tiết
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {drug.route && (
-                        <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                          <div className="text-sm text-blue-700">Cách dùng</div>
-                          <div className="font-semibold text-blue-900">
-                            {drug.route}
-                          </div>
-                        </div>
-                      )}
-                      {drug.storage && (
-                        <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                          <div className="text-sm text-blue-700">Bảo quản</div>
-                          <div className="font-semibold text-blue-900">
-                            {drug.storage}
-                          </div>
-                        </div>
-                      )}
-                      {drug.activeIngredients &&
-                        Array.isArray(drug.activeIngredients) &&
-                        drug.activeIngredients.length > 0 && (
-                          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 md:col-span-2">
-                            <div className="text-sm text-blue-700 mb-1">
-                              Thành phần hoạt chất
-                            </div>
-                            <div className="font-semibold text-blue-900">
-                              {drug.activeIngredients.join(", ")}
-                            </div>
-                          </div>
-                        )}
-                      {drug.warnings && (
-                        <div className="bg-amber-50 rounded-lg p-3 border border-amber-200 md:col-span-2">
-                          <div className="text-sm text-amber-700 mb-1">
-                            ⚠️ Cảnh báo
-                          </div>
-                          <div className="text-sm text-amber-900">
-                            {drug.warnings}
-                          </div>
-                        </div>
-                      )}
-                      {drug.indications && (
-                        <div className="bg-green-50 rounded-lg p-3 border border-green-200 md:col-span-2">
-                          <div className="text-sm text-green-700 mb-1">
-                             Chỉ định
-                          </div>
-                          <div className="text-sm text-green-900">
-                            {drug.indications}
-                          </div>
-                        </div>
-                      )}
-                      {drug.contraindications && (
-                        <div className="bg-red-50 rounded-lg p-3 border border-red-200 md:col-span-2">
-                          <div className="text-sm text-red-700 mb-1">
-                            🚫 Chống chỉ định
-                          </div>
-                          <div className="text-sm text-red-900">
-                            {drug.contraindications}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
           </motion.div>
@@ -351,6 +290,15 @@ export default function PublicDrugInfo() {
           </Link>
         </div>
       </div>
+
+      <style>{`
+        @keyframes float-slow { 0%,100% { transform: translateY(0) } 50% { transform: translateY(10px) } }
+        @keyframes float-slower { 0%,100% { transform: translateY(0) } 50% { transform: translateY(6px) } }
+        @keyframes bounce-slow { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+        .animate-bounce-slow { animation: bounce-slow 2s ease-in-out infinite; }
+        .animate-float-slow { animation: float-slow 3s ease-in-out infinite; }
+        .animate-float-slower { animation: float-slower 4s ease-in-out infinite; }
+      `}</style>
     </div>
   );
 }

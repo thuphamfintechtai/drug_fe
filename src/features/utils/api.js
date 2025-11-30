@@ -14,7 +14,7 @@ const getApiBaseUrl = () => {
   }
 
   // Production: API thật (luôn có /api ở cuối)
-  return "https://server-drug.ailusion.io.vn/api";
+  return "http://localhost:9000/api";
 };
 
 const api = axios.create({

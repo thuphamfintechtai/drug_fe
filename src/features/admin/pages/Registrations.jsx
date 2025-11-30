@@ -181,19 +181,20 @@ export default function AdminRegistrations() {
                     >
                       <td className="px-4 py-3">
                         <div className="font-medium text-[#003544]">
-                          {r?.user?.fullName || 
-                           r?.user?.username || 
-                           r?.companyInfo?.name || 
-                           "N/A"}
+                          {r?.user?.fullName ||
+                            r?.user?.username ||
+                            r?.companyInfo?.name ||
+                            "N/A"}
                         </div>
                         <div className="text-sm text-[#003544]/70">
-                          {r?.user?.email || 
-                           r?.companyInfo?.contactEmail || 
-                           "N/A"}
+                          {r?.user?.email ||
+                            r?.companyInfo?.contactEmail ||
+                            "N/A"}
                         </div>
                         {r?.user?.walletAddress && (
                           <div className="text-xs text-[#003544]/50 mt-1">
-                            {r.user.walletAddress.slice(0, 6)}...{r.user.walletAddress.slice(-4)}
+                            {r.user.walletAddress.slice(0, 6)}...
+                            {r.user.walletAddress.slice(-4)}
                           </div>
                         )}
                       </td>
@@ -210,7 +211,7 @@ export default function AdminRegistrations() {
                         <div className="flex items-center justify-end gap-2">
                           <Link
                             to={`/admin/registrations/${r._id}`}
-                            className="inline-flex items-center px-3 py-2 rounded-full border border-cyan-200 text-[#003544] hover:bg-[#90e0ef22] transition"
+                            className="inline-flex items-center px-3 py-2 rounded-full border border-primary text-[#003544] hover:bg-[#90e0ef22] transition"
                           >
                             Chi tiết
                           </Link>
@@ -249,7 +250,7 @@ export default function AdminRegistrations() {
               className={`px-3 py-2 rounded-xl ${
                 page <= 1
                   ? "bg-slate-200 text-slate-400"
-                  : "bg-white border border-cyan-200 hover:bg-[#f5fcff]"
+                  : "bg-white border !border-primary hover:bg-[#f5fcff]"
               }`}
             >
               Trước

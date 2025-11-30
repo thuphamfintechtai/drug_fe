@@ -168,13 +168,13 @@ export const useSupplyChainHistory = () => {
             batch.batchNumber
           )}/journey`
         );
-        const data = response.data?.data || response.data;
-        if (!data?.success) {
-          throw new Error(
-            data?.message || "Không thể lấy thông tin hành trình"
-          );
+        const responseData = response.data;
+
+        let journeyData = null;
+        if (responseData?.success && responseData?.data) {
+          journeyData = responseData.data;
         }
-        setJourneys((prev) => ({ ...prev, [batch.batchNumber]: data.data }));
+        setJourneys((prev) => ({ ...prev, [batch.batchNumber]: journeyData }));
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error("Không thể tải hành trình lô hàng:", err);

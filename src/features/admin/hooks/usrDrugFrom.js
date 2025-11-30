@@ -101,5 +101,6 @@ export const useDrugFrom = () => {
     navigationItems,
     translateStatus,
     translateNFTStatus,
+    id,
   };
 };

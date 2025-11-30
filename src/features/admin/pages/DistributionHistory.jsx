@@ -9,6 +9,7 @@ export default function DistributionHistory() {
     loading,
     error,
     loadingProgress,
+    pagination,
     navigationItems,
     handleSearch,
     handleClearSearch,
@@ -46,14 +47,22 @@ export default function DistributionHistory() {
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 mb-4">
-            <h2 className="text-xl font-semibold text-[#007b91]">
-              Lịch sử phân phối thuốc
-            </h2>
-            <p className="text-slate-500 text-sm mt-1">
-              Theo dõi việc chuyển giao thuốc từ nhà phân phối đến nhà thuốc
-            </p>
-          </div>
+          {/* Banner */}
+          <motion.section
+            className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-r from-primary to-secondary"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="relative px-6 py-8 md:px-10 md:py-12 text-white">
+              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight drop-shadow-sm mb-2">
+                Lịch sử phân phối thuốc
+              </h1>
+              <p className="text-white/90">
+                Theo dõi việc chuyển giao thuốc từ nhà phân phối đến nhà thuốc
+              </p>
+            </div>
+          </motion.section>
 
           <motion.div
             className="rounded-2xl bg-white border border-card-primary shadow-[0_10px_30px_rgba(0,0,0,0.06)] p-4 mb-4"
@@ -61,9 +70,9 @@ export default function DistributionHistory() {
             initial="hidden"
             animate="show"
           >
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <div>
-                <label className="block text-sm text-[#003544]/70 mb-1">
+                <label className="block text-sm font-semibold text-slate-600 mb-2">
                   Mã NPP
                 </label>
                 <input
@@ -84,11 +93,11 @@ export default function DistributionHistory() {
                       handleSearch();
                     }
                   }}
-                  placeholder="Lọc theo NPP (ObjectId)"
-                  className={`w-full h-12 rounded-full border bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 transition ${
+                  placeholder="Nhập ObjectId NPP..."
+                  className={`w-full h-12 rounded-xl border-2 bg-white text-slate-700 px-4 focus:outline-none focus:ring-2 transition ${
                     validationErrors.distributorId
                       ? "border-red-300 focus:ring-red-400"
-                      : "border-gray-200 focus:ring-[#48cae4]"
+                      : "border-slate-300 focus:ring-primary focus:border-primary"
                   }`}
                 />
                 {validationErrors.distributorId && (
@@ -99,7 +108,7 @@ export default function DistributionHistory() {
               </div>
 
               <div>
-                <label className="block text-sm text-[#003544]/70 mb-1">
+                <label className="block text-sm font-semibold text-slate-600 mb-2">
                   Mã nhà thuốc
                 </label>
                 <input
@@ -120,11 +129,11 @@ export default function DistributionHistory() {
                       handleSearch();
                     }
                   }}
-                  placeholder="Lọc theo Nhà thuốc (ObjectId)"
-                  className={`w-full h-12 rounded-full border bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 transition ${
+                  placeholder="Nhập ObjectId nhà thuốc..."
+                  className={`w-full h-12 rounded-xl border-2 bg-white text-slate-700 px-4 focus:outline-none focus:ring-2 transition ${
                     validationErrors.pharmacyId
                       ? "border-red-300 focus:ring-red-400"
-                      : "border-gray-200 focus:ring-[#48cae4]"
+                      : "border-slate-300 focus:ring-primary focus:border-primary"
                   }`}
                 />
                 {validationErrors.pharmacyId && (
@@ -135,7 +144,7 @@ export default function DistributionHistory() {
               </div>
 
               <div>
-                <label className="block text-sm text-[#003544]/70 mb-1">
+                <label className="block text-sm font-semibold text-slate-600 mb-2">
                   Mã thuốc
                 </label>
                 <input
@@ -156,11 +165,11 @@ export default function DistributionHistory() {
                       handleSearch();
                     }
                   }}
-                  placeholder="Lọc theo thuốc (ObjectId)"
-                  className={`w-full h-12 rounded-full border bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 transition ${
+                  placeholder="Nhập ObjectId thuốc..."
+                  className={`w-full h-12 rounded-xl border-2 bg-white text-slate-700 px-4 focus:outline-none focus:ring-2 transition ${
                     validationErrors.drugId
                       ? "border-red-300 focus:ring-red-400"
-                      : "border-gray-200 focus:ring-[#48cae4]"
+                      : "border-slate-300 focus:ring-primary focus:border-primary"
                   }`}
                 />
                 {validationErrors.drugId && (
@@ -171,7 +180,7 @@ export default function DistributionHistory() {
               </div>
 
               <div>
-                <label className="block text-sm text-[#003544]/70 mb-1">
+                <label className="block text-sm font-semibold text-slate-600 mb-2">
                   Trạng thái
                 </label>
                 <select
@@ -179,7 +188,7 @@ export default function DistributionHistory() {
                   onChange={(e) =>
                     updateFilter({ status: e.target.value, page: 1 })
                   }
-                  className="w-full h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+                  className="w-full h-12 rounded-xl border-2 border-slate-300 bg-white text-slate-700 px-4 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
                 >
                   <option value="">Tất cả</option>
                   <option value="pending">Đang chờ</option>
@@ -193,7 +202,7 @@ export default function DistributionHistory() {
                 <button
                   type="button"
                   onClick={handleClearSearch}
-                  className="px-4 py-2 rounded-full border border-gray-300 text-slate-700 hover:bg-gray-50 transition text-sm font-medium"
+                  className="px-5 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 hover:bg-slate-50 transition text-sm font-semibold"
                 >
                   Xóa tìm kiếm
                 </button>
@@ -201,54 +210,75 @@ export default function DistributionHistory() {
               <button
                 type="button"
                 onClick={handleSearch}
-                className="px-6 py-2 rounded-full bg-secondary hover:bg-primary !text-white font-medium transition text-sm shadow-md"
+                className="px-6 py-2.5 rounded-xl !text-white bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition font-semibold"
               >
                 Tìm kiếm
               </button>
             </div>
           </motion.div>
 
-          <motion.div
-            className="bg-white rounded-2xl border border-card-primary shadow-sm p-6"
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-          >
-            {error ? (
-              <div className="p-6 text-red-600">{error}</div>
-            ) : items.length === 0 ? (
-              <div className="p-6 text-slate-600">Không có dữ liệu</div>
-            ) : (
-              <div className="space-y-4">
-                {items.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition"
-                  >
-                    <div className="flex items-start justify-between mb-4">
+          {error ? (
+            <motion.div
+              className="rounded-2xl bg-white border border-red-200 shadow-sm p-6"
+              variants={fadeUp}
+              initial="hidden"
+              animate="show"
+            >
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                {error}
+              </div>
+            </motion.div>
+          ) : items.length === 0 ? (
+            <motion.div
+              className="rounded-2xl bg-white border border-slate-200 shadow-sm p-10 text-center"
+              variants={fadeUp}
+              initial="hidden"
+              animate="show"
+            >
+              <div className="text-6xl mb-4">📦</div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">
+                Không có dữ liệu
+              </h3>
+              <p className="text-slate-600">
+                Không tìm thấy lịch sử phân phối phù hợp
+              </p>
+            </motion.div>
+          ) : (
+            <div className="space-y-6">
+              {items.map((item, idx) => (
+                <motion.div
+                  key={idx}
+                  className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden"
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  transition={{ delay: idx * 0.1 }}
+                >
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-primary to-secondary border-b border-primary/20 px-6 py-4">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-lg font-semibold text-[#003544]">
+                        <h3 className="text-lg font-semibold text-white">
                           {item.type === "full_record"
                             ? "Giao dịch phân phối"
                             : "Xác nhận nhận hàng"}
                         </h3>
-                        <p className="text-sm text-slate-600 mt-1">
+                        <p className="text-sm text-white/80 mt-1">
                           {new Date(
                             item.invoice?.createdAt || item.proof?.createdAt
                           ).toLocaleString("vi-VN")}
                         </p>
                       </div>
-
                       {(item.invoice?.status || item.proof?.status) && (
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
                             item.invoice?.status === "completed" ||
                             item.proof?.status === "confirmed"
-                              ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : item.invoice?.status === "pending" ||
                                 item.proof?.status === "pending"
-                              ? "bg-amber-100 text-amber-700 border border-amber-200"
-                              : "bg-slate-100 text-slate-600 border border-slate-200"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-slate-50 text-slate-600 border border-slate-200"
                           }`}
                         >
                           {item.invoice?.status === "pending"
@@ -261,80 +291,95 @@ export default function DistributionHistory() {
                         </span>
                       )}
                     </div>
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-6">
+                    <div
+                      className={`grid gap-6 ${
+                        item.invoice && item.proof
+                          ? "grid-cols-1 md:grid-cols-2"
+                          : "grid-cols-1"
+                      }`}
+                    >
                       {item.invoice && (
-                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                          <h4 className="font-semibold text-slate-800 mb-3">
+                        <div className="bg-white rounded-xl  border border-slate-200 shadow-sm">
+                          <h4 className="font-semibold p-5 text-slate-800 mb-6 text-xl border-b border-slate-200 pb-2">
                             Hóa đơn
                           </h4>
-                          <div className="space-y-2 text-sm">
+                          <div className="space-y-0 divide-y divide-slate-200 p-5">
                             {item.invoice.invoiceNumber && (
-                              <div>
-                                <span className="text-slate-600">
-                                  Số hóa đơn:
-                                </span>
-                                <span className="ml-2 font-mono text-xs bg-white px-2 py-1 rounded text-slate-700">
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3 first:pt-0">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                                  Số hóa đơn
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 font-mono flex-1">
                                   {item.invoice.invoiceNumber}
-                                </span>
+                                </div>
                               </div>
                             )}
 
                             {item.invoice.fromDistributor && (
-                              <div>
-                                <span className="text-slate-600">Từ NPP:</span>
-                                <span className="ml-2 font-medium text-slate-800">
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                                  Từ NPP
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
                                   {item.invoice.fromDistributor.fullName ||
                                     item.invoice.fromDistributor.username}
-                                </span>
+                                </div>
                               </div>
                             )}
 
                             {item.invoice.toPharmacy && (
-                              <div>
-                                <span className="text-slate-600">
-                                  Đến nhà thuốc:
-                                </span>
-                                <span className="ml-2 font-medium text-slate-800">
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                                  Đến nhà thuốc
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
                                   {item.invoice.toPharmacy.fullName ||
                                     item.invoice.toPharmacy.username}
-                                </span>
+                                </div>
                               </div>
                             )}
 
                             {item.invoice.drug && (
-                              <div>
-                                <span className="text-slate-600">Thuốc:</span>
-                                <span className="ml-2 font-medium text-slate-800">
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                                  Thuốc
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
                                   {item.invoice.drug.tradeName} (
                                   {item.invoice.drug.atcCode})
-                                </span>
+                                </div>
                               </div>
                             )}
 
                             {item.invoice.quantity && (
-                              <div>
-                                <span className="text-slate-600">
-                                  Số lượng:
-                                </span>
-                                <span className="ml-2 font-semibold text-slate-800">
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                                  Số lượng
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
                                   {item.invoice.quantity}
-                                </span>
+                                </div>
                               </div>
                             )}
 
                             {item.invoice.chainTxHash && (
-                              <div>
-                                <span className="text-slate-600">TX Hash:</span>
-                                <a
-                                  href={`https://sepolia.etherscan.io/tx/${item.invoice.chainTxHash}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="ml-2 font-mono text-xs text-cyan-600 hover:text-cyan-700 hover:underline"
-                                >
-                                  {item.invoice.chainTxHash.slice(0, 10)}...
-                                  {item.invoice.chainTxHash.slice(-8)}
-                                </a>
+                              <div className="flex flex-col sm:flex-row sm:items-start py-3 last:pb-0">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0 sm:pt-1">
+                                  TX Hash
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                  <a
+                                    href={`https://sepolia.etherscan.io/tx/${item.invoice.chainTxHash}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-mono text-xs text-primary hover:text-secondary hover:underline break-all"
+                                  >
+                                    {item.invoice.chainTxHash}
+                                  </a>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -342,98 +387,107 @@ export default function DistributionHistory() {
                       )}
 
                       {item.proof && (
-                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                          <h4 className="font-semibold text-slate-800 mb-3">
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                          <h4 className="font-semibold p-5 text-slate-800 mb-4 text-xl border-b border-slate-200 pb-2">
                             Xác nhận nhận hàng
                           </h4>
-                          <div className="space-y-2 text-sm">
+                          <div className="space-y-0 divide-y divide-slate-200 p-5">
                             {item.proof.fromDistributor && (
-                              <div>
-                                <span className="text-slate-600">Từ NPP:</span>
-                                <span className="ml-2 font-medium text-slate-800">
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3 first:pt-0">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                                  Từ NPP
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
                                   {item.proof.fromDistributor.fullName ||
                                     item.proof.fromDistributor.username}
-                                </span>
+                                </div>
                               </div>
                             )}
 
                             {item.proof.toPharmacy && (
-                              <div>
-                                <span className="text-slate-600">
-                                  Nhà thuốc:
-                                </span>
-                                <span className="ml-2 font-medium text-slate-800">
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                                  Nhà thuốc
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
                                   {item.proof.toPharmacy.fullName ||
                                     item.proof.toPharmacy.username}
-                                </span>
+                                </div>
                               </div>
                             )}
 
                             {item.proof.drug && (
-                              <div>
-                                <span className="text-slate-600">Thuốc:</span>
-                                <span className="ml-2 font-medium text-slate-800">
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                                  Thuốc
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
                                   {item.proof.drug.tradeName} (
                                   {item.proof.drug.atcCode})
-                                </span>
+                                </div>
                               </div>
                             )}
 
                             {item.proof.receivedQuantity && (
-                              <div>
-                                <span className="text-slate-600">
-                                  Số lượng nhận:
-                                </span>
-                                <span className="ml-2 font-semibold text-slate-800">
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                                  Số lượng nhận
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
                                   {item.proof.receivedQuantity}
-                                </span>
+                                </div>
                               </div>
                             )}
 
                             {item.proof.receiptDate && (
-                              <div>
-                                <span className="text-slate-600">
-                                  Ngày nhận:
-                                </span>
-                                <span className="ml-2 text-slate-800">
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                                  Ngày nhận
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
                                   {new Date(
                                     item.proof.receiptDate
                                   ).toLocaleDateString("vi-VN")}
-                                </span>
+                                </div>
                               </div>
                             )}
 
                             {item.proof.receiptTxHash && (
-                              <div>
-                                <span className="text-slate-600">TX Hash:</span>
-                                <a
-                                  href={`https://sepolia.etherscan.io/tx/${item.proof.receiptTxHash}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="ml-2 font-mono text-xs text-cyan-600 hover:text-cyan-700 hover:underline"
-                                >
-                                  {item.proof.receiptTxHash.slice(0, 10)}...
-                                  {item.proof.receiptTxHash.slice(-8)}
-                                </a>
+                              <div className="flex flex-col sm:flex-row sm:items-start py-3">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0 sm:pt-1">
+                                  TX Hash
+                                </div>
+                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                  <a
+                                    href={`https://sepolia.etherscan.io/tx/${item.proof.receiptTxHash}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-mono text-xs text-primary hover:text-secondary hover:underline break-all"
+                                  >
+                                    {item.proof.receiptTxHash}
+                                  </a>
+                                </div>
                               </div>
                             )}
 
                             {item.proof.supplyChainCompleted !== undefined && (
-                              <div>
-                                <span className="text-slate-600">
-                                  Supply chain hoàn tất:
-                                </span>
-                                <span
-                                  className={`ml-2 px-2 py-0.5 rounded text-xs ${
-                                    item.proof.supplyChainCompleted
-                                      ? "bg-emerald-100 text-emerald-700"
-                                      : "bg-amber-100 text-amber-700"
-                                  }`}
-                                >
-                                  {item.proof.supplyChainCompleted
-                                    ? "Hoàn tất"
-                                    : "Chưa hoàn tất"}
-                                </span>
+                              <div className="flex flex-col sm:flex-row sm:items-center py-3 last:pb-0">
+                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
+                                  Supply chain
+                                </div>
+                                <div className="flex-1">
+                                  <span
+                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                      item.proof.supplyChainCompleted
+                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                                    }`}
+                                  >
+                                    {item.proof.supplyChainCompleted
+                                      ? "Hoàn tất"
+                                      : "Chưa hoàn tất"}
+                                  </span>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -441,31 +495,38 @@ export default function DistributionHistory() {
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </motion.div>
+                </motion.div>
+              ))}
+            </div>
+          )}
 
-          <div className="flex items-center justify-end gap-2 mt-4">
-            <button
-              disabled={page <= 1}
-              onClick={() => updateFilter({ page: page - 1 })}
-              className={`px-3 py-2 rounded-xl ${
-                page <= 1
-                  ? "bg-slate-200 text-slate-400"
-                  : "bg-white border border-cyan-200 hover:bg-[#f5fcff]"
-              }`}
-            >
-              Trước
-            </button>
-            <span className="text-sm text-slate-700">Trang {page}</span>
-            <button
-              onClick={() => updateFilter({ page: page + 1 })}
-              className="px-3 py-2 rounded-xl !text-white bg-secondary shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
-            >
-              Sau
-            </button>
-          </div>
+          {items.length > 0 && (
+            <div className="flex items-center justify-between mt-6">
+              <div className="text-sm text-slate-600">
+                Hiển thị {items.length} / {pagination?.total || 0} giao dịch
+              </div>
+              <div className="flex items-center justify-end gap-2 mt-4">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => updateFilter({ page: page - 1 })}
+                  className={`px-3 py-2 rounded-xl ${
+                    page <= 1
+                      ? "bg-slate-200 text-slate-400"
+                      : "bg-white border !border-primary hover:bg-[#f5fcff]"
+                  }`}
+                >
+                  Trước
+                </button>
+                <span className="text-sm text-slate-700">Trang {page}</span>
+                <button
+                  onClick={() => updateFilter({ page: page + 1 })}
+                  className="px-3 py-2 rounded-xl !text-white bg-linear-to-r from-secondary to-primary shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
     </DashboardLayout>
