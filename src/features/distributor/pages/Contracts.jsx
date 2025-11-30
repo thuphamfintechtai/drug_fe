@@ -9,8 +9,14 @@ import { useNavigate } from "react-router-dom";
 
 export default function Contracts() {
   const navigate = useNavigate();
-  const { loading, filteredContracts, searchText, setSearchText, columns, contracts } =
-    useContracts();
+  const {
+    loading,
+    filteredContracts,
+    searchText,
+    setSearchText,
+    columns,
+    contracts,
+  } = useContracts();
 
   const fadeUp = {
     hidden: { opacity: 0, y: 16, filter: "blur(6px)" },
@@ -88,23 +94,23 @@ export default function Contracts() {
                   handleClearSearch={handleClearSearch}
                   placeholder="Tìm kiếm theo mã hợp đồng, tên file..."
                   data={contracts || filteredContracts}
-                  getSearchText={(item) => item._id || item.contractFileName || ""}
+                  getSearchText={(item) =>
+                    item._id || item.contractFileName || ""
+                  }
                   matchFunction={(item, searchLower) => {
                     const id = (item._id || "").toLowerCase();
-                    const fileName = (item.contractFileName || "").toLowerCase();
-                    return id.includes(searchLower) || fileName.includes(searchLower);
+                    const fileName = (
+                      item.contractFileName || ""
+                    ).toLowerCase();
+                    return (
+                      id.includes(searchLower) || fileName.includes(searchLower)
+                    );
                   }}
                   getDisplayText={(item) => item.contractFileName || item._id}
                   enableAutoSearch={false}
                 />
               </div>
             </div>
-            <button
-              onClick={() => navigate("/distributor/contracts/create")}
-              className="px-6 py-3 bg-white border-2 border-[#3db6d9] text-[#3db6d9] rounded-2xl font-semibold hover:bg-[#3db6d9] hover:text-white transition-all duration-200 hover:shadow-md hover:shadow-[#3db6d9]/40 whitespace-nowrap h-[60px] flex items-center justify-center"
-            >
-              + Tạo Hợp đồng mới
-            </button>
           </motion.div>
 
           {/* Table */}
@@ -114,10 +120,32 @@ export default function Contracts() {
             initial="hidden"
             animate="show"
           >
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+            <div className="flex justify-between items-center px-6 py-4 bg-gray-50 border-b border-gray-100">
               <h2 className="text-xl font-bold text-slate-800">
                 Danh sách hợp đồng
               </h2>
+              <motion.button
+                onClick={() => navigate("/distributor/contracts/create")}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold !text-white bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 whitespace-nowrap h-[40px] relative overflow-hidden group"
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></span>
+                <svg
+                  className="w-3 h-3 relative z-10"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                <span className="relative z-10">Tạo Hợp đồng</span>
+              </motion.button>
             </div>
 
             {filteredContracts.length === 0 ? (
@@ -132,12 +160,28 @@ export default function Contracts() {
                     : "Bắt đầu bằng cách tạo hợp đồng mới với nhà thuốc"}
                 </p>
                 {!searchText && (
-                  <button
+                  <motion.button
                     onClick={() => navigate("/distributor/contracts/create")}
-                    className="px-6 py-3 bg-[#3db6d9] text-white rounded-full font-semibold hover:bg-[#2da5c9] transition-all duration-200 hover:shadow-md"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-white bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
                   >
-                    + Tạo Hợp đồng đầu tiên
-                  </button>
+                    <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></span>
+                    <svg
+                      className="w-5 h-5 relative z-10"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    <span className="relative z-10">Tạo Hợp đồng đầu tiên</span>
+                  </motion.button>
                 )}
               </div>
             ) : (
@@ -172,7 +216,11 @@ export default function Contracts() {
                             style={{ textAlign: col.align || "left" }}
                           >
                             {col.render
-                              ? col.render(record[col.dataIndex], record, rowIndex)
+                              ? col.render(
+                                  record[col.dataIndex],
+                                  record,
+                                  rowIndex
+                                )
                               : record[col.dataIndex] || "N/A"}
                           </td>
                         ))}

@@ -65,7 +65,7 @@ export const navigationItems = [
   },
   {
     path: "/pharmacy/contracts",
-    label: "Hợp đồng từ nhà phân phối",
+    label: "Hợp đồng ",
     active: false,
     icon: (
       <svg
