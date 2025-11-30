@@ -9,6 +9,9 @@ import {
   BsPersonFill,
   BsInfoCircle,
   BsCheckCircleFill,
+  BsSearch,
+  BsEye,
+  BsShieldLock,
 } from "react-icons/bs";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { toast } from "sonner";
@@ -522,58 +525,126 @@ export default function UserHome() {
     "Hỗ trợ thu hồi sản phẩm khi cần thiết.",
   ];
 
-  const StepCard = ({ step, desc, icon, color, bgColor }) => (
-    <motion.div
-      className="flex items-center gap-4 sm:gap-5 p-4 sm:p-6 bg-white rounded-2xl shadow-lg border border-slate-200/50 max-w-md hover:border-[#4BADD1]/50 transition-all relative overflow-hidden group"
-      whileHover={{
-        scale: 1.03,
-        boxShadow: "0 12px 40px rgba(75, 173, 209, 0.25)",
-        y: -4,
-      }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-    >
+  const StepCard = ({ step, desc, icon, color, bgColor, index = 0 }) => {
+    // Ensure index is a valid number
+    const stepIndex = typeof index === "number" && !isNaN(index) ? index : 0;
+
+    const colorMap = {
+      green: {
+        gradient: "from-emerald-500 to-teal-600",
+        bg: "from-emerald-50 to-teal-50",
+        border: "border-emerald-200",
+        text: "text-emerald-700",
+      },
+      red: {
+        gradient: "from-rose-500 to-pink-600",
+        bg: "from-rose-50 to-pink-50",
+        border: "border-rose-200",
+        text: "text-rose-700",
+      },
+      blue: {
+        gradient: "from-blue-500 to-indigo-600",
+        bg: "from-blue-50 to-indigo-50",
+        border: "border-blue-200",
+        text: "text-blue-700",
+      },
+      yellow: {
+        gradient: "from-amber-500 to-orange-600",
+        bg: "from-amber-50 to-orange-50",
+        border: "border-amber-200",
+        text: "text-amber-700",
+      },
+    };
+
+    const stepColor =
+      stepIndex === 0
+        ? colorMap.green
+        : stepIndex === 1
+        ? colorMap.red
+        : stepIndex === 2
+        ? colorMap.blue
+        : colorMap.yellow;
+
+    const stepNumber = stepIndex + 1;
+
+    return (
       <motion.div
-        className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-[#4BADD1] to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
-        initial={{ scaleX: 0 }}
-        whileHover={{ scaleX: 1 }}
-        transition={{ duration: 0.3 }}
-      />
-      <motion.div
-        className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center ${bgColor} transition-all shadow-md`}
-        whileHover={{ scale: 1.1 }}
-        transition={{ duration: 0.5 }}
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{
+          duration: 0.5,
+          delay: stepIndex * 0.15,
+        }}
+        className="relative h-full"
       >
-        <span className={`text-2xl sm:text-3xl ${color}`}>{icon}</span>
+        <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 h-full flex flex-col group hover:shadow-xl transition-all duration-300 hover:border-slate-300">
+          {/* Step number */}
+          <div className="flex items-center justify-between mb-6">
+            <div
+              className={`w-12 h-12 rounded-lg bg-gradient-to-br ${stepColor.gradient} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}
+            >
+              <span className="text-white text-xl">{icon}</span>
+            </div>
+            <div
+              className={`w-8 h-8 rounded-full bg-gradient-to-br ${stepColor.gradient} flex items-center justify-center text-white text-sm font-bold shadow-sm`}
+            >
+              {stepNumber}
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1">
+            <h3
+              className={`font-bold mb-3 text-lg sm:text-xl ${stepColor.text} transition-colors`}
+            >
+              {step}
+            </h3>
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+              {desc}
+            </p>
+          </div>
+
+          {/* Bottom accent line */}
+          <div
+            className={`mt-6 h-1 w-0 bg-gradient-to-r ${stepColor.gradient} group-hover:w-full transition-all duration-500 rounded-full`}
+          />
+        </div>
       </motion.div>
-      <div className="flex-1 min-w-0">
-        <h3 className="font-bold text-slate-800 mb-1 sm:mb-2 text-sm sm:text-base">
-          {step}
-        </h3>
-        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-          {desc}
-        </p>
-      </div>
-    </motion.div>
-  );
+    );
+  };
 
   const features = [
     {
-      number: 1,
+      icon: <BsSearch />,
       title: "Tra cứu dễ dàng",
       description:
         "Tìm kiếm thông tin sản phẩm bằng mã lô, mã QR hoặc series number.",
+      gradient: "from-blue-500 to-cyan-400",
+      bgGradient: "from-blue-50 to-cyan-50",
+      iconBg: "bg-blue-100",
+      iconColor: "text-blue-600",
     },
     {
-      number: 2,
+      icon: <BsEye />,
       title: "Minh bạch hoàn toàn",
       description:
         "Thông tin rõ ràng, chi tiết về toàn bộ quy trình từ nhà sản xuất đến nhà thuốc.",
+      gradient: "from-[#4BADD1] to-teal-400",
+      bgGradient: "from-[#4BADD1]/10 to-teal-50",
+      iconBg: "bg-[#4BADD1]/20",
+      iconColor: "text-[#4BADD1]",
+      featured: true,
     },
     {
-      number: 3,
+      icon: <BsShieldLock />,
       title: "Bảo mật tuyệt đối",
       description:
         "Dữ liệu được bảo mật bằng công nghệ blockchain, không thể thay đổi hay giả mạo.",
+      gradient: "from-purple-500 to-indigo-400",
+      bgGradient: "from-purple-50 to-indigo-50",
+      iconBg: "bg-purple-100",
+      iconColor: "text-purple-600",
     },
   ];
 
@@ -1143,85 +1214,191 @@ export default function UserHome() {
         </section>
       </div>
 
-      {/* Features Section - giữ nguyên từ code gốc */}
-      <section className="py-12 sm:py-16 md:py-20 px-4 bg-linear-to-b from-white to-slate-50/30">
-        <div className="max-w-6xl mx-auto">
+      {/* Features Section - Redesigned */}
+      <section className="py-16 sm:py-20 md:py-24 px-4 bg-gradient-to-b from-white via-slate-50/50 to-white relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div
+            className="absolute top-20 left-10 w-72 h-72 bg-[#4BADD1]/5 rounded-full blur-3xl"
+            animate={{
+              x: [0, 50, 0],
+              y: [0, 30, 0],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+          <motion.div
+            className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"
+            animate={{
+              x: [0, -50, 0],
+              y: [0, -30, 0],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12 sm:mb-16"
+            className="text-center mb-16 sm:mb-20"
           >
             <motion.span
-              className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 bg-[#4BADD1]/10 text-[#4BADD1] text-xs sm:text-sm font-semibold rounded-full mb-3 sm:mb-4"
+              className="inline-block px-4 py-2 bg-gradient-to-r from-[#4BADD1]/10 to-blue-500/10 text-[#4BADD1] text-sm font-semibold rounded-full mb-4 sm:mb-6 border border-[#4BADD1]/20"
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              Tính năng nổi bật
+              ✨ Tính năng nổi bật
             </motion.span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary font-bold mb-3 sm:mb-4 px-2 sm:px-0">
+            <motion.h2
+              className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 sm:mb-6 px-2 sm:px-0 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
               Tại sao chọn hệ thống của chúng tôi
-            </h2>
-            <p className="text-slate-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2 sm:px-0">
+            </motion.h2>
+            <motion.p
+              className="text-slate-600 text-base sm:text-lg md:text-xl max-w-3xl mx-auto px-2 sm:px-0 leading-relaxed"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
               Giải pháp toàn diện cho việc quản lý và truy xuất nguồn gốc dược
-              phẩm
-            </p>
+              phẩm với công nghệ tiên tiến
+            </motion.p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7 md:gap-8 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 items-stretch">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.15 }}
-                whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                className={`rounded-2xl p-6 sm:p-8 text-center transition-all duration-300 bg-white shadow-lg border border-slate-200/50 hover:shadow-2xl relative overflow-hidden
-                ${
-                  index === 1
-                    ? "border-2 border-[#4BADD1] sm:col-span-2 lg:col-span-1 bg-linear-to-br from-white to-[#4BADD1]/5"
-                    : "hover:border-[#4BADD1]/50"
-                }
-              `}
+                initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{
+                  duration: 0.6,
+                  delay: index * 0.15,
+                  type: "spring",
+                  stiffness: 100,
+                }}
+                whileHover={{
+                  y: -12,
+                  scale: 1.02,
+                  transition: { duration: 0.3 },
+                }}
+                className={`group relative rounded-3xl p-8 sm:p-10 transition-all duration-500 bg-white shadow-xl border-2 hover:shadow-2xl overflow-hidden
+                  ${
+                    feature.featured
+                      ? "border-[#4BADD1] md:col-span-2 lg:col-span-1 bg-gradient-to-br from-white via-[#4BADD1]/5 to-teal-50/30"
+                      : "border-slate-200/60 hover:border-[#4BADD1]/40"
+                  }
+                `}
               >
-                {index === 1 && (
-                  <motion.div
-                    className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-[#4BADD1]/10 rounded-full blur-2xl -mr-16 -mt-16"
-                    animate={{
-                      scale: [1, 1.2, 1],
-                      opacity: [0.3, 0.5, 0.3],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  />
+                {/* Animated background gradient for featured card */}
+                {feature.featured && (
+                  <>
+                    <motion.div
+                      className={`absolute top-0 right-0 w-40 h-40 bg-gradient-to-br ${feature.gradient} opacity-20 rounded-full blur-3xl -mr-20 -mt-20`}
+                      animate={{
+                        scale: [1, 1.3, 1],
+                        opacity: [0.2, 0.3, 0.2],
+                      }}
+                      transition={{
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    />
+                    <motion.div
+                      className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#4BADD1] via-teal-400 to-[#4BADD1]"
+                      initial={{ scaleX: 0 }}
+                      whileInView={{ scaleX: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.8, delay: 0.3 }}
+                    />
+                  </>
                 )}
-                <div
-                  className={`flex items-center justify-center w-16 sm:w-20 h-16 sm:h-20 rounded-2xl mx-auto mb-4 sm:mb-6 relative
-                ${
-                  index === 1
-                    ? "bg-linear-to-br from-[#4BADD1]/20 to-cyan-100/50"
-                    : "bg-linear-to-br from-[#4BADD1]/10 to-blue-50/50"
-                }
-              `}
+
+                {/* Icon container */}
+                <motion.div
+                  className={`relative flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-2xl mx-auto mb-6 sm:mb-8
+                    bg-gradient-to-br ${feature.gradient} shadow-lg
+                    group-hover:scale-110 group-hover:rotate-3
+                  `}
+                  initial={{ scale: 0, rotate: -180 }}
+                  whileInView={{ scale: 1, rotate: 0 }}
+                  viewport={{ once: true }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15,
+                    delay: index * 0.15 + 0.2,
+                  }}
                 >
-                  <span className={`text-3xl sm:text-4xl font-bold`}>
-                    {feature.number}
-                  </span>
+                  <div className="absolute inset-0 bg-white/20 rounded-2xl backdrop-blur-sm" />
+                  <div className="relative z-10 text-white text-3xl sm:text-4xl">
+                    {feature.icon}
+                  </div>
+                  {feature.featured && (
+                    <motion.div
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg"
+                      animate={{
+                        scale: [1, 1.2, 1],
+                        rotate: [0, 10, -10, 0],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <span className="text-xs">⭐</span>
+                    </motion.div>
+                  )}
+                </motion.div>
+
+                {/* Content */}
+                <div className="relative z-10">
+                  <motion.h3
+                    className="text-xl sm:text-2xl font-bold text-slate-900 mb-3 sm:mb-4 group-hover:text-[#4BADD1] transition-colors duration-300"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.15 + 0.3 }}
+                  >
+                    {feature.title}
+                  </motion.h3>
+                  <motion.p
+                    className="text-slate-600 text-sm sm:text-base leading-relaxed"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.15 + 0.4 }}
+                  >
+                    {feature.description}
+                  </motion.p>
                 </div>
 
-                <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2 sm:mb-3">
-                  {feature.title}
-                </h3>
-                <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                  {feature.description}
-                </p>
+                {/* Decorative corner element */}
+                <div
+                  className={`absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-tl ${feature.gradient} opacity-5 rounded-tl-full transform translate-x-1/2 translate-y-1/2 group-hover:opacity-10 transition-opacity duration-500`}
+                />
               </motion.div>
             ))}
           </div>
@@ -1260,72 +1437,74 @@ export default function UserHome() {
         </div>
       </section>
 
-      {/* Process Steps Section - giữ nguyên từ code gốc */}
-      <section className="py-12 sm:py-16 md:py-20 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
+      {/* Process Steps Section - Professional Design */}
+      <section className="py-20 sm:py-24 md:py-28 px-4 sm:px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12 sm:mb-16"
+            className="text-center mb-16 sm:mb-20"
           >
             <motion.span
-              className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 bg-[#4BADD1]/10 text-[#4BADD1] text-xs sm:text-sm font-semibold rounded-full mb-3 sm:mb-4"
-              initial={{ opacity: 0, scale: 0.8 }}
+              className="inline-block px-4 py-1.5 bg-[#4BADD1]/10 text-[#4BADD1] text-sm font-semibold rounded-full mb-4"
+              initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
               Quy trình
             </motion.span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold font-text-primary mb-3 sm:mb-4 px-2 sm:px-0">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-slate-900 mb-4 sm:mb-6">
               Quy trình hoạt động
             </h2>
-            <p className="text-slate-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2 sm:px-0">
+            <p className="text-slate-600 text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed">
               Từ nhà sản xuất đến người tiêu dùng, mọi bước đều được ghi lại
-              minh bạch
+              minh bạch trên blockchain
             </p>
           </motion.div>
 
-          {/* Container cho các bước */}
-          <div className="relative max-w-4xl mx-auto flex flex-col gap-4 sm:gap-5 md:gap-6">
-            {processSteps.map((item, index) => {
-              let alignmentClass = "justify-start";
-              if (item.align === "start") {
-                alignmentClass = "justify-start";
-              }
-              if (item.align === "mid-start") {
-                alignmentClass = "justify-start md:pl-12 lg:pl-20";
-              }
-              if (item.align === "mid-end") {
-                alignmentClass =
-                  "justify-start md:justify-end md:pr-12 lg:pr-20";
-              }
-              if (item.align === "end") {
-                alignmentClass = "justify-start md:justify-end";
-              }
+          {/* Steps Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            {processSteps.map((item, index) => (
+              <StepCard key={index} {...item} index={index} />
+            ))}
+          </div>
 
-              const isRightAligned =
-                item.align === "end" || item.align === "mid-end";
-              const animationX = isRightAligned ? 100 : -100;
-
+          {/* Connecting arrows (desktop only) */}
+          <div className="hidden lg:flex items-center justify-between max-w-5xl mx-auto mt-8 -mb-8 px-8">
+            {processSteps.slice(0, -1).map((_, idx) => {
+              const arrowIndex =
+                typeof idx === "number" && !isNaN(idx) ? idx : 0;
               return (
                 <motion.div
-                  key={index}
-                  className={`w-full flex ${alignmentClass}`}
-                  initial={{ opacity: 0, x: animationX }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
+                  key={arrowIndex}
+                  className="flex-1 flex items-center"
+                  initial={{ opacity: 0, scaleX: 0 }}
+                  whileInView={{ opacity: 1, scaleX: 1 }}
+                  viewport={{ once: true }}
                   transition={{
-                    delay: index * 0.2,
-                    type: "spring",
-                    stiffness: 100,
-                    damping: 20,
-                    mass: 0.8,
+                    duration: 0.6,
+                    delay: arrowIndex * 0.15 + 0.5,
                   }}
                 >
-                  <StepCard {...item} />
+                  <div className="flex-1 h-0.5 bg-slate-300" />
+                  <svg
+                    className="w-6 h-6 text-slate-400 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                  <div className="flex-1 h-0.5 bg-slate-300" />
                 </motion.div>
               );
             })}

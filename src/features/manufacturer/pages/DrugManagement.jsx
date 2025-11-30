@@ -146,10 +146,7 @@ export default function DrugManagement() {
               Tạo thuốc mới
             </button>
           </div>
-
-          {/* Drug List with Dropdown */}
-          <div className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden">
-            {drugs.length === 0 ? (
+          {drugs.length === 0 ? (
               <div className="p-16 flex flex-col items-center justify-center text-gray-400">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -366,7 +363,6 @@ export default function DrugManagement() {
                 })}
               </div>
             )}
-          </div>
         </div>
       )}
 
