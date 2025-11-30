@@ -80,16 +80,29 @@ export const useDashboard = () => {
 
     if (oneWeekData?.success && oneWeekData.data) {
       const data = oneWeekData.data;
-      result.oneWeek = Object.entries(data.dailyStats || {})
-        .map(([date, stats]) => ({
-          date: new Date(date).toLocaleDateString("vi-VN", {
-            day: "2-digit",
-            month: "2-digit",
-          }),
-          count: stats.count || 0,
-          quantity: stats.quantity || 0,
-        }))
-        .sort((a, b) => a.date.localeCompare(b.date));
+      // Handle dailyStats as array or object
+      let dailyStatsArray = [];
+      if (Array.isArray(data.dailyStats)) {
+        dailyStatsArray = data.dailyStats;
+      } else if (data.dailyStats && typeof data.dailyStats === 'object') {
+        dailyStatsArray = Object.entries(data.dailyStats).map(([date, stats]) => ({
+          date,
+          count: stats?.count || 0,
+          quantity: stats?.quantity || 0,
+        }));
+      }
+      
+      // Sort by date first, then map to formatted date
+      dailyStatsArray.sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+      result.oneWeek = dailyStatsArray.map((item) => ({
+        date: new Date(item.date).toLocaleDateString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+        }),
+        count: item.count || 0,
+        quantity: item.quantity || 0,
+      }));
     }
 
     if (todayYesterdayData?.success && todayYesterdayData.data) {

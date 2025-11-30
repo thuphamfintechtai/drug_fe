@@ -146,235 +146,229 @@ export default function DrugManagement() {
               Tạo thuốc mới
             </button>
           </div>
+          {drugs.length === 0 ? (
+            <div className="p-16 flex flex-col items-center justify-center text-gray-400">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-12 h-12 mb-3 opacity-60"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 7h18M5 10h14M4 14h16M6 18h12"
+                />
+              </svg>
+              <p className="text-gray-500 text-sm">Không có dữ liệu</p>
+            </div>
+          ) : (
+            <div className="space-y-4 p-4">
+              {drugs.map((drug, index) => {
+                const drugId = drug.id || drug._id || index;
+                const isExpanded = expandedItems.has(drugId);
+                const details = drugDetails[drugId] || drug;
 
-          {/* Drug List with Dropdown */}
-          <div className="bg-white rounded-2xl  shadow-sm overflow-hidden">
-            {drugs.length === 0 ? (
-              <div className="p-16 flex flex-col items-center justify-center text-gray-400">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-12 h-12 mb-3 opacity-60"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 7h18M5 10h14M4 14h16M6 18h12"
-                  />
-                </svg>
-                <p className="text-gray-500 text-sm">Không có dữ liệu</p>
-              </div>
-            ) : (
-              <div className="space-y-4 p-4">
-                {drugs.map((drug, index) => {
-                  const drugId = drug.id || drug._id || index;
-                  const isExpanded = expandedItems.has(drugId);
-                  const details = drugDetails[drugId] || drug;
-
-                  return (
+                return (
+                  <div
+                    key={drugId}
+                    className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden hover:shadow-lg transition"
+                  >
+                    {/* Clickable Header */}
                     <div
-                      key={drugId}
-                      className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden hover:shadow-lg transition"
+                      className="p-5 cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => toggleItem(drugId)}
                     >
-                      {/* Clickable Header */}
-                      <div
-                        className="p-5 cursor-pointer hover:bg-slate-50 transition-colors"
-                        onClick={() => toggleItem(drugId)}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3 flex-1">
-                            <div
-                              className={`transform transition-transform duration-300 ${
-                                isExpanded ? "rotate-180" : "rotate-0"
-                              }`}
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div
+                            className={`transform transition-transform duration-300 ${
+                              isExpanded ? "rotate-180" : "rotate-0"
+                            }`}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="w-5 h-5 text-slate-500"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
                             >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="w-5 h-5 text-slate-500"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 9l-7 7-7-7"
-                                />
-                              </svg>
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-slate-800">
-                                {drug.tradeName || "N/A"}
-                              </h3>
-                              <div className="text-sm text-slate-600 mt-1">
-                                Tên hoạt chất:{" "}
-                                <span className="font-medium">
-                                  {drug.genericName || "N/A"}
-                                </span>
-                              </div>
-                            </div>
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">
-                              {drug.atcCode || "N/A"}
-                            </span>
-                            <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                                drug.status === "active"
-                                  ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                                  : "bg-rose-50 text-rose-600 border border-rose-100"
-                              }`}
-                            >
-                              {drug.status === "active"
-                                ? "Hoạt động"
-                                : "Không hoạt động"}
-                            </span>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-slate-800">
+                              {drug.tradeName || "N/A"}
+                            </h3>
+                            <div className="text-sm text-slate-600 mt-1">
+                              Tên hoạt chất:{" "}
+                              <span className="font-medium">
+                                {drug.genericName || "N/A"}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-
-                      {/* Expandable Content */}
-                      <div
-                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                          isExpanded
-                            ? "max-h-[2000px] opacity-100"
-                            : "max-h-0 opacity-0"
-                        }`}
-                      >
-                        <div className="px-5 pb-5 border-t border-slate-200">
-                          {/* Top facts */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-sm mt-4">
-                            <div className="rounded-lg p-3 border border-slate-200">
-                              <div className="text-slate-700 mb-2">
-                                Dạng bào chế:{" "}
-                                <span className="font-semibold text-slate-800">
-                                  {details.dosageForm ||
-                                    drug.dosageForm ||
-                                    "N/A"}
-                                </span>
-                              </div>
-                              <div className="text-slate-700">
-                                Hàm lượng:{" "}
-                                <span className="font-mono text-slate-800">
-                                  {details.strength || drug.strength || "N/A"}
-                                </span>
-                              </div>
-                              {details.packaging && (
-                                <div className="text-slate-700 mt-2">
-                                  Đóng gói:{" "}
-                                  <span className="font-semibold text-slate-800">
-                                    {details.packaging}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="rounded-lg p-3 border border-slate-200">
-                              <div className="text-xs text-slate-600 mb-1">
-                                Trạng thái
-                              </div>
-                              <div className="font-medium text-slate-800">
-                                {details.status === "active" ||
-                                drug.status === "active"
-                                  ? "Hoạt động"
-                                  : details.status === "inactive" ||
-                                    drug.status === "inactive"
-                                  ? "Không hoạt động"
-                                  : details.status || drug.status || "N/A"}
-                              </div>
-                              {details.manufacturerId && (
-                                <div className="text-xs text-slate-600 mt-2">
-                                  ID Nhà sản xuất:{" "}
-                                  <span className="font-mono text-slate-800">
-                                    {details.manufacturerId}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Additional Details */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                            {details.route && (
-                              <div className="rounded-lg p-3 border border-slate-200">
-                                <div className="text-xs text-slate-600 mb-1">
-                                  Đường dùng
-                                </div>
-                                <div className="font-medium text-slate-800">
-                                  {details.route}
-                                </div>
-                              </div>
-                            )}
-                            {details.storage && (
-                              <div className="rounded-lg p-3 border border-slate-200">
-                                <div className="text-xs text-slate-600 mb-1">
-                                  Bảo quản
-                                </div>
-                                <div className="font-medium text-slate-800">
-                                  {details.storage}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Active Ingredients */}
-                          {details.activeIngredients &&
-                            Array.isArray(details.activeIngredients) &&
-                            details.activeIngredients.length > 0 && (
-                              <div className="rounded-lg p-3 border border-slate-200 text-sm mb-3">
-                                <div className="font-medium text-slate-800 mb-2">
-                                  Hoạt chất:
-                                </div>
-                                <div className="space-y-1">
-                                  {details.activeIngredients.map(
-                                    (ingredient, idx) => (
-                                      <div key={idx} className="text-slate-700">
-                                        •{" "}
-                                        {typeof ingredient === "string"
-                                          ? ingredient
-                                          : ingredient.name ||
-                                            JSON.stringify(ingredient)}
-                                      </div>
-                                    )
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                          {/* Warnings */}
-                          {details.warnings && (
-                            <div className="rounded-lg p-3 border border-slate-200 text-sm mb-3">
-                              <div className="font-medium text-slate-800 mb-1">
-                                Cảnh báo:
-                              </div>
-                              <div className="text-slate-700">
-                                {details.warnings}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* ID */}
-                          {details.id && (
-                            <div className="rounded-lg p-3 border border-slate-200 text-sm mb-3">
-                              <div className="text-xs text-slate-600 mb-1">
-                                ID thuốc
-                              </div>
-                              <div className="font-mono text-xs text-slate-600 break-all">
-                                {details.id}
-                              </div>
-                            </div>
-                          )}
+                        <div className="flex items-center gap-3">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">
+                            {drug.atcCode || "N/A"}
+                          </span>
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                              drug.status === "active"
+                                ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                : "bg-rose-50 text-rose-600 border border-rose-100"
+                            }`}
+                          >
+                            {drug.status === "active"
+                              ? "Hoạt động"
+                              : "Không hoạt động"}
+                          </span>
                         </div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+
+                    {/* Expandable Content */}
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        isExpanded
+                          ? "max-h-[2000px] opacity-100"
+                          : "max-h-0 opacity-0"
+                      }`}
+                    >
+                      <div className="px-5 pb-5 border-t border-slate-200">
+                        {/* Top facts */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-sm mt-4">
+                          <div className="rounded-lg p-3 border border-slate-200">
+                            <div className="text-slate-700 mb-2">
+                              Dạng bào chế:{" "}
+                              <span className="font-semibold text-slate-800">
+                                {details.dosageForm || drug.dosageForm || "N/A"}
+                              </span>
+                            </div>
+                            <div className="text-slate-700">
+                              Hàm lượng:{" "}
+                              <span className="font-mono text-slate-800">
+                                {details.strength || drug.strength || "N/A"}
+                              </span>
+                            </div>
+                            {details.packaging && (
+                              <div className="text-slate-700 mt-2">
+                                Đóng gói:{" "}
+                                <span className="font-semibold text-slate-800">
+                                  {details.packaging}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="rounded-lg p-3 border border-slate-200">
+                            <div className="text-xs text-slate-600 mb-1">
+                              Trạng thái
+                            </div>
+                            <div className="font-medium text-slate-800">
+                              {details.status === "active" ||
+                              drug.status === "active"
+                                ? "Hoạt động"
+                                : details.status === "inactive" ||
+                                  drug.status === "inactive"
+                                ? "Không hoạt động"
+                                : details.status || drug.status || "N/A"}
+                            </div>
+                            {details.manufacturerId && (
+                              <div className="text-xs text-slate-600 mt-2">
+                                ID Nhà sản xuất:{" "}
+                                <span className="font-mono text-slate-800">
+                                  {details.manufacturerId}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Additional Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                          {details.route && (
+                            <div className="rounded-lg p-3 border border-slate-200">
+                              <div className="text-xs text-slate-600 mb-1">
+                                Đường dùng
+                              </div>
+                              <div className="font-medium text-slate-800">
+                                {details.route}
+                              </div>
+                            </div>
+                          )}
+                          {details.storage && (
+                            <div className="rounded-lg p-3 border border-slate-200">
+                              <div className="text-xs text-slate-600 mb-1">
+                                Bảo quản
+                              </div>
+                              <div className="font-medium text-slate-800">
+                                {details.storage}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Active Ingredients */}
+                        {details.activeIngredients &&
+                          Array.isArray(details.activeIngredients) &&
+                          details.activeIngredients.length > 0 && (
+                            <div className="rounded-lg p-3 border border-slate-200 text-sm mb-3">
+                              <div className="font-medium text-slate-800 mb-2">
+                                Hoạt chất:
+                              </div>
+                              <div className="space-y-1">
+                                {details.activeIngredients.map(
+                                  (ingredient, idx) => (
+                                    <div key={idx} className="text-slate-700">
+                                      •{" "}
+                                      {typeof ingredient === "string"
+                                        ? ingredient
+                                        : ingredient.name ||
+                                          JSON.stringify(ingredient)}
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                        {/* Warnings */}
+                        {details.warnings && (
+                          <div className="rounded-lg p-3 border border-slate-200 text-sm mb-3">
+                            <div className="font-medium text-slate-800 mb-1">
+                              Cảnh báo:
+                            </div>
+                            <div className="text-slate-700">
+                              {details.warnings}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* ID */}
+                        {details.id && (
+                          <div className="rounded-lg p-3 border border-slate-200 text-sm mb-3">
+                            <div className="text-xs text-slate-600 mb-1">
+                              ID thuốc
+                            </div>
+                            <div className="font-mono text-xs text-slate-600 break-all">
+                              {details.id}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

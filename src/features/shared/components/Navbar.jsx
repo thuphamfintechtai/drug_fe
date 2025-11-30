@@ -334,48 +334,47 @@ export default function Navbar() {
                       <div className="p-4 space-y-4">
                         {/* Email */}
                         {user?.email && (
-                          <div className="text-gray-900 text-sm font-medium">
+                          <div className="text-gray-900 text-sm font-medium pb-2 border-b border-gray-200">
                             {user.email}
                           </div>
                         )}
 
-                        {/* Wallet Address */}
-                        {isConnected && account ? (
-                          <button
-                            onClick={handleWalletClick}
-                            className="w-full flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
-                          >
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0">
-                              <svg
-                                className="w-6 h-6 text-white"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                                />
-                              </svg>
-                            </div>
-                            <div className="flex-1 min-w-0 text-left">
-                              <div className="text-gray-900 text-sm font-mono">
-                                {formatAddress(account)}
+                        {/* Wallet Section - Always visible */}
+                        <div className="space-y-2">
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            Ví MetaMask
+                          </div>
+
+                          {isConnected && account ? (
+                            <button
+                              onClick={handleWalletClick}
+                              className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200 hover:border-purple-300 hover:shadow-md transition-all cursor-pointer group"
+                            >
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">
+                                <svg
+                                  className="w-6 h-6 text-white"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                  />
+                                </svg>
                               </div>
-                              <div className="h-1 bg-gray-300 rounded-full mt-1"></div>
-                            </div>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={handleConnectMetaMask}
-                            disabled={isConnecting || !isInstalled}
-                            className="w-full flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0">
+                              <div className="flex-1 min-w-0 text-left">
+                                <div className="text-gray-900 text-sm font-mono font-semibold">
+                                  {formatAddress(account)}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-0.5">
+                                  Đã kết nối
+                                </div>
+                              </div>
                               <svg
-                                className="w-6 h-6 text-white"
+                                className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -384,54 +383,129 @@ export default function Navbar() {
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
                                   strokeWidth={2}
-                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                  d="M9 5l7 7-7 7"
                                 />
                               </svg>
-                            </div>
-                            <span className="text-gray-900 text-sm">
-                              {isConnecting
-                                ? "Đang kết nối..."
-                                : "Kết nối MetaMask"}
-                            </span>
-                          </button>
-                        )}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={handleConnectMetaMask}
+                              disabled={isConnecting || !isInstalled}
+                              className="w-full flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center flex-shrink-0">
+                                <svg
+                                  className="w-6 h-6 text-white"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                  />
+                                </svg>
+                              </div>
+                              <div className="flex-1 text-left">
+                                <span className="text-gray-900 text-sm font-medium">
+                                  {isConnecting
+                                    ? "Đang kết nối..."
+                                    : !isInstalled
+                                    ? "Cài đặt MetaMask"
+                                    : "Kết nối MetaMask"}
+                                </span>
+                                {!isInstalled && (
+                                  <div className="text-xs text-gray-500 mt-0.5">
+                                    Chưa cài đặt
+                                  </div>
+                                )}
+                              </div>
+                            </button>
+                          )}
+                        </div>
 
                         {/* Menu Items */}
-                        <div className="space-y-1">
+                        <div className="space-y-1 pt-2 border-t border-gray-200">
                           <button
                             onClick={() => {
                               setDropdownOpen(false);
                               navigate(getProfileRoute());
                             }}
-                            className="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm"
+                            className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm"
                           >
-                            Tài khoản của tôi
+                            <svg
+                              className="w-5 h-5 text-gray-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
+                            </svg>
+                            <span>Tài khoản của tôi</span>
                           </button>
 
                           <button
                             onClick={() => {
                               setDropdownOpen(false);
-                              if (isConnected) {
-                                // Dispatch event để UserHome mở modal
-                                window.dispatchEvent(
-                                  new CustomEvent("openWalletModal")
-                                );
-                              } else {
-                                handleConnectMetaMask();
+                              // Luôn dispatch event để mở modal ví (nếu ở UserHome)
+                              // Hoặc navigate đến trang có modal ví
+                              window.dispatchEvent(
+                                new CustomEvent("openWalletModal")
+                              );
+                              // Nếu không có modal, thử kết nối MetaMask
+                              if (!isConnected && isInstalled) {
+                                setTimeout(() => {
+                                  handleConnectMetaMask();
+                                }, 100);
                               }
                             }}
-                            className="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm"
+                            className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm"
                           >
-                            Ví của tôi
+                            <svg
+                              className="w-5 h-5 text-gray-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                              />
+                            </svg>
+                            <span>Quản lý ví</span>
                           </button>
 
                           <button
                             onClick={handleLogout}
-                            className="w-full flex px-2 items-center justify-between px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm"
+                            className="w-full flex px-2 items-center justify-between px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm hover:text-red-600 rounded-lg transition-colors text-sm"
                           >
-                            <span>Đăng xuất</span>
+                            <div className="flex items-center gap-3">
+                              <svg
+                                className="w-5 h-5 text-gray-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                                />
+                              </svg>
+                              <span>Đăng xuất</span>
+                            </div>
                             <svg
-                              className="w-4 h-4 text-gray-600"
+                              className="w-4 h-4 text-gray-400"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
