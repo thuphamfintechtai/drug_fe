@@ -92,7 +92,7 @@ export default function DrugForm() {
                   <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                     Tên thương mại
                   </div>
-                  <div className="text-base font-bold text-slate-800 flex-1">
+                  <div className="text-base  text-slate-800 flex-1">
                     {drugData.drug.tradeName || "N/A"}
                   </div>
                 </div>
@@ -101,7 +101,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Tên hoạt chất
                     </div>
-                    <div className="text-base font-semibold text-slate-800 flex-1">
+                    <div className="text-base  text-slate-800 flex-1">
                       {drugData.drug.genericName}
                     </div>
                   </div>
@@ -111,7 +111,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Mã ATC
                     </div>
-                    <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                    <div className="text-base  text-slate-800 font-mono flex-1">
                       {drugData.drug.atcCode}
                     </div>
                   </div>
@@ -122,7 +122,7 @@ export default function DrugForm() {
                   </div>
                   <div className="flex-1">
                     <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm  ${
                         drugData.drug.status === "active"
                           ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
                           : drugData.drug.status === "inactive"
@@ -157,7 +157,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Tên công ty
                     </div>
-                    <div className="text-base font-bold text-slate-800 flex-1">
+                    <div className="text-base  text-slate-800 flex-1">
                       {drugData.drug.manufacturer.name || "N/A"}
                     </div>
                   </div>
@@ -166,7 +166,7 @@ export default function DrugForm() {
                       <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                         Số giấy phép
                       </div>
-                      <div className="text-base font-semibold text-slate-800 flex-1">
+                      <div className="text-base  text-slate-800 flex-1">
                         {drugData.drug.manufacturer.licenseNo}
                       </div>
                     </div>
@@ -176,7 +176,7 @@ export default function DrugForm() {
                       <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                         Mã số thuế
                       </div>
-                      <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                      <div className="text-base  text-slate-800 font-mono flex-1">
                         {drugData.drug.manufacturer.taxCode}
                       </div>
                     </div>
@@ -186,7 +186,7 @@ export default function DrugForm() {
                       <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                         Quốc gia
                       </div>
-                      <div className="text-base font-semibold text-slate-800 flex-1">
+                      <div className="text-base  text-slate-800 flex-1">
                         {drugData.drug.manufacturer.country}
                       </div>
                     </div>
@@ -196,7 +196,7 @@ export default function DrugForm() {
                       <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0 sm:pt-1">
                         Địa chỉ
                       </div>
-                      <div className="text-base font-semibold text-slate-800 flex-1">
+                      <div className="text-base  text-slate-800 flex-1">
                         {drugData.drug.manufacturer.address}
                       </div>
                     </div>
@@ -206,7 +206,7 @@ export default function DrugForm() {
                       <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                         Email
                       </div>
-                      <div className="text-base font-semibold text-slate-800 flex-1">
+                      <div className="text-base  text-slate-800 flex-1">
                         {drugData.drug.manufacturer.contactEmail}
                       </div>
                     </div>
@@ -216,7 +216,7 @@ export default function DrugForm() {
                       <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                         Số điện thoại
                       </div>
-                      <div className="text-base font-semibold text-slate-800 flex-1">
+                      <div className="text-base  text-slate-800 flex-1">
                         {drugData.drug.manufacturer.contactPhone}
                       </div>
                     </div>
@@ -226,7 +226,7 @@ export default function DrugForm() {
                       <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0 sm:pt-1">
                         Wallet Address
                       </div>
-                      <div className="text-base font-semibold text-slate-800 flex-1">
+                      <div className="text-base text-slate-800 flex-1">
                         {drugData.drug.manufacturer.walletAddress}
                       </div>
                     </div>
@@ -255,7 +255,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Dạng bào chế
                     </div>
-                    <div className="text-base font-semibold text-slate-800 flex-1">
+                    <div className="text-base  text-slate-800 flex-1">
                       {drugData.drug.dosageForm}
                     </div>
                   </div>
@@ -265,7 +265,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Hàm lượng
                     </div>
-                    <div className="text-base font-semibold text-slate-800 flex-1">
+                    <div className="text-base  text-slate-800 flex-1">
                       {drugData.drug.strength}
                     </div>
                   </div>
@@ -275,7 +275,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Cách dùng
                     </div>
-                    <div className="text-base font-semibold text-slate-800 flex-1">
+                    <div className="text-base  text-slate-800 flex-1">
                       {drugData.drug.route}
                     </div>
                   </div>
@@ -285,7 +285,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Quy cách đóng gói
                     </div>
-                    <div className="text-base font-semibold text-slate-800 flex-1">
+                    <div className="text-base text-slate-800 flex-1">
                       {drugData.drug.packaging}
                     </div>
                   </div>
@@ -379,7 +379,7 @@ export default function DrugForm() {
                     <label className="text-xs text-slate-600 font-medium uppercase tracking-wide">
                       Tổng sản xuất
                     </label>
-                    <p className="mt-2 text-2xl font-bold text-blue-600">
+                    <p className="mt-2 text-2xl  text-blue-600">
                       {drugData.statistics.totalProduced || 0}
                     </p>
                   </div>
@@ -387,7 +387,7 @@ export default function DrugForm() {
                     <label className="text-xs text-slate-600 font-medium uppercase tracking-wide">
                       Tổng NFT
                     </label>
-                    <p className="mt-2 text-2xl font-bold text-purple-600">
+                    <p className="mt-2 text-2xl  text-purple-600">
                       {drugData.statistics.totalNFTs || 0}
                     </p>
                   </div>
@@ -395,7 +395,7 @@ export default function DrugForm() {
                     <label className="text-xs text-slate-600 font-medium uppercase tracking-wide">
                       Hóa đơn NPP
                     </label>
-                    <p className="mt-2 text-2xl font-bold text-green-600">
+                    <p className="mt-2 text-2xl  text-green-600">
                       {drugData.statistics.totalManufacturerInvoices || 0}
                     </p>
                   </div>
@@ -403,7 +403,7 @@ export default function DrugForm() {
                     <label className="text-xs text-slate-600 font-medium uppercase tracking-wide">
                       Hóa đơn thương mại
                     </label>
-                    <p className="mt-2 text-2xl font-bold text-orange-600">
+                    <p className="mt-2 text-2xl  text-orange-600">
                       {drugData.statistics.totalCommercialInvoices || 0}
                     </p>
                   </div>
@@ -431,7 +431,7 @@ export default function DrugForm() {
                     <label className="text-xs text-slate-600 font-medium uppercase tracking-wide">
                       Tổng số
                     </label>
-                    <p className="mt-2 text-xl font-bold text-slate-700">
+                    <p className="mt-2 text-xl  text-slate-700">
                       {drugData.nftStats.total || 0}
                     </p>
                   </div>
@@ -439,7 +439,7 @@ export default function DrugForm() {
                     <label className="text-xs text-slate-600 font-medium uppercase tracking-wide">
                       Đã đúc
                     </label>
-                    <p className="mt-2 text-xl font-bold text-blue-600">
+                    <p className="mt-2 text-xl  text-blue-600">
                       {drugData.nftStats.byStatus?.minted || 0}
                     </p>
                   </div>
@@ -447,7 +447,7 @@ export default function DrugForm() {
                     <label className="text-xs text-slate-600 font-medium uppercase tracking-wide">
                       Đã chuyển
                     </label>
-                    <p className="mt-2 text-xl font-bold text-cyan-600">
+                    <p className="mt-2 text-xl  text-cyan-600">
                       {drugData.nftStats.byStatus?.transferred || 0}
                     </p>
                   </div>
@@ -455,7 +455,7 @@ export default function DrugForm() {
                     <label className="text-xs text-slate-600 font-medium uppercase tracking-wide">
                       Đã bán
                     </label>
-                    <p className="mt-2 text-xl font-bold text-green-600">
+                    <p className="mt-2 text-xl  text-green-600">
                       {drugData.nftStats.byStatus?.sold || 0}
                     </p>
                   </div>
@@ -463,7 +463,7 @@ export default function DrugForm() {
                     <label className="text-xs text-slate-600 font-medium uppercase tracking-wide">
                       Hết hạn
                     </label>
-                    <p className="mt-2 text-xl font-bold text-red-600">
+                    <p className="mt-2 text-xl  text-red-600">
                       {drugData.nftStats.byStatus?.expired || 0}
                     </p>
                   </div>
@@ -759,7 +759,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Ngày tạo
                     </div>
-                    <div className="text-base font-semibold text-slate-800 flex-1">
+                    <div className="text-base  text-slate-800 flex-1">
                       {new Date(drugData.drug.createdAt).toLocaleString(
                         "vi-VN"
                       )}
@@ -771,7 +771,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Cập nhật lần cuối
                     </div>
-                    <div className="text-base font-semibold text-slate-800 flex-1">
+                    <div className="text-base text-slate-800 flex-1">
                       {new Date(drugData.drug.updatedAt).toLocaleString(
                         "vi-VN"
                       )}
@@ -783,7 +783,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0 sm:pt-1">
                       ID
                     </div>
-                    <div className="text-base font-semibold text-slate-800 flex-1">
+                    <div className="text-base text-slate-800 flex-1">
                       {drugData.drug._id}
                     </div>
                   </div>

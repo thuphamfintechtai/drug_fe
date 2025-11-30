@@ -151,7 +151,7 @@ export default function AdminNftTracking() {
                         <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                           NFT ID
                         </div>
-                        <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                        <div className="text-base  text-slate-800 font-mono flex-1">
                           {data?.nft?.tokenId
                             ? String(data.nft.tokenId)
                             : nftId
@@ -163,7 +163,7 @@ export default function AdminNftTracking() {
                         <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                           Nhà sản xuất
                         </div>
-                        <div className="text-base font-semibold text-slate-800 flex-1">
+                        <div className="text-base  text-slate-800 flex-1">
                           {data?.supplyChain?.manufacturer?.name ||
                             data?.manufacturerInvoice?.fromManufacturer
                               ?.fullName ||
@@ -177,7 +177,7 @@ export default function AdminNftTracking() {
                         <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                           Ngày sản xuất
                         </div>
-                        <div className="text-base font-semibold text-slate-800 flex-1">
+                        <div className="text-base  text-slate-800 flex-1">
                           {formatDate(
                             data?.nft?.mfgDate ||
                               data?.nft?.proofOfProduction?.mfgDate
@@ -188,7 +188,7 @@ export default function AdminNftTracking() {
                         <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                           Số lô
                         </div>
-                        <div className="text-base font-semibold text-slate-800 flex-1">
+                        <div className="text-base  text-slate-800 flex-1">
                           {data?.nft?.batchNumber ||
                             data?.nft?.proofOfProduction?.batchNumber ||
                             "N/A"}
@@ -198,7 +198,7 @@ export default function AdminNftTracking() {
                         <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                           Số serial
                         </div>
-                        <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                        <div className="text-base  text-slate-800 font-mono flex-1">
                           {data?.nft?.serialNumber || "N/A"}
                         </div>
                       </div>
@@ -208,7 +208,7 @@ export default function AdminNftTracking() {
                         <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                           Tên thuốc
                         </div>
-                        <div className="text-base font-semibold text-slate-800 flex-1">
+                        <div className="text-base  text-slate-800 flex-1">
                           {data?.nft?.drug?.tradeName ||
                             data?.nft?.drug?.genericName ||
                             "N/A"}
@@ -218,7 +218,7 @@ export default function AdminNftTracking() {
                         <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                           Mã ATC
                         </div>
-                        <div className="text-base font-semibold text-slate-800 font-mono flex-1">
+                        <div className="text-base  text-slate-800 font-mono flex-1">
                           {data?.nft?.drug?.atcCode || "N/A"}
                         </div>
                       </div>
@@ -226,7 +226,7 @@ export default function AdminNftTracking() {
                         <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                           Nhà phân phối
                         </div>
-                        <div className="text-base font-semibold text-slate-800 flex-1">
+                        <div className="text-base  text-slate-800 flex-1">
                           {data?.supplyChain?.distributor?.name ||
                             (() => {
                               const commercialDistributor =
@@ -262,7 +262,7 @@ export default function AdminNftTracking() {
                         <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                           Nhà thuốc
                         </div>
-                        <div className="text-base font-semibold text-slate-800 flex-1">
+                        <div className="text-base  text-slate-800 flex-1">
                           {(() => {
                             // Lấy từ supplyChain.pharmacies (mảng, lấy phần tử cuối cùng vì đó là nhà thuốc hiện tại)
                             if (
@@ -290,7 +290,7 @@ export default function AdminNftTracking() {
                         <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                           Hạn sử dụng
                         </div>
-                        <div className="text-base font-semibold text-slate-800 flex-1">
+                        <div className="text-base  text-slate-800 flex-1">
                           {formatDate(
                             data?.nft?.expDate ||
                               data?.nft?.proofOfProduction?.expDate
@@ -301,7 +301,7 @@ export default function AdminNftTracking() {
                         <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                           Chủ sở hữu hiện tại
                         </div>
-                        <div className="text-base font-semibold text-slate-800 flex-1">
+                        <div className="text-base  text-slate-800 flex-1">
                           {(() => {
                             const owner = data?.nft?.currentOwner;
                             if (!owner) {
@@ -356,7 +356,7 @@ export default function AdminNftTracking() {
                           <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0 sm:pt-1">
                             Transaction Hash
                           </div>
-                          <div className="text-sm font-semibold text-slate-800 font-mono break-all flex-1">
+                          <div className="text-sm  text-slate-800 font-mono break-all flex-1">
                             <a
                               href={`https://sepolia.etherscan.io/tx/${data.nft.chainTxHash}`}
                               target="_blank"
@@ -373,7 +373,7 @@ export default function AdminNftTracking() {
                           <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0 sm:pt-1">
                             IPFS URL
                           </div>
-                          <div className="text-base font-semibold text-slate-800 flex-1">
+                          <div className="text-base  text-slate-800 flex-1">
                             <a
                               href={data.nft.ipfsUrl}
                               target="_blank"
@@ -410,7 +410,7 @@ export default function AdminNftTracking() {
                               <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
                                 Từ
                               </div>
-                              <div className="text-sm font-semibold text-slate-800 font-mono flex-1">
+                              <div className="text-sm  text-slate-800 font-mono flex-1">
                                 {short(tx.fromUserAddress)}
                               </div>
                             </div>
@@ -418,7 +418,7 @@ export default function AdminNftTracking() {
                               <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
                                 Đến
                               </div>
-                              <div className="text-sm font-semibold text-slate-800 font-mono flex-1">
+                              <div className="text-sm text-slate-800 font-mono flex-1">
                                 {short(tx.toUserAddress)}
                               </div>
                             </div>
@@ -427,7 +427,7 @@ export default function AdminNftTracking() {
                                 <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
                                   Thời gian
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                <div className="text-sm  text-slate-800 flex-1">
                                   {new Date(
                                     tx.receivedTimestamp * 1000
                                   ).toLocaleString("vi-VN")}
@@ -465,19 +465,19 @@ export default function AdminNftTracking() {
                           </h4>
                           <div className="space-y-0 divide-y divide-slate-200">
                             <div className="flex flex-col sm:flex-row sm:items-center py-3 first:pt-0">
-                              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                              <div className="text-sm  text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
                                 Số HD
                               </div>
-                              <div className="text-sm font-semibold text-slate-800 font-mono flex-1">
+                              <div className="text-sm  text-slate-800 font-mono flex-1">
                                 {data.manufacturerInvoice.invoiceNumber}
                               </div>
                             </div>
                             {data.manufacturerInvoice.invoiceDate && (
                               <div className="flex flex-col sm:flex-row sm:items-center py-3">
-                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                                <div className="text-sm  text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
                                   Ngày
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                <div className="text-sm text-slate-800 flex-1">
                                   {formatDate(
                                     data.manufacturerInvoice.invoiceDate
                                   )}
@@ -485,11 +485,11 @@ export default function AdminNftTracking() {
                               </div>
                             )}
                             <div className="flex flex-col sm:flex-row sm:items-center py-3 last:pb-0">
-                              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                              <div className="text-sm  text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
                                 Trạng thái
                               </div>
                               <div className="flex-1">
-                                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 capitalize">
+                                <span className="px-2.5 py-1 rounded-full text-xs  bg-blue-50 text-blue-700 border border-blue-200 capitalize">
                                   {data.manufacturerInvoice.status}
                                 </span>
                               </div>
@@ -504,19 +504,19 @@ export default function AdminNftTracking() {
                           </h4>
                           <div className="space-y-0 divide-y divide-slate-200">
                             <div className="flex flex-col sm:flex-row sm:items-center py-3 first:pt-0">
-                              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                              <div className="text-sm  text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
                                 Số HD
                               </div>
-                              <div className="text-sm font-semibold text-slate-800 font-mono flex-1">
+                              <div className="text-sm  text-slate-800 font-mono flex-1">
                                 {data.commercialInvoice.invoiceNumber}
                               </div>
                             </div>
                             {data.commercialInvoice.invoiceDate && (
                               <div className="flex flex-col sm:flex-row sm:items-center py-3">
-                                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                                <div className="text-sm  text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
                                   Ngày
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                <div className="text-sm  text-slate-800 flex-1">
                                   {formatDate(
                                     data.commercialInvoice.invoiceDate
                                   )}
@@ -524,7 +524,7 @@ export default function AdminNftTracking() {
                               </div>
                             )}
                             <div className="flex flex-col sm:flex-row sm:items-center py-3 last:pb-0">
-                              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
+                              <div className="text-sm  text-slate-500 uppercase tracking-wide w-full sm:w-32 shrink-0 mb-1 sm:mb-0">
                                 Trạng thái
                               </div>
                               <div className="flex-1">

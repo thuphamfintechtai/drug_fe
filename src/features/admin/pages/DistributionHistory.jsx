@@ -159,7 +159,7 @@ export default function DistributionHistory() {
                                 <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                                   Số hóa đơn
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 font-mono flex-1">
+                                <div className="text-sm  text-slate-800 font-mono flex-1">
                                   {item.invoice.invoiceNumber}
                                 </div>
                               </div>
@@ -170,7 +170,7 @@ export default function DistributionHistory() {
                                 <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                                   Từ NPP
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                <div className="text-sm  text-slate-800 flex-1">
                                   {item.invoice.fromDistributor.fullName ||
                                     item.invoice.fromDistributor.username}
                                 </div>
@@ -182,7 +182,7 @@ export default function DistributionHistory() {
                                 <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                                   Đến nhà thuốc
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                <div className="text-sm  text-slate-800 flex-1">
                                   {item.invoice.toPharmacy.fullName ||
                                     item.invoice.toPharmacy.username}
                                 </div>
@@ -194,7 +194,7 @@ export default function DistributionHistory() {
                                 <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                                   Thuốc
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                <div className="text-sm  text-slate-800 flex-1">
                                   {item.invoice.drug.tradeName} (
                                   {item.invoice.drug.atcCode})
                                 </div>
@@ -206,7 +206,7 @@ export default function DistributionHistory() {
                                 <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                                   Số lượng
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                <div className="text-sm text-slate-800 flex-1">
                                   {item.invoice.quantity}
                                 </div>
                               </div>
@@ -246,7 +246,7 @@ export default function DistributionHistory() {
                                 </div>
                                 <div className="flex-1">
                                   <span
-                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                    className={`px-3 py-1 rounded-full text-xs ${
                                       item.proof.supplyChainCompleted
                                         ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                         : "bg-amber-50 text-amber-700 border border-amber-200"
@@ -264,7 +264,7 @@ export default function DistributionHistory() {
                                 <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                                   Từ NPP
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                <div className="text-sm text-slate-800 flex-1">
                                   {item.proof.fromDistributor.fullName ||
                                     item.proof.fromDistributor.username}
                                 </div>
@@ -276,7 +276,7 @@ export default function DistributionHistory() {
                                 <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                                   Nhà thuốc
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                <div className="text-sm text-slate-800 flex-1">
                                   {item.proof.toPharmacy.fullName ||
                                     item.proof.toPharmacy.username}
                                 </div>
@@ -288,7 +288,7 @@ export default function DistributionHistory() {
                                 <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                                   Thuốc
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                <div className="text-sm text-slate-800 flex-1">
                                   {item.proof.drug.tradeName} (
                                   {item.proof.drug.atcCode})
                                 </div>
@@ -300,7 +300,7 @@ export default function DistributionHistory() {
                                 <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                                   Số lượng nhận
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                <div className="text-sm text-slate-800 flex-1">
                                   {item.proof.receivedQuantity}
                                 </div>
                               </div>
@@ -311,7 +311,7 @@ export default function DistributionHistory() {
                                 <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0">
                                   Ngày nhận
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                <div className="text-sm text-slate-800 flex-1">
                                   {new Date(
                                     item.proof.receiptDate
                                   ).toLocaleDateString("vi-VN")}
@@ -324,7 +324,7 @@ export default function DistributionHistory() {
                                 <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-40 shrink-0 mb-1 sm:mb-0 sm:pt-1">
                                   TX Hash
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800 flex-1">
+                                <div className="text-sm text-slate-800 flex-1">
                                   <a
                                     href={`https://sepolia.etherscan.io/tx/${item.proof.receiptTxHash}`}
                                     target="_blank"
