@@ -20,8 +20,7 @@ export default function CreateContract() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState([]);
-  const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
-  const [uploadedFileName, setUploadedFileName] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const { mutateAsync: createContract } = useCreateContractRequest();
 
@@ -39,42 +38,19 @@ export default function CreateContract() {
     pharmaciesResponse?.pharmacies ||
     [];
 
-  const handleFileChange = ({ fileList: newFileList }) => {
+  const handleFileChange = ({ fileList: newFileList, file }) => {
     setFileList(newFileList);
-  };
-
-  const customUpload = async ({ file, onSuccess, onError }) => {
-    try {
-      // In a real app, you would upload to a file storage service (S3, Cloudinary, etc.)
-      // For now, we'll simulate an upload
-      const formData = new FormData();
-      formData.append("file", file);
-
-      // Simulate upload delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // In production, replace this with actual upload endpoint
-      // const response = await api.post("/upload/contract", formData, {
-      //   headers: { "Content-Type": "multipart/form-data" },
-      // });
-
-      // For now, create a fake URL
-      const fakeUrl = `https://storage.example.com/contracts/${file.name}`;
-
-      setUploadedFileUrl(fakeUrl);
-      setUploadedFileName(file.name);
-
-      onSuccess("ok");
-      message.success(`${file.name} uploaded successfully`);
-    } catch (error) {
-      onError(error);
-      message.error(`${file.name} upload failed.`);
+    // Lưu file gốc để gửi lên server
+    if (file && file.status !== "removed") {
+      setSelectedFile(file.originFileObj || file);
+    } else {
+      setSelectedFile(null);
     }
   };
 
   const handleSubmit = async (values) => {
-    if (!uploadedFileUrl) {
-      message.error("Vui lòng upload file hợp đồng");
+    if (!selectedFile) {
+      message.error("Vui lòng chọn file hợp đồng");
       return;
     }
 
@@ -116,18 +92,14 @@ export default function CreateContract() {
         pharmacyWallet
       );
 
-      // Step 3: Lưu thông tin hợp đồng vào backend
-      const result = await createContract({
-        pharmacyId: values.pharmacyId,
-        contractFileUrl: uploadedFileUrl,
-        contractFileName: uploadedFileName,
-        distributorSignature: signatureResult.signature,
-        distributorAddress: signatureResult.address,
-        signedMessage: signatureResult.message,
-        pharmacyAddress: pharmacyWallet,
-        blockchainTxHash: blockchainResult.transactionHash,
-        blockchainEvent: blockchainResult.event,
-      });
+      // Step 3: Tạo FormData để gửi multipart/form-data
+      const formData = new FormData();
+      formData.append("pharmacyId", values.pharmacyId);
+      formData.append("file", selectedFile);
+      // distributorPrivateKey là optional, có thể bỏ qua
+
+      // Step 4: Gửi request với FormData
+      const result = await createContract(formData);
 
       toast.success("Tạo yêu cầu hợp đồng thành công!");
       navigate("/distributor/contracts");
@@ -237,12 +209,11 @@ export default function CreateContract() {
                 <Upload
                   fileList={fileList}
                   onChange={handleFileChange}
-                  customRequest={customUpload}
                   accept=".pdf,.doc,.docx"
                   maxCount={1}
+                  beforeUpload={() => false} // Ngăn upload tự động, sẽ upload khi submit form
                   onRemove={() => {
-                    setUploadedFileUrl(null);
-                    setUploadedFileName(null);
+                    setSelectedFile(null);
                   }}
                   className="w-full"
                 >

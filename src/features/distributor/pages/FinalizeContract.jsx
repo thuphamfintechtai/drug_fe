@@ -459,7 +459,7 @@ export default function FinalizeContract() {
             </div>
           </div>
 
-          {/* Pharmacies List */}
+          {/* Pharmacies List
           {pharmacies.length > 0 && (
             <motion.div
               variants={fadeUp}
@@ -485,7 +485,7 @@ export default function FinalizeContract() {
                   Danh sách Nhà thuốc ({pharmacies.length})
                 </h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {pharmacies.map((pharmacy) => (
                   <div
                     key={pharmacy._id}
@@ -538,9 +538,9 @@ export default function FinalizeContract() {
                     </div>
                   </div>
                 ))}
-              </div>
+              </div> }
             </motion.div>
-          )}
+          </div>)}}
 
           {/* Info Box */}
           {canFinalize && (
@@ -615,7 +615,7 @@ export default function FinalizeContract() {
                     <span className="relative z-10">Đang xử lý...</span>
                   </>
                 ) : (
-                  <span className="flex items-center gap-2 relative z-10">
+                  <span className="flex items-center gap-2 relative z-10 !text-white">
                     <svg
                       className="w-5 h-5"
                       fill="none"

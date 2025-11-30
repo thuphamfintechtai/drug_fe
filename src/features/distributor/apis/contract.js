@@ -25,8 +25,12 @@ export const useDistributorContractDetail = (contractId) => {
 
 export const useCreateContractRequest = () => {
   return useMutation({
-    mutationFn: async (data) => {
-      const response = await api.post("/distributor/contracts/create", data);
+    mutationFn: async (formData) => {
+      const response = await api.post("/distributor/contracts/create", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return response.data;
     },
   });
