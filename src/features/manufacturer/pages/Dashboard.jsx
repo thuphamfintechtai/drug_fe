@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   LineChart,
@@ -96,9 +95,9 @@ export default function ManufacturerDashboard() {
           ) : displayStats ? (
             <div className="space-y-8">
               {/* Overview Cards */}
-              <motion.div 
-                variants={fadeUp} 
-                initial={{ opacity: 0 }} 
+              <motion.div
+                variants={fadeUp}
+                initial={{ opacity: 0 }}
                 animate="show"
               >
                 <h2 className="text-lg font-semibold text-slate-800 mb-4">
@@ -149,9 +148,7 @@ export default function ManufacturerDashboard() {
                           displayStats?.productions?.total ||
                           0}
                       </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Lô hàng
-                      </div>
+                      <div className="text-xs text-slate-500 mt-2">Lô hàng</div>
                     </div>
                   </div>
 
@@ -302,7 +299,7 @@ export default function ManufacturerDashboard() {
               </div>
 
               {/* Charts Row 2: Pie Charts for NFT Status and Transfer Status */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1">
                 <motion.div
                   variants={fadeUp}
                   initial={{ opacity: 0 }}
@@ -328,47 +325,6 @@ export default function ManufacturerDashboard() {
                           dataKey="value"
                         >
                           {nftStatusData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={CHART_COLORS[index % CHART_COLORS.length]}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-[300px] text-slate-400">
-                      Chưa có dữ liệu
-                    </div>
-                  )}
-                </motion.div>
-
-                <motion.div
-                  variants={fadeUp}
-                  initial={{ opacity: 0 }}
-                  animate="show"
-                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
-                >
-                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
-                    Phân bố chuyển giao theo trạng thái
-                  </h3>
-                  {transferStatusData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={transferStatusData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) =>
-                            `${name}: ${(percent * 100).toFixed(0)}%`
-                          }
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {transferStatusData.map((entry, index) => (
                             <Cell
                               key={`cell-${index}`}
                               fill={CHART_COLORS[index % CHART_COLORS.length]}

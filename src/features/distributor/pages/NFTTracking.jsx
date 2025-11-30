@@ -39,10 +39,9 @@ export default function AdminNftTracking() {
           <div className="text-lg text-slate-600 mt-6">Đang tra cứu...</div>
         </div>
       ) : (
-        <div className="space-y-6">
-          {/* Banner */}
+        <div className="space-y-6 w-full max-w-full">
           <motion.section
-            className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-r from-primary to-secondary"
+            className="relative overflow-hidden rounded-2xl mb-6 border border-[#90e0ef33] shadow-[0_10px_30px_rgba(0,0,0,0.06)] bg-gradient-to-r from-primary to-secondary w-full"
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -59,14 +58,14 @@ export default function AdminNftTracking() {
 
           {/* Search */}
           <motion.div
-            className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6"
+            className="bg-white rounded-2xl border border-slate-200 shadow-lg p-4 sm:p-6 w-full"
             variants={fadeUp}
             initial="hidden"
             animate="show"
           >
-            <div className="max-w-3xl mx-auto">
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <div className="relative flex-1 min-w-0">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="w-5 h-5"
@@ -86,52 +85,87 @@ export default function AdminNftTracking() {
                 <input
                   type="text"
                   value={nftId}
-                  onChange={(e) => setNftId(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setNftId(value);
+                    // Khi xóa input, clear data và error để hiển thị lại trạng thái ban đầu
+                    if (!value.trim()) {
+                      setData(null);
+                      setError("");
+                    }
+                  }}
                   placeholder="Nhập NFT ID để tra cứu..."
-                  className="w-full h-14 pl-12 pr-36 rounded-xl border-2 border-slate-300 bg-white text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition text-base"
+                  className="w-full h-12 sm:h-14 pl-12 pr-4 rounded-xl border-2 border-slate-300 bg-white text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition text-sm sm:text-base"
+                  style={{ width: "100%", boxSizing: "border-box" }}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 />
-
-                <button
-                  onClick={handleSearch}
-                  disabled={loading || !nftId.trim()}
-                  className="absolute right-2 top-2 bottom-2 px-6 rounded-xl !text-white bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? "Đang tra cứu..." : "Tìm kiếm"}
-                </button>
               </div>
-              {error && (
-                <motion.div
-                  className="mt-6 bg-white rounded-2xl border border-red-200 shadow-sm p-10 text-center"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                >
-                  <div className="text-6xl mb-4">🔍</div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-2">
-                    Không tìm thấy kết quả
-                  </h3>
-                  <p className="text-slate-600 mb-1">
-                    Không có dữ liệu nào khớp với NFT ID bạn đã nhập.
-                  </p>
-                  <p className="text-slate-500 text-sm mb-6">
-                    Vui lòng kiểm tra lại hoặc thử với mã khác.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setError("");
-                      setData(null);
-                      setNftId("");
-                    }}
-                    className="px-6 py-3 rounded-xl !text-white bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition font-semibold"
-                  >
-                    Thử lại
-                  </button>
-                </motion.div>
-              )}
+
+              <button
+                onClick={handleSearch}
+                disabled={loading || !nftId.trim()}
+                className="h-12 sm:h-14 px-4 sm:px-6 rounded-xl !text-white bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base whitespace-nowrap"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <svg
+                      className="animate-spin h-4 w-4 sm:h-5 sm:w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    <span className="hidden sm:inline">Đang tra cứu...</span>
+                    <span className="sm:hidden">Đang tìm...</span>
+                  </span>
+                ) : (
+                  "Tìm kiếm"
+                )}
+              </button>
             </div>
+            {error && !data && (
+              <motion.div
+                className="mt-6 bg-white rounded-2xl border border-red-200 shadow-sm p-10 text-center"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                <div className="text-6xl mb-4">🔍</div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">
+                  Không tìm thấy kết quả
+                </h3>
+                <p className="text-slate-600 mb-1">
+                  Không có dữ liệu nào khớp với NFT ID bạn đã nhập.
+                </p>
+                <p className="text-slate-500 text-sm mb-6">
+                  Vui lòng kiểm tra lại hoặc thử với mã khác.
+                </p>
+                <button
+                  onClick={() => {
+                    setError("");
+                    setData(null);
+                    setNftId("");
+                  }}
+                  className="px-6 py-3 rounded-xl !text-white bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition font-semibold"
+                >
+                  Thử lại
+                </button>
+              </motion.div>
+            )}
           </motion.div>
 
-          {data && (
+          {data && !error && (
             <motion.div
               className="space-y-6"
               variants={fadeUp}

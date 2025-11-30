@@ -19,10 +19,10 @@ export const COLORS = {
 export const CHART_COLORS = [
   COLORS.secondary,
   COLORS.third,
-  COLORS.cyan,
-  COLORS.sky,
   COLORS.blue,
   COLORS.emerald,
   COLORS.purple,
   COLORS.pink,
+  COLORS.cyan,
+  COLORS.sky,
 ];

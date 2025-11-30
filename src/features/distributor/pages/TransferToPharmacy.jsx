@@ -223,7 +223,8 @@ export default function TransferToPharmacy() {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex items-center justify-center">
-                            {dist.transferToPharmacy === true && getAvailableNFTs(dist) === 0 ? (
+                            {dist.transferToPharmacy === true &&
+                            getAvailableNFTs(dist) === 0 ? (
                               <div className="px-4 py-2 rounded-full font-semibold border-2 border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed">
                                 Đã chuyển hết
                               </div>
@@ -237,9 +238,7 @@ export default function TransferToPharmacy() {
                                 disabled={false}
                                 className="px-4 py-2 rounded-full font-semibold transition-all duration-200 border-2 border-[#3db6d9] bg-white !text-[#3db6d9] hover:bg-[#3db6d9] hover:!text-white hover:shadow-md hover:shadow-[#3db6d9]/40"
                               >
-                                {dist.transferToPharmacy === true
-                                  ? "Chuyển tiếp cho NT"
-                                  : "Chuyển cho NT"}
+                                Chuyển cho NT
                               </button>
                             )}
                           </div>
@@ -312,35 +311,39 @@ export default function TransferToPharmacy() {
                       <div className="flex justify-between">
                         <span className="text-slate-600">Đơn hàng:</span>
                         <span className="font-mono font-medium">
-                            {getInvoiceDisplay(selectedDistribution)}
+                          {getInvoiceDisplay(selectedDistribution)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Từ:</span>
                         <span className="font-medium">
-                            {getManufacturerDisplay(selectedDistribution)}
+                          {getManufacturerDisplay(selectedDistribution)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Tổng số NFT:</span>
                         <span className="font-bold text-orange-700">
-                            {getTotalQuantityDisplay(selectedDistribution)}
+                          {getTotalQuantityDisplay(selectedDistribution)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">NFT khả dụng:</span>
-                        <span className={`font-bold ${
-                          getAvailableNFTs(selectedDistribution) === 0 
-                            ? "text-red-700" 
-                            : "text-green-700"
-                        }`}>
-                            {getAvailableNFTsDisplay(selectedDistribution)}
+                        <span
+                          className={`font-bold ${
+                            getAvailableNFTs(selectedDistribution) === 0
+                              ? "text-red-700"
+                              : "text-green-700"
+                          }`}
+                        >
+                          {getAvailableNFTsDisplay(selectedDistribution)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Ngày nhận:</span>
                         <span className="font-medium">
-                            {getDateDisplay(selectedDistribution.distributionDate)}
+                          {getDateDisplay(
+                            selectedDistribution.distributionDate
+                          )}
                         </span>
                       </div>
                     </div>
@@ -425,7 +428,7 @@ export default function TransferToPharmacy() {
                       </div>
 
                       {selectedPharmacy.user && (
-                        <div className="mt-3 pt-3 border-t border-card-primary">
+                        <div className="mt-3 pt-3 ">
                           <div className="text-xs font-semibold text-cyan-700 mb-1">
                             Thông tin tài khoản:
                           </div>
@@ -472,15 +475,18 @@ export default function TransferToPharmacy() {
                       max={getAvailableNFTs(selectedDistribution)}
                       disabled={getAvailableNFTs(selectedDistribution) === 0}
                     />
-                    <div className={`text-xs mt-1 ${
-                      getAvailableNFTs(selectedDistribution) === 0 
-                        ? "text-red-600" 
-                        : "text-cyan-600"
-                    }`}>
-                      {getAvailableNFTs(selectedDistribution) === 0 
+                    <div
+                      className={`text-xs mt-1 ${
+                        getAvailableNFTs(selectedDistribution) === 0
+                          ? "text-red-600"
+                          : "text-cyan-600"
+                      }`}
+                    >
+                      {getAvailableNFTs(selectedDistribution) === 0
                         ? "⚠️ Không còn NFT khả dụng để chuyển"
-                        : `Tối đa: ${getAvailableNFTs(selectedDistribution)} NFT khả dụng`
-                      }
+                        : `Tối đa: ${getAvailableNFTs(
+                            selectedDistribution
+                          )} NFT khả dụng`}
                     </div>
                   </div>
 
@@ -516,7 +522,10 @@ export default function TransferToPharmacy() {
                   ) : (
                     <TruckAnimationButton
                       onClick={handleSubmit}
-                      disabled={submitLoading || getAvailableNFTs(selectedDistribution) === 0}
+                      disabled={
+                        submitLoading ||
+                        getAvailableNFTs(selectedDistribution) === 0
+                      }
                       buttonState={submitLoading ? "uploading" : "idle"}
                       defaultText="Xác nhận chuyển giao"
                       uploadingText="Đang xử lý..."

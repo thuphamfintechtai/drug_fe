@@ -18,12 +18,15 @@ export const useTransferHistory = () => {
   const [items, setItems] = useState([]);
   const [allItems, setAllItems] = useState([]); // Store all items for client-side filtering
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loading, setLoading] = useState(true);
   const progressIntervalRef = useRef(null);
   const [retryingId, setRetryingId] = useState(null);
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [searchInput, setSearchInput] = useState("");
   const searchTimeoutRef = useRef(null);
   const retryAbortControllerRef = useRef(null); // FIX: Abort controller for retry
+  const isInitialLoadRef = useRef(true);
+  const prevStatusRef = useRef("");
 
   const [pagination, setPagination] = useState({
     page: 1,
@@ -47,10 +50,84 @@ export const useTransferHistory = () => {
 
   const {
     data: transferHistoryData,
-    isLoading: loading,
+    isLoading: queryLoading,
+    isFetching,
     error: transferHistoryError,
     refetch: refetchTransferHistory,
   } = useManufacturerTransferHistory(params);
+
+  // Show loading when: initial load OR status filter changes
+  const shouldShowLoading =
+    isInitialLoadRef.current ||
+    (isFetching && prevStatusRef.current !== status);
+
+  // Start loading progress animation
+  useEffect(() => {
+    if (shouldShowLoading && (queryLoading || isFetching)) {
+      setLoading(true);
+      setLoadingProgress(0);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress((prev) =>
+          prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
+        );
+      }, 50);
+    }
+  }, [queryLoading, isFetching, shouldShowLoading]);
+
+  // Complete loading animation when data is ready
+  useEffect(() => {
+    const completeLoading = async () => {
+      if (!queryLoading && !isFetching && loading) {
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+
+        // Animate to 100%
+        let currentProgress = 0;
+        setLoadingProgress((prev) => {
+          currentProgress = prev;
+          return prev;
+        });
+
+        if (currentProgress < 1) {
+          await new Promise((resolve) => {
+            const speedUp = setInterval(() => {
+              setLoadingProgress((prev) => {
+                if (prev < 1) {
+                  const np = Math.min(prev + 0.15, 1);
+                  if (np >= 1) {
+                    clearInterval(speedUp);
+                    resolve();
+                  }
+                  return np;
+                }
+                clearInterval(speedUp);
+                resolve();
+                return 1;
+              });
+            }, 30);
+            setTimeout(() => {
+              clearInterval(speedUp);
+              setLoadingProgress(1);
+              resolve();
+            }, 500);
+          });
+        }
+
+        await new Promise((r) => setTimeout(r, 200));
+        setLoading(false);
+        isInitialLoadRef.current = false;
+        prevStatusRef.current = status;
+        setTimeout(() => setLoadingProgress(0), 500);
+      }
+    };
+
+    completeLoading();
+  }, [queryLoading, isFetching, loading, status]);
 
   const saveTransferTransactionMutation = useSaveTransferTransaction();
 
@@ -81,7 +158,10 @@ export const useTransferHistory = () => {
       }
 
       // Handle pagination from count field or pagination object
-      const total = transferHistoryData.count || transferHistoryData.data?.pagination?.total || invoices.length;
+      const total =
+        transferHistoryData.count ||
+        transferHistoryData.data?.pagination?.total ||
+        invoices.length;
       const paginationData = transferHistoryData.data?.pagination || {
         page: 1,
         limit: 10,
@@ -155,69 +235,85 @@ export const useTransferHistory = () => {
 
   // Helper function to parse JSON string safely
   const safeParseJSON = (str) => {
-    if (!str || typeof str !== 'string') return null;
+    if (!str || typeof str !== "string") {
+      return null;
+    }
     try {
       // Handle MongoDB ObjectId string format
-      if (str.includes('ObjectId(') || str.includes('new ObjectId')) {
+      if (str.includes("ObjectId(") || str.includes("new ObjectId")) {
         // Step 1: Replace ObjectId patterns with quoted strings
         let cleaned = str
           .replace(/ObjectId\(['"]([^'"]+)['"]\)/g, '"$1"')
           .replace(/new ObjectId\(['"]([^'"]+)['"]\)/g, '"$1"');
-        
+
         // Step 2: Replace newlines with spaces
-        cleaned = cleaned.replace(/\n/g, ' ');
-        
+        cleaned = cleaned.replace(/\n/g, " ");
+
         // Step 3: Replace single quotes with double quotes (but preserve escaped quotes)
         cleaned = cleaned.replace(/(?<!\\)'/g, '"');
-        
+
         // Step 4: Fix unquoted keys (e.g., _id: -> "_id":)
-        cleaned = cleaned.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
-        
+        cleaned = cleaned.replace(
+          /([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g,
+          '$1"$2":'
+        );
+
         // Step 5: Fix null values
-        cleaned = cleaned.replace(/:\s*null/g, ': null');
-        
+        cleaned = cleaned.replace(/:\s*null/g, ": null");
+
         // Step 6: Remove extra spaces
-        cleaned = cleaned.replace(/\s+/g, ' ').trim();
-        
+        cleaned = cleaned.replace(/\s+/g, " ").trim();
+
         try {
           const parsed = JSON.parse(cleaned);
-          console.log('✅ Successfully parsed:', { email: parsed.email, username: parsed.username });
+          console.log("✅ Successfully parsed:", {
+            email: parsed.email,
+            username: parsed.username,
+          });
           return parsed;
         } catch (parseError) {
-          console.warn('⚠️ Failed to parse after cleaning, trying regex extraction...');
+          console.warn(
+            "⚠️ Failed to parse after cleaning, trying regex extraction..."
+          );
           // Fallback: Extract fields using regex from original string
           const extractField = (fieldName) => {
-            const regex = new RegExp(`${fieldName}\\s*:\\s*['"]([^'"]+)['"]`, 'i');
+            const regex = new RegExp(
+              `${fieldName}\\s*:\\s*['"]([^'"]+)['"]`,
+              "i"
+            );
             const match = str.match(regex);
             return match ? match[1] : null;
           };
-          
-          const email = extractField('email');
-          const username = extractField('username');
-          const walletAddress = extractField('walletAddress');
-          const phone = extractField('phone');
-          const fullName = extractField('fullName');
-          
+
+          const email = extractField("email");
+          const username = extractField("username");
+          const walletAddress = extractField("walletAddress");
+          const phone = extractField("phone");
+          const fullName = extractField("fullName");
+
           if (email || username || walletAddress) {
             const extracted = {
-              email: email || '',
-              username: username || '',
-              walletAddress: walletAddress || '',
-              phone: phone || '',
-              fullName: fullName || '',
+              email: email || "",
+              username: username || "",
+              walletAddress: walletAddress || "",
+              phone: phone || "",
+              fullName: fullName || "",
             };
-            console.log('✅ Extracted fields:', extracted);
+            console.log("✅ Extracted fields:", extracted);
             return extracted;
           }
-          
-          console.warn('❌ Could not extract any fields from:', str.substring(0, 200));
+
+          console.warn(
+            "❌ Could not extract any fields from:",
+            str.substring(0, 200)
+          );
           return null;
         }
       }
       // Try direct JSON parse
       return JSON.parse(str);
     } catch (e) {
-      console.warn('❌ Failed to parse JSON string:', str.substring(0, 100), e);
+      console.warn("❌ Failed to parse JSON string:", str.substring(0, 100), e);
       return null;
     }
   };
@@ -228,13 +324,21 @@ export const useTransferHistory = () => {
       return [];
     }
 
-    console.log('📦 [normalizeInvoices] Processing', invoices.length, 'invoices');
-    
+    console.log(
+      "📦 [normalizeInvoices] Processing",
+      invoices.length,
+      "invoices"
+    );
+
     return invoices.map((invoice, index) => {
       console.log(`📄 [normalizeInvoices] Invoice ${index + 1}:`, {
         id: invoice.id || invoice._id,
         invoiceNumber: invoice.invoiceNumber,
-        distributorId: invoice.distributorId ? (typeof invoice.distributorId === 'string' ? invoice.distributorId.substring(0, 50) + '...' : 'object') : 'null',
+        distributorId: invoice.distributorId
+          ? typeof invoice.distributorId === "string"
+            ? invoice.distributorId.substring(0, 50) + "..."
+            : "object"
+          : "null",
         hasDistributor: !!invoice.distributor,
         hasToDistributor: !!invoice.toDistributor,
       });
@@ -242,7 +346,7 @@ export const useTransferHistory = () => {
       // Priority: toDistributor > distributor > distributorName > distributorId (object) > distributorId (string parse)
       let distributor = invoice.toDistributor || invoice.distributor;
       let drug = invoice.drug;
-      
+
       // If backend returns distributorName directly (new format)
       if (!distributor && invoice.distributorName) {
         distributor = {
@@ -252,58 +356,84 @@ export const useTransferHistory = () => {
           username: invoice.distributorName, // Often distributorName is email/username
           email: invoice.distributorEmail || invoice.distributorName, // Use distributorName as email if it looks like email
           ...(invoice.distributorEmail && { email: invoice.distributorEmail }),
-          ...(invoice.distributorWallet && { walletAddress: invoice.distributorWallet }),
+          ...(invoice.distributorWallet && {
+            walletAddress: invoice.distributorWallet,
+          }),
           ...(invoice.distributorPhone && { phone: invoice.distributorPhone }),
-          ...(invoice.distributorAddress && { address: invoice.distributorAddress }),
+          ...(invoice.distributorAddress && {
+            address: invoice.distributorAddress,
+          }),
         };
-        console.log('✅ Created distributor from distributorName:', distributor);
+        console.log(
+          "✅ Created distributor from distributorName:",
+          distributor
+        );
       }
-      
+
       // Parse distributorId if it's a JSON string (old format)
       if (!distributor && invoice.distributorId) {
-        if (typeof invoice.distributorId === 'string') {
+        if (typeof invoice.distributorId === "string") {
           // Check if it's a JSON string (old format) or just an ID (new format)
-          if (invoice.distributorId.trim().startsWith('{') || invoice.distributorId.includes('ObjectId')) {
+          if (
+            invoice.distributorId.trim().startsWith("{") ||
+            invoice.distributorId.includes("ObjectId")
+          ) {
             const parsedDistributor = safeParseJSON(invoice.distributorId);
             if (parsedDistributor) {
               distributor = parsedDistributor;
-              console.log('✅ Parsed distributor from JSON string:', distributor);
+              console.log(
+                "✅ Parsed distributor from JSON string:",
+                distributor
+              );
             } else {
-              console.warn('⚠️ Failed to parse distributorId JSON:', invoice.distributorId?.substring(0, 100));
+              console.warn(
+                "⚠️ Failed to parse distributorId JSON:",
+                invoice.distributorId?.substring(0, 100)
+              );
             }
           } else {
             // It's just an ID string, not JSON - skip parsing
-            console.log('ℹ️ distributorId is just an ID, not JSON:', invoice.distributorId);
+            console.log(
+              "ℹ️ distributorId is just an ID, not JSON:",
+              invoice.distributorId
+            );
           }
-        } else if (typeof invoice.distributorId === 'object') {
+        } else if (typeof invoice.distributorId === "object") {
           // Already an object, use directly
           distributor = invoice.distributorId;
-          console.log('✅ Using distributorId as object:', distributor);
+          console.log("✅ Using distributorId as object:", distributor);
         }
       }
-      
+
       // Log final distributor
       if (distributor) {
-        console.log('✅ Final distributor:', {
-          name: distributor.name || distributor.fullName || distributor.username,
+        console.log("✅ Final distributor:", {
+          name:
+            distributor.name || distributor.fullName || distributor.username,
           email: distributor.email,
           hasWallet: !!distributor.walletAddress,
         });
       } else {
-        console.warn('⚠️ No distributor found for invoice:', invoice.invoiceNumber);
+        console.warn(
+          "⚠️ No distributor found for invoice:",
+          invoice.invoiceNumber
+        );
       }
-      
+
       // Parse drugId
       if (invoice.drugId) {
-        if (typeof invoice.drugId === 'string') {
+        if (typeof invoice.drugId === "string") {
           const parsedDrug = safeParseJSON(invoice.drugId);
           if (parsedDrug) {
             drug = parsedDrug;
-            console.log('✅ Parsed drug:', drug);
+            console.log("✅ Parsed drug:", drug);
           } else {
-            console.warn('⚠️ Failed to parse drugId:', invoice.drugId?.substring(0, 100));
+            console.warn(
+              "⚠️ Failed to parse drugId:",
+              invoice.drugId?.substring(0, 100)
+            );
           }
-        } else if (typeof invoice.drugId === 'object') {
+        } else if (typeof invoice.drugId === "object") {
           // Already an object, use directly
           drug = invoice.drugId;
         }
@@ -373,7 +503,7 @@ export const useTransferHistory = () => {
       received: "Received",
       paid: "Paid",
       cancelled: "Cancelled",
-      issued: "Đã phát hành", // Map "issued" to Vietnamese
+      issued: "issued",
     };
     return labels[status] || status;
   };

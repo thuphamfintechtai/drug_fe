@@ -118,13 +118,7 @@ export default function PasswordResetRequests() {
                               item.status
                             )}`}
                           >
-                            {item.status === "pending"
-                              ? "Đang chờ"
-                              : item.status === "approved"
-                              ? "Đã duyệt"
-                              : item.status === "rejected"
-                              ? "Đã từ chối"
-                              : item.status}
+                            {item.status}
                           </span>
                         </div>
                         <div className="space-y-1 text-sm text-slate-600">

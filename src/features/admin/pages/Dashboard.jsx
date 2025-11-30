@@ -218,7 +218,9 @@ export default function AdminDashboard() {
                         {registrationStatusData.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
-                            fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            fill={
+                              CHART_COLORS[(index + 2) % CHART_COLORS.length]
+                            }
                           />
                         ))}
                       </Pie>
@@ -234,7 +236,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Charts Row 2: NFT Status and Monthly Trends */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="">
               <motion.div
                 variants={fadeUp}
                 initial="hidden"
@@ -262,7 +264,9 @@ export default function AdminDashboard() {
                         {nftStatusData.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
-                            fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            fill={
+                              CHART_COLORS[(index + 4) % CHART_COLORS.length]
+                            }
                           />
                         ))}
                       </Pie>
@@ -277,48 +281,6 @@ export default function AdminDashboard() {
               </motion.div>
 
               {/* Blockchain & Compliance Stats */}
-              <motion.div
-                variants={fadeUp}
-                initial="hidden"
-                animate="show"
-                className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
-              >
-                <h3 className="text-lg font-semibold text-slate-800 mb-4">
-                  Blockchain & Tuân thủ
-                </h3>
-                <div className="space-y-4">
-                  {blockchainStats && (
-                    <div className="p-4 bg-cyan-50 rounded-lg">
-                      <div className="text-sm text-cyan-700 mb-2">
-                        Blockchain Coverage
-                      </div>
-                      <div className="text-2xl font-bold text-cyan-600">
-                        {blockchainStats.blockchainCoverage || "0%"}
-                      </div>
-                      <div className="text-xs text-cyan-600 mt-1">
-                        NFTs có TxHash: {blockchainStats.nftsWithTxHash || 0} /{" "}
-                        {blockchainStats.totalNFTs || 0}
-                      </div>
-                    </div>
-                  )}
-                  {complianceStats && (
-                    <div className="p-4 bg-emerald-50 rounded-lg">
-                      <div className="text-sm text-emerald-700 mb-2">
-                        Tỷ lệ tuân thủ
-                      </div>
-                      <div className="text-2xl font-bold text-emerald-600">
-                        {complianceStats.compliance?.complianceRate || "0"}%
-                      </div>
-                      <div className="text-xs text-emerald-600 mt-1">
-                        Giao dịch:{" "}
-                        {complianceStats.compliance?.blockchainTransactions ||
-                          0}{" "}
-                        / {complianceStats.compliance?.totalRecords || 0}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
             </div>
 
             {/* Monthly Trends Chart */}

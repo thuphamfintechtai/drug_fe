@@ -26,17 +26,23 @@ export default function LogoutButton({ onLogout }) {
     <button
       onClick={handleClick}
       disabled={animating}
-      className={`relative flex items-center h-10 px-4 rounded-full font-medium text-sm 
-      !text-white transition-all shadow-md
+      className={`relative flex items-center h-9 sm:h-10 px-2 sm:px-4 rounded-full font-medium text-xs sm:text-sm 
+      text-white transition-all shadow-md
       ${done ? "bg-red-500 hover:bg-red-600" : "bg-red-500 hover:bg-red-600"} 
       ${animating || done ? "opacity-80" : "hover:translate-y-[-2px]"}`}
     >
-      <span className="relative z-10 !text-white">
+      <span className="relative z-10 text-white hidden sm:inline">
         {done ? "Đã đăng xuất" : animating ? "Đăng xuất…" : "Đăng xuất"}
+      </span>
+      <span className="relative z-10 text-white sm:hidden">
+        {done ? "Xong" : animating ? "…" : "Đăng xuất"}
       </span>
 
       {/* Animated icon: person walking through door */}
-      <svg className="w-16 h-8 -ml-2" viewBox="0 0 220 110">
+      <svg
+        className="w-12 sm:w-16 h-6 sm:h-8 -ml-1 sm:-ml-2 hidden sm:block"
+        viewBox="0 0 220 110"
+      >
         <defs>
           <linearGradient id="doorGrad" x1="0" x2="1">
             <stop offset="0%" stopColor="#818cf8" />

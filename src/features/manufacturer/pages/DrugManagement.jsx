@@ -148,7 +148,7 @@ export default function DrugManagement() {
           </div>
 
           {/* Drug List with Dropdown */}
-          <div className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl  shadow-sm overflow-hidden">
             {drugs.length === 0 ? (
               <div className="p-16 flex flex-col items-center justify-center text-gray-400">
                 <svg
@@ -173,7 +173,7 @@ export default function DrugManagement() {
                   const drugId = drug.id || drug._id || index;
                   const isExpanded = expandedItems.has(drugId);
                   const details = drugDetails[drugId] || drug;
-                  
+
                   return (
                     <div
                       key={drugId}
@@ -252,7 +252,9 @@ export default function DrugManagement() {
                               <div className="text-slate-700 mb-2">
                                 Dạng bào chế:{" "}
                                 <span className="font-semibold text-slate-800">
-                                  {details.dosageForm || drug.dosageForm || "N/A"}
+                                  {details.dosageForm ||
+                                    drug.dosageForm ||
+                                    "N/A"}
                                 </span>
                               </div>
                               <div className="text-slate-700">
@@ -275,9 +277,11 @@ export default function DrugManagement() {
                                 Trạng thái
                               </div>
                               <div className="font-medium text-slate-800">
-                                {details.status === "active" || drug.status === "active"
+                                {details.status === "active" ||
+                                drug.status === "active"
                                   ? "Hoạt động"
-                                  : details.status === "inactive" || drug.status === "inactive"
+                                  : details.status === "inactive" ||
+                                    drug.status === "inactive"
                                   ? "Không hoạt động"
                                   : details.status || drug.status || "N/A"}
                               </div>
@@ -317,24 +321,28 @@ export default function DrugManagement() {
                           </div>
 
                           {/* Active Ingredients */}
-                          {details.activeIngredients && 
-                           Array.isArray(details.activeIngredients) && 
-                           details.activeIngredients.length > 0 && (
-                            <div className="rounded-lg p-3 border border-slate-200 text-sm mb-3">
-                              <div className="font-medium text-slate-800 mb-2">
-                                Hoạt chất:
+                          {details.activeIngredients &&
+                            Array.isArray(details.activeIngredients) &&
+                            details.activeIngredients.length > 0 && (
+                              <div className="rounded-lg p-3 border border-slate-200 text-sm mb-3">
+                                <div className="font-medium text-slate-800 mb-2">
+                                  Hoạt chất:
+                                </div>
+                                <div className="space-y-1">
+                                  {details.activeIngredients.map(
+                                    (ingredient, idx) => (
+                                      <div key={idx} className="text-slate-700">
+                                        •{" "}
+                                        {typeof ingredient === "string"
+                                          ? ingredient
+                                          : ingredient.name ||
+                                            JSON.stringify(ingredient)}
+                                      </div>
+                                    )
+                                  )}
+                                </div>
                               </div>
-                              <div className="space-y-1">
-                                {details.activeIngredients.map((ingredient, idx) => (
-                                  <div key={idx} className="text-slate-700">
-                                    • {typeof ingredient === 'string' 
-                                        ? ingredient 
-                                        : ingredient.name || JSON.stringify(ingredient)}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                            )}
 
                           {/* Warnings */}
                           {details.warnings && (

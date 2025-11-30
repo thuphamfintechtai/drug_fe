@@ -1,3 +1,4 @@
+import { Link, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckLoader from "../../shared/components/TruckLoader";
 import { CardUI } from "../../shared/components/ui/cardUI";
@@ -16,7 +17,34 @@ export default function Drugs() {
     handleSearch,
     handleClearSearch,
   } = useDrugs();
+  const navigate = useNavigate();
   const safeDrugs = Array.isArray(drugs) ? drugs : [];
+
+  const getStatusBadge = (status) => {
+    const configs = {
+      active: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      inactive: "bg-rose-50 text-rose-700 border-rose-200",
+      recalled: "bg-gray-50 text-gray-700 border-gray-200",
+    };
+    const labels = {
+      active: "Hoạt động",
+      inactive: "Ngừng HĐ",
+      recalled: "Thu hồi",
+    };
+    return (
+      <span
+        className={`px-2 py-0.5 text-xs font-medium rounded border ${
+          configs[status] || "bg-gray-50 text-gray-600 border-gray-200"
+        }`}
+      >
+        {labels[status] || status}
+      </span>
+    );
+  };
+
+  const handleViewDetail = (drugId) => {
+    navigate(`/distributor/drugs/${drugId}`);
+  };
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
@@ -61,140 +89,104 @@ export default function Drugs() {
                 placeholder="Tìm theo tên thương mại, tên hoạt chất, mã ATC..."
                 data={allDrugs}
                 getSearchText={(item) => {
-                  const tradeName = item.tradeName || "";
-                  const genericName = item.genericName || "";
-                  const atcCode = item.atcCode || "";
-                  return tradeName || genericName || atcCode;
+                  const drug = item.drug || item;
+                  return (
+                    drug.tradeName || drug.genericName || drug.atcCode || ""
+                  );
                 }}
                 matchFunction={(item, searchLower) => {
-                  const tradeName = (item.tradeName || "").toLowerCase();
-                  const genericName = (item.genericName || "").toLowerCase();
-                  const atcCode = (item.atcCode || "").toLowerCase();
+                  const drug = item.drug || item;
+                  const tradeName = (drug.tradeName || "").toLowerCase();
+                  const genericName = (drug.genericName || "").toLowerCase();
+                  const atcCode = (drug.atcCode || "").toLowerCase();
                   return (
                     tradeName.includes(searchLower) ||
                     genericName.includes(searchLower) ||
                     atcCode.includes(searchLower)
                   );
                 }}
-                getDisplayText={(item, searchLower) => {
-                  const tradeName = (item.tradeName || "").toLowerCase();
-                  const genericName = (item.genericName || "").toLowerCase();
-                  const atcCode = (item.atcCode || "").toLowerCase();
-                  if (tradeName.includes(searchLower)) {
-                    return item.tradeName || "";
-                  }
-                  if (genericName.includes(searchLower)) {
-                    return item.genericName || "";
-                  }
-                  if (atcCode.includes(searchLower)) {
-                    return item.atcCode || "";
-                  }
+                getDisplayText={(item) => {
+                  const drug = item.drug || item;
                   return (
-                    item.tradeName || item.genericName || item.atcCode || ""
+                    drug.tradeName || drug.genericName || drug.atcCode || ""
                   );
                 }}
                 enableAutoSearch={false}
               />
             </div>
-
-            {/* <button
-              onClick={() => {
-                setSearchAtc("");
-                loadDrugs();
-              }}
-              className="px-4 py-2.5 rounded-full border border-gray-300 text-slate-700 hover:bg-gray-50 transition"
-            >
-              ↻ Reset
-            </button> */}
           </div>
 
           {/* Table */}
-          <div className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             {safeDrugs.length === 0 ? (
-              <div className="p-16 flex flex-col items-center justify-center text-gray-400">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-12 h-12 mb-3 opacity-60"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 7h18M5 10h14M4 14h16M6 18h12"
-                  />
-                </svg>
-                <p className="text-gray-500 text-sm">Không có dữ liệu</p>
+              <div className="p-12 text-center text-gray-500">
+                Không có dữ liệu thuốc
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead className="bg-gray-50 border-b border-gray-100">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                        Tên thương mại
-                      </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                        Tên hoạt chất
-                      </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                        Mã ATC
-                      </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                        Dạng bào chế
-                      </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                        Hàm lượng
-                      </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                        Trạng thái
-                      </th>
-                    </tr>
-                  </thead>
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Tên thuốc
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Mã ATC
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Nhà sản xuất
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Trạng thái
+                    </th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">
+                      Thao tác
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {safeDrugs.map((item, index) => {
+                    const drug = item.drug || item;
+                    const drugId = drug._id || index;
 
-                  <tbody className="divide-y divide-gray-100">
-                    {safeDrugs.map((drug, index) => (
+                    return (
                       <tr
-                        key={drug._id || index}
+                        key={drugId}
                         className="hover:bg-gray-50 transition-colors"
                       >
-                        <td className="px-6 py-4 font-medium text-gray-800">
-                          {drug.tradeName}
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900">
+                            {drug.tradeName}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {drug.genericName}
+                          </p>
                         </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {drug.genericName}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">
+                        <td className="px-4 py-3">
+                          <code className="px-2 py-1 bg-gray-100 rounded text-xs">
                             {drug.atcCode}
-                          </span>
+                          </code>
                         </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {drug.dosageForm}
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {drug.manufacturer?.name || "-"}
                         </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {drug.strength}
+                        <td className="px-4 py-3">
+                          {getStatusBadge(drug.status)}
                         </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                              drug.status === "active"
-                                ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                                : "bg-rose-50 text-rose-600 border border-rose-100"
-                            }`}
-                          >
-                            {drug.status === "active"
-                              ? "Hoạt động"
-                              : "Không hoạt động"}
-                          </span>
+                        <td className="px-4 py-3 text-right">
+                          <td className="px-3 sm:px-6 py-4">
+                            <Link
+                              to={`/distributor/drugs/${drugId}`}
+                              className="inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 border-2 border-primary rounded-full font-semibold text-primary hover:text-white hover:bg-primary transition-all duration-200 text-xs sm:text-sm"
+                            >
+                              Chi tiết
+                            </Link>
+                          </td>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
           </div>
         </div>

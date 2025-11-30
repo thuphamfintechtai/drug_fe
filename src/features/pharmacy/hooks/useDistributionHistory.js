@@ -21,7 +21,8 @@ export const useDistributionHistory = () => {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
-  const filtersRef = useRef({ page, search, status });
+  const isInitialLoadRef = useRef(true);
+  const prevFiltersRef = useRef({ page, search, status });
 
   const queryParams = useMemo(() => {
     const params = { page, limit: 10 };
@@ -56,12 +57,15 @@ export const useDistributionHistory = () => {
   }, [page, search, status]);
 
   const loadData = async () => {
-    const filtersChanged =
-      filtersRef.current.page !== page ||
-      filtersRef.current.search !== search ||
-      filtersRef.current.status !== status;
-
-    const shouldShowLoader = filtersChanged || items.length === 0;
+    // Chỉ show loading khi: initial load, thay đổi page, thay đổi status
+    // Không show loading khi: search
+    const isSearchChange = prevFiltersRef.current.search !== search;
+    const isPageChange = prevFiltersRef.current.page !== page;
+    const isStatusChange = prevFiltersRef.current.status !== status;
+    const shouldShowLoader =
+      (isInitialLoadRef.current && items.length === 0) ||
+      (isPageChange && !isSearchChange) ||
+      (isStatusChange && !isSearchChange);
 
     try {
       if (shouldShowLoader) {
@@ -84,23 +88,26 @@ export const useDistributionHistory = () => {
         const responseData = response.data || {};
         console.log("Distribution History Response:", response);
         console.log("Distribution History Data:", responseData);
-        
+
         const history =
           responseData.receipts ||
           responseData.history ||
           responseData.distributions ||
           responseData.items ||
           (Array.isArray(responseData) ? responseData : []);
-        
+
         console.log("Distribution History - Extracted history:", history);
-        
+
         setItems(Array.isArray(history) ? history : []);
-        
+
         // Handle pagination - check if count exists for total
-        const total = responseData.count || responseData.total || (Array.isArray(history) ? history.length : 0);
+        const total =
+          responseData.count ||
+          responseData.total ||
+          (Array.isArray(history) ? history.length : 0);
         const currentPage = page || 1;
         const limit = 10;
-        
+
         setPagination(
           responseData.pagination || {
             page: currentPage,
@@ -156,9 +163,12 @@ export const useDistributionHistory = () => {
         await new Promise((r) => setTimeout(r, 200));
       }
       await new Promise((r) => setTimeout(r, 100));
-      setLoading(false);
-      setTimeout(() => setLoadingProgress(0), 500);
-      filtersRef.current = { page, search, status };
+      if (shouldShowLoader) {
+        setLoading(false);
+        setTimeout(() => setLoadingProgress(0), 500);
+      }
+      isInitialLoadRef.current = false;
+      prevFiltersRef.current = { page, search, status };
     }
   };
 
@@ -262,6 +272,17 @@ export const useDistributionHistory = () => {
     }
   };
 
+  // Lấy danh sách status có trong dữ liệu thực tế
+  const availableStatuses = useMemo(() => {
+    const statusSet = new Set();
+    items.forEach((item) => {
+      if (item.status) {
+        statusSet.add(item.status);
+      }
+    });
+    return Array.from(statusSet);
+  }, [items]);
+
   return {
     items,
     loading,
@@ -271,6 +292,8 @@ export const useDistributionHistory = () => {
     setSearchParams,
     searchInput,
     setSearchInput,
+    status,
+    page,
     handleSearch,
     handleClearSearch,
     updateFilter,
@@ -278,5 +301,6 @@ export const useDistributionHistory = () => {
     translateStatus,
     extractName,
     formatNotes,
+    availableStatuses,
   };
 };

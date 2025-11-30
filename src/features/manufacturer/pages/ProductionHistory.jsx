@@ -79,36 +79,6 @@ export default function ProductionHistory() {
                   }}
                 />
               </div>
-              <div>
-                <div className="relative">
-                  <select
-                    value={status}
-                    onChange={(e) =>
-                      updateFilter({ status: e.target.value, page: 1 })
-                    }
-                    className="h-11 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-12 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
-                  >
-                    <option value="">Tất cả</option>
-                    <option value="minted">Đã Mint</option>
-                    <option value="transferred">Đã chuyển</option>
-                    <option value="sold">Đã bán</option>
-                    <option value="expired">Hết hạn</option>
-                    <option value="recalled">Thu hồi</option>
-                  </select>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-5 h-5 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.23 7.21a.75.75 0 011.06.02L10 10.17l3.71-2.94a.75.75 0 111.04 1.08l-4.24 3.36a.75.75 0 01-.94 0L5.21 8.31a.75.75 0 01.02-1.1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -221,8 +191,8 @@ export default function ProductionHistory() {
                               Trạng thái sản xuất
                             </div>
                             <div className="font-medium text-slate-800">
-                              {item.status === "completed" 
-                                ? "Hoàn thành" 
+                              {item.status === "completed"
+                                ? "Hoàn thành"
                                 : item.status === "pending"
                                 ? "Đang chờ"
                                 : item.status === "distributed"
@@ -235,8 +205,8 @@ export default function ProductionHistory() {
                               <div className="text-xs text-slate-600 mt-2">
                                 Trạng thái chuyển giao:{" "}
                                 <span className="font-medium text-slate-700">
-                                  {item.transferStatus === "transferred" 
-                                    ? "Đã chuyển" 
+                                  {item.transferStatus === "transferred"
+                                    ? "Đã chuyển"
                                     : item.transferStatus === "pending"
                                     ? "Đang chờ"
                                     : "Chưa chuyển"}
@@ -280,10 +250,10 @@ export default function ProductionHistory() {
                               Ngày tạo
                             </div>
                             <div className="font-medium text-slate-700 text-sm">
-                              {(item.createdAt || item.drug?.createdAt)
-                                ? new Date(item.createdAt || item.drug?.createdAt).toLocaleString(
-                                    "vi-VN"
-                                  )
+                              {item.createdAt || item.drug?.createdAt
+                                ? new Date(
+                                    item.createdAt || item.drug?.createdAt
+                                  ).toLocaleString("vi-VN")
                                 : "N/A"}
                             </div>
                           </div>
@@ -292,10 +262,10 @@ export default function ProductionHistory() {
                               Cập nhật lần cuối
                             </div>
                             <div className="font-medium text-slate-700 text-sm">
-                              {(item.updatedAt || item.drug?.updatedAt)
-                                ? new Date(item.updatedAt || item.drug?.updatedAt).toLocaleString(
-                                    "vi-VN"
-                                  )
+                              {item.updatedAt || item.drug?.updatedAt
+                                ? new Date(
+                                    item.updatedAt || item.drug?.updatedAt
+                                  ).toLocaleString("vi-VN")
                                 : "N/A"}
                             </div>
                           </div>

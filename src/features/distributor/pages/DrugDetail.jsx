@@ -1,21 +1,13 @@
 import { motion } from "framer-motion";
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckLoader from "../../shared/components/TruckLoader";
-import { useDrugFrom } from "../hooks/usrDrugFrom";
-import { useNavigate } from "react-router-dom";
+import { useDrugDetail } from "../hooks/useDrugDetail";
+import { navigationItems } from "../constants/navigationItems";
 
-export default function DrugForm() {
-  const {
-    drugData,
-    loading,
-    error,
-    loadingProgress,
-    navigationItems,
-    translateStatus,
-    translateNFTStatus,
-    id,
-  } = useDrugFrom();
-  const navigate = useNavigate();
+export default function DrugDetail() {
+  const { drugData, loading, error, loadingProgress, translateStatus, id } =
+    useDrugDetail();
+
   const fadeUp = {
     hidden: { opacity: 0, y: 16, filter: "blur(6px)" },
     show: {
@@ -92,7 +84,7 @@ export default function DrugForm() {
                   <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                     Tên thương mại
                   </div>
-                  <div className="text-base  text-slate-800 flex-1">
+                  <div className="text-base text-slate-800 flex-1">
                     {drugData.drug.tradeName || "N/A"}
                   </div>
                 </div>
@@ -101,7 +93,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Tên hoạt chất
                     </div>
-                    <div className="text-base  text-slate-800 flex-1">
+                    <div className="text-base text-slate-800 flex-1">
                       {drugData.drug.genericName}
                     </div>
                   </div>
@@ -111,7 +103,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Mã ATC
                     </div>
-                    <div className="text-base  text-slate-800 font-mono flex-1">
+                    <div className="text-base text-slate-800 font-mono flex-1">
                       {drugData.drug.atcCode}
                     </div>
                   </div>
@@ -122,7 +114,7 @@ export default function DrugForm() {
                   </div>
                   <div className="flex-1">
                     <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm  ${
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
                         drugData.drug.status === "active"
                           ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
                           : drugData.drug.status === "inactive"
@@ -157,7 +149,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Tên công ty
                     </div>
-                    <div className="text-base  text-slate-800 flex-1">
+                    <div className="text-base text-slate-800 flex-1">
                       {drugData.drug.manufacturer.name || "N/A"}
                     </div>
                   </div>
@@ -166,7 +158,7 @@ export default function DrugForm() {
                       <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                         Số giấy phép
                       </div>
-                      <div className="text-base  text-slate-800 flex-1">
+                      <div className="text-base text-slate-800 flex-1">
                         {drugData.drug.manufacturer.licenseNo}
                       </div>
                     </div>
@@ -176,7 +168,7 @@ export default function DrugForm() {
                       <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                         Mã số thuế
                       </div>
-                      <div className="text-base  text-slate-800 font-mono flex-1">
+                      <div className="text-base text-slate-800 font-mono flex-1">
                         {drugData.drug.manufacturer.taxCode}
                       </div>
                     </div>
@@ -186,7 +178,7 @@ export default function DrugForm() {
                       <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                         Quốc gia
                       </div>
-                      <div className="text-base  text-slate-800 flex-1">
+                      <div className="text-base text-slate-800 flex-1">
                         {drugData.drug.manufacturer.country}
                       </div>
                     </div>
@@ -196,7 +188,7 @@ export default function DrugForm() {
                       <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0 sm:pt-1">
                         Địa chỉ
                       </div>
-                      <div className="text-base  text-slate-800 flex-1">
+                      <div className="text-base text-slate-800 flex-1">
                         {drugData.drug.manufacturer.address}
                       </div>
                     </div>
@@ -206,7 +198,7 @@ export default function DrugForm() {
                       <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                         Email
                       </div>
-                      <div className="text-base  text-slate-800 flex-1">
+                      <div className="text-base text-slate-800 flex-1">
                         {drugData.drug.manufacturer.contactEmail}
                       </div>
                     </div>
@@ -216,7 +208,7 @@ export default function DrugForm() {
                       <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                         Số điện thoại
                       </div>
-                      <div className="text-base  text-slate-800 flex-1">
+                      <div className="text-base text-slate-800 flex-1">
                         {drugData.drug.manufacturer.contactPhone}
                       </div>
                     </div>
@@ -255,7 +247,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Dạng bào chế
                     </div>
-                    <div className="text-base  text-slate-800 flex-1">
+                    <div className="text-base text-slate-800 flex-1">
                       {drugData.drug.dosageForm}
                     </div>
                   </div>
@@ -265,7 +257,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Hàm lượng
                     </div>
-                    <div className="text-base  text-slate-800 flex-1">
+                    <div className="text-base text-slate-800 flex-1">
                       {drugData.drug.strength}
                     </div>
                   </div>
@@ -275,7 +267,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Cách dùng
                     </div>
-                    <div className="text-base  text-slate-800 flex-1">
+                    <div className="text-base text-slate-800 flex-1">
                       {drugData.drug.route}
                     </div>
                   </div>
@@ -352,7 +344,7 @@ export default function DrugForm() {
                     {drugData.drug.activeIngredients.map((ingredient, idx) => (
                       <span
                         key={idx}
-                        className="px-4 py-2 bg-gradient-to-br from-primary to-secondary text-primary border border-primary/20 rounded-xl text-sm font-semibold"
+                        className="px-4 py-2 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-xl text-sm font-semibold"
                       >
                         {ingredient}
                       </span>
@@ -362,281 +354,9 @@ export default function DrugForm() {
               </motion.div>
             )}
 
-          {/* Thống kê */}
-
-          {/* NFT Stats */}
-
-          {/* Production History */}
-          {drugData.productionHistory &&
-            Array.isArray(drugData.productionHistory) &&
-            drugData.productionHistory.length > 0 && (
-              <motion.div
-                className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden"
-                variants={fadeUp}
-                initial="hidden"
-                animate="show"
-              >
-                <div className="bg-gradient-to-r from-primary to-secondary border-b border-primary/20 px-6 py-4">
-                  <h3 className="text-lg font-semibold text-white">
-                    Lịch sử sản xuất
-                  </h3>
-                </div>
-                <div className="p-6">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-slate-50 border-b border-slate-200">
-                        <tr>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Batch Number
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Ngày SX
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Ngày HH
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Số lượng
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Transaction Hash
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {drugData.productionHistory.map((prod) => (
-                          <tr key={prod._id} className="hover:bg-slate-50">
-                            <td className="px-4 py-3 font-medium">
-                              {prod.batchNumber}
-                            </td>
-                            <td className="px-4 py-3">
-                              {new Date(prod.mfgDate).toLocaleDateString(
-                                "vi-VN"
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              {new Date(prod.expDate).toLocaleDateString(
-                                "vi-VN"
-                              )}
-                            </td>
-                            <td className="px-4 py-3">{prod.quantity}</td>
-                            <td className="px-4 py-3">
-                              {prod.chainTxHash ? (
-                                <a
-                                  href={`https://etherscan.io/tx/${prod.chainTxHash}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:text-secondary font-mono text-xs break-all"
-                                >
-                                  {prod.chainTxHash.slice(0, 10)}...
-                                </a>
-                              ) : (
-                                <span className="text-slate-400">-</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-          {/* NFTs List */}
-          {drugData.nfts &&
-            Array.isArray(drugData.nfts) &&
-            drugData.nfts.length > 0 && (
-              <motion.div
-                className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden"
-                variants={fadeUp}
-                initial="hidden"
-                animate="show"
-              >
-                <div className="bg-gradient-to-r from-primary to-secondary border-b border-primary/20 px-6 py-4">
-                  <h3 className="text-lg font-semibold text-white">
-                    Danh sách NFT ({drugData.nfts.length})
-                  </h3>
-                </div>
-                <div className="p-6">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-slate-50 border-b border-slate-200">
-                        <tr>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Token ID
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Serial Number
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Batch
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Ngày SX
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Ngày HH
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Chủ sở hữu
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Trạng thái
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {drugData.nfts.slice(0, 10).map((nft) => (
-                          <tr key={nft._id} className="hover:bg-slate-50">
-                            <td className="px-4 py-3 font-medium">
-                              {nft.tokenId}
-                            </td>
-                            <td className="px-4 py-3 font-mono text-xs">
-                              {nft.serialNumber}
-                            </td>
-                            <td className="px-4 py-3">{nft.batchNumber}</td>
-                            <td className="px-4 py-3">
-                              {new Date(nft.mfgDate).toLocaleDateString(
-                                "vi-VN"
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              {new Date(nft.expDate).toLocaleDateString(
-                                "vi-VN"
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="text-xs">
-                                <div className="font-medium">
-                                  {nft.owner?.fullName || "N/A"}
-                                </div>
-                                <div className="text-slate-500">
-                                  {nft.owner?.email || ""}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                                  nft.status === "minted"
-                                    ? "bg-blue-50 text-blue-600"
-                                    : nft.status === "sold"
-                                    ? "bg-green-50 text-green-600"
-                                    : "bg-slate-50 text-slate-600"
-                                }`}
-                              >
-                                {translateNFTStatus(nft.status)}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {drugData.nfts.length > 10 && (
-                      <div className="mt-4 text-center text-sm text-slate-600">
-                        Hiển thị 10/{drugData.nfts.length} NFT
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-          {/* Commercial Invoices */}
-          {drugData.commercialInvoices &&
-            Array.isArray(drugData.commercialInvoices) &&
-            drugData.commercialInvoices.length > 0 && (
-              <motion.div
-                className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden"
-                variants={fadeUp}
-                initial="hidden"
-                animate="show"
-              >
-                <div className="bg-gradient-to-r from-primary to-secondary border-b border-primary/20 px-6 py-4">
-                  <h3 className="text-lg font-semibold text-white">
-                    Hóa đơn thương mại ({drugData.commercialInvoices.length})
-                  </h3>
-                </div>
-                <div className="p-6">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-slate-50 border-b border-slate-200">
-                        <tr>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Số HĐ
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Ngày
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Từ NPP
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Đến nhà thuốc
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Số lượng
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                            Trạng thái
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {drugData.commercialInvoices
-                          .slice(0, 10)
-                          .map((invoice) => (
-                            <tr key={invoice._id} className="hover:bg-slate-50">
-                              <td className="px-4 py-3 font-medium">
-                                {invoice.invoiceNumber}
-                              </td>
-                              <td className="px-4 py-3">
-                                {new Date(
-                                  invoice.invoiceDate
-                                ).toLocaleDateString("vi-VN")}
-                              </td>
-                              <td className="px-4 py-3">
-                                {invoice.fromDistributor?.fullName || "N/A"}
-                              </td>
-                              <td className="px-4 py-3">
-                                {invoice.toPharmacy?.fullName || "N/A"}
-                              </td>
-                              <td className="px-4 py-3">{invoice.quantity}</td>
-                              <td className="px-4 py-3">
-                                <span
-                                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                                    invoice.status === "sent"
-                                      ? "bg-green-50 text-green-600"
-                                      : invoice.status === "draft"
-                                      ? "bg-slate-50 text-slate-600"
-                                      : "bg-blue-50 text-blue-600"
-                                  }`}
-                                >
-                                  {invoice.status === "sent"
-                                    ? "Đã gửi"
-                                    : invoice.status === "draft"
-                                    ? "Nháp"
-                                    : invoice.status}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                    {drugData.commercialInvoices.length > 10 && (
-                      <div className="mt-4 text-center text-sm text-slate-600">
-                        Hiển thị 10/{drugData.commercialInvoices.length} hóa đơn
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
           {/* Thông tin hệ thống */}
           <motion.div
-            className="bg-white rounded-2xl border border-cyan-100 shadow-sm "
+            className="bg-white rounded-2xl border border-cyan-100 shadow-sm"
             variants={fadeUp}
             initial="hidden"
             animate="show"
@@ -653,7 +373,7 @@ export default function DrugForm() {
                     <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide w-full sm:w-48 shrink-0 mb-1 sm:mb-0">
                       Ngày tạo
                     </div>
-                    <div className="text-base  text-slate-800 flex-1">
+                    <div className="text-base text-slate-800 flex-1">
                       {new Date(drugData.drug.createdAt).toLocaleString(
                         "vi-VN"
                       )}

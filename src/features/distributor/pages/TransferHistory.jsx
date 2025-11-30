@@ -118,10 +118,10 @@ export default function TransferHistory() {
                     className="h-12 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-12 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
                   >
                     <option value="">Tất cả</option>
-                    <option value="pending">Pending</option>
-                    <option value="sent">Sent</option>
-                    <option value="received">Received</option>
-                    <option value="paid">Paid</option>
+                    <option value="pending">Đang chờ</option>
+                    <option value="sent">Đã gửi</option>
+                    <option value="received">Đã nhận</option>
+                    <option value="paid">Đã thanh toán</option>
                   </select>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

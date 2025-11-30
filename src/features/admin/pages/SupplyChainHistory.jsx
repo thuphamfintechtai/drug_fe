@@ -31,6 +31,12 @@ export default function SupplyChainHistory() {
     handleClearSearch,
     handleToggleBatch,
     updateFilter,
+    filteredBatchSuggestions,
+    filteredDrugSuggestions,
+    showBatchSuggestions,
+    setShowBatchSuggestions,
+    showDrugSuggestions,
+    setShowDrugSuggestions,
   } = useSupplyChainHistory();
 
   const navigationItems = useMemo(
@@ -57,66 +63,124 @@ export default function SupplyChainHistory() {
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 mb-6">
-            <h2 className="text-xl font-semibold text-cyan-900">
+          <div className="bg-white rounded-xl border border-card-primary shadow-sm p-4 sm:p-5 mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-cyan-900">
               Lịch sử truy xuất chuỗi cung ứng
             </h2>
-            <p className="text-slate-600 text-sm mt-1">
+            <p className="text-slate-600 text-xs sm:text-sm mt-1">
               Theo dõi hành trình của từng lô hàng từ nhà sản xuất tới nhà
               thuốc.
             </p>
           </div>
 
           <motion.div
-            className="rounded-2xl bg-white border border-card-primary shadow-[0_8px_24px_rgba(0,171,196,0.12)] p-4 mb-6"
+            className="rounded-2xl bg-white border border-card-primary shadow-[0_8px_24px_rgba(0,171,196,0.12)] p-3 sm:p-4 mb-6"
             variants={fadeUp}
             initial="hidden"
             animate="show"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-4">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
+              <div className="relative">
                 <label className="block text-sm font-medium text-slate-600 mb-1">
                   Số lô
                 </label>
-                <input
-                  type="text"
-                  value={batchNumberInput}
-                  onChange={(e) => {
-                    // Chỉ cập nhật state, không trigger search
-                    setBatchNumberInput(e.target.value);
-                  }}
-                  onKeyDown={(e) => {
-                    // Chỉ search khi nhấn Enter
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleSearch();
-                    }
-                  }}
-                  placeholder="Nhập số lô"
-                  className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={batchNumberInput}
+                    onChange={(e) => {
+                      setBatchNumberInput(e.target.value);
+                      setShowBatchSuggestions(true);
+                    }}
+                    onFocus={() => setShowBatchSuggestions(true)}
+                    onBlur={() => {
+                      // Delay để cho phép click vào suggestion
+                      // eslint-disable-next-line no-undef
+                      setTimeout(() => setShowBatchSuggestions(false), 200);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        setShowBatchSuggestions(false);
+                        handleSearch();
+                      } else if (e.key === "Escape") {
+                        setShowBatchSuggestions(false);
+                      }
+                    }}
+                    placeholder="Nhập số lô"
+                    className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
+                  />
+                  {showBatchSuggestions &&
+                    filteredBatchSuggestions.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {filteredBatchSuggestions.map((suggestion, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              setBatchNumberInput(suggestion);
+                              setShowBatchSuggestions(false);
+                              handleSearch();
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-cyan-50 hover:text-cyan-700 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                </div>
               </div>
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-medium text-slate-600 mb-1">
                   Tên thuốc
                 </label>
-                <input
-                  type="text"
-                  value={drugNameInput}
-                  onChange={(e) => {
-                    // Chỉ cập nhật state, không trigger search
-                    setDrugNameInput(e.target.value);
-                  }}
-                  onKeyDown={(e) => {
-                    // Chỉ search khi nhấn Enter
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleSearch();
-                    }
-                  }}
-                  placeholder="Lọc theo tên thuốc"
-                  className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={drugNameInput}
+                    onChange={(e) => {
+                      setDrugNameInput(e.target.value);
+                      setShowDrugSuggestions(true);
+                    }}
+                    onFocus={() => setShowDrugSuggestions(true)}
+                    onBlur={() => {
+                      // Delay để cho phép click vào suggestion
+                      // eslint-disable-next-line no-undef
+                      setTimeout(() => setShowDrugSuggestions(false), 200);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        setShowDrugSuggestions(false);
+                        handleSearch();
+                      } else if (e.key === "Escape") {
+                        setShowDrugSuggestions(false);
+                      }
+                    }}
+                    placeholder="Lọc theo tên thuốc"
+                    className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
+                  />
+                  {showDrugSuggestions &&
+                    filteredDrugSuggestions.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {filteredDrugSuggestions.map((suggestion, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              setDrugNameInput(suggestion);
+                              setShowDrugSuggestions(false);
+                              handleSearch();
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-cyan-50 hover:text-cyan-700 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">
@@ -163,12 +227,16 @@ export default function SupplyChainHistory() {
               </div>
             </div>
             {/* Search buttons */}
-            <div className="flex items-center gap-3 justify-end">
-              {(batchNumberInput || drugNameInput) && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 justify-end">
+              {(batchNumberInput ||
+                drugNameInput ||
+                statusFilter ||
+                fromDate ||
+                toDate) && (
                 <button
                   type="button"
                   onClick={handleClearSearch}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition text-sm font-medium"
+                  className="px-3 sm:px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition text-sm font-medium whitespace-nowrap"
                 >
                   Xóa tìm kiếm
                 </button>
@@ -176,7 +244,7 @@ export default function SupplyChainHistory() {
               <button
                 type="button"
                 onClick={handleSearch}
-                className="px-6 py-2 rounded-lg bg-secondary hover:bg-primary !text-white font-medium transition text-sm shadow-md"
+                className="px-4 sm:px-6 py-2 rounded-lg bg-secondary hover:bg-primary !text-white font-medium transition text-sm shadow-md whitespace-nowrap"
               >
                 Tìm kiếm
               </button>
@@ -213,14 +281,14 @@ export default function SupplyChainHistory() {
                     onClick={() => handleToggleBatch(batch)}
                     className="w-full text-left"
                   >
-                    <div className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-3">
-                          <span className="text-lg font-semibold text-slate-800">
+                    <div className="flex flex-col gap-3 sm:gap-4 p-4 sm:p-5 md:flex-row md:items-center md:justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                          <span className="text-base sm:text-lg font-semibold text-slate-800">
                             Lô {batch.batchNumber}
                           </span>
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${statusInfo.badgeClass}`}
+                            className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${statusInfo.badgeClass}`}
                           >
                             {statusInfo.label}
                           </span>
@@ -228,14 +296,14 @@ export default function SupplyChainHistory() {
                             {formatDateTime(batch.mfgDate)}
                           </span>
                         </div>
-                        <div className="mt-2 text-sm text-slate-600">
-                          <div>
+                        <div className="mt-2 text-xs sm:text-sm text-slate-600 space-y-1">
+                          <div className="truncate">
                             Thuốc:{" "}
                             <span className="font-medium text-slate-800">
                               {batch.drug?.drugName || "—"}
                             </span>
                           </div>
-                          <div>
+                          <div className="truncate">
                             Nhà sản xuất:{" "}
                             <span className="font-medium text-slate-800">
                               {batch.manufacturer?.name || "—"}
@@ -243,7 +311,7 @@ export default function SupplyChainHistory() {
                           </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3 text-sm text-slate-600 md:text-right">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm text-slate-600 md:text-right">
                         <div>
                           <div className="text-xs uppercase text-slate-500">
                             Tổng số lượng
@@ -281,7 +349,7 @@ export default function SupplyChainHistory() {
                   </button>
 
                   {isExpanded && (
-                    <div className="border-t border-slate-200 px-5 pb-6">
+                    <div className="border-t border-slate-200 px-3 sm:px-5 py-4 sm:pb-6">
                       <SupplyChainJourney
                         journey={journeys[batch.batchNumber]}
                         isLoading={journeyLoading[batch.batchNumber]}
@@ -294,12 +362,12 @@ export default function SupplyChainHistory() {
           </div>
 
           {pagination.totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-center gap-3">
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 type="button"
                 disabled={page <= 1}
                 onClick={() => updateFilter({ page: page - 1 })}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                   page <= 1
                     ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                     : "bg-white border border-cyan-300 text-cyan-700 hover:bg-cyan-50"
@@ -307,7 +375,7 @@ export default function SupplyChainHistory() {
               >
                 ← Trước
               </button>
-              <span className="text-sm text-slate-600">
+              <span className="text-xs sm:text-sm text-slate-600">
                 Trang <strong>{page}</strong> /{" "}
                 <strong>{pagination.totalPages}</strong>
               </span>
@@ -315,7 +383,7 @@ export default function SupplyChainHistory() {
                 type="button"
                 disabled={page >= pagination.totalPages}
                 onClick={() => updateFilter({ page: page + 1 })}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                   page >= pagination.totalPages
                     ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                     : "text-white bg-secondary shadow-[0_10px_24px_rgba(0,180,216,0.30)] hover:shadow-[0_14px_36px_rgba(0,180,216,0.40)]"

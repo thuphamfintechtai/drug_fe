@@ -31,6 +31,10 @@ export const useSupplyChainHistory = () => {
   const [expandedBatch, setExpandedBatch] = useState(null);
   const [journeys, setJourneys] = useState({});
   const [journeyLoading, setJourneyLoading] = useState({});
+  const [batchSuggestions, setBatchSuggestions] = useState([]);
+  const [drugSuggestions, setDrugSuggestions] = useState([]);
+  const [showBatchSuggestions, setShowBatchSuggestions] = useState(false);
+  const [showDrugSuggestions, setShowDrugSuggestions] = useState(false);
 
   useEffect(() => {
     setBatchNumberInput(batchNumber);
@@ -63,9 +67,14 @@ export const useSupplyChainHistory = () => {
   const handleClearSearch = useCallback(() => {
     setBatchNumberInput("");
     setDrugNameInput("");
+    setShowBatchSuggestions(false);
+    setShowDrugSuggestions(false);
     updateFilter({
       batchNumber: "",
       drugName: "",
+      status: "",
+      fromDate: "",
+      toDate: "",
       page: 1,
     });
   }, [updateFilter]);
@@ -151,6 +160,55 @@ export const useSupplyChainHistory = () => {
     fetchBatches();
   }, [fetchBatches]);
 
+  // Fetch all batches for suggestions (without filters)
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      try {
+        const response = await api.get(`${ADMIN_BT_PREFIX}/batches`, {
+          params: { limit: 100 }, // Get more batches for better suggestions
+        });
+
+        const responseData = response.data;
+        let allBatches = [];
+
+        if (responseData?.success) {
+          const data = responseData.data;
+          allBatches = Array.isArray(data)
+            ? data
+            : data?.batches || data?.data || [];
+        } else if (Array.isArray(responseData)) {
+          allBatches = responseData;
+        } else if (responseData?.data) {
+          const data = responseData.data;
+          allBatches = Array.isArray(data) ? data : data?.batches || [];
+        } else {
+          allBatches = responseData?.batches || [];
+        }
+
+        // Extract unique suggestions from all batches
+        const uniqueBatchNumbers = [
+          ...new Set(allBatches.map((b) => b.batchNumber).filter(Boolean)),
+        ];
+        const uniqueDrugNames = [
+          ...new Set(
+            allBatches
+              .map((b) => b.drug?.drugName)
+              .filter(Boolean)
+              .filter((name) => name && name !== "—")
+          ),
+        ];
+        setBatchSuggestions(uniqueBatchNumbers);
+        setDrugSuggestions(uniqueDrugNames);
+      } catch (err) {
+        // Silently fail - suggestions are optional
+        // eslint-disable-next-line no-console
+        console.warn("Không thể tải suggestions:", err);
+      }
+    };
+
+    fetchSuggestions();
+  }, []);
+
   const handleToggleBatch = useCallback(
     async (batch) => {
       const isExpanded = expandedBatch === batch.batchNumber;
@@ -203,6 +261,29 @@ export const useSupplyChainHistory = () => {
     []
   );
 
+  // Filter suggestions based on input
+  const filteredBatchSuggestions = useMemo(() => {
+    if (!batchNumberInput.trim()) {
+      return [];
+    }
+    return batchSuggestions
+      .filter((batch) =>
+        batch.toLowerCase().includes(batchNumberInput.toLowerCase())
+      )
+      .slice(0, 5);
+  }, [batchNumberInput, batchSuggestions]);
+
+  const filteredDrugSuggestions = useMemo(() => {
+    if (!drugNameInput.trim()) {
+      return [];
+    }
+    return drugSuggestions
+      .filter((drug) =>
+        drug.toLowerCase().includes(drugNameInput.toLowerCase())
+      )
+      .slice(0, 5);
+  }, [drugNameInput, drugSuggestions]);
+
   return {
     page,
     batchNumberInput,
@@ -224,5 +305,11 @@ export const useSupplyChainHistory = () => {
     handleClearSearch,
     handleToggleBatch,
     updateFilter,
+    filteredBatchSuggestions,
+    filteredDrugSuggestions,
+    showBatchSuggestions,
+    setShowBatchSuggestions,
+    showDrugSuggestions,
+    setShowDrugSuggestions,
   };
 };

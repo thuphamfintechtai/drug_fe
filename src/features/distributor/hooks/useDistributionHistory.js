@@ -22,7 +22,7 @@ export const useDistributionHistory = () => {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
-  const filtersRef = useRef({ page, search, status });
+  const prevFiltersRef = useRef({ page, search, status });
 
   const queryParams = useMemo(() => {
     const params = { page, limit: 10 };
@@ -102,7 +102,8 @@ export const useDistributionHistory = () => {
       (item.invoiceNumber
         ? {
             invoiceNumber: item.invoiceNumber,
-            invoiceDate: item.invoiceDate || item.createdAt || item.distributionDate,
+            invoiceDate:
+              item.invoiceDate || item.createdAt || item.distributionDate,
           }
         : undefined);
 
@@ -127,12 +128,16 @@ export const useDistributionHistory = () => {
   };
 
   const loadData = async () => {
-    const filtersChanged =
-      filtersRef.current.page !== page ||
-      filtersRef.current.search !== search ||
-      filtersRef.current.status !== status;
+    // Chỉ show loading khi: initial load, thay đổi page, thay đổi status
+    // Không show loading khi: search
+    const isSearchChange = prevFiltersRef.current.search !== search;
+    const isPageChange = prevFiltersRef.current.page !== page;
+    const isStatusChange = prevFiltersRef.current.status !== status;
     const shouldShowLoader =
-      filtersChanged || (items.length === 0 && isInitialLoad);
+      (isInitialLoad && items.length === 0) ||
+      (isPageChange && !isSearchChange) ||
+      (isStatusChange && !isSearchChange);
+
     try {
       if (shouldShowLoader) {
         setLoading(true);
@@ -169,8 +174,7 @@ export const useDistributionHistory = () => {
 
         setItems(normalizedItems);
 
-        const nextPagination =
-          response.data?.pagination ??
+        const nextPagination = response.data?.pagination ??
           response.data?.data?.pagination ??
           response.pagination ?? {
             page: 1,
@@ -243,7 +247,7 @@ export const useDistributionHistory = () => {
         setLoading(false);
         setTimeout(() => setLoadingProgress(0), 500);
       }
-      filtersRef.current = { page, search, status };
+      prevFiltersRef.current = { page, search, status };
     }
   };
 
@@ -289,6 +293,23 @@ export const useDistributionHistory = () => {
     return colors[status] || "bg-slate-100 text-slate-600 border-slate-200";
   };
 
+  // Lấy danh sách status có trong dữ liệu thực tế
+  const availableStatuses = useMemo(() => {
+    const statusSet = new Set();
+    items.forEach((item) => {
+      if (item.status) {
+        statusSet.add(item.status);
+      }
+    });
+    return Array.from(statusSet);
+  }, [items]);
+
+  const statusLabels = {
+    pending: "Pending",
+    confirmed: "Confirmed",
+    transferred: "Transferred",
+  };
+
   return {
     items,
     loading,
@@ -296,9 +317,13 @@ export const useDistributionHistory = () => {
     pagination,
     searchInput,
     setSearchInput,
+    status,
+    page,
     handleSearch,
     handleClearSearch,
     updateFilter,
     getStatusColor,
+    availableStatuses,
+    statusLabels,
   };
 };

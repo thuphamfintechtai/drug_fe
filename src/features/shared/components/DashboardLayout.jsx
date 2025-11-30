@@ -66,6 +66,7 @@ export default function DashboardLayout({
     const initialOpen = saved === null ? true : saved === "true";
     return initialOpen;
   });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const adminNavigationItems = [
     {
@@ -314,13 +315,26 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         onTransitionEnd={() => setShowLabels(sidebarOpen)}
         className={`fixed left-0 top-0 h-full z-50 !text-white
         bg-linear-to-b from-primary to-secondary shadow-lg
         transition-all duration-200 ease-linear
-        ${sidebarOpen ? "w-64" : "w-20"}`}
+        ${sidebarOpen ? "w-64" : "w-20"}
+        ${
+          mobileMenuOpen
+            ? "translate-x-0"
+            : "-translate-x-full lg:translate-x-0"
+        }`}
       >
         <div className="flex flex-col h-full p-3">
           <div
@@ -386,6 +400,7 @@ export default function DashboardLayout({
                   <li key={i}>
                     <Link
                       to={item.path}
+                      onClick={() => setMobileMenuOpen(false)}
                       className={`w-full h-11 flex items-center ${
                         showLabels ? "px-3 justify-start" : "justify-center"
                       } gap-3 rounded-md transition-colors duration-150 ease-out
@@ -413,21 +428,55 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <div className={`min-h-screen ${sidebarOpen ? "ml-64" : "ml-20"}`}>
+      <div
+        className={`min-h-screen transition-all duration-200 ${
+          sidebarOpen ? "lg:ml-64" : "lg:ml-20"
+        }`}
+      >
         <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200">
-          <div className="px-6 h-16 flex items-center justify-between">
-            <div className="text-slate-700 font-semibold">
-              {showLabels ? welcomeMessage : null}
+          <div className="px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+            {/* Mobile Menu Button + Welcome Message */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="lg:hidden p-2 rounded-lg bg-primary !text-white shadow-sm hover:bg-secondary transition-colors flex-shrink-0"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  {mobileMenuOpen ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  )}
+                </svg>
+              </button>
+              <div className="text-slate-700 font-semibold truncate">
+                {showLabels ? welcomeMessage : null}
+              </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               {walletAddress ? (
                 <div className="relative group">
                   <button
                     onClick={handleCopyAddress}
-                    className="flex items-center gap-2 h-10 px-4 rounded-full bg-secondary  !text-white hover:from-cyan-600 hover:to-teal-700 transition-colors shadow-sm hover:shadow-md"
+                    className="flex items-center gap-1.5 sm:gap-2 h-9 sm:h-10 px-2 sm:px-4 rounded-full bg-secondary !text-white hover:bg-primary transition-colors shadow-sm hover:shadow-md text-xs sm:text-sm"
                   >
                     <svg
-                      className="w-5 h-5 !text-white"
+                      className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -439,11 +488,14 @@ export default function DashboardLayout({
                         d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                       />
                     </svg>
-                    <span className="font-medium text-sm !text-white">
+                    <span className="font-medium hidden sm:inline">
                       {formatAddress(walletAddress)}
                     </span>
+                    <span className="font-medium sm:hidden">
+                      {walletAddress.substring(0, 4)}...
+                    </span>
                     {showCopied && (
-                      <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 !text-white text-xs rounded whitespace-nowrap">
+                      <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 !text-white text-xs rounded whitespace-nowrap z-10">
                         Đã sao chép!
                       </span>
                     )}
@@ -453,12 +505,12 @@ export default function DashboardLayout({
                 <button
                   onClick={handleConnectWallet}
                   disabled={isConnecting}
-                  className="flex items-center gap-2 h-10 px-4 rounded-full bg-linear-to-r from-secondary to-primary !text-white hover:from-cyan-600 hover:to-teal-700 transition-colors shadow-sm hover:shadow-md disabled:opacity-50"
+                  className="flex items-center gap-1.5 sm:gap-2 h-9 sm:h-10 px-2 sm:px-4 rounded-full bg-gradient-to-r from-secondary to-primary !text-white hover:from-primary hover:to-secondary transition-colors shadow-sm hover:shadow-md disabled:opacity-50 text-xs sm:text-sm"
                 >
                   {isConnecting ? (
                     <>
                       <svg
-                        className="animate-spin h-5 w-5 !text-white"
+                        className="animate-spin h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -477,14 +529,15 @@ export default function DashboardLayout({
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      <span className="font-medium text-sm !text-white">
+                      <span className="font-medium hidden sm:inline">
                         Đang kết nối...
                       </span>
+                      <span className="font-medium sm:hidden">...</span>
                     </>
                   ) : (
-                    <>
+                    <span className="flex items-center gap-1.5 sm:gap-2 px-2">
                       <svg
-                        className="w-5 h-5 !text-white"
+                        className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -496,10 +549,11 @@ export default function DashboardLayout({
                           d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                         />
                       </svg>
-                      <span className="font-medium text-sm !text-white">
+                      <span className="font-medium hidden sm:inline px-2">
                         Kết nối ví
                       </span>
-                    </>
+                      <span className="font-medium sm:hidden">Kết nối ví</span>
+                    </span>
                   )}
                 </button>
               )}

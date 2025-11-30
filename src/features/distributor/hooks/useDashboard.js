@@ -45,19 +45,22 @@ export const useDashboard = () => {
     refetch: refetchMonthlyTrends,
   } = useDistributorMonthlyTrends(6);
 
-  const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
+  const unwrap = (response) =>
+    response?.data?.data ?? response?.data ?? response;
 
   const stats = unwrap(statsResponse);
   const dashboardStats = unwrap(dashboardResponse);
 
   console.log("Dashboard Stats Response:", dashboardResponse);
   console.log("Dashboard Stats Data:", dashboardStats);
+  console.log("Stats (from /statistics):", stats);
+  console.log("DashboardStats (from /dashboard/stats):", dashboardStats);
 
   const chartOneWeekData = useMemo(() => {
     const data = unwrap(chartOneWeekResponse);
     console.log("One Week Response:", chartOneWeekResponse);
     console.log("One Week Data:", data);
-    
+
     // Kiểm tra nếu dailyStats là mảng (format mới)
     if (Array.isArray(data?.dailyStats)) {
       const formatted = data.dailyStats.map((stat) => {
@@ -76,9 +79,9 @@ export const useDashboard = () => {
         .sort((a, b) => a.sortKey - b.sortKey)
         .map(({ sortKey, ...rest }) => rest);
     }
-    
+
     // Fallback cho format cũ (object)
-    if (data?.dailyStats && typeof data.dailyStats === 'object') {
+    if (data?.dailyStats && typeof data.dailyStats === "object") {
       const formatted = Object.entries(data.dailyStats).map(([date, stat]) => {
         const dateObj = new Date(date);
         return {
@@ -95,7 +98,7 @@ export const useDashboard = () => {
         .sort((a, b) => a.sortKey - b.sortKey)
         .map(({ sortKey, ...rest }) => rest);
     }
-    
+
     console.log("No dailyStats found");
     return null;
   }, [chartOneWeekResponse]);
@@ -135,17 +138,70 @@ export const useDashboard = () => {
     return mapped;
   }, [monthlyTrendsResponse]);
 
-  const isLoading =
-    (statsLoading ||
+  // Ưu tiên stats (từ /statistics) nếu có dữ liệu
+  // Chỉ dùng dashboardStats nếu stats không có dữ liệu
+  const hasStatsData =
+    stats &&
+    (stats.invoices ||
+      stats.distributions ||
+      stats.transfersToPharmacy ||
+      stats.nfts);
+  const hasDashboardData =
+    dashboardStats &&
+    (dashboardStats.invoices ||
+      dashboardStats.distributions ||
+      dashboardStats.transfersToPharmacy ||
+      dashboardStats.nfts);
+
+  const displayStats = hasStatsData
+    ? stats
+    : hasDashboardData
+    ? dashboardStats
+    : stats;
+  const overview = displayStats?.overview || displayStats;
+
+  console.log("Final displayStats:", displayStats);
+  console.log("displayStats.invoices?.total:", displayStats?.invoices?.total);
+  console.log(
+    "displayStats.distributions?.total:",
+    displayStats?.distributions?.total
+  );
+
+  const isLoading = useMemo(() => {
+    const anyLoading =
+      statsLoading ||
       dashboardLoading ||
       chartOneWeekLoading ||
       chartTodayYesterdayLoading ||
-      monthlyTrendsLoading) &&
-    !stats &&
-    !dashboardStats &&
-    !chartOneWeekData &&
-    !chartTodayYesterdayData &&
-    !chartMonthlyData;
+      monthlyTrendsLoading;
+
+    if (anyLoading) {
+      return true;
+    }
+
+    const hasBasicData =
+      stats ||
+      dashboardStats ||
+      (statsResponse && (statsResponse?.data || statsResponse?.success)) ||
+      (dashboardResponse &&
+        (dashboardResponse?.data || dashboardResponse?.success));
+
+    if (!hasBasicData) {
+      return true;
+    }
+
+    return false;
+  }, [
+    statsLoading,
+    dashboardLoading,
+    chartOneWeekLoading,
+    chartTodayYesterdayLoading,
+    monthlyTrendsLoading,
+    stats,
+    dashboardStats,
+    statsResponse,
+    dashboardResponse,
+  ]);
 
   const isFetching =
     statsFetching ||
@@ -169,20 +225,14 @@ export const useDashboard = () => {
     }
   };
 
-  const displayStats = dashboardStats || stats;
-  const overview = displayStats?.overview || displayStats;
-
-  console.log("Display Stats:", displayStats);
-  console.log("Overview:", overview);
-  console.log("Invoices Received:", overview?.invoicesReceived);
-  console.log("Invoices:", overview?.invoices);
-  console.log("Transfers to Pharmacy:", overview?.transfersToPharmacy);
-  console.log("Distributions:", overview?.distributions);
-
   const invoiceStatusData = useMemo(() => {
-    const byStatus = overview?.invoicesReceived?.byStatus || overview?.invoices?.byStatus || displayStats?.invoicesReceived?.byStatus || displayStats?.invoices?.byStatus;
+    const byStatus =
+      overview?.invoicesReceived?.byStatus ||
+      overview?.invoices?.byStatus ||
+      displayStats?.invoicesReceived?.byStatus ||
+      displayStats?.invoices?.byStatus;
     console.log("Invoice byStatus:", byStatus);
-    if (!byStatus || typeof byStatus !== 'object') {
+    if (!byStatus || typeof byStatus !== "object") {
       console.log("No invoice byStatus found");
       return [];
     }
@@ -208,16 +258,18 @@ export const useDashboard = () => {
             : name,
         value: Number(value) || 0,
       }))
-      .filter(item => item.value > 0); // Chỉ hiển thị các mục có giá trị > 0
+      .filter((item) => item.value > 0); // Chỉ hiển thị các mục có giá trị > 0
     console.log("Invoice Status Data:", data);
     return data;
   }, [overview, displayStats]);
 
   // Prepare transfer to pharmacy status data
   const transferStatusData = useMemo(() => {
-    const byStatus = overview?.transfersToPharmacy?.byStatus || displayStats?.transfersToPharmacy?.byStatus;
+    const byStatus =
+      overview?.transfersToPharmacy?.byStatus ||
+      displayStats?.transfersToPharmacy?.byStatus;
     console.log("Transfer byStatus:", byStatus);
-    if (!byStatus || typeof byStatus !== 'object') {
+    if (!byStatus || typeof byStatus !== "object") {
       console.log("No transfer byStatus found");
       return [];
     }
@@ -237,16 +289,18 @@ export const useDashboard = () => {
             : name,
         value: Number(value) || 0,
       }))
-      .filter(item => item.value > 0); // Chỉ hiển thị các mục có giá trị > 0
+      .filter((item) => item.value > 0); // Chỉ hiển thị các mục có giá trị > 0
     console.log("Transfer Status Data:", data);
     return data;
   }, [overview, displayStats]);
 
   // Prepare distribution status data
   const distributionStatusData = useMemo(() => {
-    const byStatus = overview?.distributions?.byStatus || displayStats?.distributions?.byStatus;
+    const byStatus =
+      overview?.distributions?.byStatus ||
+      displayStats?.distributions?.byStatus;
     console.log("Distribution byStatus:", byStatus);
-    if (!byStatus || typeof byStatus !== 'object') {
+    if (!byStatus || typeof byStatus !== "object") {
       console.log("No distribution byStatus found");
       return [];
     }
@@ -266,7 +320,7 @@ export const useDashboard = () => {
             : name,
         value: Number(value) || 0,
       }))
-      .filter(item => item.value > 0); // Chỉ hiển thị các mục có giá trị > 0
+      .filter((item) => item.value > 0); // Chỉ hiển thị các mục có giá trị > 0
     console.log("Distribution Status Data:", data);
     return data;
   }, [overview, displayStats]);

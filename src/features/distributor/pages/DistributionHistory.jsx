@@ -20,6 +20,8 @@ export default function DistributionHistory() {
     handleClearSearch,
     updateFilter,
     getStatusColor,
+    availableStatuses,
+    statusLabels,
   } = useDistributionHistory();
   const fadeUp = {
     hidden: { opacity: 0, y: 16, filter: "blur(6px)" },
@@ -58,7 +60,7 @@ export default function DistributionHistory() {
                 setSearchInput={setSearchInput}
                 handleSearch={handleSearch}
                 handleClearSearch={handleClearSearch}
-                placeholder="Tìm theo đơn hàng"
+                placeholder="Tìm theo doanh nghiệp"
                 data={items}
                 getSearchText={(item) => {
                   const invoiceNumber =
@@ -110,23 +112,27 @@ export default function DistributionHistory() {
                   );
                 }}
               />
-              <div>
-                <label className="block text-sm text-[#003544]/70 mb-1">
-                  Trạng thái
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) =>
-                    updateFilter({ status: e.target.value, page: 1 })
-                  }
-                  className="h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
-                >
-                  <option value="">Tất cả</option>
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="transferred">Transferred</option>
-                </select>
-              </div>
+              {availableStatuses.length > 0 && (
+                <div>
+                  <label className="block text-sm text-[#003544]/70 mb-1">
+                    Trạng thái
+                  </label>
+                  <select
+                    value={status}
+                    onChange={(e) =>
+                      updateFilter({ status: e.target.value, page: 1 })
+                    }
+                    className="h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+                  >
+                    <option value="">Tất cả</option>
+                    {availableStatuses.map((s) => (
+                      <option key={s} value={s}>
+                        {statusLabels[s] || s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </motion.div>
 

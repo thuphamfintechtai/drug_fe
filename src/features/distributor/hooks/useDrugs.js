@@ -11,8 +11,10 @@ export const useDrugs = () => {
   const [allDrugs, setAllDrugs] = useState([]);
   const [searchAtc, setSearchAtc] = useState("");
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [expandedRows, setExpandedRows] = useState({});
   const progressIntervalRef = useRef(null);
-  const { data: drugsResponse, isLoading: queryLoading } = useDistributorDrugs();
+  const { data: drugsResponse, isLoading: queryLoading } =
+    useDistributorDrugs();
 
   useEffect(() => {
     const cached = queryClient.getQueryData(DRUGS_CACHE_KEY);
@@ -50,10 +52,11 @@ export const useDrugs = () => {
       return;
     }
     // Lọc client theo Tên thương mại | Tên hoạt chất | Mã ATC
-    const filtered = (allDrugs || []).filter((d) => {
-      const trade = (d.tradeName || "").toLowerCase();
-      const generic = (d.genericName || "").toLowerCase();
-      const atc = (d.atcCode || "").toLowerCase();
+    const filtered = (allDrugs || []).filter((item) => {
+      const drug = item.drug || item;
+      const trade = (drug.tradeName || "").toLowerCase();
+      const generic = (drug.genericName || "").toLowerCase();
+      const atc = (drug.atcCode || "").toLowerCase();
       return (
         trade.includes(term) || generic.includes(term) || atc.includes(term)
       );
@@ -66,6 +69,13 @@ export const useDrugs = () => {
     setDrugs(allDrugs);
   };
 
+  const toggleRow = (drugId) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [drugId]: !prev[drugId],
+    }));
+  };
+
   return {
     drugs,
     allDrugs,
@@ -75,5 +85,7 @@ export const useDrugs = () => {
     loadingProgress,
     handleSearch,
     handleClearSearch,
+    expandedRows,
+    toggleRow,
   };
 };

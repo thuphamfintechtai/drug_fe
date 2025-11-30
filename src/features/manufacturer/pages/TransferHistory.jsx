@@ -45,8 +45,8 @@ export default function TransferHistory() {
 
           {/* Filters */}
           <div className="rounded-2xl bg-white border border-card-primary shadow-sm p-4">
-            <div className="flex flex-col md:flex-row gap-3 md:items-end">
-              <div className="flex-1">
+            <div className="flex flex-col lg:flex-row gap-3 lg:items-end">
+              <div className="flex-1 min-w-0">
                 <Search
                   searchInput={searchInput}
                   setSearchInput={setSearchInput}
@@ -107,7 +107,7 @@ export default function TransferHistory() {
                   }}
                 />
               </div>
-              <div>
+              <div className="w-full lg:w-auto lg:min-w-[180px]">
                 <label className="block text-sm text-slate-600 mb-1">
                   Trạng thái
                 </label>
@@ -116,15 +116,16 @@ export default function TransferHistory() {
                   onChange={(e) =>
                     updateFilter({ status: e.target.value, page: 1 })
                   }
-                  className="h-12 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-12 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
+                  className="h-12 w-full rounded-full appearance-none border border-gray-200 bg-white text-gray-700 px-4 pr-10 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition"
                 >
                   <option value="">Tất cả</option>
-                  <option value="issued">Đã phát hành</option>
+                  <option value="confirmed">Confirmed</option>
                   <option value="pending">Pending</option>
                   <option value="sent">Sent</option>
                   <option value="received">Received</option>
                   <option value="paid">Paid</option>
                   <option value="cancelled">Cancelled</option>
+                  <option value="issued">Issued</option>
                 </select>
               </div>
             </div>
@@ -219,7 +220,7 @@ export default function TransferHistory() {
                     >
                       <div className="px-5 pb-5 border-t border-slate-200">
                         {/* Summary */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-sm mt-4">
+                        <div className="grid grid-cols-1  gap-3 mb-4 text-sm mt-4">
                           <div className="rounded-lg p-3 border border-slate-200">
                             <div className="text-slate-700 mb-2">
                               Số lượng:{" "}
@@ -284,7 +285,7 @@ export default function TransferHistory() {
 
                         {/* Distributor Panel */}
                         {item.distributor ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                          <div className="grid grid-cols-1 gap-3 mb-4">
                             <div className="rounded-lg p-3 border border-slate-200">
                               <div className="text-xs text-slate-600 mb-1">
                                 Nhà phân phối

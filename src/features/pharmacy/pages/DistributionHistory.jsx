@@ -24,6 +24,7 @@ export default function DistributionHistory() {
     formatNotes,
     status,
     page,
+    availableStatuses,
   } = useDistributionHistory();
   const fadeUp = {
     hidden: { opacity: 0, y: 16, filter: "blur(6px)" },
@@ -130,26 +131,27 @@ export default function DistributionHistory() {
                   </button>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm text-[#003544]/70 mb-1">
-                  Trạng thái
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) =>
-                    updateFilter({ status: e.target.value, page: 1 })
-                  }
-                  className="h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
-                >
-                  <option value="">Tất cả</option>
-                  <option value="pending">Đang chờ</option>
-                  <option value="received">Đã nhận</option>
-                  <option value="confirmed">Đã xác nhận</option>
-                  <option value="sold">Đã bán</option>
-                  <option value="in_stock">Tồn kho</option>
-                  <option value="expired">Hết hạn</option>
-                </select>
-              </div>
+              {availableStatuses.length > 0 && (
+                <div>
+                  <label className="block text-sm text-[#003544]/70 mb-1">
+                    Trạng thái
+                  </label>
+                  <select
+                    value={status}
+                    onChange={(e) =>
+                      updateFilter({ status: e.target.value, page: 1 })
+                    }
+                    className="h-12 rounded-full border border-gray-200 bg-white text-gray-700 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-[#48cae4] transition"
+                  >
+                    <option value="">Tất cả</option>
+                    {availableStatuses.map((s) => (
+                      <option key={s} value={s}>
+                        {translateStatus(s)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </motion.div>
 
@@ -259,8 +261,9 @@ export default function DistributionHistory() {
                                       item.deliveryAddress.city
                                         ? ", "
                                         : ""
-                                    }${item.deliveryAddress.city || ""}`.trim() ||
-                                    "Chưa có"
+                                    }${
+                                      item.deliveryAddress.city || ""
+                                    }`.trim() || "Chưa có"
                                   : item.deliveryAddress || "Chưa có"}
                               </span>
                             </div>
@@ -268,11 +271,13 @@ export default function DistributionHistory() {
                               <span className="text-slate-600">Ngày nhận:</span>
                               <span className="text-slate-800">
                                 {item.receivedDate
-                                  ? new Date(item.receivedDate).toLocaleDateString(
+                                  ? new Date(
+                                      item.receivedDate
+                                    ).toLocaleDateString("vi-VN")
+                                  : item.createdAt
+                                  ? new Date(item.createdAt).toLocaleDateString(
                                       "vi-VN"
                                     )
-                                  : item.createdAt
-                                  ? new Date(item.createdAt).toLocaleDateString("vi-VN")
                                   : "Chưa có"}
                               </span>
                             </div>

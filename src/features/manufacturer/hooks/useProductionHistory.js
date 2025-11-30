@@ -8,8 +8,11 @@ export const useProductionHistory = () => {
   const [items, setItems] = useState([]);
   const [allItems, setAllItems] = useState([]);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loading, setLoading] = useState(true);
   const progressIntervalRef = useRef(null);
   const [expandedItems, setExpandedItems] = useState(new Set());
+  const isInitialLoadRef = useRef(true);
+  const prevStatusRef = useRef("");
 
   const [searchInput, setSearchInput] = useState("");
 
@@ -35,9 +38,83 @@ export const useProductionHistory = () => {
 
   const {
     data: productionHistoryData,
-    isLoading: loading,
+    isLoading: queryLoading,
+    isFetching,
     error: productionHistoryError,
   } = useManufacturerProductionHistory(params);
+
+  // Show loading when: initial load OR status filter changes
+  const shouldShowLoading =
+    isInitialLoadRef.current ||
+    (isFetching && prevStatusRef.current !== status);
+
+  // Start loading progress animation
+  useEffect(() => {
+    if (shouldShowLoading && (queryLoading || isFetching)) {
+      setLoading(true);
+      setLoadingProgress(0);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress((prev) =>
+          prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
+        );
+      }, 50);
+    }
+  }, [queryLoading, isFetching, shouldShowLoading]);
+
+  // Complete loading animation when data is ready
+  useEffect(() => {
+    const completeLoading = async () => {
+      if (!queryLoading && !isFetching && loading) {
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+
+        // Animate to 100%
+        let currentProgress = 0;
+        setLoadingProgress((prev) => {
+          currentProgress = prev;
+          return prev;
+        });
+
+        if (currentProgress < 1) {
+          await new Promise((resolve) => {
+            const speedUp = setInterval(() => {
+              setLoadingProgress((prev) => {
+                if (prev < 1) {
+                  const np = Math.min(prev + 0.15, 1);
+                  if (np >= 1) {
+                    clearInterval(speedUp);
+                    resolve();
+                  }
+                  return np;
+                }
+                clearInterval(speedUp);
+                resolve();
+                return 1;
+              });
+            }, 30);
+            setTimeout(() => {
+              clearInterval(speedUp);
+              setLoadingProgress(1);
+              resolve();
+            }, 500);
+          });
+        }
+
+        await new Promise((r) => setTimeout(r, 200));
+        setLoading(false);
+        isInitialLoadRef.current = false;
+        prevStatusRef.current = status;
+        setTimeout(() => setLoadingProgress(0), 500);
+      }
+    };
+
+    completeLoading();
+  }, [queryLoading, isFetching, loading, status]);
 
   useEffect(() => {
     setSearchInput(search);
@@ -57,48 +134,64 @@ export const useProductionHistory = () => {
       let productions = [];
       if (Array.isArray(productionHistoryData.data)) {
         productions = productionHistoryData.data;
-        console.log('✅ [useProductionHistory] Data is array directly:', productions.length);
+        console.log(
+          "✅ [useProductionHistory] Data is array directly:",
+          productions.length
+        );
       } else if (productionHistoryData.data?.productions) {
         productions = productionHistoryData.data.productions;
-        console.log('✅ [useProductionHistory] Data has productions field:', productions.length);
+        console.log(
+          "✅ [useProductionHistory] Data has productions field:",
+          productions.length
+        );
       } else if (productionHistoryData.data?.data) {
         // Nested data.data
         if (Array.isArray(productionHistoryData.data.data)) {
           productions = productionHistoryData.data.data;
-          console.log('✅ [useProductionHistory] Data.data is array:', productions.length);
+          console.log(
+            "✅ [useProductionHistory] Data.data is array:",
+            productions.length
+          );
         } else if (productionHistoryData.data.data?.productions) {
           productions = productionHistoryData.data.data.productions;
-          console.log('✅ [useProductionHistory] Data.data has productions:', productions.length);
+          console.log(
+            "✅ [useProductionHistory] Data.data has productions:",
+            productions.length
+          );
         }
       }
-      
+
       // Handle pagination from count field or pagination object
-      const total = productionHistoryData.count || 
-                    productionHistoryData.data?.pagination?.total || 
-                    productionHistoryData.data?.total ||
-                    productions.length;
+      const total =
+        productionHistoryData.count ||
+        productionHistoryData.data?.pagination?.total ||
+        productionHistoryData.data?.total ||
+        productions.length;
       const paginationData = productionHistoryData.data?.pagination || {
         page: 1,
         limit: 10,
         total: total,
         pages: Math.ceil(total / 10) || 1,
       };
-      
-      console.log('📦 [useProductionHistory] Setting items:', {
+
+      console.log("📦 [useProductionHistory] Setting items:", {
         productionsCount: productions.length,
         total: total,
         pagination: paginationData,
       });
-      
+
       setAllItems(productions);
       setPagination(paginationData);
     } else if (productionHistoryError) {
       setItems([]);
       setAllItems([]);
-      console.error("❌ [useProductionHistory] Lỗi khi tải lịch sử sản xuất:", productionHistoryError);
+      console.error(
+        "❌ [useProductionHistory] Lỗi khi tải lịch sử sản xuất:",
+        productionHistoryError
+      );
     } else {
       // No data and no error - might be loading or empty
-      console.log('ℹ️ [useProductionHistory] No data yet:', {
+      console.log("ℹ️ [useProductionHistory] No data yet:", {
         hasData: !!productionHistoryData,
         hasError: !!productionHistoryError,
         data: productionHistoryData,

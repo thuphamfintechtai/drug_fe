@@ -18,7 +18,9 @@ export const useDrugManagement = () => {
   const [selectedDrug, setSelectedDrug] = useState(null);
   const [searchAtc, setSearchAtc] = useState("");
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loading, setLoading] = useState(true);
   const progressIntervalRef = useRef(null);
+  const isInitialLoadRef = useRef(true);
   const [showCustomDosageForm, setShowCustomDosageForm] = useState(false);
   const [showCustomRoute, setShowCustomRoute] = useState(false);
   const [strengthValue, setStrengthValue] = useState("");
@@ -30,9 +32,76 @@ export const useDrugManagement = () => {
   // React Query hooks
   const {
     data: drugsData,
-    isLoading: loading,
+    isLoading: queryLoading,
     error: drugsError,
   } = useManufacturerDrugs();
+
+  // Start loading progress animation on initial load
+  useEffect(() => {
+    if (isInitialLoadRef.current && queryLoading) {
+      setLoading(true);
+      setLoadingProgress(0);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      progressIntervalRef.current = setInterval(() => {
+        setLoadingProgress((prev) =>
+          prev < 0.9 ? Math.min(prev + 0.02, 0.9) : prev
+        );
+      }, 50);
+    }
+  }, [queryLoading]);
+
+  // Complete loading animation when data is ready
+  useEffect(() => {
+    const completeLoading = async () => {
+      if (!queryLoading && isInitialLoadRef.current) {
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+
+        // Animate to 100%
+        let currentProgress = 0;
+        setLoadingProgress((prev) => {
+          currentProgress = prev;
+          return prev;
+        });
+
+        if (currentProgress < 1) {
+          await new Promise((resolve) => {
+            const speedUp = setInterval(() => {
+              setLoadingProgress((prev) => {
+                if (prev < 1) {
+                  const np = Math.min(prev + 0.15, 1);
+                  if (np >= 1) {
+                    clearInterval(speedUp);
+                    resolve();
+                  }
+                  return np;
+                }
+                clearInterval(speedUp);
+                resolve();
+                return 1;
+              });
+            }, 30);
+            setTimeout(() => {
+              clearInterval(speedUp);
+              setLoadingProgress(1);
+              resolve();
+            }, 500);
+          });
+        }
+
+        await new Promise((r) => setTimeout(r, 200));
+        setLoading(false);
+        isInitialLoadRef.current = false;
+        setTimeout(() => setLoadingProgress(0), 500);
+      }
+    };
+
+    completeLoading();
+  }, [queryLoading]);
 
   const addDrugMutation = useManufacturerAddDrug();
   const updateDrugMutation = useManufacturerUpdateDrug();
@@ -216,7 +285,11 @@ export const useDrugManagement = () => {
       const tradeName = (d.tradeName || "").toLowerCase();
       const genericName = (d.genericName || "").toLowerCase();
       const atc = (d.atcCode || "").toLowerCase();
-      return tradeName.includes(term) || genericName.includes(term) || atc.includes(term);
+      return (
+        tradeName.includes(term) ||
+        genericName.includes(term) ||
+        atc.includes(term)
+      );
     });
     setDrugs(filtered);
   };
@@ -346,7 +419,7 @@ export const useDrugManagement = () => {
       const strength = combineStrength(strengthValue, strengthUnit);
       // Combine packaging vial và pill trước khi submit
       const packaging = combinePackaging(packagingVial, packagingPill);
-      
+
       // Submit data với field names đúng với backend
       const submitData = {
         tradeName: formData.tradeName,

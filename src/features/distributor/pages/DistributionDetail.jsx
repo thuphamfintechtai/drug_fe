@@ -10,23 +10,54 @@ export default function DistributionDetail() {
   const { data, loading, updating, form, onConfirm, onStatusUpdate } =
     useDistributionDetail();
 
+  // Helper function để extract giá trị từ field có prefix _ hoặc value object có _value
+  const getValue = (fieldName) => {
+    if (!data) {return null;}
+    const field = data[fieldName] || data[`_${fieldName}`];
+    if (field === null || field === undefined) {return null;}
+    if (typeof field === "object" && field._value !== undefined) {
+      return field._value;
+    }
+    return field;
+  };
+
   const getStatusColor = (status) => {
     const s = (status || "").toLowerCase();
-    if (s === "confirmed") return "green";
-    if (s === "sent") return "blue";
-    if (s === "issued") return "cyan";
-    if (s === "pending") return "orange";
-    if (s === "cancelled") return "red";
+    if (s === "confirmed") {
+      return "green";
+    }
+    if (s === "sent") {
+      return "blue";
+    }
+    if (s === "issued") {
+      return "cyan";
+    }
+    if (s === "pending") {
+      return "orange";
+    }
+    if (s === "cancelled") {
+      return "red";
+    }
     return "default";
   };
 
   const getStatusLabel = (status) => {
     const s = (status || "").toLowerCase();
-    if (s === "confirmed") return "Đã xác nhận";
-    if (s === "sent") return "Đã nhận";
-    if (s === "issued") return "Đã phát hành";
-    if (s === "pending") return "Chờ nhận";
-    if (s === "cancelled") return "Đã hủy";
+    if (s === "confirmed") {
+      return "Đã xác nhận";
+    }
+    if (s === "sent") {
+      return "Đã nhận";
+    }
+    if (s === "issued") {
+      return "Đã phát hành";
+    }
+    if (s === "pending") {
+      return "Chờ nhận";
+    }
+    if (s === "cancelled") {
+      return "Đã hủy";
+    }
     return status || "N/A";
   };
 
@@ -53,7 +84,8 @@ export default function DistributionDetail() {
     );
   }
 
-  const currentStatus = data.status || data._status || "pending";
+  const currentStatus =
+    getValue("status") || data.status || data._status || "pending";
 
   return (
     <DashboardLayout navigationItems={navigationItems}>
@@ -90,14 +122,20 @@ export default function DistributionDetail() {
                 Mã đơn
               </label>
               <div className="font-mono font-semibold text-gray-800 text-lg">
-                {data.invoiceNumber || data.code || "N/A"}
+                {getValue("invoiceNumber") ||
+                  data.invoiceNumber ||
+                  data.code ||
+                  "N/A"}
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-2">
                 Trạng thái
               </label>
-              <Tag color={getStatusColor(currentStatus)} className="text-sm px-3 py-1">
+              <Tag
+                color={getStatusColor(currentStatus)}
+                className="text-sm px-3 py-1"
+              >
                 {getStatusLabel(currentStatus)}
               </Tag>
             </div>
@@ -106,13 +144,17 @@ export default function DistributionDetail() {
                 Mã xác minh (Chain TX Hash)
               </label>
               <div className="font-mono text-xs text-gray-600 break-all">
-                {data.chainTxHash ? (
-                  <span title={data.chainTxHash}>
-                    {data.chainTxHash.slice(0, 12)}...{data.chainTxHash.slice(-10)}
-                  </span>
-                ) : (
-                  data.verificationCode || "N/A"
-                )}
+                {(() => {
+                  const chainTxHash =
+                    getValue("chainTxHash") || data.chainTxHash;
+                  return chainTxHash ? (
+                    <span title={chainTxHash}>
+                      {chainTxHash.slice(0, 12)}...{chainTxHash.slice(-10)}
+                    </span>
+                  ) : (
+                    data.verificationCode || "N/A"
+                  );
+                })()}
               </div>
             </div>
             <div>
@@ -120,7 +162,7 @@ export default function DistributionDetail() {
                 Số lô
               </label>
               <div className="font-mono text-gray-800">
-                {data.batchNumber || "N/A"}
+                {getValue("batchNumber") || data.batchNumber || "N/A"}
               </div>
             </div>
             <div>
@@ -144,12 +186,13 @@ export default function DistributionDetail() {
               </label>
               <div className="text-gray-800">
                 {data.manufacturerName ||
-                  (typeof (data.fromManufacturer || data.manufacturer) === "object"
+                  (typeof (data.fromManufacturer || data.manufacturer) ===
+                  "object"
                     ? (data.fromManufacturer || data.manufacturer)?.name ||
                       (data.fromManufacturer || data.manufacturer)?.username ||
                       (data.fromManufacturer || data.manufacturer)?.fullName ||
                       "N/A"
-                    : (data.fromManufacturer || data.manufacturer) || "N/A")}
+                    : data.fromManufacturer || data.manufacturer || "N/A")}
               </div>
             </div>
             <div>
@@ -157,7 +200,7 @@ export default function DistributionDetail() {
                 Số lượng
               </label>
               <div className="text-gray-800 font-semibold text-lg">
-                {data.quantity || 0}
+                {getValue("quantity") ?? data.quantity ?? 0}
               </div>
             </div>
             <div>
@@ -165,18 +208,25 @@ export default function DistributionDetail() {
                 Ngày tạo đơn
               </label>
               <div className="text-gray-800">
-                {data.invoiceDate || data.createdAt
-                  ? new Date(data.invoiceDate || data.createdAt).toLocaleString("vi-VN")
-                  : "N/A"}
+                {(() => {
+                  const invoiceDate =
+                    getValue("invoiceDate") ||
+                    data.invoiceDate ||
+                    data.createdAt ||
+                    data._createdAt;
+                  return invoiceDate
+                    ? new Date(invoiceDate).toLocaleString("vi-VN")
+                    : "N/A";
+                })()}
               </div>
             </div>
-            {data.notes && (
+            {(getValue("notes") || data.notes) && (
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-600 mb-2">
                   Ghi chú
                 </label>
                 <div className="text-gray-800 bg-gray-50 rounded-lg p-3">
-                  {data.notes}
+                  {getValue("notes") || data.notes}
                 </div>
               </div>
             )}
@@ -184,13 +234,16 @@ export default function DistributionDetail() {
         </div>
 
         {/* Token IDs */}
-        {data.tokenIds && Array.isArray(data.tokenIds) && data.tokenIds.length > 0 && (
+        {(() => {
+          const tokenIds = data._tokenIds || data.tokenIds;
+          return tokenIds && Array.isArray(tokenIds) && tokenIds.length > 0;
+        })() && (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
             <h2 className="text-lg font-semibold text-slate-800 mb-4">
               Danh sách Token IDs (NFT)
             </h2>
             <div className="flex flex-wrap gap-2">
-              {data.tokenIds.map((tokenId, index) => (
+              {(data._tokenIds || data.tokenIds || []).map((tokenId, index) => (
                 <span
                   key={index}
                   className="px-3 py-1.5 bg-cyan-50 text-cyan-700 rounded-lg font-mono text-sm border border-cyan-200"
@@ -200,7 +253,7 @@ export default function DistributionDetail() {
               ))}
             </div>
             <div className="mt-4 text-sm text-slate-500">
-              Tổng số: {data.tokenIds.length} token
+              Tổng số: {(data._tokenIds || data.tokenIds || []).length} token
             </div>
           </div>
         )}
@@ -211,41 +264,72 @@ export default function DistributionDetail() {
             Thông tin bổ sung
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data.unitPrice !== null && (
+            {(() => {
+              const unitPrice = getValue("unitPrice");
+              return unitPrice !== null && unitPrice !== undefined;
+            })() && (
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">
                   Đơn giá
                 </label>
                 <div className="text-gray-800">
-                  {data.unitPrice?.toLocaleString("vi-VN") || "N/A"} VNĐ
+                  {(() => {
+                    const unitPrice = getValue("unitPrice") ?? data.unitPrice;
+                    return unitPrice
+                      ? unitPrice.toLocaleString("vi-VN") + " VNĐ"
+                      : "N/A";
+                  })()}
                 </div>
               </div>
             )}
-            {data.totalAmount !== null && (
+            {(() => {
+              const totalAmount = getValue("totalAmount");
+              return totalAmount !== null && totalAmount !== undefined;
+            })() && (
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">
                   Tổng tiền
                 </label>
                 <div className="text-gray-800 font-semibold">
-                  {data.totalAmount?.toLocaleString("vi-VN") || "N/A"} VNĐ
+                  {(() => {
+                    const totalAmount =
+                      getValue("totalAmount") ?? data.totalAmount;
+                    return totalAmount
+                      ? totalAmount.toLocaleString("vi-VN") + " VNĐ"
+                      : "N/A";
+                  })()}
                 </div>
               </div>
             )}
-            {data.vatRate !== null && (
+            {(() => {
+              const vatRate = getValue("vatRate");
+              return vatRate !== null && vatRate !== undefined;
+            })() && (
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">
                   VAT (%)
                 </label>
-                <div className="text-gray-800">{data.vatRate || "N/A"}%</div>
+                <div className="text-gray-800">
+                  {getValue("vatRate") ?? data.vatRate ?? "N/A"}%
+                </div>
               </div>
             )}
-            {data.finalAmount !== null && (
+            {(() => {
+              const finalAmount = getValue("finalAmount");
+              return finalAmount !== null && finalAmount !== undefined;
+            })() && (
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">
                   Thành tiền
                 </label>
                 <div className="text-gray-800 font-semibold text-lg">
-                  {data.finalAmount?.toLocaleString("vi-VN") || "N/A"} VNĐ
+                  {(() => {
+                    const finalAmount =
+                      getValue("finalAmount") ?? data.finalAmount;
+                    return finalAmount
+                      ? finalAmount.toLocaleString("vi-VN") + " VNĐ"
+                      : "N/A";
+                  })()}
                 </div>
               </div>
             )}
@@ -254,9 +338,13 @@ export default function DistributionDetail() {
                 Ngày cập nhật
               </label>
               <div className="text-gray-800">
-                {data.updatedAt
-                  ? new Date(data.updatedAt).toLocaleString("vi-VN")
-                  : "N/A"}
+                {(() => {
+                  const updatedAt =
+                    getValue("updatedAt") || data.updatedAt || data._updatedAt;
+                  return updatedAt
+                    ? new Date(updatedAt).toLocaleString("vi-VN")
+                    : "N/A";
+                })()}
               </div>
             </div>
           </div>
@@ -269,7 +357,8 @@ export default function DistributionDetail() {
               Xác nhận nhận hàng
             </h2>
             <p className="text-slate-600 mb-4">
-              Đơn hàng đã được gửi từ nhà sản xuất. Vui lòng xác nhận khi đã nhận được hàng.
+              Đơn hàng đã được gửi từ nhà sản xuất. Vui lòng xác nhận khi đã
+              nhận được hàng.
             </p>
             <Button
               type="primary"

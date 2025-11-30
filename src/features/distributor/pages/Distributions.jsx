@@ -214,7 +214,7 @@ export default function Distributions() {
               setSearchInput={setSearchText}
               handleSearch={handleSearch}
               handleClearSearch={handleClearSearch}
-              placeholder="Tìm kiếm theo mã đơn, tên thuốc, mã xác minh..."
+              placeholder="Tìm kiếm theo mã đơn, tên thuốc"
               data={data}
               getSearchText={getSearchText}
               matchFunction={matchFunction}
@@ -301,7 +301,7 @@ export default function Distributions() {
                           }}
                         >
                           <td className="px-6 py-4">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100 max-w-[200px] truncate">
                               {getInvoiceDisplay(record)}
                             </span>
                           </td>
@@ -419,7 +419,7 @@ export default function Distributions() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-600">Mã đơn:</span>
-                    <span className="font-mono font-medium">
+                    <span className="font-mono font-medium truncate max-w-[200px]">
                       {getInvoiceDisplay(selectedRecord)}
                     </span>
                   </div>

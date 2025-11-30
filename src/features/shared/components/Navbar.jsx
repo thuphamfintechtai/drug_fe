@@ -427,7 +427,7 @@ export default function Navbar() {
 
                           <button
                             onClick={handleLogout}
-                            className="w-full flex items-center justify-between px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm"
+                            className="w-full flex px-2 items-center justify-between px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm"
                           >
                             <span>Đăng xuất</span>
                             <svg
