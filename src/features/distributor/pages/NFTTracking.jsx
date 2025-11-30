@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import DashboardLayout from "../../shared/components/DashboardLayout";
 import TruckLoader from "../../shared/components/TruckLoader";
 import useNFTTracking from "../hooks/useNFTTracking";
+import { navigationItems } from "../constants/navigationItems";
 export default function AdminNftTracking() {
   const {
     nftId,
@@ -14,7 +15,7 @@ export default function AdminNftTracking() {
     handleSearch,
     formatDate,
     short,
-    navigationItems,
+
     setError,
     setData,
   } = useNFTTracking();
