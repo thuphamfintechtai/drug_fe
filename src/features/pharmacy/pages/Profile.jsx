@@ -9,6 +9,7 @@ const pickCompanyInfo = (user) => {
     return null;
   }
   return (
+    user.businessProfile ||
     user.company ||
     user.companyInfo ||
     user.businessInfo ||

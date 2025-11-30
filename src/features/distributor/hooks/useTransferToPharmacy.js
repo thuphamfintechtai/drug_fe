@@ -1111,15 +1111,31 @@ export const useTransferToPharmacy = () => {
       const vatAmount = 0; // Backend will calculate (totalAmount * vatRate / 100)
       const finalAmount = 0; // Backend will calculate (totalAmount + vatAmount)
 
+      // ✅ NEW: Lấy proofOfDistributionId từ selectedDistribution (id từ API response)
+      const proofOfDistributionId = selectedDistribution?.id || selectedDistribution?._id;
+      
+      if (!proofOfDistributionId) {
+        toast.error(
+          "Không tìm thấy ID của distribution. Vui lòng chọn lại lô hàng.",
+          {
+            position: "top-right",
+            duration: 5000,
+          }
+        );
+        setSubmitLoading(false);
+        return;
+      }
+
       const payload = {
         pharmacyId: formData.pharmacyId,
         drugId: resolvedDrugId,
         amount: amount, // ✅ NEW: Số lượng NFT người dùng nhập
+        proofOfDistributionId: proofOfDistributionId, // ✅ NEW: ID của distribution (tương đương với id từ API /distribution/history)
         tokenIds: tokenIdsToSend, // ✅ NEW: Gửi kèm tokenIds từ availableTokenIds để backend biết chính xác token nào cần chuyển
         invoiceDate: invoiceDate, // ✅ NEW: Thời gian tạo invoice
         unitPrice: unitPrice, // ✅ NEW: Giá đơn vị (backend sẽ tính)
         totalAmount: totalAmount, // ✅ NEW: Tổng tiền (backend sẽ tính)
-        vatRate: vatRate, // ✅ NEW: Thuế VAT (%)
+        vatRate: vatRate, // ✅ NEW: Thuế VAT (%) 
         vatAmount: vatAmount, // ✅ NEW: Số tiền VAT (backend sẽ tính)
         finalAmount: finalAmount, // ✅ NEW: Tổng tiền cuối cùng (backend sẽ tính)
         notes: formData.notes || undefined,

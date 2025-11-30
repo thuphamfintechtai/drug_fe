@@ -310,6 +310,14 @@ export default function PharmacyNFTTracking() {
                           <div className="text-sm font-semibold text-slate-800 font-mono break-all flex-1">
                             {data.nft.contractAddress}
                           </div>
+                          <div className="text-sm font-medium text-slate-800">
+                            {data.supplyChain.manufacturer.name || "N/A"}
+                          </div>
+                          {data.supplyChain.manufacturer.email && (
+                            <div className="text-xs text-slate-600 mt-1">
+                              {data.supplyChain.manufacturer.email}
+                            </div>
+                          )}
                         </div>
                       )}
                       {data?.nft?.chainTxHash && (
@@ -327,6 +335,14 @@ export default function PharmacyNFTTracking() {
                               {data.nft.chainTxHash}
                             </a>
                           </div>
+                          <div className="text-sm font-medium text-slate-800">
+                            {data.supplyChain.distributor.name || "N/A"}
+                          </div>
+                          {data.supplyChain.distributor.email && (
+                            <div className="text-xs text-slate-600 mt-1">
+                              {data.supplyChain.distributor.email}
+                            </div>
+                          )}
                         </div>
                       )}
                       {data?.nft?.ipfsUrl && (

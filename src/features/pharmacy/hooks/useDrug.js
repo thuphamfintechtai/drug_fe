@@ -145,9 +145,11 @@ export const useDrug = () => {
     allDrugs,
     loading,
     searchAtc,
+    setSearchAtc,
     loadingProgress,
     handleSearch,
     handleClearSearch,
     safeDrugs,
+    loadDrugs,
   };
 };

@@ -318,42 +318,26 @@ export default function InvoicesFromDistributor() {
                 <style>{`
               .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
               .custom-scroll::-webkit-scrollbar { width: 0; height: 0; }
-              .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-              .custom-scroll::-webkit-scrollbar-thumb { background: transparent; }
             `}</style>
-                <div className="bg-gradient-to-r from-[#00b4d8] to-[#48cae4] px-8 py-6 rounded-t-3xl flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <h2 className="text-2xl font-bold !text-white">
-                        Xác nhận nhận hàng
-                      </h2>
-                      <p className="text-cyan-100 text-sm">
-                        Đơn: {selectedInvoice.invoiceNumber}
-                      </p>
-                    </div>
+                <div className="bg-gradient-to-r from-primary to-secondary px-8 py-6 rounded-t-3xl flex justify-between items-center">
+                  <div>
+                    <h2 className="text-2xl font-bold !text-white">
+                      Xác nhận nhận hàng
+                    </h2>
+                    <p className="text-gray-100 text-sm">
+                      Đơn: {selectedInvoice.invoiceNumber}
+                    </p>
                   </div>
                   <button
                     onClick={() => setShowConfirmDialog(false)}
                     disabled={isConfirming}
-                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white transition disabled:opacity-50"
+                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center !text-white text-xl transition disabled:opacity-50"
                   >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    ✕
                   </button>
                 </div>
 
-                <div className="p-8 space-y-6">
+                <div className="p-8 space-y-4 max-h-[500px] overflow-auto hide-scrollbar">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -739,7 +723,7 @@ export default function InvoicesFromDistributor() {
                   <button
                     onClick={handleConfirmReceipt}
                     disabled={isConfirming}
-                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cae4] !text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+                    className="px-6 py-2.5 rounded-full bg-primary !text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
                   >
                     {isConfirming ? "Đang xử lý..." : "Xác nhận nhận hàng"}
                   </button>

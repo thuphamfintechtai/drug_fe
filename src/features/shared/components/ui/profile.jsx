@@ -25,12 +25,12 @@ export function Profile({ title, subtitle, user, company, roleLabel }) {
       <div className="space-y-5">
         {/* User Info */}
         <motion.div
-          className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden"
+          className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden"
           variants={fadeUp}
           initial="hidden"
           animate="show"
         >
-          <div className="px-6 py-4 bg-secondary">
+          <div className="px-6 py-4 bg-gradient-to-r from-primary to-secondary">
             <h2 className="text-xl font-bold !text-white">
               Thông tin tài khoản
             </h2>
@@ -38,7 +38,7 @@ export function Profile({ title, subtitle, user, company, roleLabel }) {
           <div className="p-6 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-slate-50 rounded-xl p-4">
-                <div className="text-xs text-slate-500 mb-1">Tên đầy đủ</div>
+                <div className="text-xs text-slate-500 mb-1">Tên đầy đủ / Username</div>
                 <div className="font-semibold text-slate-800">
                   {user.fullName || user.username || "N/A"}
                 </div>
@@ -50,10 +50,16 @@ export function Profile({ title, subtitle, user, company, roleLabel }) {
                 </div>
               </div>
               <div className="bg-slate-50 rounded-xl p-4">
+                <div className="text-xs text-slate-500 mb-1">Số điện thoại</div>
+                <div className="font-semibold text-slate-800">
+                  {user.phone || "N/A"}
+                </div>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-4">
                 <div className="text-xs text-slate-500 mb-1">Vai trò</div>
                 <div className="font-semibold text-slate-800">
                   <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm">
-                    {roleLabel || "N/A"}
+                    {roleLabel || user.role || "N/A"}
                   </span>
                 </div>
               </div>
@@ -71,35 +77,90 @@ export function Profile({ title, subtitle, user, company, roleLabel }) {
                   </span>
                 </div>
               </div>
+              {user.id && (
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <div className="text-xs text-slate-500 mb-1">ID</div>
+                  <div className="font-mono text-xs text-slate-800 break-all">
+                    {user.id}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
-              <div className="text-xs text-cyan-700 mb-1">Wallet Address</div>
-              <div className="font-mono text-sm text-cyan-800 break-all">
+            {user.address && (
+              <div className="bg-slate-50 rounded-xl p-4">
+                <div className="text-xs text-slate-500 mb-1">Địa chỉ</div>
+                <div className="font-medium text-slate-800">
+                  {user.address || "N/A"}
+                </div>
+              </div>
+            )}
+
+            {user.country && (
+              <div className="bg-slate-50 rounded-xl p-4">
+                <div className="text-xs text-slate-500 mb-1">Quốc gia</div>
+                <div className="font-medium text-slate-800">
+                  {user.country || "N/A"}
+                </div>
+              </div>
+            )}
+
+            <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
+              <div className="text-xs text-[#007b91] mb-1 font-semibold">Wallet Address</div>
+              <div className="font-mono text-sm text-slate-800 break-all">
                 {user.walletAddress || "Chưa có"}
               </div>
             </div>
+
+            {(user.createdAt || user.updatedAt) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {user.createdAt && (
+                  <div className="bg-slate-50 rounded-xl p-4">
+                    <div className="text-xs text-slate-500 mb-1">Ngày tạo</div>
+                    <div className="font-medium text-slate-800 text-sm">
+                      {new Date(user.createdAt).toLocaleString("vi-VN")}
+                    </div>
+                  </div>
+                )}
+                {user.updatedAt && (
+                  <div className="bg-slate-50 rounded-xl p-4">
+                    <div className="text-xs text-slate-500 mb-1">Ngày cập nhật</div>
+                    <div className="font-medium text-slate-800 text-sm">
+                      {new Date(user.updatedAt).toLocaleString("vi-VN")}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </motion.div>
 
         {/* Company Info */}
         {company && (
           <motion.div
-            className="bg-white rounded-2xl border border-cyan-100 shadow-sm overflow-hidden"
+            className="bg-white rounded-2xl border border-card-primary shadow-sm overflow-hidden"
             variants={fadeUp}
             initial="hidden"
             animate="show"
           >
-            <div className="px-6 py-4 bg-linear-to-r from-[#00b4d8] to-[#48cae4]">
+            <div className="px-6 py-4 bg-gradient-to-r from-primary to-secondary">
               <h2 className="text-xl font-bold !text-white">
                 Thông tin công ty
               </h2>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
-                  <div className="text-xs text-cyan-700 mb-1">Tên công ty</div>
-                  <div className="font-bold text-cyan-900 text-lg">
+                {company.id && (
+                  <div className="bg-slate-50 rounded-xl p-4">
+                    <div className="text-xs text-slate-500 mb-1">ID</div>
+                    <div className="font-mono text-xs text-slate-800 break-all">
+                      {company.id}
+                    </div>
+                  </div>
+                )}
+                <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
+                  <div className="text-xs text-[#007b91] mb-1 font-semibold">Tên công ty</div>
+                  <div className="font-bold text-slate-800 text-lg">
                     {company.name || "N/A"}
                   </div>
                 </div>
@@ -133,36 +194,53 @@ export function Profile({ title, subtitle, user, company, roleLabel }) {
                 </div>
               </div>
 
-              <div className="bg-slate-50 rounded-xl p-4">
-                <div className="text-xs text-slate-500 mb-1">Địa chỉ</div>
-                <div className="font-medium text-slate-800">
-                  {company.address || "N/A"}
+              {company.address && (
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <div className="text-xs text-slate-500 mb-1">Địa chỉ</div>
+                  <div className="font-medium text-slate-800">
+                    {company.address || "N/A"}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <div className="text-xs text-slate-500 mb-1">
-                    Số điện thoại
+                {company.phone && (
+                  <div className="bg-slate-50 rounded-xl p-4">
+                    <div className="text-xs text-slate-500 mb-1">
+                      Số điện thoại
+                    </div>
+                    <div className="font-medium text-slate-800">
+                      {company.phone || "N/A"}
+                    </div>
                   </div>
-                  <div className="font-medium text-slate-800">
-                    {company.phone || "N/A"}
+                )}
+                {company.website && (
+                  <div className="bg-slate-50 rounded-xl p-4">
+                    <div className="text-xs text-slate-500 mb-1">Website</div>
+                    <div className="font-medium text-slate-800">
+                      {company.website || "N/A"}
+                    </div>
                   </div>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <div className="text-xs text-slate-500 mb-1">Website</div>
-                  <div className="font-medium text-slate-800">
-                    {company.website || "N/A"}
-                  </div>
-                </div>
+                )}
               </div>
 
+              {company.walletAddress && (
+                <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
+                  <div className="text-xs text-[#007b91] mb-1 font-semibold">
+                    Wallet Address (Business)
+                  </div>
+                  <div className="font-mono text-sm text-slate-800 break-all">
+                    {company.walletAddress}
+                  </div>
+                </div>
+              )}
+
               {company.contractAddress && (
-                <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-                  <div className="text-xs text-emerald-700 mb-1">
+                <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
+                  <div className="text-xs text-[#007b91] mb-1 font-semibold">
                     Contract Address
                   </div>
-                  <div className="font-mono text-sm text-emerald-800 break-all">
+                  <div className="font-mono text-sm text-slate-800 break-all">
                     {company.contractAddress}
                   </div>
                 </div>
