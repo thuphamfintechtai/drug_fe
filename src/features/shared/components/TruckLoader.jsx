@@ -110,7 +110,7 @@ const TruckLoader = memo(function TruckLoader({
         }
         .truck-loader_truck {
           position: absolute;
-          top: calc(50% - 72px); /* nâng xe lên cao hơn đường ray một chút */
+          top: calc(50% - 52px); 
           left: 0;
           width: 90px;
           height: auto;

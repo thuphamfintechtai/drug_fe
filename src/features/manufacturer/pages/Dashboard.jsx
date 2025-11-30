@@ -60,49 +60,12 @@ export default function ManufacturerDashboard() {
           <div className="bg-white rounded-xl border border-card-primary shadow-sm p-5 flex items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold text-[#007b91] flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-6 h-6 text-[#007b91]"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 7h18M5 10h14M4 14h16M6 18h12"
-                  />
-                </svg>
                 Quản lý nhà sản xuất
               </h1>
               <p className="text-slate-500 text-sm mt-1">
                 Tổng quan hệ thống và các chức năng chính
               </p>
             </div>
-
-            <button
-              onClick={loadAllData}
-              disabled={loading}
-              className="p-2.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 transition disabled:opacity-50"
-              title="Làm mới dữ liệu"
-            >
-              <svg
-                className={`w-5 h-5 text-cyan-600 transition-transform ${
-                  loading ? "animate-spin" : ""
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-            </button>
           </div>
 
           {error ? (
@@ -133,7 +96,11 @@ export default function ManufacturerDashboard() {
           ) : displayStats ? (
             <div className="space-y-8">
               {/* Overview Cards */}
-              <motion.div variants={fadeUp} initial="hidden" animate="show">
+              <motion.div 
+                variants={fadeUp} 
+                initial={{ opacity: 0 }} 
+                animate="show"
+              >
                 <h2 className="text-lg font-semibold text-slate-800 mb-4">
                   Tổng quan
                 </h2>
@@ -183,9 +150,7 @@ export default function ManufacturerDashboard() {
                           0}
                       </div>
                       <div className="text-xs text-slate-500 mt-2">
-                        Số lượng:{" "}
-                        {displayStats?.overview?.totalQuantityProduced?.toLocaleString() ||
-                          0}
+                        Lô hàng
                       </div>
                     </div>
                   </div>
@@ -236,120 +201,11 @@ export default function ManufacturerDashboard() {
                 </div>
               </motion.div>
 
-              <motion.div variants={fadeUp} initial="hidden" animate="show">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">
-                  Chi tiết NFT & Chuyển giao
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-                  <Link
-                    to="/manufacturer/production-history?status=minted"
-                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
-                  >
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.blue}, ${COLORS.cyan})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        NFT Minted
-                      </div>
-                      <div className="text-3xl font-bold text-blue-600">
-                        {displayStats?.nfts?.byStatus?.minted || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Chưa chuyển giao
-                      </div>
-                    </div>
-                  </Link>
-
-                  <Link
-                    to="/manufacturer/production-history?status=transferred"
-                    className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-transform hover:scale-[1.02]"
-                  >
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.emerald}, ${COLORS.green})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        NFT Transferred
-                      </div>
-                      <div className="text-3xl font-bold text-emerald-600">
-                        {displayStats?.nfts?.byStatus?.transferred || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Đã chuyển giao
-                      </div>
-                    </div>
-                  </Link>
-
-                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.green}, ${COLORS.emerald})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">
-                        NFT Sold
-                      </div>
-                      <div className="text-3xl font-bold text-green-600">
-                        {displayStats?.nfts?.byStatus?.sold || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Đã bán cho NPP
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.amber}, ${COLORS.orange})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">Pending</div>
-                      <div className="text-3xl font-bold text-amber-600">
-                        {displayStats?.transfers?.byStatus?.pending || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Chờ xử lý
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                    <div
-                      className="absolute top-0 left-0 w-full h-[5px] rounded-t-2xl"
-                      style={{
-                        background: `linear-gradient(to right, ${COLORS.emerald}, ${COLORS.green})`,
-                      }}
-                    />
-                    <div className="p-5 pt-7 text-center">
-                      <div className="text-sm text-slate-600 mb-1">Paid</div>
-                      <div className="text-3xl font-bold text-emerald-600">
-                        {displayStats?.transfers?.byStatus?.paid || 0}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        Đã thanh toán
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
               {/* Charts Row 1: Line Chart (7 days) and Bar Chart (Today vs Yesterday) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <motion.div
                   variants={fadeUp}
-                  initial="hidden"
+                  initial={{ opacity: 0 }}
                   animate="show"
                   className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
                 >
@@ -409,7 +265,7 @@ export default function ManufacturerDashboard() {
 
                 <motion.div
                   variants={fadeUp}
-                  initial="hidden"
+                  initial={{ opacity: 0 }}
                   animate="show"
                   className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
                 >
@@ -449,7 +305,7 @@ export default function ManufacturerDashboard() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <motion.div
                   variants={fadeUp}
-                  initial="hidden"
+                  initial={{ opacity: 0 }}
                   animate="show"
                   className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
                 >
@@ -490,7 +346,7 @@ export default function ManufacturerDashboard() {
 
                 <motion.div
                   variants={fadeUp}
-                  initial="hidden"
+                  initial={{ opacity: 0 }}
                   animate="show"
                   className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
                 >
@@ -534,7 +390,7 @@ export default function ManufacturerDashboard() {
               {chartData.monthly && chartData.monthly.length > 0 && (
                 <motion.div
                   variants={fadeUp}
-                  initial="hidden"
+                  initial={{ opacity: 0 }}
                   animate="show"
                   className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
                 >
